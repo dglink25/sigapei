@@ -1,0 +1,30 @@
+import { Global, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
+import { RedisService } from './redis.service';
+
+import { REDIS_CLIENT } from './redis.constants';
+
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: REDIS_CLIENT,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        return new Redis({
+          host: config.get('redis.host'),
+          port: config.get('redis.port'),
+          password: config.get('redis.password'),
+          db: config.get('redis.db'),
+          keyPrefix: 'identite:',
+          retryStrategy: (times) => Math.min(times * 200, 5000),
+        });
+      },
+    },
+    RedisService,
+  ],
+  exports: [RedisService, REDIS_CLIENT],
+})
+export class RedisModule {}

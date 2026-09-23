@@ -1,0 +1,98 @@
+# ============================================================
+# api-identite - Orchestration locale/complete
+# Demarrage : docker compose up -d --build
+# Microservice expose sur http://localhost:4001 (documentation : /docs)
+# ============================================================
+version: "3.9"
+
+services:
+  api-identite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-identite
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - REDIS_HOST=redis
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-sigapei}:${RABBITMQ_PASSWORD:-change-me}@rabbitmq:5672
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - sigapei
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: identite-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-sigapei}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+      POSTGRES_DB: ${DB_NAME:-sigapei}
+    volumes:
+      - identite_postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sigapei}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sigapei
+
+  redis:
+    image: redis:7-alpine
+    container_name: identite-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - identite_redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sigapei
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: identite-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-sigapei}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-change-me}
+    ports:
+      - "5672:5672"   # AMQP (inter-microservices)
+      - "15672:15672" # Interface d'administration : http://localhost:15672
+    volumes:
+      - identite_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sigapei
+
+networks:
+  sigapei:
+    driver: bridge
+
+volumes:
+  identite_postgres_data:
+  identite_redis_data:
+  identite_rabbitmq_data:
