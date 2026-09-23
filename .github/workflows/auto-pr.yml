@@ -13,16 +13,30 @@ jobs:
   auto-pr:
     runs-on: ubuntu-latest
     steps:
-      - name: Créer la PR et activer l'auto-merge
+      - name: Créer la PR et fusionner
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
         run: |
-          BRANCH="${GITHUB_REF_NAME}"
-          EXISTING=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --base develop --json number --jq '.[0].number')
-          if [ -z "$EXISTING" ]; then
-            gh pr create --repo "$GITHUB_REPOSITORY" \
-              --base develop --head "$BRANCH" \
+          find_pr() {
+            gh pr list --repo "$REPO" --head "$BRANCH" --base develop \
+              --state open --json number --jq '.[0].number'
+          }
+
+          PR=$(find_pr)
+          if [ -z "$PR" ]; then
+            gh pr create --repo "$REPO" --base develop --head "$BRANCH" \
               --title "Fusion de $BRANCH vers develop" \
-              --body "PR créée automatiquement."
+              --body "PR créée automatiquement." || true
+            sleep 5
+            PR=$(find_pr)
           fi
-          gh pr merge "$BRANCH" --repo "$GITHUB_REPOSITORY" --auto --squash
+
+          if [ -z "$PR" ]; then
+            echo "Rien à fusionner."
+            exit 0
+          fi
+
+          gh pr merge "$PR" --repo "$REPO" --merge --auto \
+            || gh pr merge "$PR" --repo "$REPO" --merge
