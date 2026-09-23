@@ -1,0 +1,28 @@
+name: Auto PR vers develop
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  auto-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Créer la PR et activer l'auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          EXISTING=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$BRANCH" --base develop --json number --jq '.[0].number')
+          if [ -z "$EXISTING" ]; then
+            gh pr create --repo "$GITHUB_REPOSITORY" \
+              --base develop --head "$BRANCH" \
+              --title "Fusion de $BRANCH vers develop" \
+              --body "PR créée automatiquement."
+          fi
+          gh pr merge "$BRANCH" --repo "$GITHUB_REPOSITORY" --auto --squash
