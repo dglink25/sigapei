@@ -1,0 +1,58 @@
+# ============================================================
+# api-scolarite — Orchestration locale
+# Microservice expose sur http://localhost:4004
+# ============================================================
+version: "3.9"
+
+services:
+  api-scolarite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-scolarite
+    restart: unless-stopped
+    ports:
+      - "4004:4004"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_NAME:-sigapei}
+      - DB_USERNAME=${DB_USERNAME:-sigapei}
+      - DB_PASSWORD=${DB_PASSWORD:-change-me}
+      - DB_SCHEMA=scolarite
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sigapei
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: scolarite-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-sigapei}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+      POSTGRES_DB: ${DB_NAME:-sigapei}
+    volumes:
+      - scolarite_postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sigapei}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sigapei
+
+networks:
+  sigapei:
+    name: sigapei
+    external: true
+
+volumes:
+  scolarite_postgres_data:
