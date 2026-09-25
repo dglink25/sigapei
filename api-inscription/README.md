@@ -8,7 +8,8 @@ d'une année sur l'autre sans duplication de dossiers.
 - **Port** : `4003`
 - **Sonde de santé** : `GET /sante`
 - **Préfixe API** : toutes les routes métier sont sous `/v1/...`
-- **Documentation OpenAPI** : `http://localhost:4003/docs`
+- **Catalogue interactif des endpoints (JSON)** : `GET /docs` (public, sans authentification)
+- **Documentation complète en Markdown** : [docs/api-documentation.md](file:///c:/Users/PC/Documents/Projets/sigapei/api-inscription/docs/api-documentation.md)
 
 ---
 
@@ -23,8 +24,8 @@ d'une année sur l'autre sans duplication de dossiers.
    - Si la classe visée suit le **programme français** : compte élève activé dès le secondaire.
 4. **Rejet motivé obligatoire** :
    Le rejet d'une candidature impose un motif textuel explicatif obligatoire stocké pour consultation du parent/candidat.
-5. **Réinscriptions** :
-   Reconduction de la fiche existante sur la nouvelle classe/année scolaire sans duplication.
+5. **Réinscriptions sans duplication** :
+   Reconduction de la fiche existante sur la nouvelle classe/année scolaire sans duplication de dossier.
 
 ---
 
@@ -32,7 +33,9 @@ d'une année sur l'autre sans duplication de dossiers.
 
 | Méthode | Endpoint | Rôle |
 |---|---|---|
-| `POST` | `/v1/candidatures` | Soumet un dossier de candidature (secrétaire ou parent) |
+| `GET` | `/docs` | **Catalogue interactif JSON** de tous les endpoints et leurs formats |
+| `GET` | `/sante` | Sonde de santé du microservice |
+| `POST` | `/v1/candidatures` | Soumet un dossier de candidature (secrétaire ou parent, accessible publiquement) |
 | `GET` | `/v1/candidatures` | Liste les candidatures du tenant (filtrable par statut/classe) |
 | `GET` | `/v1/candidatures/{uuid}` | Détail d'une candidature, statut, pièces et tests |
 | `POST` | `/v1/candidatures/{uuid}/pieces-justificatives` | Ajoute une pièce justificative (référencée S3/MinIO) |
@@ -41,9 +44,22 @@ d'une année sur l'autre sans duplication de dossiers.
 | `POST` | `/v1/candidatures/{uuid}/rejeter` | Rejette la candidature avec un motif obligatoire |
 | `POST` | `/v1/reinscriptions` | Reconduit un apprenant existant sur la nouvelle année |
 
+> [!NOTE]
+> Pour le détail des paramètres de requête, corps JSON et formats de retour de chaque route, consultez le [dossier docs](file:///c:/Users/PC/Documents/Projets/sigapei/api-inscription/docs/api-documentation.md) ou appelez directement `GET http://localhost:4003/docs`.
+
 ---
 
-## 3. Démarrage rapide
+## 3. Architecture & Modèle de Données
+
+Schéma PostgreSQL : `inscription`
+- `inscription.candidatures` : `(id, uuid, tenant_id, nom, prenom, date_naissance, sexe, email, telephone, adresse, classe_visee_id, statut, date_soumission, motif_rejet, parent_nom, parent_prenom, parent_telephone, parent_email, parent_lien, created_at, updated_at)`
+- `inscription.pieces_justificatives` : `(id, uuid, tenant_id, candidature_id, type, nom_original, chemin_stockage, taille_octets, mime_type, statut_validation, created_at, updated_at)`
+- `inscription.tests_admission` : `(id, uuid, tenant_id, candidature_id, type_test, matiere, note, note_max, resultat, observations, evalue_par_id, date_test, created_at, updated_at)`
+- `inscription.reinscriptions` : `(id, uuid, tenant_id, apprenant_id, ancienne_classe_id, nouvelle_classe_id, annee_scolaire, statut, motif_rejet, date_demande, created_at, updated_at)`
+
+---
+
+## 4. Démarrage Rapide
 
 ### Avec Docker
 ```bash
@@ -51,11 +67,9 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-### Sans Docker (Local)
+### Sans Docker (Développement local)
 ```bash
 composer install
 cp .env.example .env
-php artisan key:generate
-php artisan migrate
 php -S 0.0.0.0:4003 -t public
 ```

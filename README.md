@@ -112,3 +112,12 @@ git push                      # fusion automatique vers develop, puis retest
 - **Actions** : *Allow GitHub Actions to create and approve pull requests* activé.
 - **Collaborateurs** : rôle **Write** pour les développeurs (jamais Admin ni Maintain).
 - **Workflow** : `.github/workflows/auto-pr.yml` crée la demande de fusion vers `develop` et la fusionne à chaque push sur `feature/**`.
+
+## Microservices de la plateforme
+
+| Microservice | Port | Schéma DB | Rôle principal | Documentation |
+|---|---|---|---|---|
+| [`api-identite`](api-identite) | `4001` | `identite` | SSO, Authentification Passwordless (OTP SMS/WhatsApp/Email, WebAuthn, Firebase) | [README](api-identite/README.md) (`/docs`) |
+| [`api-inscription`](api-inscription) | `4003` | `inscription` | Candidatures, pièces justificatives, tests d'admission, validation bloquante & réinscriptions | [README](api-inscription/README.md) • [Docs API](api-inscription/docs/api-documentation.md) (`/docs`) |
+| [`api-scolarite`](api-scolarite) | `4004` | `scolarite` | Cycles, classes (programme béninois/français), dossiers apprenants, mutations, emplois du temps | [README](api-scolarite/README.md) • [Docs API](api-scolarite/docs/api-documentation.md) (`/docs`) |
+

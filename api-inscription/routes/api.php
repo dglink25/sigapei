@@ -2,6 +2,7 @@
 
 use App\candidatures\CandidatureController;
 use App\common\Middleware\VerifyTenantAndJwt;
+use App\docs\DocsController;
 use App\pieces_justificatives\PieceJustificativeController;
 use App\reinscriptions\ReinscriptionController;
 use App\tests_admission\TestAdmissionController;
@@ -15,6 +16,9 @@ Route::get('/sante', function () {
         'horodatage' => now()->toIso8601String(),
     ]);
 });
+
+// Documentation interactive — catalogue complet des endpoints (public, pas de JWT requis)
+Route::get('/docs', [DocsController::class, 'catalogue']);
 
 // Routes metier sous le prefixe v1
 Route::prefix('v1')->middleware([VerifyTenantAndJwt::class])->group(function () {

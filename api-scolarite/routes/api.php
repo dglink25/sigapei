@@ -4,6 +4,7 @@ use App\apprenants\ApprenantController;
 use App\classes\ClasseController;
 use App\common\Middleware\VerifyTenantAndJwt;
 use App\common\Responses\ApiResponse;
+use App\docs\DocsController;
 use App\emplois_du_temps\EmploiDuTempsController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,9 @@ Route::get('/sante', function () {
         'horodatage' => now()->toIso8601String(),
     ]);
 });
+
+// Documentation interactive — catalogue complet des endpoints (public, pas de JWT requis)
+Route::get('/docs', [DocsController::class, 'catalogue']);
 
 // Routes metier sous le prefixe v1, protegees par VerifyTenantAndJwt
 Route::prefix('v1')->middleware([VerifyTenantAndJwt::class])->group(function () {
