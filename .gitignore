@@ -1,11 +1,17 @@
-.env
-.env.*
-!.env.example
-
+# Node / JS
 node_modules/
 dist/
 build/
 coverage/
+
+# PHP / Composer / Laravel
+/vendor/
+vendor/
+.phpunit.result.cache
+storage/*.key
+.env
+.env.*
+!.env.example
 
 *.log
 logs/
@@ -37,3 +43,4 @@ temp/
 firebase-adminsdk*.json
 service-account*.json
 google-credentials*.json
+
