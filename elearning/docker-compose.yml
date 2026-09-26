@@ -1,0 +1,29 @@
+services:
+  backend:
+    build: ./elearningback
+    container_name: elearning-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Montage du code : hot-reload Django + db.sqlite3 persistée côté hôte
+      - ./elearningback:/code
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: elearning-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Montage du code pour le hot-reload Vite
+      - ./frontend:/app
+      # node_modules reste dans un volume dédié (pas d'overlay par le bind mount hôte)
+      - frontend_node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  frontend_node_modules:
