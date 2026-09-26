@@ -1,4 +1,4 @@
-# api-etablissements — Microservice Établissements — Plateforme SIGAPEI
+# etablissements — Microservice Établissements — Plateforme SIGAPEI
 
 Onboarding multi-étapes d'un établissement, référentiel géographique
 panafricain (54 pays), workflow de validation par le Super Administrateur,
@@ -10,7 +10,7 @@ des plans/modules/abonnements.
 - **Sonde de santé** : `GET /sante`
 - **Stack** : Laravel 11 (PHP 8.3), PostgreSQL (schéma `etablissements` de
   la base unique partagée avec les 11 autres microservices), Redis
-  (cache), RabbitMQ (bus d'événements, partagé avec `api-identite`).
+  (cache), RabbitMQ (bus d'événements, partagé avec `identite`).
 
 ---
 
@@ -27,8 +27,8 @@ docker compose up -d --build
 Puis, une seule fois, les migrations et le référentiel géographique :
 
 ```bash
-docker compose exec api-etablissements php artisan migrate
-docker compose exec api-etablissements php artisan db:seed --class=PaysAfriqueSeeder
+docker compose exec etablissements php artisan migrate
+docker compose exec etablissements php artisan db:seed --class=PaysAfriqueSeeder
 ```
 
 ### Sans Docker (développement local)
@@ -48,10 +48,10 @@ php artisan schedule:work
 
 ---
 
-## 2. Rendre ce microservice joignable par `api-identite` (réseau partagé)
+## 2. Rendre ce microservice joignable par `identite` (réseau partagé)
 
 Ce microservice **réutilise** le Redis et le RabbitMQ déjà démarrés par la
-stack `api-identite` (même base PostgreSQL unique, juste un schéma différent :
+stack `identite` (même base PostgreSQL unique, juste un schéma différent :
 `etablissements` au lieu de `identite`). Pour que les deux stacks Docker se
 voient, elles doivent partager un réseau :
 
@@ -59,7 +59,7 @@ voient, elles doivent partager un réseau :
 docker network create sigapei
 ```
 
-Puis, dans le `docker-compose.yml` de **api-identite**, remplacez le bloc
+Puis, dans le `docker-compose.yml` de **identite**, remplacez le bloc
 `networks:` en bas du fichier par :
 
 ```yaml
@@ -69,11 +69,11 @@ networks:
 ```
 
 ... et changez chaque `networks: - e-academique` en `networks: - sigapei`
-dans les services `api-identite`, `redis`, `rabbitmq` (le service `postgres`
+dans les services `identite`, `redis`, `rabbitmq` (le service `postgres`
 local peut rester tel quel ou être retiré si, comme c'est probablement votre
 cas, vous utilisez un Postgres managé distant — voir la conversation
 précédente sur Neon). Relancez ensuite `docker compose up -d` côté
-api-identite, puis côté api-etablissements.
+identite, puis côté etablissements.
 
 ---
 
@@ -90,13 +90,13 @@ Même base **unique** que les 11 autres microservices, schéma dédié
   driver PDO pgsql).
 - Le schéma `etablissements` est créé automatiquement par la première
   migration (`CREATE SCHEMA IF NOT EXISTS`) — inutile de le créer à la main,
-  contrairement à `api-identite` où Neon a nécessité une commande manuelle
+  contrairement à `identite` où Neon a nécessité une commande manuelle
   la première fois (ce n'était dû qu'à l'ordre d'exécution de TypeORM, pas
   à une limite de Neon).
 
 ### 3.2. Redis et RabbitMQ
 
-Partagés avec `api-identite` (voir section 2). Si vous préférez des
+Partagés avec `identite` (voir section 2). Si vous préférez des
 instances séparées, changez simplement `REDIS_HOST`/`RABBITMQ_HOST` dans
 `.env` pour pointer vers vos propres services.
 
@@ -111,7 +111,7 @@ logo) sont téléversés vers un stockage objet, jamais dans la base :
 
 ### 3.4. CAPTCHA
 
-Identique à `api-identite` : `CAPTCHA_PROVIDER`, `CAPTCHA_SECRET_KEY`,
+Identique à `identite` : `CAPTCHA_PROVIDER`, `CAPTCHA_SECRET_KEY`,
 `CAPTCHA_MIN_SCORE`. Le contrôleur d'onboarding (`OnboardingController::soumettre`)
 valide un `captchaToken` avant soumission finale (section 9 du cahier des
 charges) — branchez-y le même `RecaptchaProvider` que sur Identité si vous
@@ -135,7 +135,7 @@ voulez éviter de dupliquer le code entre les deux dépôts.
 ### 3.6. Secret interne (Gateway)
 
 `INTERNAL_API_SECRET` : **la même valeur** que celle configurée côté
-`api-identite`, pour que la passerelle API (Gateway) puisse appeler les
+`identite`, pour que la passerelle API (Gateway) puisse appeler les
 endpoints `/interne/*` des deux microservices avec un seul secret.
 
 ### 3.7. Lien de correction
@@ -149,7 +149,7 @@ l'affiche). `CORRECTION_TOKEN_TTL_HEURES=72` conforme au cahier des charges.
 ## 4. Communication avec les autres microservices (RabbitMQ)
 
 Ce microservice **publie** des événements sur la queue consommée par
-`api-identite` (`RABBITMQ_QUEUE_IDENTITE`, `identite.rpc` par défaut), au
+`identite` (`RABBITMQ_QUEUE_IDENTITE`, `identite.rpc` par défaut), au
 format exact attendu par le transport RMQ de NestJS
 (`{"pattern": "...", "data": {...}}`) — voir `app/Services/RabbitMQService.php`.
 
@@ -158,11 +158,11 @@ format exact attendu par le transport RMQ de NestJS
 | `demande.soumise` | Soumission finale du formulaire (étape 5) | Communication (WhatsApp+e-mail à l'établissement, au dirigeant, au Super Admin) |
 | `demande.correction_demandee` | Le Super Admin marque des champs à corriger | Communication (notification + lien de correction) |
 | `demande.correction_relance` | Relance quotidienne (18h59, tant que non corrigé) | Communication (rappel) |
-| `etablissement.valide` | Validation définitive par le Super Admin | **api-identite** (création du compte administrateur, rôle `administrateur`, `tenantId` = uuid de l'établissement) + Communication (envoi matricule + lien de définition du mot de passe) |
+| `etablissement.valide` | Validation définitive par le Super Admin | **identite** (création du compte administrateur, rôle `administrateur`, `tenantId` = uuid de l'établissement) + Communication (envoi matricule + lien de définition du mot de passe) |
 | `etablissement.suspendu` | Suspension par le Super Admin | Communication (notification), Gateway (invalidation immédiate déjà gérée côté cache Redis local) |
 | `etablissement.reactive` | Réactivation par le Super Admin | Communication (notification) |
 
-**Côté `api-identite`** : un petit ajout est nécessaire pour que ce
+**Côté `identite`** : un petit ajout est nécessaire pour que ce
 microservice consomme l'événement `etablissement.valide` et crée
 effectivement le compte administrateur (section 7.4, point 4 du cahier des
 charges). Voir les fichiers fournis séparément (`interne.rpc.controller.ts`
@@ -201,7 +201,7 @@ code en cas de collision). Exemple : « Complexe Scolaire Kisito » → `kisito8
 | `GET/POST /interne/demandes...`, `/interne/etablissements/{uuid}/suspendre|reactiver`, `GET /interne/resolution-slug/{slug}` | Endpoints internes (secret partagé `X-Internal-Secret`) |
 | `GET /sante` | Sonde de santé (hors préfixe `/v1`) |
 
-Une génération Swagger/OpenAPI (comme sur `api-identite`) peut être ajoutée
+Une génération Swagger/OpenAPI (comme sur `identite`) peut être ajoutée
 via le paquet `darkaonline/l5-swagger` si vous le souhaitez — non incluse
 ici pour rester dans le périmètre demandé ; dites-le moi si vous voulez que
 je l'ajoute.
@@ -211,7 +211,7 @@ je l'ajoute.
 ## 7. Planificateur (relance quotidienne, section 7.3)
 
 Laravel n'a pas de démon cron intégré. En Docker, le service
-`api-etablissements-scheduler` (même image, entrypoint différent) exécute
+`etablissements-scheduler` (même image, entrypoint différent) exécute
 `php artisan schedule:run` toutes les 60 secondes, ce qui déclenche
 effectivement `demandes:relancer-corrections` une fois par jour à 18h59
 (défini dans `routes/console.php`). Sans Docker, lancez `php artisan schedule:work`.

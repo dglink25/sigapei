@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('demandes_etablissement', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
 
             // Brouillon complet du formulaire 5 etapes (auto-save), format libre.
             $table->jsonb('donnees_formulaire')->nullable();
@@ -49,7 +49,7 @@ return new class extends Migration
 
         Schema::create('documents_etablissement', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->foreignId('demande_id')->constrained('demandes_etablissement')->onDelete('cascade');
             $table->enum('type', ['autorisation', 'piece_identite', 'logo']);
             $table->string('chemin_stockage', 512);

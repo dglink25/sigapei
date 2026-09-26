@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->string('nom', 64);
             $table->decimal('prix', 12, 2);
             $table->enum('periodicite', ['mensuel', 'annuel']);
@@ -45,7 +45,7 @@ return new class extends Migration
 
         Schema::create('abonnements', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->foreignId('etablissement_id')->constrained('etablissements')->onDelete('cascade');
             $table->foreignId('plan_id')->constrained('plans');
             $table->timestamp('date_debut')->useCurrent();
@@ -56,7 +56,7 @@ return new class extends Migration
 
         Schema::create('abonnements_paiements', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->foreignId('abonnement_id')->constrained('abonnements')->onDelete('cascade');
             $table->decimal('montant', 12, 2);
             $table->enum('agregateur', ['fedapay', 'kkiapay']);
