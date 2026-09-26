@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Utilisateur } from './utilisateur.entity';
+import { Utilisateur, StatutUtilisateur } from './utilisateur.entity';
 import { IdentifiantRecuperation } from './identifiant-recuperation.entity';
 import { QuestionSecurite } from './question-securite.entity';
 
@@ -40,6 +40,34 @@ export class UtilisateursService {
   async lierFirebaseUid(utilisateur: Utilisateur, fournisseur: 'google' | 'github', uid: string) {
     if (fournisseur === 'google') utilisateur.firebaseUidGoogle = uid;
     else utilisateur.firebaseUidGithub = uid;
+    return this.utilisateurRepo.save(utilisateur);
+  }
+
+  /**
+   * Cree le compte administrateur d'un etablissement (role = administrateur,
+   * tenantId = uuid de l'etablissement), a la demande du microservice
+   * Etablissements lors de la validation definitive d'une demande
+   * (evenement RabbitMQ "etablissement.valide" - voir InterneRpcController).
+   * Rappel du principe "pas d'inscription" : ce microservice ne fait
+   * qu'executer la creation ordonnee par le module metier proprietaire.
+   */
+  async creerUtilisateurAdministrateur(params: {
+    tenantId: string;
+    roleId: string;
+    nomComplet: string;
+    email: string | null;
+    telephone: string | null;
+  }): Promise<Utilisateur> {
+    const utilisateur = this.utilisateurRepo.create({
+      tenantId: params.tenantId,
+      roleId: params.roleId,
+      nomComplet: params.nomComplet,
+      email: params.email,
+      telephone: params.telephone,
+      matricule: null,
+      paysTelephone: null,
+      statut: StatutUtilisateur.ACTIF,
+    });
     return this.utilisateurRepo.save(utilisateur);
   }
 

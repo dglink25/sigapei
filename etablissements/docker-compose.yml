@@ -1,0 +1,61 @@
+# ============================================================
+# api-etablissements - Orchestration Docker
+# Demarrage : docker compose up -d --build
+# Microservice expose sur http://localhost:4002
+#
+# IMPORTANT : ce microservice REUTILISE le Redis et le RabbitMQ deja
+# demarres par la stack api-identite (meme reseau Docker partage "sigapei"),
+# et se connecte a la MEME base PostgreSQL unique (Neon ou autre), juste
+# sur le schema "etablissements" au lieu de "identite". Voir README.md.
+#
+# Pre-requis, une seule fois :
+#   docker network create sigapei
+# Puis, dans le docker-compose.yml de api-identite, remplacer le bloc
+# "networks:" pour rejoindre ce meme reseau externe (voir README.md).
+# ============================================================
+version: "3.9"
+
+services:
+  api-etablissements:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-etablissements
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+    networks:
+      - sigapei
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:4002/sante') ? 0 : 1);"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Execute le planificateur Laravel (relance quotidienne des corrections,
+  # section 7.3) toutes les 60 secondes - pas de demon cron dans l'image.
+  api-etablissements-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-etablissements-scheduler
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+    entrypoint: ["/bin/sh", "/app/docker/scheduler-entrypoint.sh"]
+    networks:
+      - sigapei
+    depends_on:
+      - api-etablissements
+
+networks:
+  sigapei:
+    external: true
