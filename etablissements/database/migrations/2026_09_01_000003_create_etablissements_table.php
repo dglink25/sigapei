@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('etablissements', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->string('slug', 160)->unique();
             $table->string('matricule', 32)->unique();
             $table->string('nom', 255);

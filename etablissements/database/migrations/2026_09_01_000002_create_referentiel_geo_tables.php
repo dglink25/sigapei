@@ -17,7 +17,7 @@ return new class extends Migration
     {
         Schema::create('pays', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->default(DB::raw('gen_random_uuid()'));
             $table->char('code_iso', 2)->unique();
             $table->string('nom', 128);
             $table->string('indicatif_tel', 8);
@@ -26,7 +26,7 @@ return new class extends Migration
 
         Schema::create('departements', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->default(DB::raw('gen_random_uuid()'));
             $table->foreignId('pays_id')->constrained('pays')->onDelete('cascade');
             $table->string('nom', 128);
             $table->timestamps();
@@ -34,7 +34,7 @@ return new class extends Migration
 
         Schema::create('communes', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->foreignId('departement_id')->constrained('departements')->onDelete('cascade');
             $table->string('nom', 128);
             $table->timestamps();
@@ -42,7 +42,7 @@ return new class extends Migration
 
         Schema::create('arrondissements', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique()->default(DB::raw('uuid_generate_v4()'));
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->foreignId('commune_id')->constrained('communes')->onDelete('cascade');
             $table->string('nom', 128);
             $table->timestamps();

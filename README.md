@@ -117,7 +117,7 @@ git push                      # fusion automatique vers develop, puis retest
 
 | Microservice | Port | Schéma DB | Rôle principal | Documentation |
 |---|---|---|---|---|
-| [`api-identite`](api-identite) | `4001` | `identite` | SSO, Authentification Passwordless (OTP SMS/WhatsApp/Email, WebAuthn, Firebase) | [README](api-identite/README.md) (`/docs`) |
-| [`api-inscription`](api-inscription) | `4003` | `inscription` | Candidatures, pièces justificatives, tests d'admission, validation bloquante & réinscriptions | [README](api-inscription/README.md) • [Docs API](api-inscription/docs/api-documentation.md) (`/docs`) |
-| [`api-scolarite`](api-scolarite) | `4004` | `scolarite` | Cycles, classes (programme béninois/français), dossiers apprenants, mutations, emplois du temps | [README](api-scolarite/README.md) • [Docs API](api-scolarite/docs/api-documentation.md) (`/docs`) |
+| [`identite`](identite) | `4001` | `identite` | SSO, Authentification Passwordless (OTP SMS/WhatsApp/Email, WebAuthn, Firebase) | [README](identite/README.md) (`/docs`) |
+| [`inscription`](inscription) | `4003` | `inscription` | Candidatures, pièces justificatives, tests d'admission, validation bloquante & réinscriptions | [README](inscription/README.md) • [Docs API](inscription/docs/api-documentation.md) (`/docs`) |
+| [`scolarite`](scolarite) | `4004` | `scolarite` | Cycles, classes (programme béninois/français), dossiers apprenants, mutations, emplois du temps | [README](scolarite/README.md) • [Docs API](scolarite/docs/api-documentation.md) (`/docs`) |
 
