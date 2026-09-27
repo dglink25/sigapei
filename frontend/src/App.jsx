@@ -55,21 +55,28 @@ export default function App() {
 
   // ── Session Académique ───────────────────────────────────────
   const [academicYear, setAcademicYear] = useState('2026-2027');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // ── Login / Logout ────────────────────────────────────────────
   const handleLogin = (user) => {
     setCurrentUser(user);
     setShowRegister(false);
-    // Set default nav for admin-layout roles
-    if (ADMIN_LAYOUT_ROLES.includes(user.role)) {
-      const defaults = { admin: 'dashboard', secretaire: 'candidatures', censeur: 'matieres' };
-      setCurrentAdminNav(defaults[user.role] || 'dashboard');
-    }
+    const defaults = { 
+      admin: 'dashboard', 
+      secretaire: 'candidatures', 
+      censeur: 'matieres',
+      enseignant: 'ens_edt',
+      comptable: 'cpt_caisse',
+      parent: 'par_dashboard',
+      candidat: 'cand_form'
+    };
+    setCurrentAdminNav(defaults[user.role] || 'dashboard');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setCurrentAdminNav('dashboard');
+    setIsMobileMenuOpen(false);
   };
 
   // ── Actions ───────────────────────────────────────────────────
@@ -164,61 +171,7 @@ export default function App() {
 
   const role = currentUser.role;
 
-  // 2. Rôles avec layout propre (pas de sidebar admin)
-  if (role === 'enseignant') {
-    return (
-      <div className="h-full flex flex-col overflow-hidden font-sans">
-        <AppHeader currentUser={currentUser} onLogout={handleLogout} />
-        <div className="flex-1 flex overflow-hidden">
-          <EnseignantSpace currentUser={currentUser} />
-        </div>
-        <Toast toast={toast} onClose={() => setToast(null)} />
-      </div>
-    );
-  }
-
-  if (role === 'comptable') {
-    return (
-      <div className="h-full flex flex-col overflow-hidden font-sans">
-        <AppHeader currentUser={currentUser} onLogout={handleLogout} />
-        <div className="flex-1 flex overflow-hidden">
-          <ComptableSpace currentUser={currentUser} />
-        </div>
-        <Toast toast={toast} onClose={() => setToast(null)} />
-      </div>
-    );
-  }
-
-  if (role === 'candidat') {
-    return (
-      <div className="h-full flex flex-col overflow-hidden font-sans bg-sigapei-canvas">
-        <AppHeader currentUser={currentUser} onLogout={handleLogout} showLabel="Espace Candidatures" />
-        <div className="flex-1 flex overflow-hidden">
-          <CandidatSpace
-            classes={classes} candidatures={candidatures} apprenants={apprenants}
-            onSubmitCandidature={handlePublicSubmitCandidature}
-            onReinscription={handlePublicReinscription}
-            showToast={showToast}
-          />
-        </div>
-        <Toast toast={toast} onClose={() => setToast(null)} />
-      </div>
-    );
-  }
-
-  if (role === 'parent') {
-    return (
-      <div className="h-full flex flex-col overflow-hidden font-sans bg-sigapei-canvas">
-        <AppHeader currentUser={currentUser} onLogout={handleLogout} showLabel="Espace Parent & Élève" />
-        <div className="flex-1 flex overflow-hidden">
-          <ParentSpace currentUser={currentUser} />
-        </div>
-        <Toast toast={toast} onClose={() => setToast(null)} />
-      </div>
-    );
-  }
-
-  // 3. Rôles avec layout Admin (sidebar + header) : admin, secretaire, censeur
+  // ── Layout Professionnel Unifié pour TOUS les rôles connectés ──
   return (
     <div className="h-full flex flex-col overflow-hidden bg-sigapei-canvas font-sans text-slate-900">
       <Header
@@ -229,56 +182,98 @@ export default function App() {
         onLogout={handleLogout}
         academicYear={academicYear}
         onSelectAcademicYear={setAcademicYear}
+        onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
       />
 
       <div className="flex-1 flex overflow-hidden">
         <section className="flex-1 flex overflow-hidden fade-enter">
+          
+          {/* Sidebar latérale universelle responsive */}
           <Sidebar
             currentNav={currentAdminNav}
             setCurrentNav={setCurrentAdminNav}
             pendingCount={pendingCount}
             role={role}
+            isOpenMobile={isMobileMenuOpen}
+            onCloseMobile={() => setIsMobileMenuOpen(false)}
           />
 
+          {/* Zone de contenu principale scrollable */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
-            {currentAdminNav === 'dashboard' && role === 'admin' && (
-              <DashboardView
-                classes={classes} candidatures={candidatures} apprenants={apprenants}
-                onOpenCreateClasse={() => setIsCreateClasseOpen(true)}
+            
+            {/* Vues Espace Enseignant */}
+            {role === 'enseignant' && (
+              <EnseignantSpace currentUser={currentUser} activeNav={currentAdminNav} />
+            )}
+
+            {/* Vues Espace Comptable & Caisse */}
+            {role === 'comptable' && (
+              <ComptableSpace 
+                currentUser={currentUser} 
+                activeNav={currentAdminNav} 
                 onSwitchNav={setCurrentAdminNav}
               />
             )}
-            {currentAdminNav === 'candidatures' && (
-              <CandidaturesView
-                candidatures={candidatures} classes={classes}
-                onExamine={(id) => setExamineCandidateId(id)}
-                onOpenCreateCandidature={() => setIsCreateCandidatureOpen(true)}
+
+            {/* Vues Espace Parent & Famille */}
+            {role === 'parent' && (
+              <ParentSpace currentUser={currentUser} activeNav={currentAdminNav} />
+            )}
+
+            {/* Vues Espace Candidat */}
+            {role === 'candidat' && (
+              <CandidatSpace
+                classes={classes} candidatures={candidatures} apprenants={apprenants}
+                onSubmitCandidature={handlePublicSubmitCandidature}
+                onReinscription={handlePublicReinscription}
+                showToast={showToast}
               />
             )}
-            {currentAdminNav === 'classes' && role === 'admin' && (
-              <ClassesView
-                classes={classes}
-                onOpenCreateClasse={() => setIsCreateClasseOpen(true)}
-              />
+
+            {/* Vues Espace Administration / Secrétariat / Censeur */}
+            {ADMIN_LAYOUT_ROLES.includes(role) && (
+              <>
+                {currentAdminNav === 'dashboard' && role === 'admin' && (
+                  <DashboardView
+                    classes={classes} candidatures={candidatures} apprenants={apprenants}
+                    onOpenCreateClasse={() => setIsCreateClasseOpen(true)}
+                    onSwitchNav={setCurrentAdminNav}
+                  />
+                )}
+                {currentAdminNav === 'candidatures' && (
+                  <CandidaturesView
+                    candidatures={candidatures} classes={classes}
+                    onExamine={(id) => setExamineCandidateId(id)}
+                    onOpenCreateCandidature={() => setIsCreateCandidatureOpen(true)}
+                  />
+                )}
+                {currentAdminNav === 'classes' && role === 'admin' && (
+                  <ClassesView
+                    classes={classes}
+                    onOpenCreateClasse={() => setIsCreateClasseOpen(true)}
+                  />
+                )}
+                {currentAdminNav === 'apprenants' && (
+                  <ApprenantsView
+                    apprenants={apprenants} classes={classes}
+                    onTransfer={role !== 'censeur' ? (id) => setMutationApprenantId(id) : null}
+                  />
+                )}
+                {currentAdminNav === 'emplois' && (
+                  <EmploisView />
+                )}
+                {currentAdminNav === 'finances' && (
+                  <FinancesView />
+                )}
+                {currentAdminNav === 'matieres' && (
+                  <MatieresNotesView classes={classes} academicYear={academicYear} />
+                )}
+                {currentAdminNav === 'annees' && role === 'admin' && (
+                  <AnneeScolaireView currentYear={academicYear} onSelectYear={setAcademicYear} classes={classes} />
+                )}
+              </>
             )}
-            {currentAdminNav === 'apprenants' && (
-              <ApprenantsView
-                apprenants={apprenants} classes={classes}
-                onTransfer={role !== 'censeur' ? (id) => setMutationApprenantId(id) : null}
-              />
-            )}
-            {currentAdminNav === 'emplois' && (
-              <EmploisView />
-            )}
-            {currentAdminNav === 'finances' && (
-              <FinancesView />
-            )}
-            {currentAdminNav === 'matieres' && (
-              <MatieresNotesView classes={classes} academicYear={academicYear} />
-            )}
-            {currentAdminNav === 'annees' && role === 'admin' && (
-              <AnneeScolaireView currentYear={academicYear} onSelectYear={setAcademicYear} classes={classes} />
-            )}
+
           </div>
         </section>
       </div>
@@ -326,41 +321,5 @@ export default function App() {
 
       <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
-  );
-}
-
-// ── Mini header réutilisable pour les espaces sans Header complet ──
-function AppHeader({ currentUser, onLogout, showLabel }) {
-  return (
-    <header className="shrink-0 h-16 bg-sigapei-sidebar flex items-center justify-between px-6 shadow-md z-40">
-      <div className="flex items-center space-x-3">
-        <img 
-          src="/logo-sigapei.png" 
-          alt="Logo SIGAPEI" 
-          className="w-10 h-10 object-contain drop-shadow" 
-        />
-        <div>
-          <span className="text-white font-black text-base">SIGAPEI</span>
-          {showLabel && <span className="hidden sm:inline text-sigapei-cream/60 text-xs ml-2">· {showLabel}</span>}
-        </div>
-      </div>
-
-      <div className="flex items-center space-x-3">
-        <div className="text-right hidden sm:block">
-          <div className="text-xs font-bold text-sigapei-cream">{currentUser?.nom}</div>
-          <div className="text-[10px] text-sigapei-cream/50">{currentUser?.etablissement || 'Accès public'}</div>
-        </div>
-        <button
-          onClick={onLogout}
-          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sigapei-cream text-xs font-bold transition"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          <span>Déconnexion</span>
-        </button>
-      </div>
-    </header>
   );
 }

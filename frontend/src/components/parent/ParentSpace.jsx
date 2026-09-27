@@ -42,10 +42,11 @@ const ENFANTS = [
   }
 ];
 
-export default function ParentSpace({ currentUser }) {
+export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }) {
   const [selectedEnfantId, setSelectedEnfantId] = useState(1);
-  const [parentSubTab, setParentSubTab] = useState('edt'); // 'edt' | 'bulletin' | 'finances' | 'historique'
+  const [parentSubTab, setParentSubTab] = useState('dashboard');
 
+  const currentTab = activeNav.startsWith('par_') ? activeNav.replace('par_', '') : parentSubTab;
   const activeEnfant = ENFANTS.find(e => e.id === selectedEnfantId) || ENFANTS[0];
 
   const days = [
@@ -150,8 +151,47 @@ export default function ParentSpace({ currentUser }) {
           ))}
         </div>
 
+        {/* SUBTAB 0 : DASHBOARD VUE D'ENSEMBLE */}
+        {currentTab === 'dashboard' && (
+          <div className="pt-4 space-y-4 fade-enter">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Moyenne Générale</span>
+                <p className="text-2xl font-black text-sigapei-green font-heading mt-1">{moyenneGenerale} / 20</p>
+                <p className="text-[11px] text-slate-500">Trimestre 1 • 6 matières</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Assiduité</span>
+                <p className="text-2xl font-black text-emerald-700 font-heading mt-1">100 %</p>
+                <p className="text-[11px] text-slate-500">0 absence non justifiée</p>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Frais de Scolarité</span>
+                <p className={`text-2xl font-black font-heading mt-1 ${activeEnfant.soldeFrais === 0 ? 'text-sigapei-green' : 'text-amber-600'}`}>
+                  {activeEnfant.soldeFrais === 0 ? 'Soldé' : `${activeEnfant.soldeFrais.toLocaleString('fr-FR')} F dus`}
+                </p>
+                <p className="text-[11px] text-slate-500">{activeEnfant.regleFrais.toLocaleString('fr-FR')} FCFA réglés</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <h4 className="font-heading font-black text-xs text-slate-800 uppercase tracking-wider mb-2">
+                Aperçu des Dernières Évaluations
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {activeEnfant.bulletin.slice(0, 3).map((b, idx) => (
+                  <div key={idx} className="p-2.5 bg-white rounded-xl border border-slate-200 flex justify-between items-center">
+                    <span className="font-bold text-xs text-slate-800">{b.matiere}</span>
+                    <span className="font-mono font-black text-xs text-sigapei-green">{b.moyenne} / 20</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* SUBTAB 1 : EMPLOI DU TEMPS */}
-        {parentSubTab === 'edt' && (
+        {(currentTab === 'edt' || (currentTab !== 'dashboard' && parentSubTab === 'edt')) && (
           <div className="pt-4 space-y-4 fade-enter">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-sigapei-black">Planning des cours de la semaine</h3>
@@ -187,7 +227,7 @@ export default function ParentSpace({ currentUser }) {
         )}
 
         {/* SUBTAB 2 : RELEVÉ DE NOTES & BULLETIN */}
-        {parentSubTab === 'bulletin' && (
+        {(currentTab === 'bulletin' || (currentTab !== 'dashboard' && parentSubTab === 'bulletin')) && (
           <div className="pt-4 space-y-4 fade-enter">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
               <div>
@@ -230,7 +270,7 @@ export default function ParentSpace({ currentUser }) {
         )}
 
         {/* SUBTAB 3 : FRAIS DE SCOLARITÉ */}
-        {parentSubTab === 'finances' && (
+        {(currentTab === 'finances' || (currentTab !== 'dashboard' && parentSubTab === 'finances')) && (
           <div className="pt-4 space-y-4 fade-enter">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -297,7 +337,7 @@ export default function ParentSpace({ currentUser }) {
         )}
 
         {/* SUBTAB 4 : HISTORIQUE & MUTATIONS */}
-        {parentSubTab === 'historique' && (
+        {(currentTab === 'historique' || (currentTab !== 'dashboard' && parentSubTab === 'historique')) && (
           <div className="pt-4 space-y-4 fade-enter">
             <h3 className="text-sm font-bold text-sigapei-black">Parcours Scolaire de l'Élève (Sans Doublon)</h3>
             <div className="border-l-2 border-sigapei-green/30 pl-4 ml-2 space-y-4 text-xs">
