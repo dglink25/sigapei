@@ -1,0 +1,29 @@
+# ============================================================
+# sigapei-frontend — Interface Réactive (Espace Harold)
+# Application exposée sur http://localhost:3000
+# ============================================================
+version: "3.9"
+
+services:
+  sigapei-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sigapei-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # URL des microservices appelés par le frontend (via le réseau interne Docker)
+      - VITE_API_INSCRIPTION_URL=${VITE_API_INSCRIPTION_URL:-http://api-inscription:4003}
+      - VITE_API_SCOLARITE_URL=${VITE_API_SCOLARITE_URL:-http://api-scolarite:4004}
+      - VITE_APP_ENV=${VITE_APP_ENV:-development}
+    networks:
+      - sigapei
+
+networks:
+  sigapei:
+    name: sigapei
+    external: true
