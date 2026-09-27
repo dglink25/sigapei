@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr" class="h-full bg-[#F6F8F7]">
+<html lang="fr" class="h-full bg-[#F8FAFC]">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,7 +33,9 @@
               cream: '#FFF6DD',        // CONTRASTE : Logo, badges clairs, respiration
               black: '#000000',        // IMPACT : Fond, contraste fort, titrage net
               dark: '#0F172A',
-              canvas: '#F6F8F7',
+              canvas: '#F8FAFC',
+              'sidebar': '#004D2B',      // Sidebar : vert profond, distinct du header
+              'sidebar-deep': '#003320', // Pied de sidebar encore plus sombre
             }
           },
           fontFamily: {
@@ -58,7 +60,7 @@
     body {
       font-family: 'Inter', sans-serif;
       color: #0F172A;
-      background-color: #F6F8F7;
+      background-color: #F8FAFC;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -169,11 +171,11 @@
       
       <!-- SIDEBAR ADMIN REPENSER : LARGE (W-72), AUCUN TEXTE QUI WRAPPE,           -->
       <!-- ICÔNES SVG INLINE QUI NE DISPARAISSENT JAMAIS, COULEURS DE CHARTE PURE   -->
-      <aside class="w-72 bg-sigapei-green text-white flex flex-col justify-between shrink-0 shadow-xl border-r border-sigapei-green-dark hidden md:flex z-30">
+      <aside class="w-72 bg-sigapei-sidebar text-white flex flex-col justify-between shrink-0 shadow-xl border-r border-sigapei-sidebar-deep hidden md:flex z-30">
         <div class="p-6 space-y-6">
           
           <!-- TITRE DU MODULE SELON CHARTE PAGE 8 -->
-          <div class="pb-4 border-b border-sigapei-green-dark flex items-center justify-between">
+          <div class="pb-4 border-b border-sigapei-sidebar-deep flex items-center justify-between">
             <div>
               <span class="text-[10px] font-black uppercase tracking-widest text-sigapei-gold block">Direction Pédagogique</span>
               <span class="text-sm font-extrabold text-sigapei-cream font-heading">Gestion Scolarité</span>
@@ -248,7 +250,7 @@
         </div>
 
         <!-- PIED DE SIDEBAR : INFRASTRUCTURE ET ACTEURS DU CAHIER DES CHARGES -->
-        <div class="p-4 bg-sigapei-green-dark border-t border-white/10 space-y-3">
+        <div class="p-4 bg-sigapei-sidebar-deep border-t border-white/10 space-y-3">
           <div class="flex items-center justify-between text-[10px] font-black text-sigapei-gold uppercase tracking-wider">
             <span>Rôles Cahier des Charges</span>
             <span>Acteurs</span>
@@ -281,7 +283,7 @@
               <p class="text-xs text-slate-500 mt-1">Supervision de l'ensemble des effectifs, admissions en cours et capacité des classes.</p>
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="openModalCreateClasse()" class="px-4 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark shadow-sm transition flex items-center gap-2">
+              <button onclick="openModalCreateClasse()" class="px-4 py-2.5 rounded-xl bg-white border border-sigapei-green text-sigapei-green font-bold text-xs hover:bg-sigapei-green hover:text-white shadow-sm transition flex items-center gap-2">
                 <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 <span>Ajouter une Classe</span>
               </button>
@@ -299,7 +301,7 @@
               <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Apprenants</span>
               <div class="flex items-baseline justify-between mt-3">
                 <span class="text-3xl font-black text-sigapei-black font-heading">1 482</span>
-                <span class="text-xs font-bold text-sigapei-green bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <span class="text-xs font-bold text-sigapei-green bg-[#EAF5EF] border border-[#BDE3CE] px-2 py-0.5 rounded-md flex items-center gap-1">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg> +5.4%
                 </span>
               </div>
@@ -366,9 +368,9 @@
               </div>
             </div>
 
-            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-start gap-4 shadow-sm">
-              <div class="w-10 h-10 rounded-xl bg-sigapei-green text-white flex items-center justify-center shrink-0 shadow-sm">
-                <svg class="w-5 h-5 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <div class="bg-sigapei-gold-light border border-sigapei-gold-border rounded-2xl p-5 flex items-start gap-4 shadow-sm">
+              <div class="w-10 h-10 rounded-xl bg-sigapei-gold text-sigapei-black flex items-center justify-center shrink-0 shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
               </div>
               <div>
                 <h4 class="text-xs font-black text-sigapei-black uppercase tracking-wider">Capacité Bloquante & Non-Duplication</h4>
@@ -790,7 +792,7 @@
                   <svg class="w-4 h-4 text-sigapei-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                   <span class="text-xs font-bold text-slate-700">Contrôle reCAPTCHA v3</span>
                 </div>
-                <span class="text-[10px] font-mono font-bold text-sigapei-green bg-emerald-100 px-2 py-0.5 rounded">Score Token: 0.98</span>
+                <span class="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">Score Token: 0.98</span>
               </div>
 
               <div class="flex justify-between pt-4">
@@ -878,7 +880,7 @@
               <div>
                 <div class="flex items-center gap-2">
                   <h2 class="text-2xl font-black text-sigapei-black font-heading">KOFFI Jean-Luc</h2>
-                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-sigapei-green border border-emerald-200">INSCRIT ACTIF</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-sigapei-gold text-sigapei-black border border-sigapei-gold-hover">INSCRIT ACTIF</span>
                 </div>
                 <p class="text-xs text-slate-500 mt-0.5">Matricule : <strong class="text-slate-800 font-mono">MAT-2026-6A-0012</strong> • Né le 14/05/2012</p>
                 <p class="text-xs text-slate-600 mt-0.5">Classe actuelle : <strong class="text-sigapei-green">6ème A (Cycle Secondaire)</strong></p>
@@ -906,7 +908,7 @@
           <div id="parent-subview-edt" class="pt-6 space-y-4">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-bold text-sigapei-black">Planning des cours de la semaine</h3>
-              <span class="text-xs font-bold text-sigapei-green bg-emerald-50 px-2 py-0.5 rounded">6ème A</span>
+              <span class="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-lg">6ème A</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-5 gap-3" id="container-parent-edt-cards">
               <!-- Injecté en JS -->
@@ -924,21 +926,21 @@
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <span class="text-xs text-slate-500 font-bold uppercase">Total Annuel Dû</span>
                 <p class="text-2xl font-black text-sigapei-black mt-1 font-heading">180 000 FCFA</p>
               </div>
-              <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+              <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <span class="text-xs text-sigapei-green font-bold uppercase">Total Réglé</span>
                 <p class="text-2xl font-black text-sigapei-green mt-1 font-heading">120 000 FCFA</p>
               </div>
-              <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+              <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <span class="text-xs text-amber-900 font-bold uppercase">Solde Restant</span>
                 <p class="text-2xl font-black text-amber-900 mt-1 font-heading">60 000 FCFA</p>
               </div>
             </div>
 
-            <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
               <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px]">
                   <tr>
@@ -953,13 +955,13 @@
                     <td class="p-3.5 font-bold">1ère Tranche (Rentrée)</td>
                     <td class="p-3.5 font-mono">60 000 FCFA</td>
                     <td class="p-3.5 text-slate-500">15 Septembre 2026</td>
-                    <td class="p-3.5"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-sigapei-green">RÉGLÉ (Reçu #891)</span></td>
+                    <td class="p-3.5"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]">RÉGLÉ (Reçu #891)</span></td>
                   </tr>
                   <tr>
                     <td class="p-3.5 font-bold">2ème Tranche</td>
                     <td class="p-3.5 font-mono">60 000 FCFA</td>
                     <td class="p-3.5 text-slate-500">15 Novembre 2026</td>
-                    <td class="p-3.5"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-sigapei-green">RÉGLÉ (Reçu #1042)</span></td>
+                    <td class="p-3.5"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]">RÉGLÉ (Reçu #1042)</span></td>
                   </tr>
                   <tr>
                     <td class="p-3.5 font-bold text-amber-900">3ème Tranche (Solde)</td>
@@ -1389,7 +1391,7 @@
             </td>
             <td class="py-3.5 px-4">
               <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                c.statut === 'validee' ? 'bg-emerald-100 text-sigapei-green border border-emerald-200' :
+                c.statut === 'validee' ? 'bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]' :
                 c.statut === 'rejetee' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-amber-100 text-amber-900 border border-amber-200'
               }">${c.statut}</span>
             </td>
@@ -1435,7 +1437,7 @@
                     <p class="text-[10px] text-slate-400 font-mono">${p.file}</p>
                   </div>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-sigapei-green border border-emerald-200 uppercase">${p.status}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE] uppercase">${p.status}</span>
               </div>
             `).join('')}
           </div>
@@ -1593,7 +1595,7 @@
             <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
               <span class="text-slate-500">Places d'admission :</span>
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
-                isFull ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-sigapei-green'
+                isFull ? 'bg-red-100 text-red-800' : 'bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]'
               }">
                 ${isFull ? 'COMPLÈTE (Bloquant)' : `${dispo} place${dispo > 1 ? 's' : ''}`}
               </span>
@@ -1620,7 +1622,7 @@
           <tr class="hover:bg-slate-50/80 transition">
             <td class="py-3.5 px-4 font-mono font-bold text-slate-900">${a.matricule}</td>
             <td class="py-3.5 px-4 font-bold text-sigapei-black">${a.nom} ${a.prenom}</td>
-            <td class="py-3.5 px-4 font-bold text-sigapei-green">${cl.nom}</td>
+            <td class="py-3.5 px-4 font-bold text-slate-800">${cl.nom}</td>
             <td class="py-3.5 px-4">
               <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${
                 cl.programme === 'beninois' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-blue-100 text-blue-900 border border-blue-200'
@@ -1628,7 +1630,7 @@
             </td>
             <td class="py-3.5 px-4">
               <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                hasAccount ? 'bg-emerald-100 text-sigapei-green' : 'bg-slate-100 text-slate-600'
+                hasAccount ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-600'
               }">
                 ${hasAccount ? 'ACTIF (Secondaire FR)' : 'AUCUN (Règle Bénin)'}
               </span>
@@ -1778,11 +1780,11 @@
       grid.innerHTML = jours.map(j => `<div class="p-2.5 font-bold text-xs bg-slate-100 rounded-xl text-slate-700">${j}</div>`).join('') +
         cours.map(row => `
           <div class="p-2.5 text-xs font-bold text-slate-500 bg-slate-50 rounded-xl flex items-center justify-center font-mono">${row.h}</div>
-          <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-left text-[11px] font-medium"><strong class="text-sigapei-green block">${row.c1}</strong> Salle B2</div>
-          <div class="p-2.5 bg-amber-50 border border-sigapei-gold/40 rounded-xl text-left text-[11px] font-medium"><strong class="text-amber-900 block">${row.c2}</strong> Salle B2</div>
+          <div class="p-2.5 bg-blue-50/80 border border-blue-200/70 rounded-xl text-left text-[11px] font-medium"><strong class="text-blue-900 block">${row.c1}</strong> Salle B2</div>
+          <div class="p-2.5 bg-amber-50/80 border border-sigapei-gold/40 rounded-xl text-left text-[11px] font-medium"><strong class="text-amber-900 block">${row.c2}</strong> Salle B2</div>
           <div class="p-2.5 bg-slate-50 rounded-xl text-slate-400 text-xs flex items-center justify-center">${row.c3}</div>
-          <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-left text-[11px] font-medium"><strong class="text-sigapei-green block">${row.c4}</strong> Salle B2</div>
-          <div class="p-2.5 bg-blue-50 border border-blue-200 rounded-xl text-left text-[11px] font-medium"><strong class="text-blue-900 block">${row.c5}</strong> Salle B2</div>
+          <div class="p-2.5 bg-indigo-50/80 border border-indigo-200/70 rounded-xl text-left text-[11px] font-medium"><strong class="text-indigo-900 block">${row.c4}</strong> Salle B2</div>
+          <div class="p-2.5 bg-teal-50/80 border border-teal-200/70 rounded-xl text-left text-[11px] font-medium"><strong class="text-teal-900 block">${row.c5}</strong> Salle B2</div>
         `).join('');
     }
 
@@ -1839,7 +1841,7 @@
           <div onclick="${isFull ? '' : `selectPublicFormClasse(${c.id})`}" 
                class="p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
                  isFull ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed' :
-                 isSelected ? 'border-sigapei-green bg-emerald-50/50 shadow-card' : 'border-slate-200 hover:border-slate-300 bg-white'
+                 isSelected ? 'border-sigapei-green bg-sigapei-cream/40 ring-2 ring-sigapei-green/20 shadow-card' : 'border-slate-200 hover:border-slate-300 bg-white'
                }">
             <div class="flex items-start justify-between">
               <div>
@@ -1929,7 +1931,7 @@
 
       container.innerHTML = `
         <div class="p-6 rounded-2xl border ${
-          found.statut === 'validee' ? 'bg-emerald-50/50 border-emerald-200' :
+          found.statut === 'validee' ? 'bg-[#EAF5EF] border-[#BDE3CE]' :
           found.statut === 'rejetee' ? 'bg-red-50/50 border-red-200' : 'bg-amber-50/50 border-sigapei-gold/40'
         } space-y-4">
           <div class="flex items-center justify-between">
@@ -1938,8 +1940,8 @@
               <p class="text-xs text-slate-500 font-mono">Dossier n° ${found.uuid}</p>
             </div>
             <span class="px-3 py-1 rounded-full text-xs font-black uppercase ${
-              found.statut === 'validee' ? 'bg-emerald-200 text-sigapei-green' :
-              found.statut === 'rejetee' ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-950'
+              found.statut === 'validee' ? 'bg-sigapei-green text-white shadow-sm' :
+              found.statut === 'rejetee' ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-amber-100 text-amber-900 border border-amber-200'
             }">${found.statut}</span>
           </div>
 
