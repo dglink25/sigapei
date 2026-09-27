@@ -13,8 +13,7 @@ const MES_CLASSES = ['3ème A', '2nde B', '1ère C', 'Terminale D'];
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 const COLORS = ['bg-blue-100 text-blue-800 border-blue-200', 'bg-indigo-100 text-indigo-800 border-indigo-200', 'bg-teal-100 text-teal-800 border-teal-200', 'bg-amber-100 text-amber-800 border-amber-200', 'bg-purple-100 text-purple-800 border-purple-200'];
 
-export default function EnseignantSpace({ currentUser }) {
-  const [tab, setTab] = useState('edt');
+export default function EnseignantSpace({ currentUser, activeNav = 'ens_edt' }) {
   const [selectedClasse, setSelectedClasse] = useState(null);
   const [searchApprenant, setSearchApprenant] = useState('');
   const [activeStudentModal, setActiveStudentModal] = useState(null);
@@ -23,6 +22,16 @@ export default function EnseignantSpace({ currentUser }) {
   const [attendanceClasse, setAttendanceClasse] = useState(1);
   const [attendanceStatus, setAttendanceStatus] = useState({});
   const [attendanceSaved, setAttendanceSaved] = useState(false);
+
+  // Saisie des notes enseignant
+  const [noteClasse, setNoteClasse] = useState(1);
+  const [noteMatiere, setNoteMatiere] = useState('Mathématiques');
+  const [notesList, setNotesList] = useState({
+    501: { devoir: 15.5, examen: 14.0 },
+    502: { devoir: 13.0, examen: 14.5 },
+    503: { devoir: 12.0, examen: 11.5 }
+  });
+  const [notesSaved, setNotesSaved] = useState(false);
 
   const apprenantsFiltres = initialApprenants.filter(a => {
     const classeMatch = selectedClasse ? a.classe_id === selectedClasse : true;
@@ -45,15 +54,22 @@ export default function EnseignantSpace({ currentUser }) {
     setTimeout(() => setAttendanceSaved(false), 3000);
   };
 
+  const handleSaveNotes = () => {
+    setNotesSaved(true);
+    setTimeout(() => setNotesSaved(false), 3000);
+  };
+
+  const effectiveTab = activeNav.replace('ens_', '');
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-sigapei-canvas">
 
-      {/* Header espace Enseignant */}
-      <div className="shrink-0 bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
+      {/* Header informatif de l'espace Enseignant */}
+      <div className="shrink-0 bg-white border-b border-slate-200 px-6 sm:px-8 py-3.5 flex items-center justify-between shadow-sm">
         <div>
-          <div className="text-[10px] font-black uppercase tracking-widest text-sigapei-green mb-0.5">Espace Enseignant</div>
-          <h1 className="text-lg font-black text-slate-900">{currentUser?.nom}</h1>
-          <p className="text-xs text-slate-400">{currentUser?.etablissement} • Professeur Certifié</p>
+          <div className="text-[10px] font-black uppercase tracking-widest text-sigapei-green mb-0.5">Espace Enseignant Certifié</div>
+          <h1 className="text-base sm:text-lg font-black text-slate-900">{currentUser?.nom}</h1>
+          <p className="text-xs text-slate-400">{currentUser?.etablissement} • Titulaire Discipline Mathématiques</p>
         </div>
         <div className="flex items-center space-x-2">
           <span className="text-[10px] px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-black uppercase tracking-wider">
@@ -63,30 +79,10 @@ export default function EnseignantSpace({ currentUser }) {
         </div>
       </div>
 
-      {/* Onglets navigation */}
-      <div className="shrink-0 bg-white border-b border-slate-100 px-8">
-        <div className="flex space-x-2 text-sm font-bold">
-          {[
-            { id: 'edt', label: 'Mon Emploi du Temps', icon: '🗓️' },
-            { id: 'classes', label: 'Mes Classes', icon: '📚' },
-            { id: 'apprenants', label: 'Dossiers Apprenants', icon: '👤' },
-            { id: 'appel', label: 'Feuille d’Appel & Présences', icon: '📝' },
-          ].map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-5 py-3.5 border-b-2 transition text-xs font-black uppercase tracking-wide flex items-center gap-2 ${
-                tab === t.id ? 'border-sigapei-green text-sigapei-green' : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}>
-              <span>{t.icon}</span>
-              <span>{t.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
 
         {/* ── 1. Emploi du Temps Personnel ── */}
-        {tab === 'edt' && (
+        {(effectiveTab === 'edt' || activeNav === 'ens_edt') && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -127,7 +123,7 @@ export default function EnseignantSpace({ currentUser }) {
         )}
 
         {/* ── 2. Mes Classes ── */}
-        {tab === 'classes' && (
+        {(effectiveTab === 'classes' || activeNav === 'ens_classes') && (
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-black text-slate-800">Mes classes affectées</h2>
@@ -170,7 +166,7 @@ export default function EnseignantSpace({ currentUser }) {
         )}
 
         {/* ── 3. Dossiers Apprenants (Lecture Seule) ── */}
-        {tab === 'apprenants' && (
+        {(effectiveTab === 'dossiers' || effectiveTab === 'apprenants' || activeNav === 'ens_dossiers') && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -239,7 +235,7 @@ export default function EnseignantSpace({ currentUser }) {
         )}
 
         {/* ── 4. Feuille d'Appel & Présences ── */}
-        {tab === 'appel' && (
+        {(effectiveTab === 'appel' || activeNav === 'ens_appel') && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-3">
@@ -308,6 +304,113 @@ export default function EnseignantSpace({ currentUser }) {
                               Absent
                             </button>
                           </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── 5. Saisie des Notes Enseignant ── */}
+        {(effectiveTab === 'notes' || activeNav === 'ens_notes') && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="text-xs font-bold text-slate-700 uppercase">Classe :</label>
+                <select 
+                  value={noteClasse}
+                  onChange={e => setNoteClasse(Number(e.target.value))}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white"
+                >
+                  {initialClasses.slice(0, 3).map(c => (
+                    <option key={c.id} value={c.id}>{c.nom} ({c.filiere})</option>
+                  ))}
+                </select>
+
+                <label className="text-xs font-bold text-slate-700 uppercase ml-2">Discipline :</label>
+                <span className="px-2.5 py-1 bg-blue-100 text-blue-800 font-bold rounded-lg text-xs">
+                  {noteMatiere} (Coef 3)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {notesSaved && (
+                  <span className="text-xs font-bold text-emerald-600 animate-bounce">
+                    ✓ Notes transmises au Censeur !
+                  </span>
+                )}
+                <button
+                  onClick={handleSaveNotes}
+                  className="px-4 py-2 bg-sigapei-green text-white text-xs font-black rounded-xl hover:bg-sigapei-green/90 transition shadow-sm"
+                >
+                  Transmettre les notes
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px]">
+                  <tr>
+                    <th className="py-3 px-4">Matricule</th>
+                    <th className="py-3 px-4">Élève</th>
+                    <th className="py-3 px-4 text-center">Devoir Surveillé (/20)</th>
+                    <th className="py-3 px-4 text-center">Examen Trimestriel (/20)</th>
+                    <th className="py-3 px-4 text-center">Moyenne (/20)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {initialApprenants.slice(0, 3).map(a => {
+                    const curNotes = notesList[a.id] || { devoir: 12.0, examen: 12.0 };
+                    const moy = ((curNotes.devoir + curNotes.examen * 2) / 3).toFixed(2);
+                    return (
+                      <tr key={a.id} className="hover:bg-slate-50 transition">
+                        <td className="py-3 px-4 font-mono font-bold text-slate-600">{a.matricule}</td>
+                        <td className="py-3 px-4 font-black text-slate-800">{a.nom} {a.prenom}</td>
+                        <td className="py-3 px-4 text-center">
+                          <input
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            max="20"
+                            value={curNotes.devoir}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setNotesList({
+                                ...notesList,
+                                [a.id]: { ...curNotes, devoir: val }
+                              });
+                            }}
+                            className="w-16 py-1 px-2 text-center font-mono font-bold text-xs rounded-xl border border-slate-200 bg-white"
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <input
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            max="20"
+                            value={curNotes.examen}
+                            onChange={e => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setNotesList({
+                                ...notesList,
+                                [a.id]: { ...curNotes, examen: val }
+                              });
+                            }}
+                            className="w-16 py-1 px-2 text-center font-mono font-bold text-xs rounded-xl border border-slate-200 bg-white"
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`px-2.5 py-1 rounded-xl font-mono font-black text-xs ${
+                            parseFloat(moy) >= 14 ? 'bg-emerald-100 text-emerald-800' :
+                            parseFloat(moy) >= 10 ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {moy}
+                          </span>
                         </td>
                       </tr>
                     );
