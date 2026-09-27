@@ -37,10 +37,11 @@ export default function Header({
               className="relative flex items-center cursor-pointer select-none group" 
               onClick={() => setCurrentSpace && setCurrentSpace('admin')}
             >
-              <div className="w-12 h-12 rounded-[18px] bg-sigapei-green border-2 border-sigapei-cream/30 flex items-center justify-center shadow-lg relative group-hover:scale-105 transition-transform overflow-hidden">
-                <span className="text-xs font-black tracking-wider text-sigapei-cream font-heading">SIG</span>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-sigapei-gold rounded-sm rotate-45 border-2 border-sigapei-green shadow-sm"></div>
+              <img 
+                src="/logo-sigapei.png" 
+                alt="Logo Officiel SIGAPEI" 
+                className="w-11 h-11 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+              />
               <span className="ml-3 font-heading font-black text-xl tracking-wider text-sigapei-cream">SIGAPEI</span>
             </div>
             

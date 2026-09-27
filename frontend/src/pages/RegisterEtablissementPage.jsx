@@ -136,12 +136,11 @@ export default function RegisterEtablissementPage({ onBack, onSuccess }) {
         <div className="absolute top-0 right-0 w-72 h-72 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-sigapei-gold flex items-center justify-center">
-            <svg className="w-6 h-6 text-sigapei-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"
-                d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-            </svg>
-          </div>
+          <img 
+            src="/logo-sigapei.png" 
+            alt="Logo SIGAPEI" 
+            className="w-11 h-11 object-contain drop-shadow-md" 
+          />
           <span className="text-sigapei-gold font-black text-xl">SIGAPEI</span>
         </div>
 
