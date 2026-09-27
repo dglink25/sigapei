@@ -44,9 +44,8 @@ const ENFANTS = [
 
 export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }) {
   const [selectedEnfantId, setSelectedEnfantId] = useState(1);
-  const [parentSubTab, setParentSubTab] = useState('dashboard');
 
-  const currentTab = activeNav.startsWith('par_') ? activeNav.replace('par_', '') : parentSubTab;
+  const currentTab = activeNav.startsWith('par_') ? activeNav.replace('par_', '') : 'dashboard';
   const activeEnfant = ENFANTS.find(e => e.id === selectedEnfantId) || ENFANTS[0];
 
   const days = [
@@ -128,29 +127,6 @@ export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 pt-2 border-b border-slate-100">
-          {[
-            { id: 'edt', label: 'Emploi du Temps Hebdomadaire', icon: '🗓️' },
-            { id: 'bulletin', label: 'Relevé de Notes & Moyennes', icon: '📊' },
-            { id: 'finances', label: 'Situation Frais Scolaires', icon: '💳' },
-            { id: 'historique', label: 'Historique Scolaire & Mutations', icon: '📜' },
-          ].map(tab => (
-            <button 
-              key={tab.id}
-              onClick={() => setParentSubTab(tab.id)} 
-              className={`px-4 py-2.5 text-xs font-bold rounded-xl transition flex items-center gap-1.5 ${
-                parentSubTab === tab.id 
-                  ? 'bg-sigapei-green text-white shadow-sm' 
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
         {/* SUBTAB 0 : DASHBOARD VUE D'ENSEMBLE */}
         {currentTab === 'dashboard' && (
           <div className="pt-4 space-y-4 fade-enter">
@@ -191,7 +167,7 @@ export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }
         )}
 
         {/* SUBTAB 1 : EMPLOI DU TEMPS */}
-        {(currentTab === 'edt' || (currentTab !== 'dashboard' && parentSubTab === 'edt')) && (
+        {currentTab === 'edt' && (
           <div className="pt-4 space-y-4 fade-enter">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-sigapei-black">Planning des cours de la semaine</h3>
@@ -227,7 +203,7 @@ export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }
         )}
 
         {/* SUBTAB 2 : RELEVÉ DE NOTES & BULLETIN */}
-        {(currentTab === 'bulletin' || (currentTab !== 'dashboard' && parentSubTab === 'bulletin')) && (
+        {currentTab === 'bulletin' && (
           <div className="pt-4 space-y-4 fade-enter">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
               <div>
@@ -270,7 +246,7 @@ export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }
         )}
 
         {/* SUBTAB 3 : FRAIS DE SCOLARITÉ */}
-        {(currentTab === 'finances' || (currentTab !== 'dashboard' && parentSubTab === 'finances')) && (
+        {currentTab === 'finances' && (
           <div className="pt-4 space-y-4 fade-enter">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
@@ -337,7 +313,7 @@ export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }
         )}
 
         {/* SUBTAB 4 : HISTORIQUE & MUTATIONS */}
-        {(currentTab === 'historique' || (currentTab !== 'dashboard' && parentSubTab === 'historique')) && (
+        {currentTab === 'historique' && (
           <div className="pt-4 space-y-4 fade-enter">
             <h3 className="text-sm font-bold text-sigapei-black">Parcours Scolaire de l'Élève (Sans Doublon)</h3>
             <div className="border-l-2 border-sigapei-green/30 pl-4 ml-2 space-y-4 text-xs">
