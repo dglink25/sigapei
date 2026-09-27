@@ -7,7 +7,8 @@ export default function Header({
   currentUser, 
   onLogout,
   academicYear = '2026-2027',
-  onSelectAcademicYear
+  onSelectAcademicYear,
+  onToggleMobileMenu
 }) {
   const getInitials = (name) => {
     if (!name) return 'SP';
@@ -21,7 +22,7 @@ export default function Header({
     secretaire: 'Secrétaire de Scolarité',
     censeur: 'Censeur des Études',
     enseignant: 'Enseignant',
-    comptable: 'Comptable',
+    comptable: 'Comptable & Caissier',
     parent: 'Parent Référent',
     candidat: 'Candidat / Visiteur'
   }[currentUser?.role] || 'Utilisateur';
@@ -31,8 +32,21 @@ export default function Header({
       <div className="max-w-[1700px] mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           
-          {/* LOGO OFFICIEL SIGAPEI */}
-          <div className="flex items-center space-x-5">
+          {/* Hamburger Mobile + LOGO OFFICIEL SIGAPEI */}
+          <div className="flex items-center space-x-2 sm:space-x-5">
+            {onToggleMobileMenu && (
+              <button
+                type="button"
+                onClick={onToggleMobileMenu}
+                className="md:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition focus:outline-none"
+                aria-label="Ouvrir la navigation"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            )}
+
             <div 
               className="relative flex items-center cursor-pointer select-none group" 
               onClick={() => setCurrentSpace && setCurrentSpace('admin')}
@@ -40,9 +54,9 @@ export default function Header({
               <img 
                 src="/logo-sigapei.png" 
                 alt="Logo Officiel SIGAPEI" 
-                className="w-12 h-12 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+                className="w-10 h-10 sm:w-12 sm:h-12 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
               />
-              <span className="ml-3 font-heading font-black text-xl tracking-wider text-sigapei-cream">SIGAPEI</span>
+              <span className="ml-2 sm:ml-3 font-heading font-black text-lg sm:text-xl tracking-wider text-sigapei-cream">SIGAPEI</span>
             </div>
             
             <div className="hidden lg:flex items-center space-x-3 border-l border-white/20 pl-5">
