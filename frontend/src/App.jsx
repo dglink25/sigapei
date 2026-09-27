@@ -15,6 +15,7 @@ import ExamineModal from './components/modals/ExamineModal';
 import RejectModal from './components/modals/RejectModal';
 import MutationModal from './components/modals/MutationModal';
 import CreateClasseModal from './components/modals/CreateClasseModal';
+import CreateCandidatureModal from './components/modals/CreateCandidatureModal';
 import Toast from './components/common/Toast';
 import LoginPage from './pages/LoginPage';
 import RegisterEtablissementPage from './pages/RegisterEtablissementPage';
@@ -41,6 +42,7 @@ export default function App() {
   const [rejectCandidateId, setRejectCandidateId] = useState(null);
   const [mutationApprenantId, setMutationApprenantId] = useState(null);
   const [isCreateClasseOpen, setIsCreateClasseOpen] = useState(false);
+  const [isCreateCandidatureOpen, setIsCreateCandidatureOpen] = useState(false);
 
   // ── Toast ─────────────────────────────────────────────────────
   const [toast, setToast] = useState(null);
@@ -243,6 +245,7 @@ export default function App() {
               <CandidaturesView
                 candidatures={candidatures} classes={classes}
                 onExamine={(id) => setExamineCandidateId(id)}
+                onOpenCreateCandidature={() => setIsCreateCandidatureOpen(true)}
               />
             )}
             {currentAdminNav === 'classes' && role === 'admin' && (
@@ -294,6 +297,17 @@ export default function App() {
         <CreateClasseModal
           onClose={() => setIsCreateClasseOpen(false)}
           onConfirm={handleCreateClasse}
+        />
+      )}
+      {isCreateCandidatureOpen && (
+        <CreateCandidatureModal
+          classes={classes}
+          onClose={() => setIsCreateCandidatureOpen(false)}
+          onConfirm={(newCand) => {
+            handlePublicSubmitCandidature(newCand);
+            setIsCreateCandidatureOpen(false);
+            showToast(`Candidature guichet ${newCand.nom} enregistrée avec succès !`, 'success');
+          }}
         />
       )}
 

@@ -3,50 +3,104 @@ import React, { useState } from 'react';
 export default function CandidaturesView({ 
   candidatures, 
   classes, 
-  onExamine 
+  onExamine,
+  onOpenCreateCandidature
 }) {
   const [filter, setFilter] = useState('all');
+  const [selectedClassId, setSelectedClassId] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const filteredCandidatures = candidatures.filter(c => {
-    if (filter === 'all') return true;
-    return c.statut === filter;
+    const statusMatch = filter === 'all' || c.statut === filter;
+    const classMatch = selectedClassId === 'all' || String(c.classe_id) === String(selectedClassId);
+    const searchMatch = !searchTerm || 
+      `${c.nom} ${c.prenom} ${c.uuid} ${c.parent_nom || ''}`.toLowerCase().includes(searchTerm.toLowerCase());
+    return statusMatch && classMatch && searchMatch;
   });
 
   return (
     <div className="space-y-6 fade-enter">
       
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-sigapei-black font-heading">Instruction des Candidatures</h2>
-          <p className="text-xs text-slate-500 mt-1">Examen des dossiers, vérification des pièces justificatives S3 MinIO et validation des admissions.</p>
+          <p className="text-xs text-slate-500 mt-1">Examen des dossiers d'admission, validation des pièces justificatives S3 et contrôle de capacité.</p>
         </div>
         
-        {/* Filters */}
-        <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-sm text-xs font-bold">
-          <button 
-            onClick={() => setFilter('all')} 
-            className={`px-3 py-1.5 rounded-lg transition ${filter === 'all' ? 'bg-sigapei-green text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+        {/* Actions header */}
+        <div className="flex items-center gap-3">
+          {onOpenCreateCandidature && (
+            <button
+              onClick={onOpenCreateCandidature}
+              className="px-4 py-2.5 rounded-xl bg-sigapei-green text-white text-xs font-black hover:bg-sigapei-green/90 shadow-md transition flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Saisie Guichet (Secrétariat)</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Barre d'outils et filtres */}
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {/* Status filters */}
+          <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 text-xs font-bold">
+            <button 
+              onClick={() => setFilter('all')} 
+              className={`px-3 py-1.5 rounded-lg transition ${filter === 'all' ? 'bg-sigapei-green text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Tous ({candidatures.length})
+            </button>
+            <button 
+              onClick={() => setFilter('en_attente')} 
+              className={`px-3 py-1.5 rounded-lg transition ${filter === 'en_attente' ? 'bg-sigapei-gold text-sigapei-black font-black shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              En attente ({candidatures.filter(c => c.statut === 'en_attente').length})
+            </button>
+            <button 
+              onClick={() => setFilter('validee')} 
+              className={`px-3 py-1.5 rounded-lg transition ${filter === 'validee' ? 'bg-sigapei-green text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Validées ({candidatures.filter(c => c.statut === 'validee').length})
+            </button>
+            <button 
+              onClick={() => setFilter('rejetee')} 
+              className={`px-3 py-1.5 rounded-lg transition ${filter === 'rejetee' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Rejetées ({candidatures.filter(c => c.statut === 'rejetee').length})
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+          {/* Filtre par classe */}
+          <select 
+            value={selectedClassId}
+            onChange={e => setSelectedClassId(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white text-slate-700"
           >
-            Tous ({candidatures.length})
-          </button>
-          <button 
-            onClick={() => setFilter('en_attente')} 
-            className={`px-3 py-1.5 rounded-lg transition ${filter === 'en_attente' ? 'bg-sigapei-gold text-sigapei-black font-black shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            En attente ({candidatures.filter(c => c.statut === 'en_attente').length})
-          </button>
-          <button 
-            onClick={() => setFilter('validee')} 
-            className={`px-3 py-1.5 rounded-lg transition ${filter === 'validee' ? 'bg-sigapei-green text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            Validées ({candidatures.filter(c => c.statut === 'validee').length})
-          </button>
-          <button 
-            onClick={() => setFilter('rejetee')} 
-            className={`px-3 py-1.5 rounded-lg transition ${filter === 'rejetee' ? 'bg-red-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            Rejetées ({candidatures.filter(c => c.statut === 'rejetee').length})
-          </button>
+            <option value="all">Toutes les classes</option>
+            {classes.map(cl => (
+              <option key={cl.id} value={cl.id}>{cl.nom}</option>
+            ))}
+          </select>
+
+          {/* Recherche textuelle */}
+          <div className="relative">
+            <input 
+              type="text"
+              placeholder="Recherche élève / UUID…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:border-sigapei-green outline-none w-48 sm:w-56"
+            />
+            <svg className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
       </div>
 
