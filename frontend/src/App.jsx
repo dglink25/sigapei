@@ -332,15 +332,15 @@ export default function App() {
 // ── Mini header réutilisable pour les espaces sans Header complet ──
 function AppHeader({ currentUser, onLogout, showLabel }) {
   return (
-    <header className="shrink-0 h-14 bg-sigapei-sidebar flex items-center justify-between px-6 shadow-md z-40">
+    <header className="shrink-0 h-16 bg-sigapei-sidebar flex items-center justify-between px-6 shadow-md z-40">
       <div className="flex items-center space-x-3">
         <img 
           src="/logo-sigapei.png" 
           alt="Logo SIGAPEI" 
-          className="w-8 h-8 object-contain drop-shadow" 
+          className="w-10 h-10 object-contain drop-shadow" 
         />
         <div>
-          <span className="text-white font-black text-sm">SIGAPEI</span>
+          <span className="text-white font-black text-base">SIGAPEI</span>
           {showLabel && <span className="hidden sm:inline text-sigapei-cream/60 text-xs ml-2">· {showLabel}</span>}
         </div>
       </div>
