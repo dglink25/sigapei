@@ -334,12 +334,11 @@ function AppHeader({ currentUser, onLogout, showLabel }) {
   return (
     <header className="shrink-0 h-14 bg-sigapei-sidebar flex items-center justify-between px-6 shadow-md z-40">
       <div className="flex items-center space-x-3">
-        <div className="w-8 h-8 rounded-lg bg-sigapei-gold flex items-center justify-center">
-          <svg className="w-5 h-5 text-sigapei-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"
-              d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-          </svg>
-        </div>
+        <img 
+          src="/logo-sigapei.png" 
+          alt="Logo SIGAPEI" 
+          className="w-8 h-8 object-contain drop-shadow" 
+        />
         <div>
           <span className="text-white font-black text-sm">SIGAPEI</span>
           {showLabel && <span className="hidden sm:inline text-sigapei-cream/60 text-xs ml-2">· {showLabel}</span>}
