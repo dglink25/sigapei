@@ -29,7 +29,7 @@ export default function Header({
   return (
     <header className="bg-sigapei-green text-white border-b border-sigapei-green-dark shrink-0 z-40 shadow-md">
       <div className="max-w-[1700px] mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16 sm:h-18 py-1">
+        <div className="flex items-center justify-between h-16">
           
           {/* LOGO OFFICIEL SIGAPEI */}
           <div className="flex items-center space-x-5">
@@ -40,9 +40,9 @@ export default function Header({
               <img 
                 src="/logo-sigapei.png" 
                 alt="Logo Officiel SIGAPEI" 
-                className="w-13 h-13 sm:w-14 sm:h-14 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
+                className="w-12 h-12 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
               />
-              <span className="ml-3 font-heading font-black text-2xl tracking-wider text-sigapei-cream">SIGAPEI</span>
+              <span className="ml-3 font-heading font-black text-xl tracking-wider text-sigapei-cream">SIGAPEI</span>
             </div>
             
             <div className="hidden lg:flex items-center space-x-3 border-l border-white/20 pl-5">
