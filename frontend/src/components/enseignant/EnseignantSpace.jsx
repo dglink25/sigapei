@@ -10,51 +10,74 @@ const MON_EDT = {
 };
 
 const MES_CLASSES = ['3ème A', '2nde B', '1ère C', 'Terminale D'];
-
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
-
 const COLORS = ['bg-blue-100 text-blue-800 border-blue-200', 'bg-indigo-100 text-indigo-800 border-indigo-200', 'bg-teal-100 text-teal-800 border-teal-200', 'bg-amber-100 text-amber-800 border-amber-200', 'bg-purple-100 text-purple-800 border-purple-200'];
 
 export default function EnseignantSpace({ currentUser }) {
   const [tab, setTab] = useState('edt');
   const [selectedClasse, setSelectedClasse] = useState(null);
   const [searchApprenant, setSearchApprenant] = useState('');
+  const [activeStudentModal, setActiveStudentModal] = useState(null);
+
+  // État de l'appel de classe
+  const [attendanceClasse, setAttendanceClasse] = useState(1);
+  const [attendanceStatus, setAttendanceStatus] = useState({});
+  const [attendanceSaved, setAttendanceSaved] = useState(false);
 
   const apprenantsFiltres = initialApprenants.filter(a => {
-    const classeMatch = selectedClasse ? a.classe_id === selectedClasse : MES_CLASSES.some(c => c === (initialClasses.find(cl => cl.id === a.classe_id)?.nom));
-    const searchMatch = !searchApprenant || `${a.nom} ${a.prenom}`.toLowerCase().includes(searchApprenant.toLowerCase());
+    const classeMatch = selectedClasse ? a.classe_id === selectedClasse : true;
+    const searchMatch = !searchApprenant || `${a.nom} ${a.prenom} ${a.matricule}`.toLowerCase().includes(searchApprenant.toLowerCase());
     return classeMatch && searchMatch;
   });
+
+  const studentsForAttendance = initialApprenants.filter(a => a.classe_id === attendanceClasse);
+
+  const handleSetAttendance = (studentId, status) => {
+    setAttendanceStatus(prev => ({
+      ...prev,
+      [studentId]: status
+    }));
+    setAttendanceSaved(false);
+  };
+
+  const handleSaveAttendance = () => {
+    setAttendanceSaved(true);
+    setTimeout(() => setAttendanceSaved(false), 3000);
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-sigapei-canvas">
 
-      {/* Header espace */}
+      {/* Header espace Enseignant */}
       <div className="shrink-0 bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
         <div>
           <div className="text-[10px] font-black uppercase tracking-widest text-sigapei-green mb-0.5">Espace Enseignant</div>
           <h1 className="text-lg font-black text-slate-900">{currentUser?.nom}</h1>
-          <p className="text-xs text-slate-400">{currentUser?.etablissement} · Lecture seule</p>
+          <p className="text-xs text-slate-400">{currentUser?.etablissement} • Professeur Certifié</p>
         </div>
         <div className="flex items-center space-x-2">
-          <span className="text-[10px] px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-black uppercase tracking-wider">Enseignant</span>
+          <span className="text-[10px] px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 font-black uppercase tracking-wider">
+            Mathématiques
+          </span>
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Onglets navigation */}
       <div className="shrink-0 bg-white border-b border-slate-100 px-8">
-        <div className="flex space-x-0 text-sm font-bold">
+        <div className="flex space-x-2 text-sm font-bold">
           {[
             { id: 'edt', label: 'Mon Emploi du Temps', icon: '🗓️' },
             { id: 'classes', label: 'Mes Classes', icon: '📚' },
             { id: 'apprenants', label: 'Dossiers Apprenants', icon: '👤' },
+            { id: 'appel', label: 'Feuille d’Appel & Présences', icon: '📝' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`px-5 py-3.5 border-b-2 transition text-sm ${
+              className={`px-5 py-3.5 border-b-2 transition text-xs font-black uppercase tracking-wide flex items-center gap-2 ${
                 tab === t.id ? 'border-sigapei-green text-sigapei-green' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}>
-              {t.icon} {t.label}
+              <span>{t.icon}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
@@ -62,28 +85,37 @@ export default function EnseignantSpace({ currentUser }) {
 
       <div className="flex-1 overflow-y-auto p-8 space-y-6">
 
-        {/* ── Emploi du Temps ── */}
+        {/* ── 1. Emploi du Temps Personnel ── */}
         {tab === 'edt' && (
           <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-black text-slate-800">Mon emploi du temps</h2>
-              <p className="text-xs text-slate-400">Semaine en cours · Lecture seule</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-black text-slate-800">Mon planning hebdomadaire de cours</h2>
+                <p className="text-xs text-slate-400">Semestre 1 • 14 heures de cours attribuées par le Censeur</p>
+              </div>
+              <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+                Année 2026-2027
+              </span>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {JOURS.map((jour, ji) => (
                 <div key={jour} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                   <div className="bg-sigapei-sidebar px-4 py-2.5">
                     <span className="text-xs font-black text-sigapei-cream uppercase tracking-wider">{jour}</span>
                   </div>
-                  <div className="p-3 space-y-2 min-h-[120px]">
+                  <div className="p-3 space-y-2 min-h-[140px]">
                     {(MON_EDT[jour] || []).length === 0 ? (
-                      <div className="text-center text-xs text-slate-300 pt-4">Libre</div>
+                      <div className="text-center text-xs text-slate-300 pt-6 italic">Aucun cours</div>
                     ) : (
                       (MON_EDT[jour] || []).map((c, i) => (
-                        <div key={i} className={`p-2.5 rounded-xl border text-xs ${COLORS[(ji + i) % COLORS.length]}`}>
-                          <div className="font-black">{c.heure}</div>
-                          <div className="font-semibold mt-0.5">{c.matiere}</div>
-                          <div className="text-[10px] mt-1 opacity-70">{c.classe} · {c.salle}</div>
+                        <div key={i} className={`p-3 rounded-xl border text-xs ${COLORS[(ji + i) % COLORS.length]}`}>
+                          <div className="font-mono font-black">{c.heure}</div>
+                          <div className="font-extrabold mt-1 text-sm">{c.matiere}</div>
+                          <div className="text-[11px] mt-1 opacity-80 flex items-center justify-between">
+                            <span className="font-bold">{c.classe}</span>
+                            <span>{c.salle}</span>
+                          </div>
                         </div>
                       ))
                     )}
@@ -94,33 +126,41 @@ export default function EnseignantSpace({ currentUser }) {
           </div>
         )}
 
-        {/* ── Mes Classes ── */}
+        {/* ── 2. Mes Classes ── */}
         {tab === 'classes' && (
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-black text-slate-800">Mes classes affectées</h2>
-              <p className="text-xs text-slate-400">{MES_CLASSES.length} classes · Lecture seule</p>
+              <p className="text-xs text-slate-400">Jauges d'effectif et progression des inscriptions</p>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {MES_CLASSES.map((nom, i) => {
                 const cl = initialClasses.find(c => c.nom === nom);
-                const nb = cl ? cl.inscrits : Math.floor(20 + Math.random() * 15);
+                const nb = cl ? cl.inscrits : 38;
                 const cap = cl ? cl.capacite : 45;
                 const pct = Math.round((nb / cap) * 100);
                 return (
-                  <div key={nom} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${COLORS[i % COLORS.length].split(' ').slice(0,2).join(' ')}`}>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0112 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                      </svg>
+                  <div key={nom} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-xl bg-sigapei-green/10 text-sigapei-green font-black flex items-center justify-center">
+                        📚
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                        {cl?.cycle || 'Secondaire'}
+                      </span>
                     </div>
-                    <div className="font-black text-slate-800 text-sm">{nom}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{nb} élèves</div>
-                    <div className="mt-3">
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div>
+                      <div className="font-black text-slate-800 text-base">{nom}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">Effectif : {nb} élèves</div>
+                    </div>
+                    <div>
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full bg-sigapei-green rounded-full transition-all" style={{ width: `${pct}%` }} />
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-1">{nb} / {cap} places</div>
+                      <div className="text-[11px] text-slate-500 mt-1 flex justify-between">
+                        <span>Remplissage</span>
+                        <span className="font-bold font-mono">{pct}%</span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -129,69 +169,215 @@ export default function EnseignantSpace({ currentUser }) {
           </div>
         )}
 
-        {/* ── Dossiers Apprenants ── */}
+        {/* ── 3. Dossiers Apprenants (Lecture Seule) ── */}
         {tab === 'apprenants' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-black text-slate-800">Dossiers des apprenants</h2>
-                <p className="text-xs text-slate-400">Lecture seule · Aucune modification possible</p>
+                <p className="text-xs text-slate-400">Consultation pédagogique en lecture seule (cliquez sur un élève pour sa fiche)</p>
               </div>
-              <div className="flex items-center space-x-3">
-                <select value={selectedClasse || ''} onChange={e => setSelectedClasse(e.target.value || null)}
-                  className="px-3 py-2 rounded-xl border-2 border-slate-200 text-xs font-semibold text-slate-700 outline-none focus:border-sigapei-green bg-white">
+              <div className="flex items-center space-x-2">
+                <select value={selectedClasse || ''} onChange={e => setSelectedClasse(e.target.value ? Number(e.target.value) : null)}
+                  className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-sigapei-green bg-white">
                   <option value="">Toutes mes classes</option>
                   {initialClasses.map(c => (
                     <option key={c.id} value={c.id}>{c.nom}</option>
                   ))}
                 </select>
                 <input value={searchApprenant} onChange={e => setSearchApprenant(e.target.value)}
-                  placeholder="Rechercher un élève…"
-                  className="px-4 py-2 rounded-xl border-2 border-slate-200 text-xs outline-none focus:border-sigapei-green bg-white w-48" />
+                  placeholder="Rechercher élève…"
+                  className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs outline-none focus:border-sigapei-green bg-white w-44" />
               </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                      {['Matricule', 'Nom & Prénom', 'Classe', 'Date de naissance', 'Contact parent'].map(h => (
-                        <th key={h} className="px-5 py-3 text-left text-[10px] font-black text-slate-500 uppercase tracking-wider">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {apprenantsFiltres.length === 0 ? (
-                      <tr><td colSpan="5" className="px-5 py-8 text-center text-sm text-slate-400">Aucun apprenant trouvé.</td></tr>
-                    ) : apprenantsFiltres.map(a => {
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">Matricule</th>
+                    <th className="py-3 px-4">Nom & Prénom</th>
+                    <th className="py-3 px-4">Classe</th>
+                    <th className="py-3 px-4">Date de naissance</th>
+                    <th className="py-3 px-4">Contact Parent</th>
+                    <th className="py-3 px-4 text-right">Fiche</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {apprenantsFiltres.length === 0 ? (
+                    <tr><td colSpan="6" className="text-center py-8 text-slate-400">Aucun apprenant trouvé.</td></tr>
+                  ) : (
+                    apprenantsFiltres.map(a => {
                       const cl = initialClasses.find(c => c.id === a.classe_id);
                       return (
-                        <tr key={a.id} className="hover:bg-slate-50 transition">
-                          <td className="px-5 py-3 font-mono text-xs text-slate-500">{a.matricule}</td>
-                          <td className="px-5 py-3 font-bold text-slate-800">{a.nom} {a.prenom}</td>
-                          <td className="px-5 py-3">
-                            <span className="px-2 py-1 rounded-lg bg-sigapei-green/10 text-sigapei-green text-xs font-bold">{cl?.nom || '—'}</span>
+                        <tr key={a.id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3 px-4 font-mono font-bold text-slate-700">{a.matricule}</td>
+                          <td className="py-3 px-4 font-extrabold text-slate-800">{a.nom} {a.prenom}</td>
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded-lg bg-sigapei-green/10 text-sigapei-green text-[11px] font-bold">
+                              {cl?.nom || '6ème A'}
+                            </span>
                           </td>
-                          <td className="px-5 py-3 text-xs text-slate-500">{a.date_naissance}</td>
-                          <td className="px-5 py-3 text-xs text-slate-500">{a.parent_nom} · {a.parent_tel}</td>
+                          <td className="py-3 px-4 text-slate-500">{a.date_naissance}</td>
+                          <td className="py-3 px-4 text-slate-600 font-medium">{a.parent_nom} ({a.parent_tel})</td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => setActiveStudentModal(a)}
+                              className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-sigapei-green hover:text-white text-slate-700 text-[11px] font-bold transition"
+                            >
+                              Voir fiche
+                            </button>
+                          </td>
                         </tr>
                       );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <span className="text-xs text-slate-500">Vous consultez ces dossiers en <strong>lecture seule</strong>. Toute modification doit passer par la Secrétaire ou l'Administrateur.</span>
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
+
+        {/* ── 4. Feuille d'Appel & Présences ── */}
+        {tab === 'appel' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-bold text-slate-700 uppercase">Classe :</label>
+                <select 
+                  value={attendanceClasse}
+                  onChange={e => setAttendanceClasse(Number(e.target.value))}
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white"
+                >
+                  {initialClasses.map(c => (
+                    <option key={c.id} value={c.id}>{c.nom}</option>
+                  ))}
+                </select>
+                <span className="text-xs text-slate-500">Date du jour : {new Date().toLocaleDateString('fr-FR')}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {attendanceSaved && (
+                  <span className="text-xs font-bold text-emerald-600 animate-bounce">
+                    ✓ Appel enregistré !
+                  </span>
+                )}
+                <button
+                  onClick={handleSaveAttendance}
+                  className="px-4 py-2 bg-sigapei-green text-white text-xs font-black rounded-xl hover:bg-sigapei-green/90 transition shadow-sm"
+                >
+                  Valider l'appel
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px]">
+                  <tr>
+                    <th className="py-3 px-4">Matricule</th>
+                    <th className="py-3 px-4">Nom & Prénom</th>
+                    <th className="py-3 px-4 text-center">Statut de Présence</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {studentsForAttendance.map(a => {
+                    const currentStat = attendanceStatus[a.id] || 'present';
+                    return (
+                      <tr key={a.id} className="hover:bg-slate-50 transition">
+                        <td className="py-3 px-4 font-mono font-bold text-slate-600">{a.matricule}</td>
+                        <td className="py-3 px-4 font-bold text-slate-800">{a.nom} {a.prenom}</td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-0.5 text-xs font-bold">
+                            <button
+                              onClick={() => handleSetAttendance(a.id, 'present')}
+                              className={`px-3 py-1 rounded-lg transition ${currentStat === 'present' ? 'bg-emerald-500 text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                              Présent
+                            </button>
+                            <button
+                              onClick={() => handleSetAttendance(a.id, 'retard')}
+                              className={`px-3 py-1 rounded-lg transition ${currentStat === 'retard' ? 'bg-amber-500 text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                              En retard
+                            </button>
+                            <button
+                              onClick={() => handleSetAttendance(a.id, 'absent')}
+                              className={`px-3 py-1 rounded-lg transition ${currentStat === 'absent' ? 'bg-red-500 text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                            >
+                              Absent
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
       </div>
+
+      {/* Modal Fiche Dossier Apprenant */}
+      {activeStudentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigapei-black/60 backdrop-blur-sm fade-enter">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md overflow-hidden">
+            <div className="bg-sigapei-sidebar px-6 py-4 flex items-center justify-between text-white">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-2xl bg-sigapei-gold text-sigapei-black font-black flex items-center justify-center">
+                  👤
+                </div>
+                <div>
+                  <h3 className="font-heading font-black text-sm text-white">
+                    {activeStudentModal.nom} {activeStudentModal.prenom}
+                  </h3>
+                  <p className="text-[11px] text-sigapei-gold font-mono">{activeStudentModal.matricule}</p>
+                </div>
+              </div>
+              <button onClick={() => setActiveStudentModal(null)} className="text-white hover:text-white/80">
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100">
+                <div>
+                  <span className="text-slate-400 font-bold uppercase text-[10px]">Date de naissance</span>
+                  <p className="font-extrabold text-slate-800 mt-0.5">{activeStudentModal.date_naissance}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-bold uppercase text-[10px]">Classe actuelle</span>
+                  <p className="font-extrabold text-sigapei-green mt-0.5">
+                    {initialClasses.find(c => c.id === activeStudentModal.classe_id)?.nom || '6ème A'}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-slate-400 font-bold uppercase text-[10px]">Parent / Référent</span>
+                <p className="font-extrabold text-slate-800 mt-0.5">{activeStudentModal.parent_nom}</p>
+                <p className="text-slate-500 mt-0.5">📞 {activeStudentModal.parent_tel}</p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px]">
+                🔒 <strong>Accès Pédagogique :</strong> L'enseignant a accès au dossier pour le suivi scolaire et la saisie des notes. Aucune modification administrative permise.
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => setActiveStudentModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl transition"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

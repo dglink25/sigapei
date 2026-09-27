@@ -104,9 +104,9 @@ export default function LoginPage({ onLogin, onGoRegister }) {
     // Prefill hint email
     const match = ROLES.find(r => r.id === roleId);
     if (match) {
-      const hintEmail = match.hint.split(' / ')[0];
+      const [hintEmail, hintPassword] = match.hint.split(' / ');
       setEmail(hintEmail);
-      setPassword('');
+      setPassword(hintPassword || '');
     }
   };
 
