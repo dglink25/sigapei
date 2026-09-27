@@ -1,0 +1,1831 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGAPEI — Portail Inscription & Scolarité</title>
+  
+  <!-- Polices Inter & Poppins (Charte graphique SIGAPEI - Page 6) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js pour le Dashboard (Charte graphique - Page 8) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            // Palette chromatique officielle SIGAPEI (Charte - Page 5 & 12)
+            sigapei: {
+              green: '#006B3C',    // PRIMAIRE : Structure, navigation, titres
+              'green-dark': '#00522E',
+              'green-light': '#00874C',
+              gold: '#E9AA20',     // SECONDAIRE / ACCENT : Actions, focus, points clés
+              'gold-hover': '#D69818',
+              'gold-light': '#FDF4DC',
+              cream: '#FFF6DD',    // CONTRASTE : Logo, badges clairs, texte sur fond sombre
+              black: '#000000',    // IMPACT : Fond, contraste fort
+              dark: '#111827',
+              surface: '#F8FAFC',
+            },
+            status: {
+              valide: '#006B3C',
+              attente: '#E9AA20',
+              erreur: '#B91C1C'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            heading: ['Poppins', 'Inter', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 4px 20px -2px rgba(0, 107, 60, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
+            'card-hover': '0 10px 25px -3px rgba(0, 107, 60, 0.1), 0 4px 10px -2px rgba(0, 0, 0, 0.04)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Règle d'or de la charte : Le vert domine. L'or signale. Le crème respire. Le noir cadre. */
+    body {
+      font-family: 'Inter', sans-serif;
+      color: #111827;
+      background-color: #F8FAFC;
+    }
+    
+    /* Logo officiel SIGAPEI SVG (Charte - Page 3 & 12) */
+    .sigapei-logo-badge {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #006B3C;
+      border-radius: 14px;
+      padding: 6px 14px;
+      box-shadow: 0 4px 12px rgba(0, 107, 60, 0.25);
+    }
+    .sigapei-logo-accent {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 14px;
+      height: 14px;
+      background-color: #E9AA20;
+      border-radius: 3px;
+      transform: rotate(45deg);
+      border: 2px solid #006B3C;
+    }
+
+    /* Transition douce */
+    .fade-in {
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Personnalisation de la scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full flex flex-col">
+
+  <!-- ========================================================================= -->
+  <!-- BARRE SUPÉRIEURE DE NAVIGATION GLOBALE (SÉLECTEUR DES ESPACES)             -->
+  <!-- ========================================================================= -->
+  <header class="bg-sigapei-green text-white shadow-md z-30 shrink-0 border-b border-sigapei-green-dark">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Titre Institutionnel -->
+        <div class="flex items-center space-x-4">
+          <div class="relative cursor-pointer" onclick="switchSpace('admin')">
+            <div class="bg-sigapei-green border-2 border-sigapei-cream/20 rounded-2xl px-3 py-1.5 flex items-center shadow-inner">
+              <span class="font-extrabold tracking-wider text-sigapei-cream text-lg">SIGAPEI</span>
+            </div>
+            <!-- Accent doré incliné selon charte page 3 -->
+            <div class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-sigapei-gold rounded-sm rotate-45 border border-sigapei-green"></div>
+          </div>
+          <div class="hidden sm:block border-l border-sigapei-green-dark pl-4">
+            <p class="text-xs uppercase tracking-wider text-sigapei-gold font-semibold">Plateforme de Gestion</p>
+            <p class="text-xs text-sigapei-cream/80 font-medium">Inscriptions & Scolarité</p>
+          </div>
+        </div>
+
+        <!-- Navigation entre les Espaces Métiers de la Plateforme (Sans site vitrine) -->
+        <nav class="flex items-center space-x-1 sm:space-x-2 bg-sigapei-green-dark/60 p-1.5 rounded-xl border border-sigapei-cream/10">
+          
+          <button id="btn-nav-candidat" onclick="switchSpace('candidat')" 
+                  class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 text-sigapei-cream/80 hover:text-white hover:bg-white/10">
+            <i data-lucide="user-plus" class="w-4 h-4 text-sigapei-gold"></i>
+            <span>Admission & Inscription</span>
+          </button>
+
+          <button id="btn-nav-admin" onclick="switchSpace('admin')" 
+                  class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 bg-sigapei-gold text-sigapei-black shadow-sm font-bold">
+            <i data-lucide="shield-check" class="w-4 h-4 text-sigapei-black"></i>
+            <span>Administration / Scolarité</span>
+          </button>
+
+          <button id="btn-nav-parent" onclick="switchSpace('parent')" 
+                  class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 text-sigapei-cream/80 hover:text-white hover:bg-white/10">
+            <i data-lucide="users" class="w-4 h-4 text-sigapei-gold"></i>
+            <span>Espace Parent & Élève</span>
+          </button>
+
+        </nav>
+
+        <!-- Profil & Indicateur Tenant -->
+        <div class="flex items-center space-x-3">
+          <div class="hidden md:flex flex-col text-right">
+            <span class="text-xs font-bold text-white">Complexe Scolaire Jean-Marie</span>
+            <span class="text-[10px] text-sigapei-cream/70">Année Scolaire 2026-2027</span>
+          </div>
+          <div class="w-9 h-9 rounded-full bg-sigapei-gold/20 border-2 border-sigapei-gold flex items-center justify-center text-sigapei-gold font-bold text-xs">
+            DIR
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- CORPS PRINCIPAL DE L'APPLICATION                                          -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 flex overflow-hidden">
+
+    <!-- ======================================================================= -->
+    <!-- ESPACE 1 : ADMISSION & CANDIDATURE (PARENT / CANDIDAT)                  -->
+    <!-- ======================================================================= -->
+    <section id="space-candidat" class="hidden flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50 fade-in">
+      <div class="max-w-4xl mx-auto space-y-6">
+
+        <!-- En-tête de section -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sigapei-gold/15 text-sigapei-green text-xs font-bold uppercase tracking-wider mb-2">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-sigapei-gold"></i> Portail d'Admission 2026-2027
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-sigapei-black font-heading">Dépôt & Suivi de Candidature</h1>
+            <p class="text-sm text-slate-500 mt-1">Formulaire officiel d'inscription et suivi en temps réel de votre dossier d'admission.</p>
+          </div>
+          <!-- Onglets Inscription / Suivi / Réinscription -->
+          <div class="flex bg-slate-100 p-1 rounded-xl self-start sm:self-center border border-slate-200">
+            <button onclick="switchCandidatTab('form')" id="tab-btn-form" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-sigapei-green text-white shadow-sm transition">Nouvelle Inscription</button>
+            <button onclick="switchCandidatTab('suivi')" id="tab-btn-suivi" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">Suivre un Dossier</button>
+            <button onclick="switchCandidatTab('reinscription')" id="tab-btn-reinscription" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">Réinscription</button>
+          </div>
+        </div>
+
+        <!-- SOUS-VUE 1 : FORMULAIRE D'INSCRIPTION MULTI-ÉTAPES -->
+        <div id="candidat-view-form" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+          
+          <!-- Stepper des 4 étapes -->
+          <div class="mb-8">
+            <div class="flex items-center justify-between relative">
+              <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-slate-100 w-full z-0"></div>
+              <div id="step-progress-bar" class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-sigapei-green z-0 transition-all duration-300" style="width: 25%;"></div>
+
+              <!-- Étape 1 -->
+              <div class="relative z-10 flex flex-col items-center">
+                <div id="step-dot-1" class="w-10 h-10 rounded-full bg-sigapei-green text-white font-bold text-sm flex items-center justify-center border-4 border-white shadow-sm transition">1</div>
+                <span class="text-xs font-semibold text-sigapei-black mt-2 hidden sm:block">Élève</span>
+              </div>
+              <!-- Étape 2 -->
+              <div class="relative z-10 flex flex-col items-center">
+                <div id="step-dot-2" class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 font-bold text-sm flex items-center justify-center border-4 border-white shadow-sm transition">2</div>
+                <span class="text-xs font-medium text-slate-500 mt-2 hidden sm:block">Classe & Programme</span>
+              </div>
+              <!-- Étape 3 -->
+              <div class="relative z-10 flex flex-col items-center">
+                <div id="step-dot-3" class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 font-bold text-sm flex items-center justify-center border-4 border-white shadow-sm transition">3</div>
+                <span class="text-xs font-medium text-slate-500 mt-2 hidden sm:block">Responsable Légal</span>
+              </div>
+              <!-- Étape 4 -->
+              <div class="relative z-10 flex flex-col items-center">
+                <div id="step-dot-4" class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 font-bold text-sm flex items-center justify-center border-4 border-white shadow-sm transition">4</div>
+                <span class="text-xs font-medium text-slate-500 mt-2 hidden sm:block">Pièces & Validation</span>
+              </div>
+            </div>
+          </div>
+
+          <form id="form-admission" onsubmit="event.preventDefault(); submitCandidature();">
+            
+            <!-- ÉTAPE 1 : IDENTITÉ DE L'ÉLÈVE -->
+            <div id="step-content-1" class="space-y-6">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-sigapei-black">1. Identité et État Civil de l'Élève</h3>
+                <p class="text-xs text-slate-500">Renseignez scrupuleusement les informations telles qu'inscrites sur l'acte de naissance.</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Nom de famille <span class="text-red-500">*</span></label>
+                  <input type="text" id="cad-nom" required placeholder="Ex : KOFFI" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Prénom(s) <span class="text-red-500">*</span></label>
+                  <input type="text" id="cad-prenom" required placeholder="Ex : Jean-Luc" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Date de naissance <span class="text-red-500">*</span></label>
+                  <input type="date" id="cad-date-naissance" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Genre <span class="text-red-500">*</span></label>
+                  <select id="cad-sexe" required class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm bg-white">
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Lieu de résidence / Ville</label>
+                  <input type="text" id="cad-adresse" placeholder="Ex : Cotonou, Haie Vive" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Établissement précédent</label>
+                  <input type="text" id="cad-ecole-origine" placeholder="Ex : École Primaire Saint-Joseph" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                </div>
+              </div>
+
+              <div class="flex justify-end pt-4">
+                <button type="button" onclick="goToStep(2)" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-sm hover:bg-sigapei-green-dark shadow-sm transition flex items-center gap-2">
+                  <span>Continuer vers la classe</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- ÉTAPE 2 : CLASSE VISÉE & PROGRAMME PÉDAGOGIQUE -->
+            <div id="step-content-2" class="hidden space-y-6">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-sigapei-black">2. Classe & Programme Pédagogique</h3>
+                <p class="text-xs text-slate-500">Sélectionnez la classe d'accueil et visualisez la capacité disponible en temps réel.</p>
+              </div>
+
+              <!-- Rappel de la règle métier du cahier des charges -->
+              <div class="bg-sigapei-cream/70 border border-sigapei-gold/40 rounded-xl p-4 flex items-start gap-3">
+                <i data-lucide="info" class="w-5 h-5 text-sigapei-gold shrink-0 mt-0.5"></i>
+                <div class="text-xs text-slate-800 leading-relaxed">
+                  <span class="font-bold text-sigapei-green">Règle d'accès aux comptes de la plateforme :</span>
+                  Au sein du <strong>Programme Béninois</strong>, aucun compte élève n'est créé (règle stricte interdisant le téléphone portable en milieu scolaire). Le suivi s'effectue exclusivement par le parent. Pour le <strong>Programme Français</strong> au secondaire, un compte élève autonome est créé.
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">Sélectionnez la classe souhaitée <span class="text-red-500">*</span></label>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="candidature-classes-selector">
+                  <!-- Classes générées dynamiquement -->
+                </div>
+              </div>
+
+              <div class="flex justify-between pt-4">
+                <button type="button" onclick="goToStep(1)" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-50 transition">Retour</button>
+                <button type="button" onclick="goToStep(3)" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-sm hover:bg-sigapei-green-dark shadow-sm transition flex items-center gap-2">
+                  <span>Continuer vers le responsable</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- ÉTAPE 3 : RESPONSABLE LÉGAL -->
+            <div id="step-content-3" class="hidden space-y-6">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-sigapei-black">3. Coordonnées du Responsable Légal</h3>
+                <p class="text-xs text-slate-500">Le responsable légal recevra les alertes SMS/WhatsApp et pilotera l'espace parent.</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Nom du parent / tuteur <span class="text-red-500">*</span></label>
+                  <input type="text" id="cad-parent-nom" required placeholder="Ex : KOFFI" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Prénom du parent / tuteur <span class="text-red-500">*</span></label>
+                  <input type="text" id="cad-parent-prenom" required placeholder="Ex : Marc" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Téléphone Principal (avec indicatif) <span class="text-red-500">*</span></label>
+                  <input type="tel" id="cad-parent-tel" required placeholder="+229 97 00 00 02" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                  <span class="text-[10px] text-slate-500">Utilisé pour l'envoi du code OTP et des notifications WhatsApp/SMS.</span>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Adresse E-mail</label>
+                  <input type="email" id="cad-parent-email" placeholder="parent.koffi@sigapei.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green focus:border-transparent text-sm">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Lien de parenté</label>
+                  <div class="flex gap-4">
+                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                      <input type="radio" name="lien-parente" value="pere" checked class="text-sigapei-green focus:ring-sigapei-green"> Père
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                      <input type="radio" name="lien-parente" value="mere" class="text-sigapei-green focus:ring-sigapei-green"> Mère
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                      <input type="radio" name="lien-parente" value="tuteur" class="text-sigapei-green focus:ring-sigapei-green"> Tuteur légal
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-between pt-4">
+                <button type="button" onclick="goToStep(2)" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-50 transition">Retour</button>
+                <button type="button" onclick="goToStep(4)" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-sm hover:bg-sigapei-green-dark shadow-sm transition flex items-center gap-2">
+                  <span>Continuer vers les pièces</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- ÉTAPE 4 : PIÈCES S3 & VALIDATION FINALE -->
+            <div id="step-content-4" class="hidden space-y-6">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-sigapei-black">4. Pièces Justificatives (Stockage Sécurisé S3) & Soumission</h3>
+                <p class="text-xs text-slate-500">Téléversez les documents requis sous format PDF ou Image (max 5 Mo par pièce).</p>
+              </div>
+
+              <!-- Zone de drop des fichiers -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Acte de naissance -->
+                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-center hover:border-sigapei-green transition bg-slate-50/50">
+                  <div class="w-10 h-10 rounded-full bg-sigapei-green/10 text-sigapei-green flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                  </div>
+                  <h4 class="text-xs font-bold text-sigapei-black uppercase tracking-wide">Acte de Naissance <span class="text-red-500">*</span></h4>
+                  <p class="text-[11px] text-slate-500 mb-3">Copie légalisée de l'acte (PDF ou JPG)</p>
+                  <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-sm">
+                    <i data-lucide="upload" class="w-3.5 h-3.5 text-sigapei-gold"></i>
+                    <span id="label-file-acte">Parcourir</span>
+                    <input type="file" class="hidden" onchange="handleFileSelect(this, 'label-file-acte')">
+                  </label>
+                </div>
+
+                <!-- Dernier bulletin -->
+                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-5 text-center hover:border-sigapei-green transition bg-slate-50/50">
+                  <div class="w-10 h-10 rounded-full bg-sigapei-gold/15 text-sigapei-gold flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="award" class="w-5 h-5"></i>
+                  </div>
+                  <h4 class="text-xs font-bold text-sigapei-black uppercase tracking-wide">Dernier Bulletin Scolaire</h4>
+                  <p class="text-[11px] text-slate-500 mb-3">Relevé de notes de l'année écoulée</p>
+                  <label class="cursor-pointer inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 shadow-sm">
+                    <i data-lucide="upload" class="w-3.5 h-3.5 text-sigapei-gold"></i>
+                    <span id="label-file-bulletin">Parcourir</span>
+                    <input type="file" class="hidden" onchange="handleFileSelect(this, 'label-file-bulletin')">
+                  </label>
+                </div>
+              </div>
+
+              <!-- Bloc de sécurité CAPTCHA (Charte - Règle n°4 de la plateforme) -->
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-200">
+                    <i data-lucide="shield" class="w-4 h-4"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-bold text-slate-800">Protection Anti-Robot reCAPTCHA v3</p>
+                    <p class="text-[11px] text-slate-500">Validation transparente de l'intégrité du formulaire.</p>
+                  </div>
+                </div>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-50 text-sigapei-green text-[10px] font-extrabold uppercase tracking-wider border border-emerald-200">
+                  <i data-lucide="check" class="w-3 h-3"></i> Vérifié (Score 0.9)
+                </span>
+              </div>
+
+              <!-- Récapitulatif -->
+              <div class="bg-sigapei-cream/50 border border-sigapei-gold/30 rounded-xl p-4 text-xs text-slate-700 space-y-1">
+                <p><strong>Candidat :</strong> <span id="summary-nom">—</span></p>
+                <p><strong>Classe visée :</strong> <span id="summary-classe">—</span></p>
+                <p><strong>Responsable légal :</strong> <span id="summary-parent">—</span></p>
+              </div>
+
+              <div class="flex justify-between pt-4">
+                <button type="button" onclick="goToStep(3)" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-50 transition">Retour</button>
+                <button type="submit" class="px-8 py-3 rounded-xl bg-sigapei-gold text-sigapei-black font-extrabold text-sm hover:bg-sigapei-gold-hover shadow-md transition flex items-center gap-2">
+                  <i data-lucide="send" class="w-4 h-4"></i>
+                  <span>Soumettre définitivement ma candidature</span>
+                </button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- SOUS-VUE 2 : SUIVI EN DIRECT D'UN DOSSIER -->
+        <div id="candidat-view-suivi" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8 space-y-6">
+          <div class="border-b border-slate-100 pb-3">
+            <h3 class="text-lg font-bold text-sigapei-black">Suivre l'instruction de votre candidature</h3>
+            <p class="text-xs text-slate-500">Saisissez votre référence de dossier (UUID ou Code) pour connaître l'état d'avancement.</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="text" id="input-search-suivi" placeholder="Ex : f7a8b9c0-d1e2-3456 ou Koffi" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green text-sm">
+            <button onclick="rechercherDossier()" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-sm hover:bg-sigapei-green-dark transition flex items-center justify-center gap-2">
+              <i data-lucide="search" class="w-4 h-4 text-sigapei-gold"></i>
+              <span>Vérifier le statut</span>
+            </button>
+          </div>
+
+          <div id="resultat-suivi" class="space-y-4 pt-2">
+            <!-- Résultat injecté dynamiquement -->
+          </div>
+        </div>
+
+        <!-- SOUS-VUE 3 : FORMULAIRE DE RÉINSCRIPTION -->
+        <div id="candidat-view-reinscription" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8 space-y-6">
+          <div class="border-b border-slate-100 pb-3">
+            <h3 class="text-lg font-bold text-sigapei-black">Réinscription Annuelle (Reconduction sans doublon)</h3>
+            <p class="text-xs text-slate-500">Pour les élèves déjà inscrits à l'établissement lors de l'année précédente.</p>
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-900 leading-relaxed">
+            <span class="font-bold">Information importante :</span> La réinscription met directement à jour le dossier de l'élève existant dans le schéma de scolarité. <strong>Aucune nouvelle fiche élève n'est créée</strong> afin de garantir la continuité pédagogique et l'historique complet.
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Matricule de l'élève <span class="text-red-500">*</span></label>
+              <input type="text" id="reinc-matricule" placeholder="Ex : MAT-2026-9812" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Nouvelle classe demandée <span class="text-red-500">*</span></label>
+              <select id="reinc-classe" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sigapei-green text-sm bg-white">
+                <option value="5ème A (Programme Béninois)">5ème A — Programme Béninois (Capacité dispo : 4 places)</option>
+                <option value="5ème B (Programme Français)">5ème B — Programme Français (Capacité dispo : 2 places)</option>
+                <option value="4ème A (Programme Béninois)">4ème A — Programme Béninois (Capacité dispo : 8 places)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button onclick="validerReinscription()" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-sm hover:bg-sigapei-green-dark transition flex items-center gap-2">
+              <i data-lucide="check-circle" class="w-4 h-4 text-sigapei-gold"></i>
+              <span>Confirmer la réinscription</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- ESPACE 2 : DASHBOARD ADMINISTRATION & SCOLARITÉ                         -->
+    <!-- (Direction artistique conforme à la page 8 de la charte graphique)     -->
+    <!-- ======================================================================= -->
+    <section id="space-admin" class="flex-1 flex overflow-hidden fade-in">
+      
+      <!-- SIDEBAR ADMIN VERTE (Charte graphique page 8) -->
+      <aside class="w-64 bg-sigapei-green text-white flex flex-col justify-between shrink-0 shadow-lg border-r border-sigapei-green-dark hidden md:flex">
+        <div class="p-6 space-y-6">
+          
+          <!-- En-tête Sidebar -->
+          <div class="flex items-center space-x-3 pb-4 border-b border-sigapei-green-dark">
+            <div class="w-8 h-8 rounded-lg bg-sigapei-gold text-sigapei-black font-extrabold flex items-center justify-center text-xs">
+              AD
+            </div>
+            <div>
+              <p class="text-xs font-extrabold text-sigapei-cream">Scolarité & Admission</p>
+              <p class="text-[10px] text-sigapei-gold">Guichet Centralisé</p>
+            </div>
+          </div>
+
+          <!-- Navigation de la Sidebar -->
+          <nav class="space-y-1.5 text-xs font-semibold">
+            
+            <button onclick="switchAdminTab('kpis')" id="admin-menu-kpis" 
+                    class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition bg-sigapei-gold text-sigapei-black font-bold shadow-sm">
+              <div class="flex items-center space-x-2.5">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Tableau de bord</span>
+              </div>
+              <span class="w-2 h-2 rounded-full bg-sigapei-black"></span>
+            </button>
+
+            <button onclick="switchAdminTab('admissions')" id="admin-menu-admissions" 
+                    class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition text-sigapei-cream/80 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-2.5">
+                <i data-lucide="inbox" class="w-4 h-4 text-sigapei-gold"></i>
+                <span>Instruction Candidatures</span>
+              </div>
+              <span id="badge-candidatures-count" class="px-1.5 py-0.5 rounded-full text-[10px] bg-sigapei-gold text-sigapei-black font-extrabold">2</span>
+            </button>
+
+            <button onclick="switchAdminTab('classes')" id="admin-menu-classes" 
+                    class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition text-sigapei-cream/80 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-2.5">
+                <i data-lucide="graduation-cap" class="w-4 h-4 text-sigapei-gold"></i>
+                <span>Classes & Capacités</span>
+              </div>
+              <span class="text-[10px] text-sigapei-cream/60">Temps réel</span>
+            </button>
+
+            <button onclick="switchAdminTab('apprenants')" id="admin-menu-apprenants" 
+                    class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition text-sigapei-cream/80 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-2.5">
+                <i data-lucide="user-check" class="w-4 h-4 text-sigapei-gold"></i>
+                <span>Apprenants & Mutations</span>
+              </div>
+            </button>
+
+            <button onclick="switchAdminTab('emplois')" id="admin-menu-emplois" 
+                    class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition text-sigapei-cream/80 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-2.5">
+                <i data-lucide="calendar" class="w-4 h-4 text-sigapei-gold"></i>
+                <span>Emplois du Temps</span>
+              </div>
+            </button>
+
+          </nav>
+
+        </div>
+
+        <!-- Pied de Sidebar : Statut Serveurs Microservices -->
+        <div class="p-4 bg-sigapei-green-dark/80 text-[11px] border-t border-sigapei-green-dark">
+          <p class="font-bold text-sigapei-gold uppercase tracking-wider text-[10px] mb-1.5">Microservices Connectés</p>
+          <div class="space-y-1 text-slate-300">
+            <div class="flex items-center justify-between">
+              <span>api-inscription (4003)</span>
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>api-scolarite (4004)</span>
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CONTENU ADMIN (Zone claire contrastée) -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50 space-y-6">
+
+        <!-- ========================================== -->
+        <!-- SOUS-ONGLET 1 : KPIS & DASHBOARD OVERVIEW  -->
+        <!-- ========================================== -->
+        <div id="admin-tab-kpis" class="space-y-6">
+          
+          <!-- Cartes KPI (Directement inspirées de la page 8 de la charte) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Total Apprenants</span>
+              <div class="flex items-baseline justify-between mt-2">
+                <span class="text-3xl font-extrabold text-sigapei-black font-heading">1 248</span>
+                <span class="text-xs font-bold text-sigapei-green flex items-center">
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5 mr-0.5"></i> +4.2%
+                </span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-1">Inscrits actifs 2026-2027</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Candidatures en attente</span>
+              <div class="flex items-baseline justify-between mt-2">
+                <span class="text-3xl font-extrabold text-sigapei-gold font-heading" id="kpi-candidatures-count">18</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sigapei-gold/15 text-sigapei-green">
+                  À instruire
+                </span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-1">Pièces déposées & tests</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Taux de Remplissage</span>
+              <div class="flex items-baseline justify-between mt-2">
+                <span class="text-3xl font-extrabold text-sigapei-green font-heading">89,4 %</span>
+                <span class="text-xs font-semibold text-slate-500">42 / 47 Classes</span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-1">5 classes à capacité maximale</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Recouvrement Scolarité</span>
+              <div class="flex items-baseline justify-between mt-2">
+                <span class="text-2xl font-extrabold text-sigapei-black font-heading">78,2 M</span>
+                <span class="text-xs font-bold text-sigapei-green">FCFA</span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-1">Lecture seule Finances (12,7 M dû)</span>
+            </div>
+
+          </div>
+
+          <!-- Graphique Évolution (Conforme à la page 8 de la charte : vert = donnée principale, or = point d'attention) -->
+          <div class="bg-white p-6 rounded-2xl shadow-card border border-slate-100 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-base font-extrabold text-sigapei-black font-heading">Évolution des Admissions & Remplissage</h3>
+                <p class="text-xs text-slate-500">Suivi hebdomadaire des inscriptions par rapport à la capacité d'accueil totale.</p>
+              </div>
+              <div class="flex items-center gap-4 text-xs font-medium">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sigapei-green"></span> Inscriptions effectives</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sigapei-gold"></span> Capacité cible</span>
+              </div>
+            </div>
+            <div class="h-64">
+              <canvas id="chart-admissions"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ===================================================== -->
+        <!-- SOUS-ONGLET 2 : INSTRUCTION & VALIDATION CANDIDATURES -->
+        <!-- ===================================================== -->
+        <div id="admin-tab-admissions" class="hidden space-y-6">
+          <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-extrabold text-sigapei-black font-heading">Guichet d'Instruction des Candidatures</h2>
+              <p class="text-xs text-slate-500">Examen des pièces justificatives, saisie des tests et validation avec création directe de l'apprenant.</p>
+            </div>
+            <!-- Filtre statut -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-600">Filtrer par statut :</span>
+              <select id="filter-candidatures-status" onchange="filterCandidaturesTable()" class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white">
+                <option value="tous">Tous les statuts</option>
+                <option value="soumise" selected>En attente (Soumise)</option>
+                <option value="validee">Validée (Admis)</option>
+                <option value="rejetee">Rejetée</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table des candidatures -->
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+                    <th class="py-3.5 px-4">Candidat</th>
+                    <th class="py-3.5 px-4">Classe Visée</th>
+                    <th class="py-3.5 px-4">Programme</th>
+                    <th class="py-3.5 px-4">Responsable</th>
+                    <th class="py-3.5 px-4">Pièces S3</th>
+                    <th class="py-3.5 px-4">Test Admission</th>
+                    <th class="py-3.5 px-4">Statut</th>
+                    <th class="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="table-candidatures-body" class="divide-y divide-slate-100 font-medium">
+                  <!-- Lignes générées en JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SOUS-ONGLET 3 : CLASSES & CAPACITÉS        -->
+        <!-- ========================================== -->
+        <div id="admin-tab-classes" class="hidden space-y-6">
+          <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-extrabold text-sigapei-black font-heading">Gestion des Classes & Jauges de Capacité</h2>
+              <p class="text-xs text-slate-500">Calcul en temps réel de la disponibilité de place pour empêcher les sur-admissions.</p>
+            </div>
+            <button onclick="openModalCreateClasse()" class="px-4 py-2 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="plus" class="w-4 h-4 text-sigapei-gold"></i>
+              <span>Ajouter une classe</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="admin-classes-grid">
+            <!-- Cartes de classes générées en JS -->
+          </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- SOUS-ONGLET 4 : APPRENANTS & MUTATIONS SANS DUP -->
+        <!-- ============================================== -->
+        <div id="admin-tab-apprenants" class="hidden space-y-6">
+          <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-extrabold text-sigapei-black font-heading">Dossiers Apprenants & Mutations Internes</h2>
+              <p class="text-xs text-slate-500">Transferts de classe sans duplication d'élève, avec historisation complète et détection de changement de programme.</p>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+                    <th class="py-3.5 px-4">Matricule</th>
+                    <th class="py-3.5 px-4">Nom & Prénom</th>
+                    <th class="py-3.5 px-4">Classe Actuelle</th>
+                    <th class="py-3.5 px-4">Programme</th>
+                    <th class="py-3.5 px-4">Compte Utilisateur</th>
+                    <th class="py-3.5 px-4">Historique Mutations</th>
+                    <th class="py-3.5 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="table-apprenants-body" class="divide-y divide-slate-100 font-medium">
+                  <!-- Lignes générées en JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SOUS-ONGLET 5 : EMPLOIS DU TEMPS           -->
+        <!-- ========================================== -->
+        <div id="admin-tab-emplois" class="hidden space-y-6">
+          <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-extrabold text-sigapei-black font-heading">Gestion des Emplois du Temps</h2>
+              <p class="text-xs text-slate-500">Créneaux horaires par classe, matière et enseignant.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-600">Classe :</span>
+              <select id="select-edt-classe" onchange="renderEmploiDuTemps()" class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 bg-white">
+                <option value="6A">6ème A (Programme Béninois)</option>
+                <option value="6B">6ème B (Programme Français)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 overflow-x-auto">
+            <div class="min-w-[650px] grid grid-cols-6 gap-3 text-center" id="grid-emploi-temps">
+              <!-- Planning généré en JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- ESPACE 3 : PORTAIL PARENT & ÉLÈVE                                       -->
+    <!-- ======================================================================= -->
+    <section id="space-parent" class="hidden flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50 fade-in">
+      <div class="max-w-5xl mx-auto space-y-6">
+
+        <!-- Carte Profil Apprenant & Statut de Compte -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-slate-100">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+            <div class="flex items-center space-x-4">
+              <div class="w-16 h-16 rounded-2xl bg-sigapei-green text-sigapei-cream flex items-center justify-center font-extrabold text-xl shadow-md border-2 border-sigapei-gold">
+                KJ
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-2xl font-extrabold text-sigapei-black font-heading">KOFFI Jean-Luc</h2>
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-sigapei-green border border-emerald-200">INSCRIT ACTIF</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Matricule : <strong class="text-slate-800">MAT-2026-6A-0012</strong> • Né le 14/05/2012</p>
+                <p class="text-xs text-slate-500">Classe actuelle : <strong class="text-sigapei-green">6ème A</strong> (Cycle Secondaire)</p>
+              </div>
+            </div>
+
+            <!-- Statut du compte selon règle Béninois/Français -->
+            <div class="bg-sigapei-cream/60 border border-sigapei-gold/40 rounded-xl p-3 text-right max-w-xs">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Règle Programme Pédagogique</span>
+              <p class="text-xs font-extrabold text-sigapei-green mt-0.5">Programme Béninois</p>
+              <p class="text-[11px] text-slate-600 mt-1">Aucun compte élève propre (téléphone interdit). Pilotage 100 % sous le compte du parent (Marc Koffi).</p>
+            </div>
+          </div>
+
+          <!-- Onglets de l'espace parent -->
+          <div class="flex gap-2 pt-6 border-b border-slate-100">
+            <button onclick="switchParentSubTab('notes')" id="btn-parent-notes" class="px-4 py-2 font-bold text-xs rounded-xl bg-sigapei-green text-white shadow-sm transition">Emploi du Temps</button>
+            <button onclick="switchParentSubTab('finances')" id="btn-parent-finances" class="px-4 py-2 font-bold text-xs rounded-xl text-slate-600 hover:text-slate-900 transition">Situation Frais de Scolarité (Lecture Seule)</button>
+            <button onclick="switchParentSubTab('historique')" id="btn-parent-historique" class="px-4 py-2 font-bold text-xs rounded-xl text-slate-600 hover:text-slate-900 transition">Historique Scolaire</button>
+          </div>
+
+          <!-- SOUS-ONGLET 1 : PLANNING HEBDO -->
+          <div id="parent-subview-notes" class="pt-6 space-y-4">
+            <h3 class="text-sm font-bold text-sigapei-black">Emploi du temps de la classe (6ème A)</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3" id="parent-edt-view">
+              <!-- Planning parent généré en JS -->
+            </div>
+          </div>
+
+          <!-- SOUS-ONGLET 2 : FRAIS DE SCOLARITÉ (LECTURE SEULE PURE) -->
+          <div id="parent-subview-finances" class="hidden pt-6 space-y-6">
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between text-xs text-amber-900">
+              <div class="flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-sigapei-gold shrink-0"></i>
+                <span>Cette vue est en <strong>lecture seule pure</strong> par jointure directe sur le microservice Finances. Aucune écriture n'est possible depuis la scolarité.</span>
+              </div>
+              <span class="font-extrabold px-2 py-0.5 rounded bg-amber-200 text-amber-950 text-[10px]">LECTURE SEULE</span>
+            </div>
+
+            <!-- Synthèse financière (Exemple de la charte page 7) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <span class="text-xs text-slate-500 font-bold uppercase">Total Annuel Dû</span>
+                <p class="text-2xl font-extrabold text-sigapei-black mt-1 font-heading">180 000 FCFA</p>
+              </div>
+              <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+                <span class="text-xs text-sigapei-green font-bold uppercase">Total Réglé</span>
+                <p class="text-2xl font-extrabold text-sigapei-green mt-1 font-heading">120 000 FCFA</p>
+              </div>
+              <div class="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                <span class="text-xs text-amber-800 font-bold uppercase">Solde Restant</span>
+                <p class="text-2xl font-extrabold text-amber-900 mt-1 font-heading">60 000 FCFA</p>
+              </div>
+            </div>
+
+            <!-- Liste des échéances -->
+            <div class="border border-slate-200 rounded-xl overflow-hidden">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
+                  <tr>
+                    <th class="p-3">Tranche</th>
+                    <th class="p-3">Montant</th>
+                    <th class="p-3">Échéance</th>
+                    <th class="p-3">Statut Facture</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr>
+                    <td class="p-3 font-semibold">1ère Tranche (Rentrée)</td>
+                    <td class="p-3 font-bold">60 000 FCFA</td>
+                    <td class="p-3 text-slate-500">15 Septembre 2026</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-sigapei-green">PAYÉE</span></td>
+                  </tr>
+                  <tr>
+                    <td class="p-3 font-semibold">2ème Tranche</td>
+                    <td class="p-3 font-bold">60 000 FCFA</td>
+                    <td class="p-3 text-slate-500">15 Novembre 2026</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-sigapei-green">PAYÉE</span></td>
+                  </tr>
+                  <tr>
+                    <td class="p-3 font-semibold">3ème Tranche (Solde)</td>
+                    <td class="p-3 font-bold text-amber-900">60 000 FCFA</td>
+                    <td class="p-3 text-slate-500">15 Février 2027</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-800">EN ATTENTE</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SOUS-ONGLET 3 : HISTORIQUE DES MUTATIONS -->
+          <div id="parent-subview-historique" class="hidden pt-6 space-y-4">
+            <h3 class="text-sm font-bold text-sigapei-black">Traçabilité du parcours scolaire de l'élève</h3>
+            <div class="border-l-2 border-sigapei-green pl-4 ml-2 space-y-4 text-xs">
+              <div class="relative">
+                <span class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-sigapei-green border-2 border-white"></span>
+                <span class="text-[10px] font-bold text-sigapei-gold">01 Septembre 2026</span>
+                <p class="font-bold text-sigapei-black">Admission validée en 6ème A (Programme Béninois)</p>
+                <p class="text-slate-500">Dossier validé suite au test d'admission d'entrée en 6e (Note : 16.5/20).</p>
+              </div>
+              <div class="relative">
+                <span class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-300 border-2 border-white"></span>
+                <span class="text-[10px] font-bold text-slate-400">Année 2025-2026</span>
+                <p class="font-bold text-slate-700">CM2 à l'École Primaire Saint-Joseph</p>
+                <p class="text-slate-500">Obtention du CEP avec mention Bien.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL : REJET DE CANDIDATURE AVEC MOTIF OBLIGATOIRE                       -->
+  <!-- ========================================================================= -->
+  <div id="modal-rejet" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-extrabold text-red-600 flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i> Rejeter la candidature
+        </h3>
+        <button onclick="closeModalRejet()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <p class="text-xs text-slate-600">
+        Conformément à la règle de la plateforme, <strong>tout rejet exige un motif explicatif obligatoire</strong> (minimum 5 caractères) qui sera consigné et consultable par le candidat/parent.
+      </p>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Motif de refus <span class="text-red-500">*</span></label>
+        <textarea id="modal-rejet-motif" rows="3" placeholder="Ex : Moyenne au test d'admission insuffisante (seuil minimal fixé à 12/20)..." class="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModalRejet()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button onclick="confirmRejetCandidature()" class="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 shadow-sm">Confirmer le rejet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL : TRANSFERT D'APPRENANT SANS DUPLICATION                             -->
+  <!-- ========================================================================= -->
+  <div id="modal-transfert" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-extrabold text-sigapei-green flex items-center gap-2">
+          <i data-lucide="arrow-left-right" class="w-5 h-5 text-sigapei-gold"></i> Mutation / Transfert Interne de Classe
+        </h3>
+        <button onclick="closeModalTransfert()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div class="bg-slate-50 p-3 rounded-xl text-xs space-y-1">
+        <p><strong>Élève :</strong> <span id="trans-eleve-nom">—</span></p>
+        <p><strong>Classe actuelle :</strong> <span id="trans-classe-actuelle">—</span></p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nouvelle classe de destination <span class="text-red-500">*</span></label>
+        <select id="trans-nouvelle-classe" onchange="checkChangementProgramme()" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-sigapei-green">
+          <option value="6B" data-prog="francais">6ème B (Programme Français — 2 places dispo)</option>
+          <option value="6C" data-prog="beninois">6ème C (Programme Béninois — 6 places dispo)</option>
+        </select>
+      </div>
+
+      <!-- Alerte de changement de programme -->
+      <div id="alerte-changement-programme" class="bg-amber-50 border border-sigapei-gold rounded-xl p-3 text-xs text-amber-950 hidden">
+        <strong class="text-sigapei-green">Alerte Changement de Programme détectée :</strong>
+        Transfert d'un programme Béninois vers un programme Français. Le système signale automatiquement à <em>api-identite</em> la création du compte élève autonome requis pour le secondaire.
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Motif de la mutation</label>
+        <input type="text" id="trans-motif" placeholder="Ex : Demande écrite de la famille pour réorientation en section bilingue" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl">
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModalTransfert()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button onclick="confirmTransfert()" class="px-5 py-2 rounded-xl bg-sigapei-green text-white text-xs font-bold hover:bg-sigapei-green-dark shadow-sm">Valider la mutation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL : CRÉER UNE NOUVELLE CLASSE                                         -->
+  <!-- ========================================================================= -->
+  <div id="modal-classe" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-extrabold text-sigapei-green flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-5 h-5 text-sigapei-gold"></i> Créer une nouvelle classe
+        </h3>
+        <button onclick="closeModalCreateClasse()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de la classe <span class="text-red-500">*</span></label>
+          <input type="text" id="new-classe-nom" placeholder="Ex : 5ème A" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cycle <span class="text-red-500">*</span></label>
+            <select id="new-classe-cycle" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-white">
+              <option value="primaire">Primaire</option>
+              <option value="secondaire" selected>Secondaire</option>
+              <option value="universitaire">Universitaire</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Programme <span class="text-red-500">*</span></label>
+            <select id="new-classe-programme" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-white">
+              <option value="beninois" selected>Béninois</option>
+              <option value="francais">Français</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Capacité Maximale d'Accueil <span class="text-red-500">*</span></label>
+          <input type="number" id="new-classe-capacite" value="45" min="1" max="100" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl">
+          <span class="text-[10px] text-slate-500">Contrôle bloquant : toute inscription sera refusée une fois ce seuil atteint.</span>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModalCreateClasse()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button onclick="saveNewClasse()" class="px-5 py-2 rounded-xl bg-sigapei-green text-white text-xs font-bold hover:bg-sigapei-green-dark shadow-sm">Créer la classe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TOAST DE NOTIFICATION FLOTTANT                                            -->
+  <!-- ========================================================================= -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toast-box" class="bg-sigapei-green text-white px-5 py-3 rounded-2xl shadow-xl border border-white/20 flex items-center space-x-3 text-xs font-bold">
+      <i id="toast-icon" data-lucide="check-circle" class="w-5 h-5 text-sigapei-gold"></i>
+      <span id="toast-message">Opération réussie</span>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- LOGIQUE APPLICATIVE JAVASCRIPT ULTRA-COMPLÈTE                             -->
+  <!-- ========================================================================= -->
+  <script>
+    // État global des données simulées & synchronisées avec api-inscription et api-scolarite
+    let classesData = [
+      { id: 1, uuid: 'c1-6a', nom: '6ème A', cycle: 'secondaire', niveau: '6e', programme: 'beninois', capacite: 45, inscrits: 40 },
+      { id: 2, uuid: 'c2-6b', nom: '6ème B', cycle: 'secondaire', niveau: '6e', programme: 'francais', capacite: 35, inscrits: 33 },
+      { id: 3, uuid: 'c3-cm2a', nom: 'CM2 A', cycle: 'primaire', niveau: 'CM2', programme: 'beninois', capacite: 30, inscrits: 30 }, // Classe complète !
+      { id: 4, uuid: 'c4-5a', nom: '5ème A', cycle: 'secondaire', niveau: '5e', programme: 'beninois', capacite: 45, inscrits: 41 },
+    ];
+
+    let candidaturesData = [
+      {
+        id: 1,
+        uuid: 'f7a8b9c0-d1e2-3456-fghi-j78901234567',
+        nom: 'Koffi',
+        prenom: 'Jean-Luc',
+        date_naissance: '2012-05-14',
+        sexe: 'M',
+        classe_id: 1,
+        classe_nom: '6ème A',
+        programme: 'beninois',
+        parent_nom: 'Koffi Marc',
+        parent_tel: '+229 97 00 00 02',
+        pieces: 2,
+        test_note: 16.5,
+        statut: 'soumise', // 'soumise', 'validee', 'rejetee'
+        date_soumission: '2026-09-25 10:15'
+      },
+      {
+        id: 2,
+        uuid: 'e4d3c2b1-a9f8-7654-lkji-h98765432109',
+        nom: 'Bio Guera',
+        prenom: 'Aïcha',
+        date_naissance: '2013-08-22',
+        sexe: 'F',
+        classe_id: 2,
+        classe_nom: '6ème B',
+        programme: 'francais',
+        parent_nom: 'Bio Guera Sabi',
+        parent_tel: '+229 96 11 22 33',
+        pieces: 2,
+        test_note: 14.0,
+        statut: 'soumise',
+        date_soumission: '2026-09-26 14:30'
+      },
+      {
+        id: 3,
+        uuid: 'd3c2b1a0-9876-5432-10fe-dcba98765432',
+        nom: 'Mensah',
+        prenom: 'Dovon',
+        date_naissance: '2012-01-10',
+        sexe: 'M',
+        classe_id: 3, // CM2 A (complète)
+        classe_nom: 'CM2 A',
+        programme: 'beninois',
+        parent_nom: 'Mensah Paul',
+        parent_tel: '+229 95 44 55 66',
+        pieces: 1,
+        test_note: 11.5,
+        statut: 'soumise',
+        date_soumission: '2026-09-27 08:20'
+      }
+    ];
+
+    let apprenantsData = [
+      {
+        id: 1,
+        uuid: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
+        matricule: 'MAT-2026-6A-0012',
+        nom: 'Koffi',
+        prenom: 'Jean-Luc',
+        classe_id: 1,
+        classe_nom: '6ème A',
+        programme: 'beninois',
+        has_account: false, // Programme Béninois = pas de compte élève
+        mutations_count: 0
+      },
+      {
+        id: 2,
+        uuid: 'a3b4c5d6-e7f8-9012-cdef-123456789012',
+        matricule: 'MAT-2026-6B-0005',
+        nom: 'Dupont',
+        prenom: 'Camille',
+        classe_id: 2,
+        classe_nom: '6ème B',
+        programme: 'francais',
+        has_account: true, // Programme Français secondaire = compte actif
+        mutations_count: 1
+      }
+    ];
+
+    let currentCandidatureTarget = null;
+    let currentApprenantTarget = null;
+    let selectedClasseId = 1;
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      renderCandidatureClassesSelector();
+      renderAdminClasses();
+      renderCandidaturesTable();
+      renderApprenantsTable();
+      renderEmploiDuTemps();
+      renderParentEmploiDuTemps();
+      initChart();
+    });
+
+    // Bascule entre les 3 grands espaces de la plateforme
+    function switchSpace(space) {
+      document.getElementById('space-candidat').classList.add('hidden');
+      document.getElementById('space-admin').classList.add('hidden');
+      document.getElementById('space-parent').classList.add('hidden');
+
+      // Styles boutons du header
+      ['candidat', 'admin', 'parent'].forEach(s => {
+        const btn = document.getElementById(`btn-nav-${s}`);
+        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 text-sigapei-cream/80 hover:text-white hover:bg-white/10";
+      });
+
+      const activeBtn = document.getElementById(`btn-nav-${space}`);
+      activeBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center space-x-1.5 bg-sigapei-gold text-sigapei-black shadow-sm font-bold";
+
+      document.getElementById(`space-${space}`).classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    // Bascule des onglets de l'espace Candidat
+    function switchCandidatTab(tab) {
+      ['form', 'suivi', 'reinscription'].forEach(t => {
+        document.getElementById(`candidat-view-${t}`).classList.add('hidden');
+        document.getElementById(`tab-btn-${t}`).className = "px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+      });
+
+      document.getElementById(`candidat-view-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-sigapei-green text-white shadow-sm transition";
+      lucide.createIcons();
+    }
+
+    // Gestion du stepper du formulaire
+    let currentStep = 1;
+    function goToStep(step) {
+      if (step === 2) {
+        const nom = document.getElementById('cad-nom').value.trim();
+        const prenom = document.getElementById('cad-prenom').value.trim();
+        if (!nom || !prenom) {
+          showToast('Veuillez renseigner le nom et prénom du candidat', 'warning');
+          return;
+        }
+      }
+
+      if (step === 4) {
+        document.getElementById('summary-nom').innerText = `${document.getElementById('cad-nom').value} ${document.getElementById('cad-prenom').value}`;
+        const c = classesData.find(x => x.id === selectedClasseId);
+        document.getElementById('summary-classe').innerText = c ? `${c.nom} (${c.programme.toUpperCase()})` : 'Non sélectionnée';
+        document.getElementById('summary-parent').innerText = `${document.getElementById('cad-parent-nom').value} (${document.getElementById('cad-parent-tel').value})`;
+      }
+
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`step-content-${i}`).classList.add('hidden');
+        const dot = document.getElementById(`step-dot-${i}`);
+        if (i < step) {
+          dot.className = "w-10 h-10 rounded-full bg-sigapei-green text-white font-bold text-sm flex items-center justify-center border-4 border-white shadow-sm transition";
+          dot.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i>`;
+        } else if (i === step) {
+          dot.className = "w-10 h-10 rounded-full bg-sigapei-gold text-sigapei-black font-extrabold text-sm flex items-center justify-center border-4 border-white shadow-sm transition";
+          dot.innerText = i;
+        } else {
+          dot.className = "w-10 h-10 rounded-full bg-slate-200 text-slate-600 font-bold text-sm flex items-center justify-center border-4 border-white shadow-sm transition";
+          dot.innerText = i;
+        }
+      }
+
+      document.getElementById(`step-content-${step}`).classList.remove('hidden');
+      document.getElementById('step-progress-bar').style.width = `${step * 25}%`;
+      currentStep = step;
+      lucide.createIcons();
+    }
+
+    function renderCandidatureClassesSelector() {
+      const container = document.getElementById('candidature-classes-selector');
+      container.innerHTML = classesData.map(c => {
+        const dispo = Math.max(0, c.capacite - c.inscrits);
+        const isFull = dispo <= 0;
+        const isSelected = c.id === selectedClasseId;
+
+        return `
+          <div onclick="${isFull ? '' : `selectClasseForCandidature(${c.id})`}" 
+               class="p-4 rounded-xl border-2 transition cursor-pointer flex flex-col justify-between ${
+                 isFull ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed' :
+                 isSelected ? 'border-sigapei-green bg-emerald-50/40 shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white'
+               }">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-xs font-extrabold text-sigapei-black">${c.nom}</span>
+                <p class="text-[11px] text-slate-500 capitalize">Cycle ${c.cycle} • Niveau ${c.niveau}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                c.programme === 'beninois' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-blue-100 text-blue-900 border border-blue-200'
+              }">Prog. ${c.programme.toUpperCase()}</span>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-500 font-medium">Places restantes :</span>
+              <span class="font-extrabold ${isFull ? 'text-red-600' : 'text-sigapei-green'}">
+                ${isFull ? 'COMPLÈTE (0)' : `${dispo} place${dispo > 1 ? 's' : ''}`}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectClasseForCandidature(id) {
+      selectedClasseId = id;
+      renderCandidatureClassesSelector();
+    }
+
+    function handleFileSelect(input, labelId) {
+      if (input.files && input.files[0]) {
+        document.getElementById(labelId).innerText = input.files[0].name.substring(0, 15) + '...';
+        showToast('Fichier validé pour téléversement S3', 'success');
+      }
+    }
+
+    function submitCandidature() {
+      const nom = document.getElementById('cad-nom').value.trim();
+      const prenom = document.getElementById('cad-prenom').value.trim();
+      const targetClasse = classesData.find(x => x.id === selectedClasseId);
+
+      // Simulation vérification bloquante de capacité
+      if (targetClasse.inscrits >= targetClasse.capacite) {
+        showToast(`Erreur : la classe ${targetClasse.nom} a atteint sa capacité maximale !`, 'error');
+        return;
+      }
+
+      const newCand = {
+        id: candidaturesData.length + 1,
+        uuid: 'cand-' + Math.random().toString(36).substring(2, 10),
+        nom: nom,
+        prenom: prenom,
+        date_naissance: document.getElementById('cad-date-naissance').value || '2012-05-14',
+        sexe: document.getElementById('cad-sexe').value,
+        classe_id: targetClasse.id,
+        classe_nom: targetClasse.nom,
+        programme: targetClasse.programme,
+        parent_nom: document.getElementById('cad-parent-nom').value || 'Parent Référent',
+        parent_tel: document.getElementById('cad-parent-tel').value || '+22997000000',
+        pieces: 2,
+        test_note: null,
+        statut: 'soumise',
+        date_soumission: 'Aujourd\'hui'
+      };
+
+      candidaturesData.unshift(newCand);
+      renderCandidaturesTable();
+      updateBadges();
+
+      showToast('Candidature déposée avec succès ! Référence : ' + newCand.uuid, 'success');
+      
+      // Basculer vers suivi avec la référence
+      switchCandidatTab('suivi');
+      document.getElementById('input-search-suivi').value = newCand.uuid;
+      rechercherDossier();
+    }
+
+    function rechercherDossier() {
+      const q = document.getElementById('input-search-suivi').value.trim().toLowerCase();
+      const resultDiv = document.getElementById('resultat-suivi');
+      
+      const found = candidaturesData.find(c => c.uuid.toLowerCase().includes(q) || c.nom.toLowerCase().includes(q));
+
+      if (!found) {
+        resultDiv.innerHTML = `
+          <div class="p-4 rounded-xl bg-slate-100 text-slate-600 text-xs text-center">
+            Aucun dossier trouvé pour cette référence. Vérifiez la saisie de votre UUID.
+          </div>
+        `;
+        return;
+      }
+
+      resultDiv.innerHTML = `
+        <div class="p-5 rounded-2xl border ${
+          found.statut === 'validee' ? 'bg-emerald-50/50 border-emerald-200' :
+          found.statut === 'rejetee' ? 'bg-red-50/50 border-red-200' : 'bg-amber-50/50 border-amber-200'
+        } space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-extrabold text-sigapei-black">${found.nom} ${found.prenom}</span>
+              <p class="text-[11px] text-slate-500">Dossier n° ${found.uuid}</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+              found.statut === 'validee' ? 'bg-emerald-200 text-sigapei-green' :
+              found.statut === 'rejetee' ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-900'
+            }">${found.statut}</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-2 border-t border-slate-200/60">
+            <div><span class="text-slate-400">Classe :</span> <strong>${found.classe_nom}</strong></div>
+            <div><span class="text-slate-400">Programme :</span> <strong>${found.programme.toUpperCase()}</strong></div>
+            <div><span class="text-slate-400">Date :</span> <strong>${found.date_soumission}</strong></div>
+          </div>
+
+          ${found.statut === 'rejetee' ? `
+            <div class="bg-white p-3 rounded-xl border border-red-200 text-xs text-red-700">
+              <strong>Motif du refus consigné :</strong> ${found.motif_rejet || 'Dossier incomplet ou non conforme.'}
+            </div>
+          ` : ''}
+
+          ${found.statut === 'validee' ? `
+            <div class="bg-white p-3 rounded-xl border border-emerald-200 text-xs text-sigapei-green">
+              <strong>Félicitations !</strong> Votre candidature a été validée. L'élève est inscrit en ${found.classe_nom}. Vous pouvez accéder à l'espace parent.
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function validerReinscription() {
+      const mat = document.getElementById('reinc-matricule').value.trim();
+      if (!mat) {
+        showToast('Veuillez renseigner le matricule de l\'élève', 'warning');
+        return;
+      }
+      showToast(`Réinscription validée sans duplication de dossier pour le matricule ${mat}`, 'success');
+      document.getElementById('reinc-matricule').value = '';
+    }
+
+    // ==========================================
+    // LOGIQUE DE L'ESPACE ADMINISTRATION
+    // ==========================================
+    function switchAdminTab(tab) {
+      ['kpis', 'admissions', 'classes', 'apprenants', 'emplois'].forEach(t => {
+        document.getElementById(`admin-tab-${t}`).classList.add('hidden');
+        const menuBtn = document.getElementById(`admin-menu-${t}`);
+        if (menuBtn) {
+          menuBtn.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition text-sigapei-cream/80 hover:text-white hover:bg-white/10";
+        }
+      });
+
+      document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`admin-menu-${tab}`);
+      if (activeBtn) {
+        activeBtn.className = "w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition bg-sigapei-gold text-sigapei-black font-bold shadow-sm";
+      }
+      lucide.createIcons();
+    }
+
+    function renderCandidaturesTable() {
+      const filter = document.getElementById('filter-candidatures-status')?.value || 'tous';
+      const tbody = document.getElementById('table-candidatures-body');
+      
+      const filtered = candidaturesData.filter(c => filter === 'tous' || c.statut === filter);
+
+      tbody.innerHTML = filtered.map(c => `
+        <tr class="hover:bg-slate-50/80 transition">
+          <td class="py-3 px-4">
+            <div class="font-bold text-sigapei-black">${c.nom} ${c.prenom}</div>
+            <div class="text-[10px] text-slate-400 font-mono">${c.uuid.substring(0, 16)}...</div>
+          </td>
+          <td class="py-3 px-4 font-semibold text-slate-700">${c.classe_nom}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+              c.programme === 'beninois' ? 'bg-amber-50 text-amber-900 border border-amber-200' : 'bg-blue-50 text-blue-900 border border-blue-200'
+            }">${c.programme.toUpperCase()}</span>
+          </td>
+          <td class="py-3 px-4 text-slate-600">
+            <div>${c.parent_nom}</div>
+            <div class="text-[10px] text-slate-400">${c.parent_tel}</div>
+          </td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+              <i data-lucide="file-check" class="w-3.5 h-3.5 text-sigapei-green"></i> ${c.pieces} pièces S3
+            </span>
+          </td>
+          <td class="py-3 px-4">
+            ${c.test_note !== null ? `
+              <span class="font-bold ${c.test_note >= 12 ? 'text-sigapei-green' : 'text-red-600'}">${c.test_note} / 20</span>
+            ` : `<button onclick="promptNoteTest(${c.id})" class="text-xs text-sigapei-gold hover:underline font-bold">+ Noter test</button>`}
+          </td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+              c.statut === 'validee' ? 'bg-emerald-100 text-sigapei-green' :
+              c.statut === 'rejetee' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-900'
+            }">${c.statut}</span>
+          </td>
+          <td class="py-3 px-4 text-right space-x-1">
+            ${c.statut === 'soumise' ? `
+              <button onclick="validerCandidatureAdmin(${c.id})" title="Valider & Générer Apprenant" class="p-1.5 rounded-lg bg-sigapei-green text-white hover:bg-sigapei-green-dark transition">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openModalRejet(${c.id})" title="Rejeter avec motif" class="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            ` : `<span class="text-slate-400 text-[10px]">Traité</span>`}
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function filterCandidaturesTable() {
+      renderCandidaturesTable();
+    }
+
+    function promptNoteTest(id) {
+      const note = prompt('Saisir la note du test d\'admission (/20) :');
+      if (note && !isNaN(note)) {
+        const c = candidaturesData.find(x => x.id === id);
+        c.test_note = parseFloat(note);
+        renderCandidaturesTable();
+        showToast('Résultat du test enregistré dans inscription.tests_admission', 'success');
+      }
+    }
+
+    function validerCandidatureAdmin(id) {
+      const c = candidaturesData.find(x => x.id === id);
+      const targetClasse = classesData.find(cl => cl.id === c.classe_id);
+
+      // Vérification bloquante de capacité
+      if (targetClasse.inscrits >= targetClasse.capacite) {
+        showToast(`ERREUR BLOQUANTE : La classe ${targetClasse.nom} a atteint sa capacité maximale (${targetClasse.capacite} places) !`, 'error');
+        return;
+      }
+
+      // Incrémenter classe
+      targetClasse.inscrits++;
+      c.statut = 'validee';
+
+      // Création automatique de l'apprenant dans scolarite.apprenants
+      const newApp = {
+        id: apprenantsData.length + 1,
+        uuid: 'app-' + Math.random().toString(36).substring(2, 10),
+        matricule: `MAT-2026-${targetClasse.niveau}-${Math.floor(1000 + Math.random() * 9000)}`,
+        nom: c.nom,
+        prenom: c.prenom,
+        classe_id: targetClasse.id,
+        classe_nom: targetClasse.nom,
+        programme: targetClasse.programme,
+        has_account: targetClasse.programme === 'francais', // Règle programme
+        mutations_count: 0
+      };
+
+      apprenantsData.unshift(newApp);
+      renderCandidaturesTable();
+      renderAdminClasses();
+      renderApprenantsTable();
+      updateBadges();
+
+      showToast(`Candidature validée ! Élève inscrit en ${targetClasse.nom}. Compte utilisateur élève : ${newApp.has_account ? 'CRÉÉ' : 'AUCUN (Programme Béninois)'}`, 'success');
+    }
+
+    function openModalRejet(id) {
+      currentCandidatureTarget = id;
+      document.getElementById('modal-rejet-motif').value = '';
+      document.getElementById('modal-rejet').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeModalRejet() {
+      document.getElementById('modal-rejet').classList.add('hidden');
+    }
+
+    function confirmRejetCandidature() {
+      const motif = document.getElementById('modal-rejet-motif').value.trim();
+      if (motif.length < 5) {
+        showToast('Le motif de rejet est obligatoire (min 5 caractères)', 'warning');
+        return;
+      }
+
+      const c = candidaturesData.find(x => x.id === currentCandidatureTarget);
+      c.statut = 'rejetee';
+      c.motif_rejet = motif;
+
+      closeModalRejet();
+      renderCandidaturesTable();
+      updateBadges();
+      showToast('Candidature rejetée et motif consigné avec succès', 'info');
+    }
+
+    function renderAdminClasses() {
+      const grid = document.getElementById('admin-classes-grid');
+      grid.innerHTML = classesData.map(c => {
+        const dispo = Math.max(0, c.capacite - c.inscrits);
+        const isFull = dispo <= 0;
+        const percent = Math.round((c.inscrits / c.capacite) * 100);
+
+        return `
+          <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between space-y-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-base font-extrabold text-sigapei-black font-heading">${c.nom}</span>
+                <p class="text-xs text-slate-500 capitalize">${c.cycle} • Niveau ${c.niveau}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                c.programme === 'beninois' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-blue-100 text-blue-900 border border-blue-200'
+              }">Prog. ${c.programme.toUpperCase()}</span>
+            </div>
+
+            <!-- Jauge de capacité -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-500 font-semibold">Effectif : <strong>${c.inscrits} / ${c.capacite}</strong></span>
+                <span class="font-extrabold ${isFull ? 'text-red-600' : 'text-sigapei-green'}">${percent}%</span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-300 ${isFull ? 'bg-red-500' : 'bg-sigapei-green'}" style="width: ${percent}%;"></div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-500">Places libres :</span>
+              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                isFull ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-sigapei-green'
+              }">
+                ${isFull ? 'COMPLÈTE' : `${dispo} disponible${dispo > 1 ? 's' : ''}`}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderApprenantsTable() {
+      const tbody = document.getElementById('table-apprenants-body');
+      tbody.innerHTML = apprenantsData.map(a => `
+        <tr class="hover:bg-slate-50/80 transition">
+          <td class="py-3 px-4 font-mono font-bold text-slate-800">${a.matricule}</td>
+          <td class="py-3 px-4 font-bold text-sigapei-black">${a.nom} ${a.prenom}</td>
+          <td class="py-3 px-4 font-semibold text-sigapei-green">${a.classe_nom}</td>
+          <td class="py-3 px-4">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+              a.programme === 'beninois' ? 'bg-amber-50 text-amber-900 border border-amber-200' : 'bg-blue-50 text-blue-900 border border-blue-200'
+            }">${a.programme.toUpperCase()}</span>
+          </td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+              a.has_account ? 'bg-emerald-100 text-sigapei-green' : 'bg-slate-100 text-slate-600'
+            }">
+              <i data-lucide="${a.has_account ? 'check' : 'shield-off'}" class="w-3 h-3"></i>
+              ${a.has_account ? 'ACTIF (Secondaire FR)' : 'AUCUN (Règle Bénin)'}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-slate-500 text-[11px]">
+            ${a.mutations_count} mutation${a.mutations_count > 1 ? 's' : ''} consignée${a.mutations_count > 1 ? 's' : ''}
+          </td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="openModalTransfert(${a.id})" class="px-3 py-1 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition flex items-center gap-1 ml-auto">
+              <i data-lucide="arrow-left-right" class="w-3.5 h-3.5 text-sigapei-gold"></i>
+              <span>Transférer</span>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function openModalTransfert(id) {
+      currentApprenantTarget = id;
+      const app = apprenantsData.find(x => x.id === id);
+      document.getElementById('trans-eleve-nom').innerText = `${app.nom} ${app.prenom} (${app.matricule})`;
+      document.getElementById('trans-classe-actuelle').innerText = `${app.classe_nom} (Programme ${app.programme.toUpperCase()})`;
+      checkChangementProgramme();
+      document.getElementById('modal-transfert').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeModalTransfert() {
+      document.getElementById('modal-transfert').classList.add('hidden');
+    }
+
+    function checkChangementProgramme() {
+      const select = document.getElementById('trans-nouvelle-classe');
+      const opt = select.options[select.selectedIndex];
+      const targetProg = opt.getAttribute('data-prog');
+
+      const app = apprenantsData.find(x => x.id === currentApprenantTarget);
+      const isSwitch = app && app.programme === 'beninois' && targetProg === 'francais';
+
+      const alertDiv = document.getElementById('alerte-changement-programme');
+      if (isSwitch) {
+        alertDiv.classList.remove('hidden');
+      } else {
+        alertDiv.classList.add('hidden');
+      }
+    }
+
+    function confirmTransfert() {
+      const select = document.getElementById('trans-nouvelle-classe');
+      const opt = select.options[select.selectedIndex];
+      const targetProg = opt.getAttribute('data-prog');
+
+      const app = apprenantsData.find(x => x.id === currentApprenantTarget);
+      const oldClasse = classesData.find(c => c.id === app.classe_id);
+      
+      // Trouver classe cible
+      const newClasse = classesData.find(c => c.programme === targetProg && c.id !== app.classe_id) || classesData[1];
+
+      if (newClasse.inscrits >= newClasse.capacite) {
+        showToast('Impossible : la classe de destination est complète !', 'error');
+        return;
+      }
+
+      // Mise à jour SANS DUPLICATION de la ligne apprenant
+      oldClasse.inscrits = Math.max(0, oldClasse.inscrits - 1);
+      newClasse.inscrits++;
+
+      app.classe_id = newClasse.id;
+      app.classe_nom = newClasse.nom;
+      app.programme = newClasse.programme;
+      app.mutations_count++;
+      if (newClasse.programme === 'francais') {
+        app.has_account = true;
+      }
+
+      closeModalTransfert();
+      renderAdminClasses();
+      renderApprenantsTable();
+
+      showToast(`Mutation enregistrée avec succès dans scolarite.historique_classes sans duplication du dossier !`, 'success');
+    }
+
+    function openModalCreateClasse() {
+      document.getElementById('modal-classe').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeModalCreateClasse() {
+      document.getElementById('modal-classe').classList.add('hidden');
+    }
+
+    function saveNewClasse() {
+      const nom = document.getElementById('new-classe-nom').value.trim();
+      if (!nom) {
+        showToast('Veuillez renseigner le nom de la classe', 'warning');
+        return;
+      }
+
+      const newC = {
+        id: classesData.length + 1,
+        uuid: 'c-' + Math.random().toString(36).substring(2, 8),
+        nom: nom,
+        cycle: document.getElementById('new-classe-cycle').value,
+        niveau: nom.split(' ')[0] || '6e',
+        programme: document.getElementById('new-classe-programme').value,
+        capacite: parseInt(document.getElementById('new-classe-capacite').value) || 45,
+        inscrits: 0
+      };
+
+      classesData.push(newC);
+      closeModalCreateClasse();
+      renderAdminClasses();
+      renderCandidatureClassesSelector();
+      showToast(`Classe ${nom} créée avec succès dans scolarite.classes`, 'success');
+    }
+
+    function renderEmploiDuTemps() {
+      const grid = document.getElementById('grid-emploi-temps');
+      const days = ['Heures', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+      const slots = [
+        { h: '08h - 10h', mat: 'Mathématiques', prof: 'M. Mensah', salle: 'B2' },
+        { h: '10h - 12h', mat: 'Français', prof: 'Mme Bio', salle: 'B2' },
+        { h: '15h - 17h', mat: 'SVT', prof: 'M. Dossou', salle: 'Labo 1' },
+      ];
+
+      grid.innerHTML = days.map(d => `<div class="p-2 font-bold text-xs bg-slate-100 rounded-lg text-slate-700">${d}</div>`).join('') +
+        slots.map(s => `
+          <div class="p-2 text-xs font-bold text-slate-500 bg-slate-50 rounded-lg flex items-center justify-center">${s.h}</div>
+          <div class="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-left text-[11px]">
+            <p class="font-bold text-sigapei-green">${s.mat}</p>
+            <p class="text-slate-500">${s.prof}</p>
+          </div>
+          <div class="p-2 bg-amber-50 border border-amber-200 rounded-lg text-left text-[11px]">
+            <p class="font-bold text-amber-900">Histoire-Géo</p>
+            <p class="text-slate-500">Mme Lawson</p>
+          </div>
+          <div class="p-2 bg-slate-50 rounded-lg text-slate-400 text-xs flex items-center justify-center">—</div>
+          <div class="p-2 bg-emerald-50 border border-emerald-200 rounded-lg text-left text-[11px]">
+            <p class="font-bold text-sigapei-green">${s.mat}</p>
+            <p class="text-slate-500">${s.prof}</p>
+          </div>
+          <div class="p-2 bg-blue-50 border border-blue-200 rounded-lg text-left text-[11px]">
+            <p class="font-bold text-blue-900">Anglais</p>
+            <p class="text-slate-500">M. Smith</p>
+          </div>
+        `).join('');
+    }
+
+    function renderParentEmploiDuTemps() {
+      const pGrid = document.getElementById('parent-edt-view');
+      const cours = [
+        { jour: 'Lundi', c: '08h-10h Maths • 10h-12h Français' },
+        { jour: 'Mardi', c: '08h-10h Histoire • 15h-17h SVT' },
+        { jour: 'Mercredi', c: '08h-12h Anglais & EPS' },
+        { jour: 'Jeudi', c: '08h-10h Maths • 10h-12h Français' },
+        { jour: 'Vendredi', c: '08h-10h Physique • 15h-17h Arts' },
+      ];
+
+      pGrid.innerHTML = cours.map(c => `
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+          <p class="font-bold text-sigapei-green">${c.jour}</p>
+          <p class="text-slate-600 mt-1 text-[11px]">${c.c}</p>
+        </div>
+      `).join('');
+    }
+
+    function switchParentSubTab(tab) {
+      ['notes', 'finances', 'historique'].forEach(t => {
+        document.getElementById(`parent-subview-${t}`).classList.add('hidden');
+        document.getElementById(`btn-parent-${t}`).className = "px-4 py-2 font-bold text-xs rounded-xl text-slate-600 hover:text-slate-900 transition";
+      });
+
+      document.getElementById(`parent-subview-${tab}`).classList.remove('hidden');
+      document.getElementById(`btn-parent-${tab}`).className = "px-4 py-2 font-bold text-xs rounded-xl bg-sigapei-green text-white shadow-sm transition";
+      lucide.createIcons();
+    }
+
+    function updateBadges() {
+      const pending = candidaturesData.filter(c => c.statut === 'soumise').length;
+      document.getElementById('badge-candidatures-count').innerText = pending;
+      document.getElementById('kpi-candidatures-count').innerText = pending;
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('chart-admissions').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8'],
+          datasets: [
+            {
+              label: 'Inscriptions Confirmées',
+              data: [120, 240, 480, 710, 890, 1050, 1180, 1248],
+              borderColor: '#006B3C', // Vert SIGAPEI
+              backgroundColor: 'rgba(0, 107, 60, 0.08)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.35,
+              pointBackgroundColor: '#006B3C'
+            },
+            {
+              label: 'Cible Capacité Maximale',
+              data: [1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400],
+              borderColor: '#E9AA20', // Or SIGAPEI
+              borderDash: [5, 5],
+              borderWidth: 2,
+              fill: false,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: { font: { family: 'Inter', size: 11 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: 'Inter', size: 11 } }
+            }
+          }
+        }
+      });
+    }
+
+    // Gestion des Toast notifications
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('toast');
+      const box = document.getElementById('toast-box');
+      const icon = document.getElementById('toast-icon');
+      const message = document.getElementById('toast-message');
+
+      message.innerText = msg;
+
+      if (type === 'error') {
+        box.className = "bg-red-700 text-white px-5 py-3 rounded-2xl shadow-xl border border-white/20 flex items-center space-x-3 text-xs font-bold";
+        icon.setAttribute('data-lucide', 'alert-circle');
+      } else if (type === 'warning') {
+        box.className = "bg-amber-600 text-white px-5 py-3 rounded-2xl shadow-xl border border-white/20 flex items-center space-x-3 text-xs font-bold";
+        icon.setAttribute('data-lucide', 'alert-triangle');
+      } else {
+        box.className = "bg-sigapei-green text-white px-5 py-3 rounded-2xl shadow-xl border border-white/20 flex items-center space-x-3 text-xs font-bold";
+        icon.setAttribute('data-lucide', 'check-circle');
+      }
+
+      lucide.createIcons();
+      toast.classList.remove('translate-y-20', 'opacity-0');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
