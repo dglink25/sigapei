@@ -135,13 +135,13 @@ export default function RegisterEtablissementPage({ onBack, onSuccess }) {
       <div className="hidden lg:flex w-[38%] bg-sigapei-sidebar flex-col justify-between p-12 relative overflow-hidden shrink-0">
         <div className="absolute top-0 right-0 w-72 h-72 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/3 pointer-events-none" />
 
-        <div className="relative z-10 flex items-center space-x-3">
+        <div className="relative z-10 flex items-center space-x-3.5">
           <img 
             src="/logo-sigapei.png" 
             alt="Logo SIGAPEI" 
-            className="w-11 h-11 object-contain drop-shadow-md" 
+            className="w-16 h-16 object-contain drop-shadow-xl" 
           />
-          <span className="text-sigapei-gold font-black text-xl">SIGAPEI</span>
+          <span className="text-sigapei-gold font-black text-2xl tracking-tight">SIGAPEI</span>
         </div>
 
         {/* Stepper vertical */}
