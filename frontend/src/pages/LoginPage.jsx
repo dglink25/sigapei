@@ -140,15 +140,15 @@ export default function LoginPage({ onLogin, onGoRegister }) {
 
         {/* Logo & Nom */}
         <div className="relative z-10">
-          <div className="flex items-center space-x-3.5 mb-2">
+          <div className="flex items-center space-x-4 mb-2">
             <img 
               src="/logo-sigapei.png" 
               alt="Logo SIGAPEI" 
-              className="w-14 h-14 object-contain drop-shadow-xl" 
+              className="w-20 h-20 object-contain drop-shadow-2xl" 
             />
             <div>
-              <span className="block text-sigapei-gold font-black text-2xl tracking-tight leading-none">SIGAPEI</span>
-              <span className="block text-sigapei-cream/70 text-xs font-medium tracking-widest uppercase mt-0.5">Plateforme Scolaire</span>
+              <span className="block text-sigapei-gold font-black text-3xl tracking-tight leading-none">SIGAPEI</span>
+              <span className="block text-sigapei-cream/70 text-xs font-semibold tracking-widest uppercase mt-1">Plateforme Scolaire</span>
             </div>
           </div>
         </div>
@@ -189,10 +189,17 @@ export default function LoginPage({ onLogin, onGoRegister }) {
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 overflow-y-auto">
         <div className="w-full max-w-md space-y-8">
 
-          {/* Titre */}
-          <div>
-            <h2 className="text-2xl font-black text-slate-900">Connexion</h2>
-            <p className="text-sm text-slate-500 mt-1">Sélectionnez votre rôle puis entrez vos identifiants.</p>
+          {/* Titre & Logo */}
+          <div className="flex items-center space-x-3.5">
+            <img 
+              src="/logo-sigapei.png" 
+              alt="Logo SIGAPEI" 
+              className="w-14 h-14 object-contain drop-shadow-md" 
+            />
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 font-heading">Connexion SIGAPEI</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Sélectionnez votre rôle puis validez vos accès.</p>
+            </div>
           </div>
 
           {/* Sélecteur de rôle */}
