@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-[#F8FAFC]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGAPEI — Système Intégré de Gestion Administrative et Pédagogique</title>
+  
+  <!-- Polices Officielles (Charte Graphique SIGAPEI - Page 6) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            // PALETTE OFFICIELLE SIGAPEI (Charte - Pages 5 & 12)
+            sigapei: {
+              green: '#006B3C',        // PRIMAIRE : Structure, navigation, titres, boutons d'action
+              'green-dark': '#004D2B', // Vert foncé pour bordures et fond profond
+              'green-light': '#00874C',
+              'green-soft': '#E6F4EC',
+              gold: '#E9AA20',         // ACCENT : Actions secondaires, focus, points clés, signalement
+              'gold-hover': '#D49514',
+              'gold-light': '#FEF7E8',
+              'gold-border': '#F5D388',
+              cream: '#FFF6DD',        // CONTRASTE : Logo, badges clairs, respiration
+              black: '#000000',        // IMPACT : Fond, contraste fort, titrage net
+              dark: '#0F172A',
+              canvas: '#F8FAFC',
+              'sidebar': '#004D2B',      // Sidebar : vert profond, distinct du header
+              'sidebar-deep': '#003320', // Pied de sidebar encore plus sombre
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            heading: ['Poppins', 'Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          boxShadow: {
+            'card': '0 4px 20px -2px rgba(0, 107, 60, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03)',
+            'card-hover': '0 12px 30px -4px rgba(0, 107, 60, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04)',
+            'modal': '0 25px 60px -15px rgba(0, 77, 43, 0.35)',
+            'glow-gold': '0 0 25px rgba(233, 170, 32, 0.45)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* RÈGLE D'OR DE LA MARQUE (Charte - Page 2 & 12) :
+       « Le vert domine. L'or signale. Le crème respire. Le noir cadre. » */
+    body {
+      font-family: 'Inter', sans-serif;
+      color: #0F172A;
+      background-color: #F8FAFC;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Scrollbar élégante */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+    .fade-enter {
+      animation: enterFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes enterFade {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden">
+
+  <!-- ========================================================================= -->
+  <!-- HEADER SUPÉRIEUR ÉLÉGANT & SÉLECTEUR D'ESPACES                             -->
+  <!-- ========================================================================= -->
+  <header class="bg-sigapei-green text-white border-b border-sigapei-green-dark shrink-0 z-40 shadow-md">
+    <div class="max-w-[1700px] mx-auto px-4 sm:px-6">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- LOGO OFFICIEL SIGAPEI CONFORME AUX PAGES 3, 4 ET 12 DE LA CHARTE -->
+        <div class="flex items-center space-x-5">
+          <div class="relative flex items-center cursor-pointer select-none group" onclick="switchMainSpace('admin')">
+            <!-- Bloc principal : Carré aux angles fortement arrondis en Vert #006B3C -->
+            <div class="w-12 h-12 rounded-[18px] bg-sigapei-green border-2 border-sigapei-cream/30 flex items-center justify-center shadow-lg relative group-hover:scale-105 transition-transform overflow-hidden">
+              <span class="text-xs font-black tracking-wider text-sigapei-cream font-heading">SIG</span>
+            </div>
+            <!-- Accent : Forme dorée inclinée #E9AA20 superposée en bas à droite -->
+            <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-sigapei-gold rounded-sm rotate-45 border-2 border-sigapei-green shadow-sm"></div>
+            <!-- Signature « SIGAPEI » en capitales crème très contrasté -->
+            <span class="ml-3 font-heading font-black text-xl tracking-wider text-sigapei-cream">SIGAPEI</span>
+          </div>
+          
+          <div class="hidden lg:flex items-center space-x-3 border-l border-white/20 pl-5">
+            <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-sigapei-gold border border-white/10">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-extrabold text-white">Complexe Scolaire Jean-Marie</span>
+                <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-sigapei-gold text-sigapei-black">TENANT #1</span>
+              </div>
+              <p class="text-[11px] text-sigapei-cream/80">Cotonou, Bénin • Année 2026-2027</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SÉLECTEUR D'ESPACES (PAS DE SITE VITRINE) -->
+        <div class="flex items-center bg-black/25 p-1 rounded-2xl border border-white/15">
+          <button id="btn-space-admin" onclick="switchMainSpace('admin')" 
+                  class="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-sigapei-gold text-sigapei-black shadow-md">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            <span>Administration & Scolarité</span>
+          </button>
+
+          <button id="btn-space-candidat" onclick="switchMainSpace('candidat')" 
+                  class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 text-sigapei-cream/80 hover:text-white hover:bg-white/10">
+            <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            <span>Admissions & Inscriptions</span>
+          </button>
+
+          <button id="btn-space-parent" onclick="switchMainSpace('parent')" 
+                  class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 text-sigapei-cream/80 hover:text-white hover:bg-white/10">
+            <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <span>Espace Parent & Élève</span>
+          </button>
+        </div>
+
+        <!-- Profil & Statut Microservices -->
+        <div class="flex items-center space-x-3">
+          <div class="hidden sm:flex items-center gap-2 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="font-medium text-sigapei-cream text-[11px]">Ports 4003 & 4004 Connectés</span>
+          </div>
+
+          <div class="flex items-center space-x-2.5 pl-2 border-l border-white/20">
+            <div class="w-9 h-9 rounded-xl bg-sigapei-cream text-sigapei-green font-black text-xs flex items-center justify-center shadow-md border border-sigapei-gold">
+              HK
+            </div>
+            <div class="hidden xl:block text-left text-xs leading-tight">
+              <p class="font-bold text-white">Harold MIKPONHOUE</p>
+              <p class="text-[10px] text-sigapei-gold font-medium">Chef de Scolarité</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- CORPS PRINCIPAL DE L'APPLICATION                                          -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- ======================================================================= -->
+    <!-- ESPACE A : ADMINISTRATION & SCOLARITÉ                                   -->
+    <!-- DA Page 8 du Brand Guidelines : Sidebar verte, items dorés, cartes      -->
+    <!-- ======================================================================= -->
+    <section id="space-view-admin" class="flex-1 flex overflow-hidden fade-enter">
+      
+      <!-- SIDEBAR ADMIN REPENSER : LARGE (W-72), AUCUN TEXTE QUI WRAPPE,           -->
+      <!-- ICÔNES SVG INLINE QUI NE DISPARAISSENT JAMAIS, COULEURS DE CHARTE PURE   -->
+      <aside class="w-72 bg-sigapei-sidebar text-white flex flex-col justify-between shrink-0 shadow-xl border-r border-sigapei-sidebar-deep hidden md:flex z-30">
+        <div class="p-6 space-y-6">
+          
+          <!-- TITRE DU MODULE SELON CHARTE PAGE 8 -->
+          <div class="pb-4 border-b border-sigapei-sidebar-deep flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-black uppercase tracking-widest text-sigapei-gold block">Direction Pédagogique</span>
+              <span class="text-sm font-extrabold text-sigapei-cream font-heading">Gestion Scolarité</span>
+            </div>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm animate-pulse"></span>
+          </div>
+
+          <!-- NAVIGATION DE LA SIDEBAR AVEC ICÔNES SVG ROBUSTES (NE DISPARAISSENT PAS) -->
+          <nav class="space-y-2 text-xs font-semibold" id="admin-sidebar-nav">
+            
+            <!-- Item 1 : Tableau de bord -->
+            <button onclick="switchAdminNav('dashboard')" id="nav-btn-dashboard" 
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition font-bold bg-sigapei-gold text-sigapei-black shadow-md">
+              <div class="flex items-center space-x-3">
+                <svg class="w-4 h-4 text-sigapei-black shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <span class="truncate">Tableau de bord</span>
+              </div>
+              <span class="w-2 h-2 rounded-full bg-sigapei-black"></span>
+            </button>
+
+            <!-- Item 2 : Instruction Candidatures -->
+            <button onclick="switchAdminNav('candidatures')" id="nav-btn-candidatures" 
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition text-sigapei-cream/90 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-3">
+                <svg class="w-4 h-4 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                <span class="truncate">Instruction Candidatures</span>
+              </div>
+              <span id="badge-nav-pending" class="px-2 py-0.5 rounded-full text-[10px] bg-sigapei-gold text-sigapei-black font-black">3</span>
+            </button>
+
+            <!-- Item 3 : Classes & Capacité -->
+            <button onclick="switchAdminNav('classes')" id="nav-btn-classes" 
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition text-sigapei-cream/90 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-3">
+                <svg class="w-4 h-4 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/></svg>
+                <span class="truncate">Classes & Capacité</span>
+              </div>
+              <span class="text-[10px] text-sigapei-cream/60">Jauges</span>
+            </button>
+
+            <!-- Item 4 : Dossiers & Mutations -->
+            <button onclick="switchAdminNav('apprenants')" id="nav-btn-apprenants" 
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition text-sigapei-cream/90 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-3">
+                <svg class="w-4 h-4 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span class="truncate">Dossiers & Mutations</span>
+              </div>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-sigapei-cream font-bold">Sans doublon</span>
+            </button>
+
+            <!-- Item 5 : Emplois du Temps -->
+            <button onclick="switchAdminNav('emplois')" id="nav-btn-emplois" 
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition text-sigapei-cream/90 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-3">
+                <svg class="w-4 h-4 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span class="truncate">Emplois du Temps</span>
+              </div>
+              <span class="text-[10px] text-sigapei-cream/60">Censeur</span>
+            </button>
+
+            <!-- Item 6 : Frais Scolaires (Lecture Seule) -->
+            <button onclick="switchAdminNav('finances')" id="nav-btn-finances" 
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl transition text-sigapei-cream/90 hover:text-white hover:bg-white/10">
+              <div class="flex items-center space-x-3">
+                <svg class="w-4 h-4 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span class="truncate">Frais de Scolarité</span>
+              </div>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-white/15 text-sigapei-gold font-bold">Lecture Seule</span>
+            </button>
+
+          </nav>
+        </div>
+
+        <!-- PIED DE SIDEBAR : INFRASTRUCTURE ET ACTEURS DU CAHIER DES CHARGES -->
+        <div class="p-4 bg-sigapei-sidebar-deep border-t border-white/10 space-y-3">
+          <div class="flex items-center justify-between text-[10px] font-black text-sigapei-gold uppercase tracking-wider">
+            <span>Rôles Cahier des Charges</span>
+            <span>Acteurs</span>
+          </div>
+          <!-- Sélecteur rapide des acteurs pour tester l'interface selon le cahier des charges -->
+          <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+            <span class="px-2 py-1 rounded bg-white/10 text-white font-medium">Secrétaire</span>
+            <span class="px-2 py-1 rounded bg-white/10 text-white font-medium">Administrateur</span>
+            <span class="px-2 py-1 rounded bg-white/10 text-white font-medium">Censeur</span>
+            <span class="px-2 py-1 rounded bg-white/10 text-white font-medium">Comptable</span>
+          </div>
+          <div class="pt-1 text-[10px] text-slate-300 border-t border-white/10 flex items-center justify-between">
+            <span>Base PostgreSQL Neon</span>
+            <span class="text-emerald-400 font-mono font-bold">Schéma Scolarité</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ZONE DE CONTENU ADMIN -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
+
+        <!-- =================================================================== -->
+        <!-- 1. VUE TABLEAU DE BORD (Conforme DA Page 8 de la charte)            -->
+        <!-- =================================================================== -->
+        <div id="admin-view-dashboard" class="space-y-6 fade-enter">
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-2xl sm:text-3xl font-black text-sigapei-black font-heading tracking-tight">Tableau de Bord Général</h1>
+              <p class="text-xs text-slate-500 mt-1">Supervision de l'ensemble des effectifs, admissions en cours et capacité des classes.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openModalCreateClasse()" class="px-4 py-2.5 rounded-xl bg-white border border-sigapei-green text-sigapei-green font-bold text-xs hover:bg-sigapei-green hover:text-white shadow-sm transition flex items-center gap-2">
+                <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>Ajouter une Classe</span>
+              </button>
+              <button onclick="switchAdminNav('candidatures')" class="px-4 py-2.5 rounded-xl bg-sigapei-gold text-sigapei-black font-black text-xs hover:bg-sigapei-gold-hover shadow-sm transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                <span>Instruire Candidatures (<span id="dash-badge-pending">3</span>)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 CARTES KPI (Reprise exacte des dimensions et du style de la Page 8) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between hover:shadow-card-hover transition">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Apprenants</span>
+              <div class="flex items-baseline justify-between mt-3">
+                <span class="text-3xl font-black text-sigapei-black font-heading">1 482</span>
+                <span class="text-xs font-bold text-sigapei-green bg-[#EAF5EF] border border-[#BDE3CE] px-2 py-0.5 rounded-md flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg> +5.4%
+                </span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-1">Dossiers uniques actifs</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between hover:shadow-card-hover transition">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Candidatures en attente</span>
+              <div class="flex items-baseline justify-between mt-3">
+                <span class="text-3xl font-black text-sigapei-gold font-heading" id="dash-kpi-pending">3</span>
+                <span class="text-xs font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md">À instruire</span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-1">Pièces et tests à valider</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between hover:shadow-card-hover transition">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Taux de Remplissage</span>
+              <div class="flex items-baseline justify-between mt-3">
+                <span class="text-3xl font-black text-sigapei-green font-heading">92.4 %</span>
+                <span class="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md" id="dash-kpi-full-classes">2 Complètes</span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-1">Contrôle bloquant actif</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between hover:shadow-card-hover transition">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Situation Frais Scolaires</span>
+              <div class="flex items-baseline justify-between mt-3">
+                <span class="text-2xl font-black text-sigapei-black font-heading">184,5 M <span class="text-xs text-sigapei-green font-sans font-bold">FCFA</span></span>
+                <span class="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded">Lecture Seule</span>
+              </div>
+              <span class="text-[11px] text-slate-400 mt-1">Jointure directe sur Finances</span>
+            </div>
+
+          </div>
+
+          <!-- GRAPHIQUE OFFICIEL CONFORME À LA PAGE 8 DU BRAND GUIDELINES -->
+          <div class="bg-white p-6 rounded-2xl shadow-card border border-slate-100 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+              <div>
+                <h3 class="text-base font-black text-sigapei-black font-heading">Évolution des Admissions & Seuil de Capacité</h3>
+                <p class="text-xs text-slate-500">Vert = Inscriptions effectives confirmées • Or = Seuil de capacité maximale autorisée (Page 8 de la charte).</p>
+              </div>
+              <div class="flex items-center gap-4 text-xs font-semibold">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sigapei-green"></span> Donnée principale (Inscrits)</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sigapei-gold"></span> Point d'attention (Plafond 1600)</span>
+              </div>
+            </div>
+            <div class="h-64">
+              <canvas id="chart-admissions-official"></canvas>
+            </div>
+          </div>
+
+          <!-- RAPPELS DES RÈGLES MAJEURES DU CAHIER DES CHARGES -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-sigapei-cream/70 border border-sigapei-gold/50 rounded-2xl p-5 flex items-start gap-4 shadow-sm">
+              <div class="w-10 h-10 rounded-xl bg-sigapei-gold text-sigapei-black flex items-center justify-center shrink-0 font-bold shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+              </div>
+              <div>
+                <h4 class="text-xs font-black text-sigapei-black uppercase tracking-wider">Règle Majeure : Programme Béninois vs Français</h4>
+                <p class="text-xs text-slate-800 mt-1 leading-relaxed">
+                  Dans le <strong>Programme Béninois</strong>, les élèves n'ont <strong>aucun compte de connexion</strong> (application formelle de l'interdiction du smartphone en classe). Les parents pilotent 100 % du suivi. Pour le <strong>Programme Français</strong> au secondaire, un compte élève autonome est créé automatiquement.
+                </p>
+              </div>
+            </div>
+
+            <div class="bg-sigapei-gold-light border border-sigapei-gold-border rounded-2xl p-5 flex items-start gap-4 shadow-sm">
+              <div class="w-10 h-10 rounded-xl bg-sigapei-gold text-sigapei-black flex items-center justify-center shrink-0 shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              </div>
+              <div>
+                <h4 class="text-xs font-black text-sigapei-black uppercase tracking-wider">Capacité Bloquante & Non-Duplication</h4>
+                <p class="text-xs text-slate-800 mt-1 leading-relaxed">
+                  Toute admission est <strong>bloquée dès que la classe est complète</strong>. En cas de mutation ou réinscription, la ligne apprenant existante est mise à jour : <strong>aucun doublon de dossier</strong> n'est généré.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- 2. VUE GUICHET INSTRUCTION CANDIDATURES (Pour la Secrétaire)        -->
+        <!-- =================================================================== -->
+        <div id="admin-view-candidatures" class="hidden space-y-6 fade-enter">
+          
+          <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div class="flex-1 flex flex-wrap items-center gap-3">
+              <div class="relative flex-1 min-w-[240px]">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input type="text" id="admin-search-cand" oninput="renderAdminCandidaturesTable()" placeholder="Rechercher candidat, UUID ou parent..." class="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sigapei-green">
+              </div>
+
+              <select id="admin-filter-cand-statut" onchange="renderAdminCandidaturesTable()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white">
+                <option value="tous">Tous les statuts</option>
+                <option value="soumise" selected>À instruire (Soumise)</option>
+                <option value="validee">Validée (Admis)</option>
+                <option value="rejetee">Rejetée</option>
+              </select>
+
+              <select id="admin-filter-cand-prog" onchange="renderAdminCandidaturesTable()" class="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white">
+                <option value="tous">Tous les programmes</option>
+                <option value="beninois">Prog. Béninois</option>
+                <option value="francais">Prog. Français</option>
+              </select>
+            </div>
+
+            <button onclick="openModalCreateCandidaturePhysique()" class="px-4 py-2 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2 shadow-sm whitespace-nowrap">
+              <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+              <span>Saisie Candidature Physique</span>
+            </button>
+          </div>
+
+          <!-- Table des dossiers -->
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                    <th class="py-4 px-4">Candidat & Dossier</th>
+                    <th class="py-4 px-4">Classe Visée</th>
+                    <th class="py-4 px-4">Programme</th>
+                    <th class="py-4 px-4">Parent Référent</th>
+                    <th class="py-4 px-4">Pièces S3</th>
+                    <th class="py-4 px-4">Test Admission</th>
+                    <th class="py-4 px-4">Statut</th>
+                    <th class="py-4 px-4 text-right">Instruction</th>
+                  </tr>
+                </thead>
+                <tbody id="table-body-candidatures-admin" class="divide-y divide-slate-100 font-medium">
+                  <!-- Injecté en JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- 3. VUE CLASSES & CAPACITÉ (Pour l'Administrateur)                   -->
+        <!-- =================================================================== -->
+        <div id="admin-view-classes" class="hidden space-y-6 fade-enter">
+          
+          <div class="bg-white rounded-2xl p-6 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-black text-sigapei-black font-heading">Classes & Contrôle Bloquant des Capacités</h2>
+              <p class="text-xs text-slate-500">Calcul en temps réel : saturation bloquante pour empêcher tout dépassement de quota.</p>
+            </div>
+            
+            <button onclick="openModalCreateClasse()" class="px-4 py-2 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-1.5 shadow-sm">
+              <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Ajouter une Classe</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="grid-classes-admin-cards">
+            <!-- Injecté en JS -->
+          </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- 4. VUE DOSSIERS APPRENANTS & MUTATIONS (Sans duplication)           -->
+        <!-- =================================================================== -->
+        <div id="admin-view-apprenants" class="hidden space-y-6 fade-enter">
+          
+          <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-black text-sigapei-black font-heading">Dossiers Apprenants & Mutations Internes</h2>
+              <p class="text-xs text-slate-500">Maintien d'un dossier unique par élève sans duplication lors des mutations de classes.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <input type="text" id="admin-search-apprenants-input" oninput="renderAdminApprenantsTable()" placeholder="Filtrer matricule, nom..." class="px-3 py-2 text-xs rounded-xl border border-slate-200">
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                    <th class="py-4 px-4">Matricule Officiel</th>
+                    <th class="py-4 px-4">Élève</th>
+                    <th class="py-4 px-4">Classe Actuelle</th>
+                    <th class="py-4 px-4">Programme</th>
+                    <th class="py-4 px-4">Statut Compte Utilisateur</th>
+                    <th class="py-4 px-4">Parent Référent</th>
+                    <th class="py-4 px-4">Mutations Passées</th>
+                    <th class="py-4 px-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="table-body-apprenants-admin" class="divide-y divide-slate-100 font-medium">
+                  <!-- Injecté en JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- 5. VUE EMPLOIS DU TEMPS (Pour le Censeur & Enseignants)             -->
+        <!-- =================================================================== -->
+        <div id="admin-view-emplois" class="hidden space-y-6 fade-enter">
+          
+          <div class="bg-white rounded-2xl p-5 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-xl font-black text-sigapei-black font-heading">Gestionnaire des Emplois du Temps (Censeur)</h2>
+              <p class="text-xs text-slate-500">Plannings hebdomadaires des créneaux, affectations d'enseignants et contrôle de salles.</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-bold text-slate-600">Classe sélectionnée :</span>
+              <select id="admin-select-class-edt" onchange="renderAdminEDTGrid()" class="px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 bg-white">
+                <option value="6A">6ème A (Programme Béninois)</option>
+                <option value="6B">6ème B (Programme Français)</option>
+                <option value="5A">5ème A (Programme Béninois)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 overflow-x-auto">
+            <div class="min-w-[750px] grid grid-cols-6 gap-3 text-center" id="grid-admin-edt">
+              <!-- Planning généré en JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- 6. VUE FINANCES (Pour le Comptable - Lecture Seule Pure)            -->
+        <!-- =================================================================== -->
+        <div id="admin-view-finances" class="hidden space-y-6 fade-enter">
+          
+          <div class="bg-amber-50 border border-amber-300 rounded-2xl p-5 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              </div>
+              <div>
+                <h3 class="text-xs font-black text-amber-950 uppercase tracking-wider">Règle Absolue d'Isolation Financière</h3>
+                <p class="text-xs text-amber-900 mt-0.5">Ce module interroge directement les tables <code>finances.factures</code> et <code>finances.transactions</code> en <strong>lecture seule pure</strong>. Aucune écriture financière n'est autorisée depuis la Scolarité.</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full text-[10px] font-black bg-amber-200 text-amber-950 border border-amber-300">LECTURE SEULE STRICTE</span>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-card border border-slate-100 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 class="text-sm font-bold text-sigapei-black">Synthèse des frais de scolarité par classe</h3>
+              <span class="text-xs text-slate-500">Source : Microservice Finances</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase text-[10px]">
+                    <th class="p-3.5">Classe</th>
+                    <th class="p-3.5">Inscrits</th>
+                    <th class="p-3.5">Total Dû</th>
+                    <th class="p-3.5">Encaissé</th>
+                    <th class="p-3.5">Solde en Attente</th>
+                    <th class="p-3.5">Taux Recouvrement</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium">
+                  <tr>
+                    <td class="p-3.5 font-bold text-sigapei-green">6ème A (Prog. Béninois)</td>
+                    <td class="p-3.5">43</td>
+                    <td class="p-3.5 font-mono">7 740 000 FCFA</td>
+                    <td class="p-3.5 font-mono font-bold text-sigapei-green">6 020 000 FCFA</td>
+                    <td class="p-3.5 font-mono text-amber-800">1 720 000 FCFA</td>
+                    <td class="p-3.5 font-black text-sigapei-green">77.7 %</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 font-bold text-sigapei-green">6ème B (Prog. Français)</td>
+                    <td class="p-3.5">32</td>
+                    <td class="p-3.5 font-mono">11 200 000 FCFA</td>
+                    <td class="p-3.5 font-mono font-bold text-sigapei-green">8 960 000 FCFA</td>
+                    <td class="p-3.5 font-mono text-amber-800">2 240 000 FCFA</td>
+                    <td class="p-3.5 font-black text-sigapei-green">80.0 %</td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 font-bold text-sigapei-green">Terminale C (Prog. Béninois)</td>
+                    <td class="p-3.5">40</td>
+                    <td class="p-3.5 font-mono">10 000 000 FCFA</td>
+                    <td class="p-3.5 font-mono font-bold text-sigapei-green">9 200 000 FCFA</td>
+                    <td class="p-3.5 font-mono text-amber-800">800 000 FCFA</td>
+                    <td class="p-3.5 font-black text-sigapei-green">92.0 %</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- ESPACE B : ADMISSION & CANDIDATURE (PUBLIC / PARENT)                    -->
+    <!-- ======================================================================= -->
+    <section id="space-view-candidat" class="hidden flex-1 overflow-y-auto p-4 sm:p-8 bg-[#F6F8F7] fade-enter">
+      <div class="max-w-4xl mx-auto space-y-6">
+
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sigapei-green/10 text-sigapei-green text-xs font-bold uppercase tracking-wider mb-2">
+              <svg class="w-3.5 h-3.5 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              <span>Portail Officiel des Admissions</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-sigapei-black font-heading">Dépôt & Suivi de Candidature</h1>
+            <p class="text-xs text-slate-500 mt-1">Formulaire officiel d'inscription et suivi en direct de l'instruction de votre dossier.</p>
+          </div>
+
+          <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-center">
+            <button onclick="switchCandidatTab('form')" id="tab-candidat-form" class="px-4 py-2 rounded-lg text-xs font-bold bg-sigapei-green text-white shadow-sm transition">Nouvelle Inscription</button>
+            <button onclick="switchCandidatTab('suivi')" id="tab-candidat-suivi" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">Suivre un Dossier</button>
+            <button onclick="switchCandidatTab('reinc')" id="tab-candidat-reinc" class="px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition">Réinscription</button>
+          </div>
+        </div>
+
+        <!-- SOUS-ONGLET CANDIDAT 1 : FORMULAIRE 4 ÉTAPES -->
+        <div id="candidat-sub-form" class="bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8">
+          
+          <!-- Stepper -->
+          <div class="mb-8">
+            <div class="flex items-center justify-between relative">
+              <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-slate-100 w-full z-0"></div>
+              <div id="cand-stepper-progress-bar" class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-sigapei-green z-0 transition-all duration-300" style="width: 25%;"></div>
+
+              <div class="relative z-10 flex flex-col items-center">
+                <div id="step-bubble-1" class="w-10 h-10 rounded-full bg-sigapei-gold text-sigapei-black font-black text-xs flex items-center justify-center border-4 border-white shadow-sm">1</div>
+                <span class="text-[11px] font-bold text-sigapei-black mt-2 hidden sm:block">Élève</span>
+              </div>
+              <div class="relative z-10 flex flex-col items-center">
+                <div id="step-bubble-2" class="w-10 h-10 rounded-full bg-slate-200 text-slate-500 font-bold text-xs flex items-center justify-center border-4 border-white shadow-sm">2</div>
+                <span class="text-[11px] font-medium text-slate-400 mt-2 hidden sm:block">Classe & Programme</span>
+              </div>
+              <div class="relative z-10 flex flex-col items-center">
+                <div id="step-bubble-3" class="w-10 h-10 rounded-full bg-slate-200 text-slate-500 font-bold text-xs flex items-center justify-center border-4 border-white shadow-sm">3</div>
+                <span class="text-[11px] font-medium text-slate-400 mt-2 hidden sm:block">Responsable Légal</span>
+              </div>
+              <div class="relative z-10 flex flex-col items-center">
+                <div id="step-bubble-4" class="w-10 h-10 rounded-full bg-slate-200 text-slate-500 font-bold text-xs flex items-center justify-center border-4 border-white shadow-sm">4</div>
+                <span class="text-[11px] font-medium text-slate-400 mt-2 hidden sm:block">Pièces & Validation</span>
+              </div>
+            </div>
+          </div>
+
+          <form id="form-admission-public" onsubmit="event.preventDefault(); submitPublicAdmission();">
+            
+            <!-- ÉTAPE 1 -->
+            <div id="step-page-1" class="space-y-5">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-sigapei-black">1. Identité de l'Élève Candidat</h3>
+                <p class="text-xs text-slate-500">Renseignez scrupuleusement les informations de l'acte de naissance.</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de famille <span class="text-red-500">*</span></label>
+                  <input type="text" id="cand-nom-val" required placeholder="Ex : DOSSOU" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom(s) <span class="text-red-500">*</span></label>
+                  <input type="text" id="cand-prenom-val" required placeholder="Ex : Christian" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Date de naissance <span class="text-red-500">*</span></label>
+                  <input type="date" id="cand-date-val" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Genre <span class="text-red-500">*</span></label>
+                  <select id="cand-sexe-val" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs bg-white focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex justify-end pt-4">
+                <button type="button" onclick="goToStepPublic(2)" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2">
+                  <span>Continuer vers le choix de classe</span>
+                  <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- ÉTAPE 2 -->
+            <div id="step-page-2" class="hidden space-y-5">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-sigapei-black">2. Sélection de la Classe & Règle Programme</h3>
+                <p class="text-xs text-slate-500">Visualisez les places disponibles. Une classe saturée bloque immédiatement l'inscription.</p>
+              </div>
+
+              <div class="bg-sigapei-cream/70 border border-sigapei-gold/40 rounded-xl p-4 flex items-start gap-3">
+                <svg class="w-5 h-5 text-sigapei-gold shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <div class="text-xs text-slate-800 leading-relaxed">
+                  <strong class="text-sigapei-green">Règle d'accès aux comptes :</strong>
+                  Pour le <strong>Programme Béninois</strong>, aucun compte élève n'est créé (téléphone interdit en milieu scolaire). Le parent gère 100 % des consultations. Pour le <strong>Programme Français</strong> au secondaire, un compte élève autonome est créé.
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="container-public-classes-cards">
+                <!-- Injecté en JS -->
+              </div>
+
+              <div class="flex justify-between pt-4">
+                <button type="button" onclick="goToStepPublic(1)" class="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Retour</button>
+                <button type="button" onclick="goToStepPublic(3)" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2">
+                  <span>Continuer vers le responsable</span>
+                  <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- ÉTAPE 3 -->
+            <div id="step-page-3" class="hidden space-y-5">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-sigapei-black">3. Responsable Légal / Parent Référent</h3>
+                <p class="text-xs text-slate-500">Coordonnées utilisées pour l'envoi de la décision par SMS/WhatsApp.</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom du responsable <span class="text-red-500">*</span></label>
+                  <input type="text" id="cand-pnom-val" required placeholder="Ex : DOSSOU" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom du responsable <span class="text-red-500">*</span></label>
+                  <input type="text" id="cand-pprenom-val" required placeholder="Ex : Marcel" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Téléphone Principal (avec indicatif) <span class="text-red-500">*</span></label>
+                  <input type="tel" id="cand-ptel-val" required placeholder="+229 97 00 00 00" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Adresse E-mail</label>
+                  <input type="email" id="cand-pmail-val" placeholder="parent.dossou@gmail.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+                </div>
+              </div>
+
+              <div class="flex justify-between pt-4">
+                <button type="button" onclick="goToStepPublic(2)" class="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Retour</button>
+                <button type="button" onclick="goToStepPublic(4)" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2">
+                  <span>Continuer vers les pièces</span>
+                  <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- ÉTAPE 4 -->
+            <div id="step-page-4" class="hidden space-y-5">
+              <div class="border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-sigapei-black">4. Dépôt des Pièces S3 & Validation Finale</h3>
+                <p class="text-xs text-slate-500">Téléversez les documents officiels sous format PDF ou Image.</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center bg-slate-50 hover:border-sigapei-green transition">
+                  <svg class="w-8 h-8 text-sigapei-green mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                  <p class="text-xs font-bold text-sigapei-black">Acte de Naissance <span class="text-red-500">*</span></p>
+                  <span class="text-[10px] text-slate-500 block mb-2">Copie légalisée (PDF ou Image)</span>
+                  <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-700 shadow-sm">
+                    <svg class="w-3.5 h-3.5 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span id="label-upload-acte">Sélectionner</span>
+                    <input type="file" class="hidden" onchange="document.getElementById('label-upload-acte').innerText = this.files[0]?.name || 'Fichier prêt';">
+                  </label>
+                </div>
+
+                <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center bg-slate-50 hover:border-sigapei-green transition">
+                  <svg class="w-8 h-8 text-sigapei-gold mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                  <p class="text-xs font-bold text-sigapei-black">Dernier Bulletin Scolaire</p>
+                  <span class="text-[10px] text-slate-500 block mb-2">Relevé de notes officiel</span>
+                  <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-700 shadow-sm">
+                    <svg class="w-3.5 h-3.5 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span id="label-upload-bulletin">Sélectionner</span>
+                    <input type="file" class="hidden" onchange="document.getElementById('label-upload-bulletin').innerText = this.files[0]?.name || 'Fichier prêt';">
+                  </label>
+                </div>
+              </div>
+
+              <!-- CAPTCHA -->
+              <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-sigapei-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                  <span class="text-xs font-bold text-slate-700">Contrôle reCAPTCHA v3</span>
+                </div>
+                <span class="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">Score Token: 0.98</span>
+              </div>
+
+              <div class="flex justify-between pt-4">
+                <button type="button" onclick="goToStepPublic(3)" class="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Retour</button>
+                <button type="submit" class="px-8 py-3 rounded-xl bg-sigapei-gold text-sigapei-black font-black text-xs hover:bg-sigapei-gold-hover shadow-md transition flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                  <span>Soumettre ma candidature</span>
+                </button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- SOUS-ONGLET CANDIDAT 2 : SUIVI DU DOSSIER -->
+        <div id="candidat-sub-suivi" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8 space-y-6">
+          <div class="border-b border-slate-100 pb-3">
+            <h3 class="text-base font-bold text-sigapei-black">Suivre l'instruction de votre dossier</h3>
+            <p class="text-xs text-slate-500">Saisissez votre référence de candidature ou votre nom pour vérifier le statut.</p>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="text" id="public-search-uuid-input" placeholder="Ex : f7a8b9c0 ou Bio Guera" class="flex-1 px-4 py-2.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-sigapei-green focus:outline-none">
+            <button onclick="handlePublicSearchDossier()" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2">
+              <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <span>Vérifier</span>
+            </button>
+          </div>
+
+          <div id="container-public-suivi-result" class="pt-2">
+            <!-- Injecté en JS -->
+          </div>
+        </div>
+
+        <!-- SOUS-ONGLET CANDIDAT 3 : RÉINSCRIPTION SANS DOUBLON -->
+        <div id="candidat-sub-reinc" class="hidden bg-white rounded-2xl shadow-card border border-slate-100 p-6 sm:p-8 space-y-6">
+          <div class="border-b border-slate-100 pb-3">
+            <h3 class="text-base font-bold text-sigapei-black">Réinscription Annuelle (Reconduction sans doublon)</h3>
+            <p class="text-xs text-slate-500">Pour les élèves déjà enregistrés au complexe lors de l'année précédente.</p>
+          </div>
+
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-900 leading-relaxed">
+            <strong class="font-bold text-blue-950">Règle de continuité pédagogique :</strong> La réinscription met directement à jour le dossier élève existant vers la nouvelle classe sans générer aucun doublon de matricule ou de fiche.
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule Officiel <span class="text-red-500">*</span></label>
+              <input type="text" id="reinc-input-matricule" placeholder="Ex : MAT-2026-6A-0012" class="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-200">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nouvelle Classe Demandée <span class="text-red-500">*</span></label>
+              <select id="reinc-select-classe" class="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-200 bg-white">
+                <option value="5ème A (Prog. Béninois)">5ème A — Programme Béninois (Capacité disponible)</option>
+                <option value="5ème B (Prog. Français)">5ème B — Programme Français (Capacité disponible)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <button onclick="handleReincAction()" class="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2">
+              <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Valider la reconduction</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- ESPACE C : ESPACE PARENT & ÉLÈVE                                        -->
+    <!-- ======================================================================= -->
+    <section id="space-view-parent" class="hidden flex-1 overflow-y-auto p-4 sm:p-8 bg-[#F6F8F7] fade-enter">
+      <div class="max-w-5xl mx-auto space-y-6">
+
+        <!-- Fiche Apprenant & Sélecteur Multi-Enfants (Cahier des charges Acteurs Parent) -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-card border border-slate-100">
+          
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+            <div class="flex items-center space-x-4">
+              <div class="w-16 h-16 rounded-2xl bg-sigapei-green text-sigapei-cream font-black text-2xl flex items-center justify-center border-2 border-sigapei-gold shadow-md">
+                KJ
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-2xl font-black text-sigapei-black font-heading">KOFFI Jean-Luc</h2>
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-sigapei-gold text-sigapei-black border border-sigapei-gold-hover">INSCRIT ACTIF</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Matricule : <strong class="text-slate-800 font-mono">MAT-2026-6A-0012</strong> • Né le 14/05/2012</p>
+                <p class="text-xs text-slate-600 mt-0.5">Classe actuelle : <strong class="text-sigapei-green">6ème A (Cycle Secondaire)</strong></p>
+              </div>
+            </div>
+
+            <!-- Règle d'accès au compte selon le programme -->
+            <div class="bg-sigapei-cream/70 border border-sigapei-gold/50 rounded-2xl p-3.5 max-w-xs text-right">
+              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Statut Programme Pédagogique</span>
+              <p class="text-xs font-black text-sigapei-green mt-0.5">Programme Béninois</p>
+              <p class="text-[11px] text-slate-700 mt-1 leading-snug">
+                Aucun compte élève propre (téléphone interdit en milieu scolaire). Consultation 100 % sous le compte du parent référent (Marc Koffi).
+              </p>
+            </div>
+          </div>
+
+          <!-- Onglets Espace Parent -->
+          <div class="flex gap-2 pt-5 border-b border-slate-100">
+            <button onclick="switchParentSubTab('edt')" id="tab-parent-edt" class="px-4 py-2 text-xs font-bold rounded-xl bg-sigapei-green text-white shadow-sm transition">Emploi du Temps Hebdomadaire</button>
+            <button onclick="switchParentSubTab('finances')" id="tab-parent-finances" class="px-4 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition">Situation Frais Scolaires (Lecture Seule)</button>
+            <button onclick="switchParentSubTab('historique')" id="tab-parent-historique" class="px-4 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition">Historique Scolaire & Mutations</button>
+          </div>
+
+          <!-- SOUS-VUE PARENT 1 : EMPLOI DU TEMPS -->
+          <div id="parent-subview-edt" class="pt-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-sigapei-black">Planning des cours de la semaine</h3>
+              <span class="text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2.5 py-0.5 rounded-lg">6ème A</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-5 gap-3" id="container-parent-edt-cards">
+              <!-- Injecté en JS -->
+            </div>
+          </div>
+
+          <!-- SOUS-VUE PARENT 2 : FINANCES (LECTURE SEULE PURE) -->
+          <div id="parent-subview-finances" class="hidden pt-6 space-y-6">
+            <div class="bg-amber-50 border border-amber-300 rounded-xl p-3.5 flex items-center justify-between text-xs text-amber-950">
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Données consolidées en <strong>lecture seule pure</strong> issues du microservice Finances.</span>
+              </div>
+              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-200">LECTURE SEULE</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs text-slate-500 font-bold uppercase">Total Annuel Dû</span>
+                <p class="text-2xl font-black text-sigapei-black mt-1 font-heading">180 000 FCFA</p>
+              </div>
+              <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs text-sigapei-green font-bold uppercase">Total Réglé</span>
+                <p class="text-2xl font-black text-sigapei-green mt-1 font-heading">120 000 FCFA</p>
+              </div>
+              <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <span class="text-xs text-amber-900 font-bold uppercase">Solde Restant</span>
+                <p class="text-2xl font-black text-amber-900 mt-1 font-heading">60 000 FCFA</p>
+              </div>
+            </div>
+
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-extrabold uppercase text-[10px]">
+                  <tr>
+                    <th class="p-3.5">Tranche de Frais</th>
+                    <th class="p-3.5">Montant</th>
+                    <th class="p-3.5">Date Limite</th>
+                    <th class="p-3.5">Statut Règlement</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 font-medium">
+                  <tr>
+                    <td class="p-3.5 font-bold">1ère Tranche (Rentrée)</td>
+                    <td class="p-3.5 font-mono">60 000 FCFA</td>
+                    <td class="p-3.5 text-slate-500">15 Septembre 2026</td>
+                    <td class="p-3.5"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]">RÉGLÉ (Reçu #891)</span></td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 font-bold">2ème Tranche</td>
+                    <td class="p-3.5 font-mono">60 000 FCFA</td>
+                    <td class="p-3.5 text-slate-500">15 Novembre 2026</td>
+                    <td class="p-3.5"><span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]">RÉGLÉ (Reçu #1042)</span></td>
+                  </tr>
+                  <tr>
+                    <td class="p-3.5 font-bold text-amber-900">3ème Tranche (Solde)</td>
+                    <td class="p-3.5 font-mono font-bold text-amber-900">60 000 FCFA</td>
+                    <td class="p-3.5 text-slate-500">15 Février 2027</td>
+                    <td class="p-3.5"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900">EN ATTENTE</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- SOUS-VUE PARENT 3 : HISTORIQUE -->
+          <div id="parent-subview-historique" class="hidden pt-6 space-y-4">
+            <h3 class="text-sm font-bold text-sigapei-black">Traçabilité du parcours scolaire de l'élève</h3>
+            <div class="border-l-2 border-sigapei-green pl-4 ml-2 space-y-5 text-xs">
+              <div class="relative">
+                <span class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-sigapei-green border-2 border-white"></span>
+                <span class="text-[10px] font-bold text-sigapei-gold">Rentrée 2026-2027</span>
+                <p class="font-bold text-sigapei-black">Admission validée en 6ème A (Programme Béninois)</p>
+                <p class="text-slate-500 text-[11px]">Dossier instruit par le secrétariat. Test d'admission réussi (16.5/20).</p>
+              </div>
+              <div class="relative">
+                <span class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-300 border-2 border-white"></span>
+                <span class="text-[10px] font-bold text-slate-400">Année 2025-2026</span>
+                <p class="font-bold text-slate-700">CM2 à l'École Primaire Sainte-Rita</p>
+                <p class="text-slate-500 text-[11px]">Obtention du Certificat d'Études Primaires (CEP).</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODALES DE TRAITEMENT (Avec backdrop flouté & composants de charte)        -->
+  <!-- ========================================================================= -->
+
+  <!-- MODAL DÉTAIL CANDIDATURE & INSTRUCTION -->
+  <div id="modal-examine-candidature" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-modal border border-slate-100 overflow-y-auto max-h-[90vh]">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div>
+          <span class="text-[10px] font-black text-sigapei-gold uppercase tracking-wider">Instruction Officielle (Secrétaire / Admin)</span>
+          <h3 class="text-lg font-black text-sigapei-black" id="examine-modal-title">Dossier de Candidature</h3>
+        </div>
+        <button onclick="closeModalExamine()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="space-y-4" id="examine-modal-content">
+        <!-- Rempli en JS -->
+      </div>
+
+      <div class="flex justify-end gap-2 pt-4 border-t border-slate-100" id="examine-modal-actions">
+        <!-- Actions JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL REJET MOTIVÉ -->
+  <div id="modal-motive-rejet" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-modal border border-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-black text-red-600 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>Rejet Obligatoirement Motivé</span>
+        </h3>
+        <button onclick="closeModalMotiveRejet()" class="text-slate-400 hover:text-slate-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        Conformément au cahier des charges, <strong>aucun dossier ne peut être rejeté sans motif explicite consigné</strong> (min. 5 caractères). Ce motif est notifié au candidat.
+      </p>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Motif formel du rejet <span class="text-red-500">*</span></label>
+        <textarea id="text-motive-rejet" rows="3" placeholder="Ex : Moyenne générale au test d'admission insuffisante (10.5/20 alors que le seuil d'admissibilité est à 12/20)..." class="w-full p-3 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModalMotiveRejet()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button onclick="submitMotiveRejet()" class="px-4 py-2 rounded-xl bg-red-600 text-white text-xs font-bold hover:bg-red-700 shadow-sm">Confirmer le Rejet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MUTATION DE CLASSE -->
+  <div id="modal-transfert-mutation" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-modal border border-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-black text-sigapei-green flex items-center gap-2">
+          <svg class="w-5 h-5 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+          <span>Mutation de Classe (Sans Duplication)</span>
+        </h3>
+        <button onclick="closeModalTransfertMutation()" class="text-slate-400 hover:text-slate-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      
+      <div class="bg-slate-50 p-3.5 rounded-2xl text-xs space-y-1">
+        <p><strong>Élève :</strong> <span id="mut-info-nom" class="font-bold text-slate-900">—</span></p>
+        <p><strong>Classe actuelle :</strong> <span id="mut-info-classe" class="text-sigapei-green font-semibold">—</span></p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nouvelle classe de destination <span class="text-red-500">*</span></label>
+        <select id="mut-select-target-class" onchange="handleMutationTargetChange()" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-sigapei-green">
+          <!-- Injecté dynamiquement -->
+        </select>
+      </div>
+
+      <!-- Alerte automatique de changement de programme -->
+      <div id="mut-alert-programme-box" class="bg-sigapei-cream border border-sigapei-gold rounded-xl p-3.5 text-xs text-slate-800 hidden space-y-1">
+        <div class="flex items-center gap-2 text-sigapei-green font-black">
+          <svg class="w-4 h-4 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>Détection de Changement de Programme Pédagogique</span>
+        </div>
+        <p class="text-[11px] text-slate-700 leading-snug">
+          Passage du programme <strong>Béninois</strong> au programme <strong>Français</strong>. Le système ordonnera à <em>api-identite</em> la création du compte élève autonome requis pour le secondaire. La fiche apprenant n'est <strong>aucunement dupliquée</strong>.
+        </p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Motif formel de la mutation</label>
+        <input type="text" id="mut-input-reason" placeholder="Ex : Demande de réorientation formulée par la famille" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl">
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModalTransfertMutation()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button onclick="submitMutationTransfert()" class="px-5 py-2 rounded-xl bg-sigapei-green text-white text-xs font-bold hover:bg-sigapei-green-dark shadow-sm">Valider la Mutation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CRÉATION CLASSE -->
+  <div id="modal-add-class" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-modal border border-slate-100">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-black text-sigapei-green flex items-center gap-2">
+          <svg class="w-5 h-5 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>Créer une Nouvelle Classe</span>
+        </h3>
+        <button onclick="closeModalCreateClasse()" class="text-slate-400 hover:text-slate-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom / Intitulé <span class="text-red-500">*</span></label>
+          <input type="text" id="input-new-c-nom" placeholder="Ex : 4ème A" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Cycle <span class="text-red-500">*</span></label>
+            <select id="input-new-c-cycle" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-white">
+              <option value="primaire">Primaire</option>
+              <option value="secondaire" selected>Secondaire</option>
+              <option value="universitaire">Universitaire</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Programme <span class="text-red-500">*</span></label>
+            <select id="input-new-c-programme" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl bg-white">
+              <option value="beninois" selected>Béninois</option>
+              <option value="francais">Français</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Capacité Maximale d'Accueil <span class="text-red-500">*</span></label>
+          <input type="number" id="input-new-c-capacite" value="45" min="1" max="150" class="w-full p-2.5 text-xs border border-slate-300 rounded-xl font-bold">
+          <span class="text-[10px] text-slate-400 mt-0.5 block">Seuil bloquant : les inscriptions vers cette classe seront stoppées net dès saturation.</span>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModalCreateClasse()" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50">Annuler</button>
+        <button onclick="submitNewClasse()" class="px-5 py-2 rounded-xl bg-sigapei-green text-white text-xs font-bold hover:bg-sigapei-green-dark shadow-sm">Créer la classe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION FLOTTANT -->
+  <div id="toast-wrapper-el" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toast-box-el" class="bg-sigapei-green text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center space-x-3 text-xs font-bold">
+      <span id="toast-icon-slot">
+        <svg class="w-5 h-5 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+      </span>
+      <span id="toast-text-slot">Opération réussie</span>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT DU FRONTEND AVEC ICÔNES INLINE PURES (AUCUNE DISPARITION)       -->
+  <!-- ========================================================================= -->
+  <script>
+    // BASE DE DONNÉES LOCALE COMPLÈTE
+    let memoryClasses = [
+      { id: 1, uuid: 'c1-6a', nom: '6ème A', cycle: 'secondaire', niveau: '6e', programme: 'beninois', capacite: 45, inscrits: 43 },
+      { id: 2, uuid: 'c2-6b', nom: '6ème B', cycle: 'secondaire', niveau: '6e', programme: 'francais', capacite: 35, inscrits: 32 },
+      { id: 3, uuid: 'c3-cm2a', nom: 'CM2 A', cycle: 'primaire', niveau: 'CM2', programme: 'beninois', capacite: 30, inscrits: 30 }, // CLASSE COMPLÈTE
+      { id: 4, uuid: 'c4-termc', nom: 'Terminale C', cycle: 'secondaire', niveau: 'Tle', programme: 'beninois', capacite: 40, inscrits: 40 }, // CLASSE COMPLÈTE
+      { id: 5, uuid: 'c5-5a', nom: '5ème A', cycle: 'secondaire', niveau: '5e', programme: 'beninois', capacite: 45, inscrits: 38 },
+      { id: 6, uuid: 'c6-l1info', nom: 'Licence 1 Informatique', cycle: 'universitaire', niveau: 'L1', programme: 'beninois', capacite: 60, inscrits: 45 },
+    ];
+
+    let memoryCandidatures = [
+      {
+        id: 1,
+        uuid: 'f7a8b9c0-d1e2-3456-fghi-j78901234567',
+        nom: 'Koffi',
+        prenom: 'Jean-Luc',
+        date_naissance: '2012-05-14',
+        sexe: 'M',
+        classe_id: 1,
+        parent_nom: 'Koffi Marc',
+        parent_tel: '+229 97 00 00 02',
+        parent_email: 'marc.koffi@sigapei.com',
+        pieces: [
+          { type: 'Acte de Naissance', file: 'acte_koffi_legalise.pdf', status: 'conforme' },
+          { type: 'Dernier Bulletin (CM2)', file: 'bulletin_t3_cm2.pdf', status: 'conforme' }
+        ],
+        test: { matiere: 'Français & Maths', note: 16.5, note_max: 20, avis: 'admis' },
+        statut: 'soumise',
+        motif_rejet: null,
+        date_soumission: '25/09/2026 10:15'
+      },
+      {
+        id: 2,
+        uuid: 'e4d3c2b1-a9f8-7654-lkji-h98765432109',
+        nom: 'Bio Guera',
+        prenom: 'Aïcha',
+        date_naissance: '2013-08-22',
+        sexe: 'F',
+        classe_id: 2,
+        parent_nom: 'Bio Guera Sabi',
+        parent_tel: '+229 96 11 22 33',
+        parent_email: 'sabi.bioguera@gmail.com',
+        pieces: [
+          { type: 'Acte de Naissance', file: 'acte_aicha.pdf', status: 'conforme' },
+          { type: 'Certificat de Nationalité', file: 'certificat_nat.pdf', status: 'conforme' }
+        ],
+        test: { matiere: 'Test Bilingue Français/Anglais', note: 14.0, note_max: 20, avis: 'admis' },
+        statut: 'soumise',
+        motif_rejet: null,
+        date_soumission: '26/09/2026 14:30'
+      },
+      {
+        id: 3,
+        uuid: 'd3c2b1a0-9876-5432-10fe-dcba98765432',
+        nom: 'Mensah',
+        prenom: 'Dovon',
+        date_naissance: '2014-02-10',
+        sexe: 'M',
+        classe_id: 3, // CM2 A (Capacité 30/30 - Complète !)
+        parent_nom: 'Mensah Paul',
+        parent_tel: '+229 95 44 55 66',
+        parent_email: 'paul.mensah@yahoo.fr',
+        pieces: [
+          { type: 'Acte de Naissance', file: 'acte_mensah.jpg', status: 'conforme' }
+        ],
+        test: { matiere: 'Test Passage CM2', note: 10.5, note_max: 20, avis: 'ajourne' },
+        statut: 'soumise',
+        motif_rejet: null,
+        date_soumission: '27/09/2026 08:20'
+      }
+    ];
+
+    let memoryApprenants = [
+      {
+        id: 1,
+        uuid: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
+        matricule: 'MAT-2026-6A-0012',
+        nom: 'Koffi',
+        prenom: 'Jean-Luc',
+        classe_id: 1,
+        parent_nom: 'Koffi Marc',
+        mutations: []
+      },
+      {
+        id: 2,
+        uuid: 'a3b4c5d6-e7f8-9012-cdef-123456789012',
+        matricule: 'MAT-2026-6B-0005',
+        nom: 'Dupont',
+        prenom: 'Camille',
+        classe_id: 2,
+        parent_nom: 'Dupont François',
+        mutations: [
+          { date: '10/09/2026', ancienne: '6ème A', nouvelle: '6ème B', motif: 'Choix de filière bilingue' }
+        ]
+      },
+      {
+        id: 3,
+        uuid: 'c4d5e6f7-a8b9-0123-def0-234567890123',
+        matricule: 'MAT-2026-TC-0040',
+        nom: 'Soglo',
+        prenom: 'Armand',
+        classe_id: 4,
+        parent_nom: 'Soglo Gatien',
+        mutations: []
+      }
+    ];
+
+    let activeExamineCandId = null;
+    let activeMutationAppId = null;
+    let selectedFormClassId = 1;
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAdminDashboardData();
+      renderAdminCandidaturesTable();
+      renderAdminClassesCards();
+      renderAdminApprenantsTable();
+      renderAdminEDTGrid();
+      renderPublicClassesCards();
+      renderParentEDTCards();
+      initOfficialChart();
+    });
+
+    // BASCULE DE L'ESPACE GLOBAL (HEADER)
+    function switchMainSpace(space) {
+      document.getElementById('space-view-admin').classList.add('hidden');
+      document.getElementById('space-view-candidat').classList.add('hidden');
+      document.getElementById('space-view-parent').classList.add('hidden');
+
+      ['admin', 'candidat', 'parent'].forEach(s => {
+        const btn = document.getElementById(`btn-space-${s}`);
+        btn.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 text-sigapei-cream/80 hover:text-white hover:bg-white/10";
+      });
+
+      const activeBtn = document.getElementById(`btn-space-${space}`);
+      activeBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-sigapei-gold text-sigapei-black shadow-md";
+
+      document.getElementById(`space-view-${space}`).classList.remove('hidden');
+    }
+
+    // NAVIGATION SIDEBAR ADMIN (RÈGLE DES ICÔNES TOUJOURS VISIBLES & CONTRASTÉES)
+    function switchAdminNav(view) {
+      ['dashboard', 'candidatures', 'classes', 'apprenants', 'emplois', 'finances'].forEach(v => {
+        const container = document.getElementById(`admin-view-${v}`);
+        if (container) container.classList.add('hidden');
+
+        const btn = document.getElementById(`nav-btn-${v}`);
+        if (btn) {
+          // Inactive style : texte crème, icône or
+          btn.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl transition text-sigapei-cream/90 hover:text-white hover:bg-white/10";
+          const icon = btn.querySelector('svg');
+          if (icon) icon.setAttribute('class', 'w-4 h-4 text-sigapei-gold shrink-0');
+        }
+      });
+
+      const activeContainer = document.getElementById(`admin-view-${view}`);
+      if (activeContainer) activeContainer.classList.remove('hidden');
+
+      const activeBtn = document.getElementById(`nav-btn-${view}`);
+      if (activeBtn) {
+        // Active style : fond or, texte noir, icône noire contrastée (JAMAIS INVISIBLE !)
+        activeBtn.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl transition font-bold bg-sigapei-gold text-sigapei-black shadow-md";
+        const icon = activeBtn.querySelector('svg');
+        if (icon) icon.setAttribute('class', 'w-4 h-4 text-sigapei-black shrink-0');
+      }
+    }
+
+    // REFRESH KPIS
+    function renderAdminDashboardData() {
+      const pendingCount = memoryCandidatures.filter(c => c.statut === 'soumise').length;
+      document.getElementById('dash-kpi-pending').innerText = pendingCount;
+      document.getElementById('dash-badge-pending').innerText = pendingCount;
+      document.getElementById('badge-nav-pending').innerText = pendingCount;
+
+      const fullCount = memoryClasses.filter(c => c.inscrits >= c.capacite).length;
+      document.getElementById('dash-kpi-full-classes').innerText = `${fullCount} Complète${fullCount > 1 ? 's' : ''}`;
+    }
+
+    // TABLE CANDIDATURES ADMIN
+    function renderAdminCandidaturesTable() {
+      const tbody = document.getElementById('table-body-candidatures-admin');
+      const search = document.getElementById('admin-search-cand')?.value.toLowerCase() || '';
+      const filterStatut = document.getElementById('admin-filter-cand-statut')?.value || 'tous';
+      const filterProg = document.getElementById('admin-filter-cand-prog')?.value || 'tous';
+
+      const filtered = memoryCandidatures.filter(c => {
+        const cl = memoryClasses.find(x => x.id === c.classe_id);
+        const matchSearch = c.nom.toLowerCase().includes(search) || c.prenom.toLowerCase().includes(search) || c.uuid.toLowerCase().includes(search);
+        const matchStatut = filterStatut === 'tous' || c.statut === filterStatut;
+        const matchProg = filterProg === 'tous' || (cl && cl.programme === filterProg);
+        return matchSearch && matchStatut && matchProg;
+      });
+
+      tbody.innerHTML = filtered.map(c => {
+        const cl = memoryClasses.find(x => x.id === c.classe_id) || memoryClasses[0];
+        const isFull = cl.inscrits >= cl.capacite;
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3.5 px-4">
+              <div class="font-bold text-sigapei-black">${c.nom} ${c.prenom}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${c.uuid.substring(0, 18)}...</div>
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="font-bold text-slate-800">${cl.nom}</div>
+              <div class="text-[10px] ${isFull ? 'text-red-600 font-bold' : 'text-slate-400'}">
+                ${isFull ? 'CAPACITÉ MAX (0 place)' : `${cl.capacite - cl.inscrits} places libres`}
+              </div>
+            </td>
+            <td class="py-3.5 px-4">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                cl.programme === 'beninois' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-blue-100 text-blue-900 border border-blue-200'
+              }">Prog. ${cl.programme.toUpperCase()}</span>
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="text-slate-800 font-medium">${c.parent_nom}</div>
+              <div class="text-[10px] text-slate-400">${c.parent_tel}</div>
+            </td>
+            <td class="py-3.5 px-4">
+              <span class="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg">
+                <svg class="w-3.5 h-3.5 text-sigapei-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                ${c.pieces.length} doc(s) S3
+              </span>
+            </td>
+            <td class="py-3.5 px-4">
+              ${c.test ? `
+                <span class="font-bold font-mono ${c.test.note >= 12 ? 'text-sigapei-green' : 'text-red-600'}">
+                  ${c.test.note} / 20 (${c.test.avis.toUpperCase()})
+                </span>
+              ` : `<span class="text-slate-400 italic">Non noté</span>`}
+            </td>
+            <td class="py-3.5 px-4">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                c.statut === 'validee' ? 'bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]' :
+                c.statut === 'rejetee' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-amber-100 text-amber-900 border border-amber-200'
+              }">${c.statut}</span>
+            </td>
+            <td class="py-3.5 px-4 text-right">
+              <button onclick="openModalExamine(${c.id})" class="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-100 transition inline-flex items-center gap-1.5 shadow-sm">
+                <svg class="w-3.5 h-3.5 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span>Examiner</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // MODAL EXAMEN CANDIDATURE
+    function openModalExamine(id) {
+      activeExamineCandId = id;
+      const c = memoryCandidatures.find(x => x.id === id);
+      const cl = memoryClasses.find(x => x.id === c.classe_id) || memoryClasses[0];
+      const isFull = cl.inscrits >= cl.capacite;
+
+      document.getElementById('examine-modal-title').innerText = `${c.nom} ${c.prenom} — Candidature`;
+
+      document.getElementById('examine-modal-content').innerHTML = `
+        <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl text-xs">
+          <div><span class="text-slate-400">Date naissance :</span> <strong>${c.date_naissance}</strong></div>
+          <div><span class="text-slate-400">Genre :</span> <strong>${c.sexe === 'M' ? 'Masculin' : 'Féminin'}</strong></div>
+          <div><span class="text-slate-400">Classe postulée :</span> <strong class="text-sigapei-green">${cl.nom} (${cl.programme.toUpperCase()})</strong></div>
+          <div><span class="text-slate-400">Capacité temps réel :</span> <strong class="${isFull ? 'text-red-600' : 'text-sigapei-green'}">${isFull ? 'COMPLÈTE (0 place libre)' : `${cl.capacite - cl.inscrits} places libres`}</strong></div>
+          <div><span class="text-slate-400">Parent / Tuteur :</span> <strong>${c.parent_nom} (${c.parent_tel})</strong></div>
+          <div><span class="text-slate-400">Date de dépôt :</span> <strong>${c.date_soumission}</strong></div>
+        </div>
+
+        <div class="space-y-2">
+          <span class="text-xs font-bold text-sigapei-black uppercase tracking-wider">Pièces Justificatives (Stockage Objet S3 MinIO)</span>
+          <div class="space-y-1.5">
+            ${c.pieces.map(p => `
+              <div class="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-white text-xs">
+                <div class="flex items-center gap-2">
+                  <svg class="w-4 h-4 text-sigapei-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <div>
+                    <p class="font-bold text-slate-800">${p.type}</p>
+                    <p class="text-[10px] text-slate-400 font-mono">${p.file}</p>
+                  </div>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE] uppercase">${p.status}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <span class="text-xs font-bold text-sigapei-black uppercase tracking-wider">Évaluation Test d'Admission</span>
+          <div class="p-3 bg-amber-50/70 border border-sigapei-gold/40 rounded-xl flex items-center justify-between text-xs">
+            <div>
+              <p class="font-bold text-slate-800">${c.test ? c.test.matiere : 'Test standard'}</p>
+              <p class="text-[11px] text-slate-500">Seuil de passage requis : 12.0 / 20</p>
+            </div>
+            <div class="text-right">
+              <span class="text-base font-black font-mono ${c.test && c.test.note >= 12 ? 'text-sigapei-green' : 'text-red-600'}">
+                ${c.test ? c.test.note : '—'} / 20
+              </span>
+              <p class="text-[10px] font-extrabold uppercase ${c.test && c.test.note >= 12 ? 'text-sigapei-green' : 'text-red-600'}">
+                ${c.test ? c.test.avis : 'Non noté'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        ${c.statut === 'rejetee' ? `
+          <div class="bg-red-50 border border-red-200 p-3 rounded-xl text-xs text-red-800">
+            <strong>Motif formel du refus consigné :</strong> ${c.motif_rejet || 'Dossier non conforme'}
+          </div>
+        ` : ''}
+      `;
+
+      const actionsDiv = document.getElementById('examine-modal-actions');
+      if (c.statut === 'soumise') {
+        actionsDiv.innerHTML = `
+          <button onclick="openModalMotiveRejet()" class="px-4 py-2 rounded-xl bg-red-100 text-red-700 font-bold text-xs hover:bg-red-200 transition">
+            Rejeter avec motif
+          </button>
+          <button onclick="validateCandidatureDirect()" class="px-6 py-2 rounded-xl bg-sigapei-green text-white font-extrabold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-1.5 shadow-sm">
+            <svg class="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>Valider l'Admission & Créer l'Apprenant</span>
+          </button>
+        `;
+      } else {
+        actionsDiv.innerHTML = `
+          <span class="text-xs text-slate-400 italic self-center mr-auto">Dossier déjà instruit (${c.statut})</span>
+          <button onclick="closeModalExamine()" class="px-5 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700">Fermer</button>
+        `;
+      }
+
+      document.getElementById('modal-examine-candidature').classList.remove('hidden');
+    }
+
+    function closeModalExamine() {
+      document.getElementById('modal-examine-candidature').classList.add('hidden');
+    }
+
+    // VALIDATION DIRECTE DE CANDIDATURE AVEC RÈGLE PROGRAMME & CONTRÔLE BLOQUANT
+    function validateCandidatureDirect() {
+      const c = memoryCandidatures.find(x => x.id === activeExamineCandId);
+      const cl = memoryClasses.find(x => x.id === c.classe_id);
+
+      // CONTRÔLE BLOQUANT
+      if (cl.inscrits >= cl.capacite) {
+        triggerToastNotification(`ÉCHEC DE VALIDATION : La classe ${cl.nom} a atteint son quota maximal (${cl.capacite} places) !`, 'error');
+        return;
+      }
+
+      cl.inscrits++;
+      c.statut = 'validee';
+
+      // CRÉATION DIRECTE DANS SCOLARITÉ SANS DUPLICATION
+      const newApp = {
+        id: memoryApprenants.length + 1,
+        uuid: 'app-' + Math.random().toString(36).substring(2, 10),
+        matricule: `MAT-2026-${cl.niveau}-${Math.floor(1000 + Math.random() * 9000)}`,
+        nom: c.nom,
+        prenom: c.prenom,
+        classe_id: cl.id,
+        parent_nom: c.parent_nom,
+        mutations: []
+      };
+      memoryApprenants.unshift(newApp);
+
+      const ruleNote = cl.programme === 'francais'
+        ? "Compte élève secondaire CRÉÉ automatiquement (Prog. Français)."
+        : "Aucun compte élève créé : consultation 100 % sous le compte parent (Règle Programme Béninois).";
+
+      closeModalExamine();
+      renderAdminDashboardData();
+      renderAdminCandidaturesTable();
+      renderAdminClassesCards();
+      renderAdminApprenantsTable();
+
+      triggerToastNotification(`Candidature validée avec succès ! ${ruleNote}`, 'success');
+    }
+
+    // REJET MOTIVÉ
+    function openModalMotiveRejet() {
+      document.getElementById('text-motive-rejet').value = '';
+      document.getElementById('modal-motive-rejet').classList.remove('hidden');
+    }
+
+    function closeModalMotiveRejet() {
+      document.getElementById('modal-motive-rejet').classList.add('hidden');
+    }
+
+    function submitMotiveRejet() {
+      const motif = document.getElementById('text-motive-rejet').value.trim();
+      if (motif.length < 5) {
+        triggerToastNotification('Le motif de rejet doit contenir au moins 5 caractères explicites.', 'warning');
+        return;
+      }
+
+      const c = memoryCandidatures.find(x => x.id === activeExamineCandId);
+      c.statut = 'rejetee';
+      c.motif_rejet = motif;
+
+      closeModalMotiveRejet();
+      closeModalExamine();
+      renderAdminDashboardData();
+      renderAdminCandidaturesTable();
+
+      triggerToastNotification('Candidature rejetée et motif officiel consigné.', 'info');
+    }
+
+    // GRILLE DES CLASSES
+    function renderAdminClassesCards() {
+      const container = document.getElementById('grid-classes-admin-cards');
+      container.innerHTML = memoryClasses.map(c => {
+        const dispo = Math.max(0, c.capacite - c.inscrits);
+        const isFull = dispo <= 0;
+        const percent = Math.round((c.inscrits / c.capacite) * 100);
+
+        return `
+          <div class="bg-white p-5 rounded-2xl shadow-card border border-slate-100 flex flex-col justify-between space-y-4 hover:shadow-card-hover transition">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-base font-black text-sigapei-black font-heading">${c.nom}</span>
+                <p class="text-xs text-slate-400 capitalize">Cycle ${c.cycle} • Niveau ${c.niveau}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                c.programme === 'beninois' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-blue-100 text-blue-900 border border-blue-200'
+              }">Prog. ${c.programme.toUpperCase()}</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-500 font-semibold">Effectif : <strong>${c.inscrits} / ${c.capacite}</strong></span>
+                <span class="font-black ${isFull ? 'text-red-600' : 'text-sigapei-green'}">${percent}%</span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-300 ${isFull ? 'bg-red-600' : percent > 85 ? 'bg-amber-500' : 'bg-sigapei-green'}" style="width: ${percent}%;"></div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-500">Places d'admission :</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                isFull ? 'bg-red-100 text-red-800' : 'bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]'
+              }">
+                ${isFull ? 'COMPLÈTE (Bloquant)' : `${dispo} place${dispo > 1 ? 's' : ''}`}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // TABLE DES APPRENANTS & MUTATIONS SANS DOUBLON
+    function renderAdminApprenantsTable() {
+      const tbody = document.getElementById('table-body-apprenants-admin');
+      const search = document.getElementById('admin-search-apprenants-input')?.value.toLowerCase() || '';
+
+      const filtered = memoryApprenants.filter(a => {
+        return a.nom.toLowerCase().includes(search) || a.prenom.toLowerCase().includes(search) || a.matricule.toLowerCase().includes(search);
+      });
+
+      tbody.innerHTML = filtered.map(a => {
+        const cl = memoryClasses.find(x => x.id === a.classe_id) || memoryClasses[0];
+        const hasAccount = cl.programme === 'francais';
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3.5 px-4 font-mono font-bold text-slate-900">${a.matricule}</td>
+            <td class="py-3.5 px-4 font-bold text-sigapei-black">${a.nom} ${a.prenom}</td>
+            <td class="py-3.5 px-4 font-bold text-slate-800">${cl.nom}</td>
+            <td class="py-3.5 px-4">
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                cl.programme === 'beninois' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-blue-100 text-blue-900 border border-blue-200'
+              }">Prog. ${cl.programme.toUpperCase()}</span>
+            </td>
+            <td class="py-3.5 px-4">
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                hasAccount ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-600'
+              }">
+                ${hasAccount ? 'ACTIF (Secondaire FR)' : 'AUCUN (Règle Bénin)'}
+              </span>
+            </td>
+            <td class="py-3.5 px-4 text-slate-700">${a.parent_nom}</td>
+            <td class="py-3.5 px-4 text-[11px] text-slate-500">
+              ${a.mutations.length > 0 ? `<span class="text-sigapei-gold font-bold">${a.mutations.length} mutation(s)</span>` : 'Admission initiale'}
+            </td>
+            <td class="py-3.5 px-4 text-right">
+              <button onclick="openModalMutationApprenant(${a.id})" class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-1.5 shadow-sm">
+                <svg class="w-3.5 h-3.5 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                <span>Transférer</span>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // MODAL MUTATION
+    function openModalMutationApprenant(appId) {
+      activeMutationAppId = appId;
+      const a = memoryApprenants.find(x => x.id === appId);
+      const cl = memoryClasses.find(x => x.id === a.classe_id);
+
+      document.getElementById('mut-info-nom').innerText = `${a.nom} ${a.prenom} (${a.matricule})`;
+      document.getElementById('mut-info-classe').innerText = `${cl.nom} (Programme ${cl.programme.toUpperCase()})`;
+
+      const select = document.getElementById('mut-select-target-class');
+      select.innerHTML = memoryClasses
+        .filter(c => c.id !== a.classe_id)
+        .map(c => `
+          <option value="${c.id}" data-prog="${c.programme}">
+            ${c.nom} — Programme ${c.programme.toUpperCase()} (${c.inscrits >= c.capacite ? 'COMPLÈTE' : `${c.capacite - c.inscrits} places disponibles`})
+          </option>
+        `).join('');
+
+      handleMutationTargetChange();
+      document.getElementById('modal-transfert-mutation').classList.remove('hidden');
+    }
+
+    function closeModalTransfertMutation() {
+      document.getElementById('modal-transfert-mutation').classList.add('hidden');
+    }
+
+    function handleMutationTargetChange() {
+      const a = memoryApprenants.find(x => x.id === activeMutationAppId);
+      const currentCl = memoryClasses.find(x => x.id === a.classe_id);
+
+      const select = document.getElementById('mut-select-target-class');
+      const targetCl = memoryClasses.find(x => x.id === parseInt(select.value));
+
+      const isSwitchToFrench = currentCl && targetCl && currentCl.programme === 'beninois' && targetCl.programme === 'francais';
+      const alertBox = document.getElementById('mut-alert-programme-box');
+
+      if (isSwitchToFrench) {
+        alertBox.classList.remove('hidden');
+      } else {
+        alertBox.classList.add('hidden');
+      }
+    }
+
+    function submitMutationTransfert() {
+      const a = memoryApprenants.find(x => x.id === activeMutationAppId);
+      const currentCl = memoryClasses.find(x => x.id === a.classe_id);
+
+      const select = document.getElementById('mut-select-target-class');
+      const targetCl = memoryClasses.find(x => x.id === parseInt(select.value));
+      const reason = document.getElementById('mut-input-reason').value.trim() || 'Mutation administrative';
+
+      // BLOCAGE EN CAS DE CLASSE SÉLECTIONNÉE COMPLÈTE
+      if (targetCl.inscrits >= targetCl.capacite) {
+        triggerToastNotification(`MUTATION REFUSÉE : La classe ${targetCl.nom} est complète !`, 'error');
+        return;
+      }
+
+      // MISE À JOUR SANS DUPLICATION
+      currentCl.inscrits = Math.max(0, currentCl.inscrits - 1);
+      targetCl.inscrits++;
+
+      a.mutations.push({
+        date: new Date().toLocaleDateString('fr-FR'),
+        ancienne: currentCl.nom,
+        nouvelle: targetCl.nom,
+        motif: reason
+      });
+      a.classe_id = targetCl.id;
+
+      closeModalTransfertMutation();
+      renderAdminDashboardData();
+      renderAdminClassesCards();
+      renderAdminApprenantsTable();
+
+      triggerToastNotification(`Mutation effectuée sans duplication ! Consignée dans scolarite.historique_classes.`, 'success');
+    }
+
+    // CRÉATION DE CLASSE
+    function openModalCreateClasse() {
+      document.getElementById('modal-add-class').classList.remove('hidden');
+    }
+
+    function closeModalCreateClasse() {
+      document.getElementById('modal-add-class').classList.add('hidden');
+    }
+
+    function submitNewClasse() {
+      const nom = document.getElementById('input-new-c-nom').value.trim();
+      const cycle = document.getElementById('input-new-c-cycle').value;
+      const programme = document.getElementById('input-new-c-programme').value;
+      const cap = parseInt(document.getElementById('input-new-c-capacite').value) || 45;
+
+      if (!nom) {
+        triggerToastNotification('Le nom de la classe est obligatoire.', 'warning');
+        return;
+      }
+
+      const newC = {
+        id: memoryClasses.length + 1,
+        uuid: 'c-' + Math.random().toString(36).substring(2, 8),
+        nom: nom,
+        cycle: cycle,
+        niveau: nom.split(' ')[0] || '6e',
+        programme: programme,
+        capacite: cap,
+        inscrits: 0
+      };
+
+      memoryClasses.push(newC);
+      closeModalCreateClasse();
+      renderAdminClassesCards();
+      renderPublicClassesCards();
+      renderAdminDashboardData();
+
+      triggerToastNotification(`Classe ${nom} ajoutée avec succès au schéma scolarite !`, 'success');
+    }
+
+    // PLANNING ADMIN (CENSEUR)
+    function renderAdminEDTGrid() {
+      const grid = document.getElementById('grid-admin-edt');
+      const jours = ['Heures', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+      const cours = [
+        { h: '08h - 10h', c1: 'Mathématiques (M. Mensah)', c2: 'Histoire-Géo (Mme Lawson)', c3: '—', c4: 'Mathématiques (M. Mensah)', c5: 'Physique-Chimie (M. Dossou)' },
+        { h: '10h - 12h', c1: 'Français (Mme Bio)', c2: 'Anglais (M. Smith)', c3: 'EPS (Stade)', c4: 'Français (Mme Bio)', c5: 'SVT (Labo)' },
+        { h: '15h - 17h', c1: 'SVT (Labo)', c2: 'Informatique', c3: '—', c4: 'Histoire-Géo', c5: 'Arts Plastiques' },
+      ];
+
+      grid.innerHTML = jours.map(j => `<div class="p-2.5 font-bold text-xs bg-slate-100 rounded-xl text-slate-700">${j}</div>`).join('') +
+        cours.map(row => `
+          <div class="p-2.5 text-xs font-bold text-slate-500 bg-slate-50 rounded-xl flex items-center justify-center font-mono">${row.h}</div>
+          <div class="p-2.5 bg-blue-50/80 border border-blue-200/70 rounded-xl text-left text-[11px] font-medium"><strong class="text-blue-900 block">${row.c1}</strong> Salle B2</div>
+          <div class="p-2.5 bg-amber-50/80 border border-sigapei-gold/40 rounded-xl text-left text-[11px] font-medium"><strong class="text-amber-900 block">${row.c2}</strong> Salle B2</div>
+          <div class="p-2.5 bg-slate-50 rounded-xl text-slate-400 text-xs flex items-center justify-center">${row.c3}</div>
+          <div class="p-2.5 bg-indigo-50/80 border border-indigo-200/70 rounded-xl text-left text-[11px] font-medium"><strong class="text-indigo-900 block">${row.c4}</strong> Salle B2</div>
+          <div class="p-2.5 bg-teal-50/80 border border-teal-200/70 rounded-xl text-left text-[11px] font-medium"><strong class="text-teal-900 block">${row.c5}</strong> Salle B2</div>
+        `).join('');
+    }
+
+    // -------------------------------------------------------------------------
+    // ESPACE CANDIDAT : NAVIGATION & PROCESSUS D'ADMISSION
+    // -------------------------------------------------------------------------
+    function switchCandidatTab(tab) {
+      ['form', 'suivi', 'reinc'].forEach(t => {
+        document.getElementById(`candidat-sub-${t}`).classList.add('hidden');
+        document.getElementById(`tab-candidat-${t}`).className = "px-4 py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition";
+      });
+
+      document.getElementById(`candidat-sub-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-candidat-${tab}`).className = "px-4 py-2 rounded-lg text-xs font-bold bg-sigapei-green text-white shadow-sm transition";
+    }
+
+    function goToStepPublic(step) {
+      if (step === 2) {
+        const nom = document.getElementById('cand-nom-val').value.trim();
+        const prenom = document.getElementById('cand-prenom-val').value.trim();
+        if (!nom || !prenom) {
+          triggerToastNotification('Nom et prénom de l\'élève requis.', 'warning');
+          return;
+        }
+      }
+
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`step-page-${i}`).classList.add('hidden');
+        const bubble = document.getElementById(`step-bubble-${i}`);
+        if (i < step) {
+          bubble.className = "w-10 h-10 rounded-full bg-sigapei-green text-white font-bold text-xs flex items-center justify-center border-4 border-white shadow-sm";
+          bubble.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+        } else if (i === step) {
+          bubble.className = "w-10 h-10 rounded-full bg-sigapei-gold text-sigapei-black font-black text-xs flex items-center justify-center border-4 border-white shadow-sm";
+          bubble.innerText = i;
+        } else {
+          bubble.className = "w-10 h-10 rounded-full bg-slate-200 text-slate-500 font-bold text-xs flex items-center justify-center border-4 border-white shadow-sm";
+          bubble.innerText = i;
+        }
+      }
+
+      document.getElementById(`step-page-${step}`).classList.remove('hidden');
+      document.getElementById('cand-stepper-progress-bar').style.width = `${step * 25}%`;
+    }
+
+    function renderPublicClassesCards() {
+      const container = document.getElementById('container-public-classes-cards');
+      container.innerHTML = memoryClasses.map(c => {
+        const dispo = Math.max(0, c.capacite - c.inscrits);
+        const isFull = dispo <= 0;
+        const isSelected = c.id === selectedFormClassId;
+
+        return `
+          <div onclick="${isFull ? '' : `selectPublicFormClasse(${c.id})`}" 
+               class="p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
+                 isFull ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed' :
+                 isSelected ? 'border-sigapei-green bg-sigapei-cream/40 ring-2 ring-sigapei-green/20 shadow-card' : 'border-slate-200 hover:border-slate-300 bg-white'
+               }">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-sm font-black text-sigapei-black font-heading">${c.nom}</span>
+                <p class="text-xs text-slate-500 capitalize">${c.cycle} • Niveau ${c.niveau}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold ${
+                c.programme === 'beninois' ? 'bg-amber-100 text-amber-900 border border-amber-200' : 'bg-blue-100 text-blue-900 border border-blue-200'
+              }">Prog. ${c.programme.toUpperCase()}</span>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-500">Places d'admission :</span>
+              <span class="font-extrabold ${isFull ? 'text-red-600' : 'text-sigapei-green'}">
+                ${isFull ? 'COMPLÈTE (Bloquant)' : `${dispo} place${dispo > 1 ? 's' : ''} disponible${dispo > 1 ? 's' : ''}`}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectPublicFormClasse(id) {
+      selectedFormClassId = id;
+      renderPublicClassesCards();
+    }
+
+    function submitPublicAdmission() {
+      const nom = document.getElementById('cand-nom-val').value.trim();
+      const prenom = document.getElementById('cand-prenom-val').value.trim();
+      const targetCl = memoryClasses.find(x => x.id === selectedFormClassId);
+
+      // CONTRÔLE BLOQUANT
+      if (targetCl.inscrits >= targetCl.capacite) {
+        triggerToastNotification(`La classe ${targetCl.nom} est complète. Inscription bloquée.`, 'error');
+        return;
+      }
+
+      const newCand = {
+        id: memoryCandidatures.length + 1,
+        uuid: 'cand-' + Math.random().toString(36).substring(2, 10),
+        nom: nom,
+        prenom: prenom,
+        date_naissance: document.getElementById('cand-date-val').value || '2012-05-14',
+        sexe: document.getElementById('cand-sexe-val').value,
+        classe_id: targetCl.id,
+        parent_nom: `${document.getElementById('cand-pnom-val').value} ${document.getElementById('cand-pprenom-val').value}` || 'Parent Référent',
+        parent_tel: document.getElementById('cand-ptel-val').value || '+229 97 00 00 00',
+        parent_email: document.getElementById('cand-pmail-val').value || 'parent@sigapei.com',
+        pieces: [
+          { type: 'Acte de Naissance', file: 'acte_depose.pdf', status: 'conforme' },
+          { type: 'Dernier Bulletin', file: 'bulletin_depose.pdf', status: 'conforme' }
+        ],
+        test: null,
+        statut: 'soumise',
+        motif_rejet: null,
+        date_soumission: 'Aujourd\'hui'
+      };
+
+      memoryCandidatures.unshift(newCand);
+      renderAdminDashboardData();
+      renderAdminCandidaturesTable();
+
+      triggerToastNotification(`Candidature soumise avec succès ! Réf : ${newCand.uuid}`, 'success');
+
+      switchCandidatTab('suivi');
+      document.getElementById('public-search-uuid-input').value = newCand.uuid;
+      handlePublicSearchDossier();
+    }
+
+    function handlePublicSearchDossier() {
+      const q = document.getElementById('public-search-uuid-input').value.trim().toLowerCase();
+      const container = document.getElementById('container-public-suivi-result');
+
+      const found = memoryCandidatures.find(c => c.uuid.toLowerCase().includes(q) || c.nom.toLowerCase().includes(q));
+
+      if (!found) {
+        container.innerHTML = `
+          <div class="p-4 rounded-xl bg-slate-100 text-slate-600 text-xs text-center">
+            Aucun dossier trouvé pour cette référence. Vérifiez la saisie de votre UUID.
+          </div>
+        `;
+        return;
+      }
+
+      const cl = memoryClasses.find(x => x.id === found.classe_id) || memoryClasses[0];
+
+      container.innerHTML = `
+        <div class="p-6 rounded-2xl border ${
+          found.statut === 'validee' ? 'bg-[#EAF5EF] border-[#BDE3CE]' :
+          found.statut === 'rejetee' ? 'bg-red-50/50 border-red-200' : 'bg-amber-50/50 border-sigapei-gold/40'
+        } space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-base font-black text-sigapei-black font-heading">${found.nom} ${found.prenom}</span>
+              <p class="text-xs text-slate-500 font-mono">Dossier n° ${found.uuid}</p>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-black uppercase ${
+              found.statut === 'validee' ? 'bg-sigapei-green text-white shadow-sm' :
+              found.statut === 'rejetee' ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-amber-100 text-amber-900 border border-amber-200'
+            }">${found.statut}</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-2 border-t border-slate-200">
+            <div><span class="text-slate-400">Classe :</span> <strong>${cl.nom}</strong></div>
+            <div><span class="text-slate-400">Programme :</span> <strong>${cl.programme.toUpperCase()}</strong></div>
+            <div><span class="text-slate-400">Date soumission :</span> <strong>${found.date_soumission}</strong></div>
+          </div>
+
+          ${found.statut === 'rejetee' ? `
+            <div class="bg-white p-3.5 rounded-xl border border-red-200 text-xs text-red-800">
+              <strong>Motif formel du rejet :</strong> ${found.motif_rejet || 'Dossier non conforme'}
+            </div>
+          ` : ''}
+
+          ${found.statut === 'validee' ? `
+            <div class="bg-white p-3.5 rounded-xl border border-emerald-200 text-xs text-sigapei-green">
+              <strong>Admission confirmée !</strong> L'élève est inscrit en ${cl.nom}. Le responsable légal peut accéder à l'espace parent.
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function handleReincAction() {
+      const mat = document.getElementById('reinc-input-matricule').value.trim();
+      if (!mat) {
+        triggerToastNotification('Le matricule officiel est requis.', 'warning');
+        return;
+      }
+      triggerToastNotification(`Reconduction annuelle validée sans duplication de dossier pour ${mat}`, 'success');
+      document.getElementById('reinc-input-matricule').value = '';
+    }
+
+    // -------------------------------------------------------------------------
+    // ESPACE PARENT : ONGLETS ET PLANNING
+    // -------------------------------------------------------------------------
+    function switchParentSubTab(sub) {
+      ['edt', 'finances', 'historique'].forEach(s => {
+        document.getElementById(`parent-subview-${s}`).classList.add('hidden');
+        document.getElementById(`tab-parent-${s}`).className = "px-4 py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-900 transition";
+      });
+
+      document.getElementById(`parent-subview-${sub}`).classList.remove('hidden');
+      document.getElementById(`tab-parent-${sub}`).className = "px-4 py-2 text-xs font-bold rounded-xl bg-sigapei-green text-white shadow-sm transition";
+    }
+
+    function renderParentEDTCards() {
+      const container = document.getElementById('container-parent-edt-cards');
+      const cours = [
+        { jour: 'Lundi', p: '08h-10h Maths • 10h-12h Français • 15h-17h SVT' },
+        { jour: 'Mardi', p: '08h-10h Histoire • 10h-12h Anglais • 15h-17h Info' },
+        { jour: 'Mercredi', p: '08h-10h EPS • 10h-12h Sciences' },
+        { jour: 'Jeudi', p: '08h-10h Maths • 10h-12h Français' },
+        { jour: 'Vendredi', p: '08h-10h Physique • 10h-12h Arts' },
+      ];
+
+      container.innerHTML = cours.map(c => `
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-1">
+          <p class="font-black text-sigapei-green font-heading">${c.jour}</p>
+          <p class="text-slate-600 text-[11px] leading-relaxed">${c.p}</p>
+        </div>
+      `).join('');
+    }
+
+    // GRAPHIQUE OFFICIEL (Chart.js)
+    function initOfficialChart() {
+      const ctx = document.getElementById('chart-admissions-official').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Août S1', 'Août S2', 'Août S3', 'Août S4', 'Sept S1', 'Sept S2', 'Sept S3', 'Sept S4'],
+          datasets: [
+            {
+              label: 'Inscriptions Confirmées',
+              data: [150, 380, 690, 940, 1180, 1340, 1440, 1482],
+              borderColor: '#006B3C',
+              backgroundColor: 'rgba(0, 107, 60, 0.08)',
+              borderWidth: 3.5,
+              fill: true,
+              tension: 0.35,
+              pointBackgroundColor: '#006B3C',
+              pointRadius: 4
+            },
+            {
+              label: 'Capacité Totale Maximale (1600)',
+              data: [1600, 1600, 1600, 1600, 1600, 1600, 1600, 1600],
+              borderColor: '#E9AA20',
+              borderDash: [6, 6],
+              borderWidth: 2,
+              fill: false,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Inter', size: 10 } } },
+            x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 10 } } }
+          }
+        }
+      });
+    }
+
+    // TOAST NOTIFICATION
+    function triggerToastNotification(text, type = 'success') {
+      const toast = document.getElementById('toast-wrapper-el');
+      const box = document.getElementById('toast-box-el');
+      const slot = document.getElementById('toast-text-slot');
+      const icon = document.getElementById('toast-icon-slot');
+
+      slot.innerText = text;
+
+      if (type === 'error') {
+        box.className = "bg-red-700 text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center space-x-3 text-xs font-bold";
+        icon.innerHTML = `<svg class="w-5 h-5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+      } else if (type === 'warning') {
+        box.className = "bg-amber-600 text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center space-x-3 text-xs font-bold";
+        icon.innerHTML = `<svg class="w-5 h-5 text-sigapei-cream shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+      } else {
+        box.className = "bg-sigapei-green text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center space-x-3 text-xs font-bold";
+        icon.innerHTML = `<svg class="w-5 h-5 text-sigapei-gold shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+      }
+
+      toast.classList.remove('translate-y-24', 'opacity-0');
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 4500);
+    }
+  </script>
+</body>
+</html>
