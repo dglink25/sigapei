@@ -1,6 +1,14 @@
 import React from 'react';
 
-export default function Header({ currentSpace, setCurrentSpace, pendingCount, currentUser, onLogout }) {
+export default function Header({ 
+  currentSpace, 
+  setCurrentSpace, 
+  pendingCount, 
+  currentUser, 
+  onLogout,
+  academicYear = '2026-2027',
+  onSelectAcademicYear
+}) {
   const getInitials = (name) => {
     if (!name) return 'SP';
     const parts = name.trim().split(/\s+/);
@@ -47,16 +55,34 @@ export default function Header({ currentSpace, setCurrentSpace, pendingCount, cu
                   <span className="text-xs font-extrabold text-white">{currentUser?.etablissement || 'Collège Saint-Michel de Cotonou'}</span>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-sigapei-gold text-sigapei-black">ACTIF</span>
                 </div>
-                <p className="text-[11px] text-sigapei-cream/80">Cotonou, Bénin • Année 2026-2027</p>
+                <p className="text-[11px] text-sigapei-cream/80">Cotonou, Bénin</p>
               </div>
             </div>
           </div>
 
-          {/* Profil, Statut Microservices & Déconnexion */}
+          {/* Sélecteur d'Année Académique & Profil */}
           <div className="flex items-center space-x-3 sm:space-x-4">
+            
+            {/* SÉLECTEUR ANNÉE ACADÉMIQUE */}
+            <div className="flex items-center gap-2 bg-black/25 px-3 py-1.5 rounded-xl border border-white/15">
+              <span className="text-xs">📅</span>
+              <div className="flex flex-col text-left">
+                <span className="text-[9px] text-sigapei-gold font-black uppercase tracking-wider leading-none">Année Scolaire</span>
+                <select
+                  value={academicYear}
+                  onChange={e => onSelectAcademicYear && onSelectAcademicYear(e.target.value)}
+                  className="bg-transparent text-xs font-black text-sigapei-cream outline-none cursor-pointer mt-0.5"
+                >
+                  <option value="2026-2027" className="text-slate-900 font-bold">2026-2027 (Active)</option>
+                  <option value="2025-2026" className="text-slate-900 font-bold">2025-2026 (Archivée)</option>
+                  <option value="2027-2028" className="text-slate-900 font-bold">2027-2028 (Préinscriptions)</option>
+                </select>
+              </div>
+            </div>
+
             <div className="hidden md:flex items-center gap-2 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="font-medium text-sigapei-cream text-[11px]">Ports 4003 & 4004 Connectés</span>
+              <span className="font-medium text-sigapei-cream text-[11px]">Microservices Connectés</span>
             </div>
 
             <div className="flex items-center space-x-3 pl-2 border-l border-white/20">

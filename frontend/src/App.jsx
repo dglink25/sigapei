@@ -7,6 +7,8 @@ import ClassesView from './components/admin/ClassesView';
 import ApprenantsView from './components/admin/ApprenantsView';
 import EmploisView from './components/admin/EmploisView';
 import FinancesView from './components/admin/FinancesView';
+import MatieresNotesView from './components/admin/MatieresNotesView';
+import AnneeScolaireView from './components/admin/AnneeScolaireView';
 import CandidatSpace from './components/candidat/CandidatSpace';
 import ParentSpace from './components/parent/ParentSpace';
 import EnseignantSpace from './components/enseignant/EnseignantSpace';
@@ -51,13 +53,16 @@ export default function App() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  // ── Session Académique ───────────────────────────────────────
+  const [academicYear, setAcademicYear] = useState('2026-2027');
+
   // ── Login / Logout ────────────────────────────────────────────
   const handleLogin = (user) => {
     setCurrentUser(user);
     setShowRegister(false);
     // Set default nav for admin-layout roles
     if (ADMIN_LAYOUT_ROLES.includes(user.role)) {
-      const defaults = { admin: 'dashboard', secretaire: 'candidatures', censeur: 'emplois' };
+      const defaults = { admin: 'dashboard', secretaire: 'candidatures', censeur: 'matieres' };
       setCurrentAdminNav(defaults[user.role] || 'dashboard');
     }
   };
@@ -222,6 +227,8 @@ export default function App() {
         pendingCount={pendingCount}
         currentUser={currentUser}
         onLogout={handleLogout}
+        academicYear={academicYear}
+        onSelectAcademicYear={setAcademicYear}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -265,6 +272,12 @@ export default function App() {
             )}
             {currentAdminNav === 'finances' && (
               <FinancesView />
+            )}
+            {currentAdminNav === 'matieres' && (
+              <MatieresNotesView classes={classes} academicYear={academicYear} />
+            )}
+            {currentAdminNav === 'annees' && role === 'admin' && (
+              <AnneeScolaireView currentYear={academicYear} onSelectYear={setAcademicYear} classes={classes} />
             )}
           </div>
         </section>
