@@ -1,101 +1,127 @@
-# Documentation Technique de l'API — api-scolarite
+# Documentation Complète de l'API — scolarite
 
 Microservice de gestion administrative et pédagogique de la plateforme **SIGAPEI**.
 
 - **Port** : `4004`
 - **Préfixe API** : `/v1`
 - **Sonde de santé** : `GET /sante`
-- **Catalogue interactif des endpoints** : `GET /docs` (public, format JSON)
+- **Catalogue interactif des endpoints (JSON)** : `GET /docs` (public)
+- **Base de données** : PostgreSQL managée (Neon), schéma dédié `scolarite`
 
 ---
 
-## 1. Principes d'Architecture & Sécurité
+## 1. Principes Transverses & Spécifications Générales
 
-### 1.1. Cloisonnement Multi-Tenant
-Toutes les tables portent une colonne `tenant_id` indexée. L'accès aux données est filtré automatiquement via le scope global Eloquent `TenantScope`. Aucune fuite de données entre établissements n'est possible.
+### 1.1. Format Standard des Réponses
 
-### 1.2. Exposition exclusive des UUIDs
-Conformément à la règle de la plateforme, **aucun identifiant interne `id` (bigint auto-incrémenté) n'est exposé** dans les URLs ou dans les réponses API clientes. Seules les colonnes `uuid` (UUIDv4) sont exposées.
+Toutes les réponses de l'API sont normalisées :
 
-### 1.3. Authentification & Headers
-Les requêtes vers `/v1/*` exigent :
-* Header d'authentification client : `Authorization: Bearer <token_jwt>` (émis par `api-identite`)
-* Ou Header inter-services interne : `X-Internal-Secret: <INTERNAL_API_SECRET>` accompagné de `X-Tenant-Id: <id>`
-
-### 1.4. Format standard des réponses JSON
-
-**Succès (HTTP 200 / 201) :**
+#### Réponse de Succès (HTTP 200 / 201)
 ```json
 {
   "succes": true,
-  "message": "Description de l'opération",
-  "donnees": { ... },
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "message": "Description de l'opération effectuée",
+  "donnees": {
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    ...
+  },
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
 
-**Erreur (HTTP 400 / 401 / 403 / 404 / 422 / 500) :**
+#### Réponse d'Erreur (HTTP 400, 401, 403, 404, 422, 500)
 ```json
 {
   "succes": false,
-  "code_erreur": "CODE_ERREUR_METIER",
-  "message": "Explication claire de l'erreur",
+  "code_erreur": "ERREUR_TRANSFERT",
+  "message": "Transfert impossible : la classe de destination (6ème B) est complète.",
   "details": null,
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
 
+### 1.2. Authentification & Headers Requis
+
+| Contexte d'appel | Headers requis | Description |
+|---|---|---|
+| **Appel client authentifié** | `Authorization: Bearer <token_jwt>` | Jeton JWT émis par `identite` contenant `sub`, `tenant_id`, et `role` |
+| **Appel inter-services** | `X-Internal-Secret: <INTERNAL_API_SECRET>`<br>`X-Tenant-Id: <id>` | Secret partagé de la plateforme pour communication directe sans JWT (ex: `/v1/interne/*`) |
+
+### 1.3. Règles Métier Fondamentales de la Scolarité
+
+1. **Règle du Programme Pédagogique (Béninois vs Français)** :
+   * **Programme Béninois** : aucun compte de connexion élève propre (`utilisateur_id = NULL`), quel que soit son cycle (primaire ou secondaire), en raison de l'interdiction stricte du téléphone aux élèves durant l'année scolaire. L'accès à l'espace se fait exclusivement via le compte parent rattaché (`scolarite.parents_apprenants`).
+   * **Programme Français** : compte élève activé dès le cycle secondaire.
+   * **Cycle Universitaire** : étudiant titulaire autonome de son compte.
+2. **Transferts internes sans duplication de dossier** :
+   * La mutation met à jour `classe_id` sur la même ligne de la table `scolarite.apprenants`.
+   * L'historique complet est archivé dans `scolarite.historique_classes`.
+   * En cas de transfert d'une classe béninoise vers une classe française, le système active `compte_apprenant_a_creer: true` pour déclencher le provisionnement sans altérer le dossier élève.
+3. **Paiements de scolarité en lecture seule pure** :
+   * La consultation interroge `finances.factures` et `finances.transactions` par jointure directe.
+   * Aucune écriture financière n'est effectuée côté Scolarité.
+
 ---
 
-## 2. Règle Majeure : Gestion du Compte selon le Programme Pédagogique
-
-Chaque classe est rattachée à un programme pédagogique via la colonne `programme` (`beninois` ou `francais`) :
-1. **Programme Béninois** :
-   * L'apprenant n'a **aucun compte de connexion propre** (`utilisateur_id = NULL`), quel que soit son cycle (primaire ou secondaire).
-   * L'accès aux notes, emplois du temps et demandes se fait exclusivement via le compte du parent rattaché (`scolarite.parents_apprenants`).
-   * Règle motivée par la réalité du terrain : interdiction formelle du téléphone aux élèves durant l'année scolaire.
-2. **Programme Français** :
-   * Compte optionnel au primaire, compte propre et actif par défaut dès le cycle secondaire.
-3. **Cycle Universitaire** :
-   * L'étudiant est systématiquement titulaire autonome de son compte, quel que soit le programme.
-4. **Mutation Béninois $\rightarrow$ Français** :
-   * Déclenche automatiquement le provisionnement du compte élève, sans jamais recréer le dossier apprenant.
+## 2. Référentiel des Endpoints
 
 ---
 
-## 3. Endpoints Détaillés
+### 2.1. Sonde de santé
+Vérifie la disponibilité du microservice pour la Gateway et les load-balancers.
 
-### 3.1. Sonde de santé
 * **Méthode** : `GET`
 * **Route** : `/sante`
-* **Accès** : Public (sans authentification)
-* **Réponse 200** :
+* **Authentification** : Aucune (publique)
+
+#### Exemple de Requête
+```bash
+curl -X GET http://localhost:4004/sante
+```
+
+#### Exemple de Réponse (HTTP 200 OK)
 ```json
 {
   "statut": "ok",
   "service": "api-scolarite",
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
 
 ---
 
-### 3.2. Catalogue des endpoints
+### 2.2. Catalogue des Endpoints (Swagger / OpenAPI alternatif)
+Retourne le catalogue complet des endpoints, paramètres et formats JSON.
+
 * **Méthode** : `GET`
 * **Route** : `/docs`
-* **Accès** : Public (sans authentification)
-* **Description** : Renvoie la liste complète de tous les endpoints, leurs paramètres, schémas de requêtes et exemples de réponses.
+* **Authentification** : Aucune (publique)
+
+#### Exemple de Requête
+```bash
+curl -X GET http://localhost:4004/docs
+```
 
 ---
 
-### 3.3. Lister les classes
+### 2.3. Lister les classes
+Retourne les classes de l'établissement avec leur effectif, capacité et programme.
+
 * **Méthode** : `GET`
 * **Route** : `/v1/classes`
-* **Query Params** :
-  * `cycle` (optionnel) : `primaire`, `secondaire`, `universitaire`
-  * `programme` (optionnel) : `beninois`, `francais`
-  * `statut` (optionnel) : `actif`, `archive`
-* **Réponse 200** :
+* **Authentification** : `Authorization: Bearer <token_jwt>`
+* **Paramètres de Requête (Query)** :
+  * `cycle` (string, optionnel) : `primaire`, `secondaire`, `universitaire`
+  * `programme` (string, optionnel) : `beninois`, `francais`
+  * `statut` (string, optionnel) : `actif`, `archive`
+
+#### Exemple de Requête
+```bash
+curl -X GET "http://localhost:4004/v1/classes?programme=beninois" \
+  -H "Authorization: Bearer <token_jwt>"
+```
+
+#### Exemple de Réponse (HTTP 200 OK)
 ```json
 {
   "succes": true,
@@ -115,27 +141,45 @@ Chaque classe est rattachée à un programme pédagogique via la colonne `progra
       "statut": "actif"
     }
   ],
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
 
 ---
 
-### 3.4. Créer une classe
+### 2.4. Créer une classe
+Configure une nouvelle classe au sein de l'établissement.
+
 * **Méthode** : `POST`
 * **Route** : `/v1/classes`
-* **Corps de la requête (JSON)** :
-```json
-{
-  "nom": "6ème B (Programme Français)",
-  "cycle": "secondaire",
-  "niveau": "6e",
-  "filiere": null,
-  "programme": "francais",
-  "capacite": 35
-}
+* **Authentification** : `Authorization: Bearer <token_jwt>` (Admin)
+
+#### Paramètres du Corps (JSON)
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `nom` | String | Oui | Intitulé de la classe (max 100) |
+| `cycle` | String | Oui | `primaire`, `secondaire`, `universitaire` |
+| `niveau` | String | Oui | Niveau académique (ex: `CI`, `6e`, `Terminale`, `L1`) |
+| `filiere` | String | Non | Filière ou série (ex: `Scientifique`, `Litteraire`) |
+| `programme` | String | Oui | `beninois` ou `francais` |
+| `capacite` | Integer | Oui | Capacité maximale d'accueil (ex: 45) |
+
+#### Exemple de Requête
+```bash
+curl -X POST http://localhost:4004/v1/classes \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_jwt>" \
+  -d '{
+    "nom": "6ème B (Programme Français)",
+    "cycle": "secondaire",
+    "niveau": "6e",
+    "filiere": null,
+    "programme": "francais",
+    "capacite": 35
+  }'
 ```
-* **Réponse 201** :
+
+#### Exemple de Réponse (HTTP 201 Created)
 ```json
 {
   "succes": true,
@@ -150,19 +194,20 @@ Chaque classe est rattachée à un programme pédagogique via la colonne `progra
     "capacite": 35,
     "statut": "actif"
   },
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
-* **Erreurs possibles** :
-  * `422 DONNEES_INVALIDES` : Champs manquants ou programme différent de `beninois`/`francais`.
 
 ---
 
-### 3.5. Vérifier la disponibilité de place en temps réel
+### 2.5. Vérifier la capacité en temps réel
+Calcul dynamique consommé par le microservice `inscription` avant toute validation d'admission.
+
 * **Méthode** : `GET`
 * **Route** : `/v1/classes/{uuid}/disponibilite`
-* **Description** : Calcul dynamique et bloquant consommé par `api-inscription`.
-* **Réponse 200** :
+* **Authentification** : `Authorization: Bearer <token_jwt>` ou `X-Internal-Secret`
+
+#### Exemple de Réponse (HTTP 200 OK)
 ```json
 {
   "succes": true,
@@ -178,16 +223,20 @@ Chaque classe est rattachée à un programme pédagogique via la colonne `progra
     "places_disponibles": 5,
     "est_complete": false
   },
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
 
 ---
 
-### 3.6. Consulter le dossier complet d'un apprenant
+### 2.6. Consulter le dossier complet d'un apprenant
+Fournit l'état civil, la classe actuelle, l'historique de tous les transferts passés et les parents rattachés.
+
 * **Méthode** : `GET`
 * **Route** : `/v1/apprenants/{uuid}`
-* **Réponse 200** :
+* **Authentification** : `Authorization: Bearer <token_jwt>`
+
+#### Exemple de Réponse (HTTP 200 OK)
 ```json
 {
   "succes": true,
@@ -226,29 +275,42 @@ Chaque classe est rattachée à un programme pédagogique via la colonne `progra
       }
     ]
   },
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
 
 ---
 
-### 3.7. Effectuer un transfert / mutation interne de classe
+### 2.7. Effectuer un transfert / mutation interne de classe
+Opération atomique sans duplication de dossier :
+1. Vérifie la disponibilité de place dans la classe cible (`scolarite.classes`).
+2. Met à jour `classe_id` sur la fiche apprenant existante dans `scolarite.apprenants`.
+3. Consigne la mutation dans `scolarite.historique_classes`.
+4. Détecte le changement de programme : si passage `beninois` $\rightarrow$ `francais`, indique `compte_apprenant_a_creer: true`.
+5. Journalise l'opération dans `audit_log` et publie l'événement RabbitMQ `apprenant.transfere`.
+
 * **Méthode** : `POST`
 * **Route** : `/v1/apprenants/{uuid}/transfert`
-* **Corps de la requête (JSON)** :
-```json
-{
-  "nouvelle_classe_uuid": "9c8b7a6d-5e4f-3210-fedc-ba9876543210",
-  "motif": "Changement de filière et passage au programme français"
-}
+* **Authentification** : `Authorization: Bearer <token_jwt>` (Admin, Personnel)
+
+#### Paramètres du Corps (JSON)
+| Champ | Type | Requis | Description |
+|---|---|---|---|
+| `nouvelle_classe_uuid` | UUID | Oui | UUID de la classe de destination |
+| `motif` | String | Non | Motif du changement de classe (max 255) |
+
+#### Exemple de Requête
+```bash
+curl -X POST http://localhost:4004/v1/apprenants/b2c3d4e5-f6a7-8901-bcde-f12345678901/transfert \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token_jwt>" \
+  -d '{
+    "nouvelle_classe_uuid": "9c8b7a6d-5e4f-3210-fedc-ba9876543210",
+    "motif": "Passage en section bilingue programme français"
+  }'
 ```
-* **Règles métier appliquées** :
-  1. Vérification bloquante de la capacité de la classe cible.
-  2. Conservation stricte de la même ligne dans `scolarite.apprenants` (pas de duplication de dossier).
-  3. Journalisation de l'ancienne et de la nouvelle classe dans `scolarite.historique_classes`.
-  4. Détection du changement de programme : si `beninois` $\rightarrow$ `francais`, `compte_apprenant_a_creer: true`.
-  5. Journalisation dans `audit_log`.
-* **Réponse 200** :
+
+#### Exemple de Réponse (HTTP 200 OK)
 ```json
 {
   "succes": true,
@@ -267,22 +329,26 @@ Chaque classe est rattachée à un programme pédagogique via la colonne `progra
       "nom": "6ème B (Programme Français)",
       "programme": "francais"
     },
-    "date_transfert": "2026-09-25T10:30:00+01:00",
+    "date_transfert": "2026-09-27T10:30:00+01:00",
     "changement_programme": true,
     "compte_apprenant_a_creer": true,
     "message": "Transfert effectue avec succes sans duplication du dossier."
   },
-  "horodatage": "2026-09-25T10:30:00+01:00"
+  "horodatage": "2026-09-27T10:30:00+01:00"
 }
 ```
 
 ---
 
-### 3.8. Consulter les paiements de scolarité (Lecture seule pure)
+### 2.8. Consulter les paiements de scolarité (Lecture Seule Pure)
+Interroge en jointure directe `finances.factures` et `finances.transactions` pour exposer la situation financière de l'élève.
+
 * **Méthode** : `GET`
 * **Route** : `/v1/apprenants/{uuid}/paiements-scolarite`
-* **Description** : Jointure SQL directe sur `finances.factures` et `finances.transactions`. Aucune écriture n'est effectuée côté Scolarité.
-* **Réponse 200** :
+* **Authentification** : `Authorization: Bearer <token_jwt>`
+* **Garantie** : Strictement aucune écriture financière n'est réalisée.
+
+#### Exemple de Réponse (HTTP 200 OK)
 ```json
 {
   "succes": true,
@@ -322,15 +388,17 @@ Chaque classe est rattachée à un programme pédagogique via la colonne `progra
       ]
     }
   },
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
 
 ---
 
-### 3.9. Emplois du temps
+### 2.9. Emplois du temps
+Permet de consulter et configurer les créneaux de cours.
+
 * **Consulter** : `GET /v1/emplois-du-temps?classe_uuid=...&jour=lundi`
-* **Créer/Modifier un créneau** : `POST /v1/emplois-du-temps`
+* **Créer / Mettre à jour** : `POST /v1/emplois-du-temps`
 ```json
 {
   "classe_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -346,12 +414,14 @@ Chaque classe est rattachée à un programme pédagogique via la colonne `progra
 
 ---
 
-### 3.10. Endpoint Interne (Inter-microservices)
+### 2.10. Endpoint Interne (Inter-microservices)
+Consommé par `api-evaluations`, `api-finances` et `api-vie-scolaire` pour connaître la classe et le programme d'un apprenant sans passer par une requête SQL directe sur le schéma `scolarite`.
+
 * **Méthode** : `GET`
 * **Route** : `/v1/interne/apprenants/{uuid}/classe`
-* **Protection** : `X-Internal-Secret: <INTERNAL_API_SECRET>`
-* **Consommé par** : `api-evaluations`, `api-finances`, `api-vie-scolaire`.
-* **Réponse 200** :
+* **Authentification** : `X-Internal-Secret: <INTERNAL_API_SECRET>`
+
+#### Exemple de Réponse (HTTP 200 OK)
 ```json
 {
   "succes": true,
@@ -365,6 +435,6 @@ Chaque classe est rattachée à un programme pédagogique via la colonne `progra
     "cycle": "secondaire",
     "programme": "beninois"
   },
-  "horodatage": "2026-09-25T10:00:00+01:00"
+  "horodatage": "2026-09-27T10:00:00+01:00"
 }
 ```
