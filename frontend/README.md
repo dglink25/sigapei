@@ -66,23 +66,56 @@ Ce module frontend couvre **exclusivement les formulaires et espaces de travail 
 
 ---
 
-## 3. Démarrage Rapide
+## 3. Architecture Technique (React 18 + Vite + Tailwind CSS)
 
-### Option A : Visualisation Immédiate (Zéro Dépendance)
-Ouvrez simplement le fichier `frontend/index.html` dans n'importe quel navigateur, ou lancez un serveur local :
-```bash
-# Avec PHP (déjà installé)
-php -S 0.0.0.0:3000 -t frontend
+L'application frontend est développée en **React 18** avec **Vite** comme bundler ultra-rapide et **Tailwind CSS** pour l'application stricte de la charte graphique :
 
-# Ou avec Python / Node
-npx serve frontend -l 3000
 ```
-Puis accédez à **http://localhost:3000**.
+frontend/
+├── index.html                   # Point d'entrée HTML Vite (Google Fonts Inter, Poppins, JetBrains Mono)
+├── vite.config.js               # Configuration Vite (port 3000, host: true)
+├── tailwind.config.js           # Thème étendu SIGAPEI (vert #006B3C, sidebar #004D2B, or #E9AA20, crème #FFF6DD)
+├── postcss.config.js            # Pipeline PostCSS / Tailwind
+├── package.json                 # Dépendances (React, ReactDOM, Vite, Chart.js)
+├── src/
+│   ├── main.jsx                 # Point de montage React (createRoot)
+│   ├── index.css                # Directives Tailwind & typographie
+│   ├── App.jsx                  # Composant racine orchestrant les 3 espaces et modales
+│   ├── data/
+│   │   └── initialData.js       # Store de données initiales (classes, candidatures, apprenants, EDT, finances)
+│   └── components/
+│       ├── Header.jsx           # En-tête officiel SIGAPEI avec logo charte, tenant et sélecteur d'espace
+│       ├── Sidebar.jsx          # Sidebar administration w-72 avec icônes SVG inline et pied acteurs
+│       ├── admin/
+│       │   ├── DashboardView.jsx    # Tableau de bord, 4 KPIs, graphique Chart.js, règles clés
+│       │   ├── CandidaturesView.jsx # Instruction des candidatures avec filtres et examen S3
+│       │   ├── ClassesView.jsx      # Suivi des jauges de capacité avec blocage en temps réel
+│       │   ├── ApprenantsView.jsx   # Dossiers apprenants, règle compte Bénin vs FR, mutations
+│       │   ├── EmploisView.jsx      # Emploi du temps géré par le Censeur
+│       │   └── FinancesView.jsx     # Vue consolidée en lecture seule connectée au service Finances
+│       ├── candidat/
+│       │   └── CandidatSpace.jsx    # Stepper 4 étapes, suivi de dossier par UUID, réinscription
+│       ├── parent/
+│       │   └── ParentSpace.jsx      # Fiche élève, planning hebdo, situation financière, historique
+│       ├── modals/
+│       │   ├── ExamineModal.jsx     # Examen des pièces S3 MinIO et test d'admission
+│       │   ├── RejectModal.jsx      # Rejet motivé obligatoire
+│       │   ├── MutationModal.jsx    # Transfert de classe sans duplication avec alerte programme
+│       │   └── CreateClasseModal.jsx# Création de nouvelle classe avec cycle et programme
+│       └── common/
+│           └── Toast.jsx            # Système de notifications flottantes réactives
+```
 
-### Option B : Environnement de Développement Vite
+### Lancement en Développement
 ```bash
 cd frontend
 npm install
 npm run dev
+# Serveur disponible sur http://localhost:3000
 ```
-Accédez à l'URL locale fournie par Vite (généralement http://localhost:5173).
+
+### Compilation pour la Production
+```bash
+npm run build
+# Artefacts générés dans frontend/dist/
+```
