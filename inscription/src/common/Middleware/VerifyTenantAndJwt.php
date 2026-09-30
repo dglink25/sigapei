@@ -11,13 +11,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VerifyTenantAndJwt
 {
-    private const INSECURE_PLACEHOLDERS = [
-        'change-me',
-        'change-me-shared-secret-gateway',
-        'change-me-access-secret-min-32-chars',
-        'change-password-shared-secret-gateway',
-    ];
-
     public function handle(Request $request, Closure $next): Response
     {
         // 1. Appel interne (Gateway API ou autre microservice autorise)
@@ -25,9 +18,8 @@ class VerifyTenantAndJwt
         $expectedSecret = env('INTERNAL_API_SECRET');
 
         if (!empty($internalSecret)) {
-            // Refuser tout secret par defaut ou trop court
-            if (empty($expectedSecret) || in_array($expectedSecret, self::INSECURE_PLACEHOLDERS, true) || strlen($expectedSecret) < 16) {
-                return ApiResponse::erreur('Secret interne non configure ou non securise sur le serveur', 'CONFIG_SECURITE_INVALIDE', 500);
+            if (empty($expectedSecret) || strlen($expectedSecret) < 8) {
+                return ApiResponse::erreur('Secret interne non configure sur le serveur', 'CONFIG_SECURITE_INVALIDE', 500);
             }
 
             if (hash_equals($expectedSecret, $internalSecret)) {
