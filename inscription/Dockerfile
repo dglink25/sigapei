@@ -1,4 +1,4 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.2-cli-alpine
 
 WORKDIR /var/www/html
 
@@ -15,8 +15,11 @@ RUN apk add --no-cache \
 # Installer Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copier les fichiers du projet
+# Copier le code du microservice
 COPY . /var/www/html
+
+# Installer les dependances Composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
 
 # Permissions storage et bootstrap/cache
 RUN mkdir -p /var/www/html/storage/framework/views \
@@ -28,4 +31,8 @@ RUN mkdir -p /var/www/html/storage/framework/views \
 
 EXPOSE 4003
 
-CMD ["php", "-S", "0.0.0.0:4003", "-t", "public"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD php -r "exit(@file_get_contents('http://127.0.0.1:4003/sante') ? 0 : 1);"
+
+# Utiliser public/index.php comme routeur pour rediriger toutes les URLs vers l'application (pas de 404)
+CMD ["php", "-S", "0.0.0.0:4003", "-t", "public", "public/index.php"]

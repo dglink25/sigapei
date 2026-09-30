@@ -11,34 +11,48 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VerifyTenantAndJwt
 {
+    private const INSECURE_PLACEHOLDERS = [
+        'change-me',
+        'change-me-shared-secret-gateway',
+        'change-me-access-secret-min-32-chars',
+        'change-password-shared-secret-gateway',
+    ];
+
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Verification d'un appel interne via X-Internal-Secret
+        // 1. Verification d'un appel interne via X-Internal-Secret (Gateway ou autre microservice autorise)
         $internalSecret = $request->header('X-Internal-Secret');
-        $expectedSecret = env('INTERNAL_API_SECRET', 'change-me-shared-secret-gateway');
+        $expectedSecret = env('INTERNAL_API_SECRET');
 
-        if (!empty($internalSecret) && hash_equals($expectedSecret, $internalSecret)) {
-            $tenantHeader = $request->header('X-Tenant-Id', $request->query('tenant_id'));
-            if ($tenantHeader) {
-                app()->instance('current_tenant_id', (int) $tenantHeader);
+        if (!empty($internalSecret)) {
+            if (empty($expectedSecret) || in_array($expectedSecret, self::INSECURE_PLACEHOLDERS, true) || strlen($expectedSecret) < 16) {
+                return ApiResponse::erreur('Secret interne non configure ou non securise sur le serveur', 'CONFIG_SECURITE_INVALIDE', 500);
             }
-            return $next($request);
+
+            if (hash_equals($expectedSecret, $internalSecret)) {
+                $tenantHeader = $request->header('X-Tenant-Id', $request->query('tenant_id'));
+                if ($tenantHeader) {
+                    app()->instance('current_tenant_id', (int) $tenantHeader);
+                }
+                return $next($request);
+            }
+
+            return ApiResponse::erreur('Secret interne invalide', 'ACCES_INTERNE_REFUSE', 403);
         }
 
         // 2. Verification du Bearer Token JWT emis par api-identite
         $authHeader = $request->header('Authorization');
         if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
-            // Mode developpement souple si tenant_id passe explicitement pour tests
-            if (app()->environment('local', 'testing') && $request->hasHeader('X-Tenant-Id')) {
-                app()->instance('current_tenant_id', (int) $request->header('X-Tenant-Id'));
-                return $next($request);
-            }
-            return ApiResponse::erreur('Jeton d\'authentification manquant', 'NON_AUTHENTIFIE', 401);
+            return ApiResponse::erreur('Authentification requise. Jeton Bearer manquant.', 'NON_AUTHENTIFIE', 401);
         }
 
         $jwtToken = substr($authHeader, 7);
-        $secret = env('JWT_ACCESS_SECRET', 'change-me-access-secret-min-32-chars');
+        $secret = env('JWT_ACCESS_SECRET');
         $algo = env('JWT_ALGO', 'HS256');
+
+        if (empty($secret) || in_array($secret, self::INSECURE_PLACEHOLDERS, true)) {
+            return ApiResponse::erreur('Configuration de signature JWT invalide sur le serveur', 'CONFIG_SECURITE_INVALIDE', 500);
+        }
 
         try {
             $decoded = JWT::decode($jwtToken, new Key($secret, $algo));

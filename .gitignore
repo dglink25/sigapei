@@ -44,3 +44,6 @@ firebase-adminsdk*.json
 service-account*.json
 google-credentials*.json
 
+pdf_*.txt
+
+
