@@ -7,18 +7,38 @@ return [
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', 'postgres'),
+            'host' => env('DB_HOST', 'ep-raspy-brook-b46yo20b-pooler.c-6.us-east-2.aws.neon.tech'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'sigapei'),
-            'username' => env('DB_USERNAME', 'sigapei'),
-            'password' => env('DB_PASSWORD', 'change-me'),
+            'database' => env('DB_DATABASE', 'neondb'),
+            'username' => env('DB_USERNAME', ''),
+            'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => env('DB_SCHEMA', 'scolarite') . ',public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Schema dedie Neon pour le microservice Scolarite dans la base unique
+            'search_path' => env('DB_SCHEMA', 'scolarite'),
+            'sslmode' => env('DB_SSLMODE', 'require'),
         ],
     ],
 
-    'migrations' => 'migrations',
+    // Table de suivi des migrations dediee pour eviter tout conflit sur la base unique partagee
+    'migrations' => [
+        'table' => 'migrations_' . env('DB_SCHEMA', 'scolarite'),
+        'update_date_on_publish' => true,
+    ],
+
+    'redis' => [
+        'client' => env('REDIS_CLIENT', 'phpredis'),
+        'options' => [
+            'cluster' => env('REDIS_CLUSTER', 'redis'),
+            'prefix' => 'scolarite:',
+        ],
+        'default' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_DB', '3'),
+        ],
+    ],
 ];

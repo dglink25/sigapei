@@ -31,8 +31,8 @@ docker compose up -d --build
 
 Puis, une seule fois pour appliquer les tables du schéma `scolarite` :
 ```bash
-docker compose exec scolarite php artisan migrate
-docker compose exec scolarite php artisan db:seed --class=ScolariteSeeder
+docker compose exec api-scolarite php artisan migrate
+docker compose exec api-scolarite php artisan db:seed --class=ScolariteSeeder
 ```
 
 Le microservice démarre sur **http://localhost:4004**.

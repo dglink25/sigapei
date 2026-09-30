@@ -31,8 +31,8 @@ docker compose up -d --build
 
 Puis, une seule fois pour appliquer les tables du schéma `inscription` :
 ```bash
-docker compose exec inscription php artisan migrate
-docker compose exec inscription php artisan db:seed --class=InscriptionSeeder
+docker compose exec api-inscription php artisan migrate
+docker compose exec api-inscription php artisan db:seed --class=InscriptionSeeder
 ```
 
 Le microservice démarre sur **http://localhost:4003**.
