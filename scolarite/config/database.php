@@ -18,6 +18,7 @@ return [
             // Schema dedie Neon pour le microservice Scolarite dans la base unique
             'search_path' => env('DB_SCHEMA', 'scolarite'),
             'sslmode' => env('DB_SSLMODE', 'require'),
+            'options' => env('DB_OPTIONS', '--endpoint=ep-raspy-brook-b46yo20b'),
         ],
     ],
 
