@@ -1,6 +1,11 @@
 # ============================================================
-# api-scolarite — Orchestration locale
-# Microservice expose sur http://localhost:4004
+# api-scolarite — Orchestration Docker
+# Demarrage : docker compose up -d --build
+# Microservice expose sur http://localhost:4004 (Sante : /sante, Docs : /docs)
+#
+# IMPORTANT : ce microservice REUTILISE le reseau Docker partage "sigapei"
+# et se connecte a la base PostgreSQL UNIQUE (Neon managé) sur son propre
+# schema dedie "scolarite" via les variables de son fichier .env.
 # ============================================================
 version: "3.9"
 
@@ -15,44 +20,15 @@ services:
       - "4004:4004"
     env_file:
       - .env
-    environment:
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_DATABASE=${DB_NAME:-sigapei}
-      - DB_USERNAME=${DB_USERNAME:-sigapei}
-      - DB_PASSWORD=${DB_PASSWORD:-change-me}
-      - DB_SCHEMA=scolarite
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
       - sigapei
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: scolarite-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USERNAME:-sigapei}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
-      POSTGRES_DB: ${DB_NAME:-sigapei}
-    volumes:
-      - scolarite_postgres_data:/var/lib/postgresql/data
-      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    ports:
-      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-sigapei}"]
-      interval: 10s
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:4004/sante') ? 0 : 1);"]
+      interval: 30s
       timeout: 5s
-      retries: 5
-    networks:
-      - sigapei
+      retries: 3
 
 networks:
   sigapei:
     name: sigapei
     external: true
-
-volumes:
-  scolarite_postgres_data:
