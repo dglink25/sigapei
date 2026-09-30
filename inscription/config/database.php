@@ -18,6 +18,7 @@ return [
             // Schema dedie Neon pour le microservice Inscription dans la base unique
             'search_path' => env('DB_SCHEMA', 'inscription'),
             'sslmode' => env('DB_SSLMODE', 'require'),
+            'options' => env('DB_OPTIONS', '--endpoint=ep-raspy-brook-b46yo20b'),
         ],
     ],
 
