@@ -36,6 +36,7 @@ return [
         Illuminate\Translation\TranslationServiceProvider::class,
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
+        App\common\Providers\NeonServiceProvider::class,
         App\common\Providers\RouteServiceProvider::class,
     ],
 
