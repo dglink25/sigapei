@@ -18,15 +18,15 @@ return [
             // Schema dedie Neon pour le microservice Inscription dans la base unique
             'search_path' => env('DB_SCHEMA', 'inscription'),
             'sslmode' => env('DB_SSLMODE', 'require'),
-            'options' => env('DB_OPTIONS', '--endpoint=ep-raspy-brook-b46yo20b'),
+            // Contournement SNI pour libpq ancienne (XAMPP / Docker sans SNI)
+            // NeonServiceProvider injecte cet endpoint dans le DSN PDO via NeonPostgresConnector
+            'neon_endpoint' => env('DB_ENDPOINT', 'ep-raspy-brook-b46yo20b'),
+            'application_name' => env('APP_NAME', 'api-inscription'),
         ],
     ],
 
     // Table de suivi des migrations dediee pour eviter tout conflit sur la base unique partagee
-    'migrations' => [
-        'table' => 'migrations_' . env('DB_SCHEMA', 'inscription'),
-        'update_date_on_publish' => true,
-    ],
+    'migrations' => env('DB_SCHEMA', 'inscription') . '_migrations',
 
     'redis' => [
         'client' => env('REDIS_CLIENT', 'phpredis'),

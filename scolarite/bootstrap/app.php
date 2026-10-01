@@ -4,6 +4,9 @@ $app = new Illuminate\Foundation\Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );
 
+$app->useAppPath($app->basePath('src'));
+$app->useDatabasePath($app->basePath('src/database'));
+
 $app->singleton(
     Illuminate\Contracts\Http\Kernel::class,
     App\common\Kernel::class
