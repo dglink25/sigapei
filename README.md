@@ -156,7 +156,7 @@ même mot de passe** — seul le schéma change d'un microservice à l'autre.
    changez uniquement `DB_SCHEMA` pour le nom de votre propre microservice
    (`inscription`, `scolarite`, `vie_scolaire`, `elearning`...) :
    ```dotenv
-   DB_HOST=ep-raspy-brook-b46yo20b-pooler.c-6.us-east-2.aws.neon.tech
+   DB_HOST=your-neon-project.pooler.region.aws.neon.tech
    DB_PORT=5432
    DB_DATABASE=neondb
    DB_USERNAME=<fourni par le chef de projet>
@@ -170,7 +170,7 @@ même mot de passe** — seul le schéma change d'un microservice à l'autre.
    fois sur Neon (il n'existe pas encore, et ni Laravel ni TypeORM ne le
    créent automatiquement avant leur toute première table technique) :
    ```bash
-   psql "postgresql://<DB_USERNAME>:<DB_PASSWORD>@ep-raspy-brook-b46yo20b-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require"
+   psql "postgresql://<DB_USERNAME>:<DB_PASSWORD>@your-neon-project.pooler.region.aws.neon.tech/neondb?sslmode=require"
    ```
    ```sql
    CREATE SCHEMA IF NOT EXISTS <le_nom_de_votre_microservice>;

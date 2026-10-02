@@ -67,7 +67,7 @@ Toute la configuration s'effectue via le fichier `.env` (copie de `.env.example`
 ### 3.1. Base de données PostgreSQL (Neon)
 
 Le microservice est propriétaire exclusif du schéma `scolarite` dans la base unique managée Neon :
-* `DB_HOST=ep-raspy-brook-b46yo20b-pooler.c-6.us-east-2.aws.neon.tech`
+* `DB_HOST=your-neon-project.pooler.region.aws.neon.tech`
 * `DB_PORT=5432`
 * `DB_DATABASE=neondb`
 * `DB_USERNAME` & `DB_PASSWORD` : fournis par le chef de projet.

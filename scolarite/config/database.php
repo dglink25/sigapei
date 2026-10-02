@@ -7,7 +7,7 @@ return [
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', 'ep-raspy-brook-b46yo20b-pooler.c-6.us-east-2.aws.neon.tech'),
+            'host' => env('DB_HOST', ''),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'neondb'),
             'username' => env('DB_USERNAME', ''),
@@ -20,7 +20,7 @@ return [
             'sslmode' => env('DB_SSLMODE', 'require'),
             // Contournement SNI pour libpq ancienne (XAMPP / Docker sans SNI)
             // NeonServiceProvider injecte cet endpoint dans le DSN PDO via NeonPostgresConnector
-            'neon_endpoint' => env('DB_ENDPOINT', 'ep-raspy-brook-b46yo20b'),
+            'neon_endpoint' => env('DB_ENDPOINT', ''),
             'application_name' => env('APP_NAME', 'api-scolarite'),
         ],
     ],
