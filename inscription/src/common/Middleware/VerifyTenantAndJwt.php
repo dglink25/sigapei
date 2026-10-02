@@ -11,6 +11,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VerifyTenantAndJwt
 {
+    private const INSECURE_PLACEHOLDERS = [
+        'change-me',
+        'secret',
+        'your-secret',
+        'default-secret',
+        'change-me-shared-secret-gateway',
+    ];
+
     public function handle(Request $request, Closure $next): Response
     {
         // 1. Appel interne (Gateway API ou autre microservice autorise)
@@ -25,7 +33,7 @@ class VerifyTenantAndJwt
             if (hash_equals($expectedSecret, $internalSecret)) {
                 $tenantHeader = $request->header('X-Tenant-Id', $request->query('tenant_id'));
                 if ($tenantHeader) {
-                    app()->instance('current_tenant_id', (int) $tenantHeader);
+                    app()->instance('current_tenant_id', $tenantHeader);
                 }
                 return $next($request);
             }
@@ -38,7 +46,7 @@ class VerifyTenantAndJwt
         if ($request->is('*/candidatures') && $request->isMethod('post')) {
             $tenantHeader = $request->header('X-Tenant-Id', $request->input('tenant_id'));
             if ($tenantHeader) {
-                app()->instance('current_tenant_id', (int) $tenantHeader);
+                app()->instance('current_tenant_id', $tenantHeader);
                 return $next($request);
             }
             return ApiResponse::erreur('Identifiant de l\'etablissement (tenant_id) obligatoire pour soumettre une candidature', 'TENANT_MANQUANT', 422);
@@ -60,17 +68,23 @@ class VerifyTenantAndJwt
 
         try {
             $decoded = JWT::decode($jwtToken, new Key($secret, $algo));
-            
-            $tenantId = $decoded->tenant_id ?? $request->header('X-Tenant-Id');
+
+            // Supporte les deux conventions de JWT (identite: tenantId / convention snake_case: tenant_id)
+            $tenantId = $decoded->tenantId ?? $decoded->tenant_id ?? $request->header('X-Tenant-Id');
             if (!$tenantId) {
                 return ApiResponse::erreur('Identifiant de tenant introuvable dans le jeton', 'TENANT_MANQUANT', 403);
             }
 
-            app()->instance('current_tenant_id', (int) $tenantId);
-            app()->instance('current_user', (array) $decoded);
+            $userData = (array) $decoded;
+            // Normalisation pour compatibilité avec le reste de l'application
+            $userData['roleCode'] = $userData['roleCode'] ?? $userData['role_code'] ?? $userData['role'] ?? null;
+            $userData['uuid'] = $userData['sub'] ?? null;
+
+            app()->instance('current_tenant_id', $tenantId);
+            app()->instance('current_user', $userData);
             $request->merge([
-                'auth_user' => (array) $decoded,
-                'current_tenant_id' => (int) $tenantId
+                'auth_user' => $userData,
+                'current_tenant_id' => $tenantId
             ]);
 
             return $next($request);
