@@ -4,6 +4,7 @@ namespace App\candidatures;
 
 use App\common\Services\AuditService;
 use App\integrations\EtablissementsClient;
+use App\integrations\IdentiteClient;
 use App\integrations\ScolariteClient;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -13,15 +14,17 @@ class ValidationService
     public function __construct(
         protected CandidatureRepository $repository,
         protected ScolariteClient $scolariteClient,
-        protected EtablissementsClient $etablissementsClient
+        protected EtablissementsClient $etablissementsClient,
+        protected IdentiteClient $identiteClient
     ) {}
 
     /**
      * Valide definitivement une candidature :
      * 1. Verifie le module actif
      * 2. Verifie la disponibilite de place
-     * 3. Cree l'apprenant dans scolarite.apprenants (selon la regle du programme)
-     * 4. Passe le statut a 'validee'
+     * 3. Retrouve ou associe le compte parent depuis le microservice Identité
+     * 4. Cree l'apprenant dans scolarite.apprenants (selon la regle du programme)
+     * 5. Passe le statut a 'validee'
      */
     public function validerCandidature(string $candidatureUuid): array
     {
@@ -49,12 +52,20 @@ class ValidationService
             throw new Exception("Validation impossible : la classe '{$dispo['nom']}' a atteint sa capacite maximale ({$dispo['capacite']} places).");
         }
 
-        return DB::transaction(function () use ($candidature, $dispo) {
-            // 3. Creation de l'apprenant dans le schema scolarite
+        // 3. Liaison avec le microservice Identité : vérifier si le parent possède un compte SSO
+        $parentCompte = $this->identiteClient->trouverUtilisateurParContact(
+            $candidature->parent_email,
+            $candidature->parent_telephone
+        );
+        $parentId = $parentCompte?->id ?? null;
+
+        return DB::transaction(function () use ($candidature, $dispo, $parentId) {
+            // 4. Creation de l'apprenant dans le schema scolarite
             $apprenant = $this->scolariteClient->creerApprenant([
                 'tenant_id' => $candidature->tenant_id,
                 'classe_id' => $candidature->classe_visee_id,
                 'candidature_id' => $candidature->id,
+                'parent_id' => $parentId,
                 'nom' => $candidature->nom,
                 'prenom' => $candidature->prenom,
                 'date_naissance' => $candidature->date_naissance->format('Y-m-d'),
@@ -62,11 +73,11 @@ class ValidationService
                 'parent_lien' => $candidature->parent_lien,
             ]);
 
-            // 4. Passage du statut a 'validee'
+            // 5. Passage du statut a 'validee'
             $candidature->statut = 'validee';
             $candidature->save();
 
-            // 5. Journalisation dans l'audit_log
+            // 6. Journalisation dans l'audit_log
             AuditService::journaliser(
                 'VALIDATION_CANDIDATURE',
                 "Candidature {$candidature->nom} {$candidature->prenom} validee pour la classe {$dispo['nom']}",
@@ -75,6 +86,7 @@ class ValidationService
                     'apprenant_uuid' => $apprenant['uuid'],
                     'classe_nom' => $dispo['nom'],
                     'programme' => $dispo['programme'],
+                    'parent_id_identite' => $parentId,
                     'compte_utilisateur_actif' => $apprenant['compte_utilisateur_cree'],
                 ]
             );
@@ -86,6 +98,7 @@ class ValidationService
                     'uuid' => $apprenant['uuid'],
                     'classe' => $dispo['nom'],
                     'programme' => $dispo['programme'],
+                    'parent_lie' => ($parentId !== null),
                     'compte_utilisateur_cree' => $apprenant['compte_utilisateur_cree'],
                 ],
                 'message' => 'Candidature validee avec succes et apprenant genere dans la scolarite.',
