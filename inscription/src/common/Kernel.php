@@ -20,5 +20,6 @@ class Kernel extends HttpKernel
 
     protected $middlewareAliases = [
         'auth.tenant' => \App\common\Middleware\VerifyTenantAndJwt::class,
+        'role'        => \App\common\Middleware\VerifyRole::class,
     ];
 }

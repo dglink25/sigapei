@@ -11,9 +11,17 @@ use Symfony\Component\HttpFoundation\Response;
 
 class VerifyTenantAndJwt
 {
+    private const INSECURE_PLACEHOLDERS = [
+        'change-me',
+        'secret',
+        'your-secret',
+        'default-secret',
+        'change-me-shared-secret-gateway',
+    ];
+
     public function handle(Request $request, Closure $next): Response
     {
-        // 1. Verification d'un appel interne via X-Internal-Secret (Gateway ou autre microservice autorise)
+        // 1. Appel interne (Gateway API ou autre microservice autorise)
         $internalSecret = $request->header('X-Internal-Secret');
         $expectedSecret = env('INTERNAL_API_SECRET');
 
@@ -25,7 +33,7 @@ class VerifyTenantAndJwt
             if (hash_equals($expectedSecret, $internalSecret)) {
                 $tenantHeader = $request->header('X-Tenant-Id', $request->query('tenant_id'));
                 if ($tenantHeader) {
-                    app()->instance('current_tenant_id', (int) $tenantHeader);
+                    app()->instance('current_tenant_id', $tenantHeader);
                 }
                 return $next($request);
             }
@@ -33,7 +41,7 @@ class VerifyTenantAndJwt
             return ApiResponse::erreur('Secret interne invalide', 'ACCES_INTERNE_REFUSE', 403);
         }
 
-        // 2. Verification du Bearer Token JWT emis par api-identite
+        // 2. Bearer Token JWT obligatoire pour toutes les routes
         $authHeader = $request->header('Authorization');
         if (!$authHeader || !str_starts_with($authHeader, 'Bearer ')) {
             return ApiResponse::erreur('Authentification requise. Jeton Bearer manquant.', 'NON_AUTHENTIFIE', 401);
@@ -49,18 +57,23 @@ class VerifyTenantAndJwt
 
         try {
             $decoded = JWT::decode($jwtToken, new Key($secret, $algo));
-            
-            // Verifier et attacher le tenant_id
-            $tenantId = $decoded->tenant_id ?? $request->header('X-Tenant-Id');
+
+            // Supporte les deux conventions de JWT (identite: tenantId / convention snake_case: tenant_id)
+            $tenantId = $decoded->tenantId ?? $decoded->tenant_id ?? $request->header('X-Tenant-Id');
             if (!$tenantId) {
                 return ApiResponse::erreur('Identifiant de tenant introuvable dans le jeton', 'TENANT_MANQUANT', 403);
             }
 
-            app()->instance('current_tenant_id', (int) $tenantId);
-            app()->instance('current_user', (array) $decoded);
+            $userData = (array) $decoded;
+            // Normalisation pour compatibilité avec le reste de l'application
+            $userData['roleCode'] = $userData['roleCode'] ?? $userData['role_code'] ?? $userData['role'] ?? null;
+            $userData['uuid'] = $userData['sub'] ?? null;
+
+            app()->instance('current_tenant_id', $tenantId);
+            app()->instance('current_user', $userData);
             $request->merge([
-                'auth_user' => (array) $decoded,
-                'current_tenant_id' => (int) $tenantId
+                'auth_user' => $userData,
+                'current_tenant_id' => $tenantId
             ]);
 
             return $next($request);
