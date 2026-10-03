@@ -834,15 +834,15 @@ h1 .wd {
   to { transform: translateX(-50%); }
 }
 
-/* Scroll Reveal */
-.js .rv {
+/* Scroll Reveal — works as soon as JS adds the .in class */
+.rv {
   opacity: 0;
   transform: translateY(34px);
   transition: opacity 0.8s, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
   transition-delay: var(--d, 0s);
 }
 
-.js .rv.in {
+.rv.in {
   opacity: 1;
   transform: translateY(0);
 }
@@ -890,11 +890,11 @@ h1 .wd {
 }
 
 .panel > * {
-  animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .panel > *:last-child {
-  animation-delay: 0.12s;
+  transition-delay: 0.1s;
 }
 
 .panel ul {
@@ -1201,6 +1201,12 @@ h1 .wd {
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
+.pl .btn {
+  width: 100%;
+  text-align: center;
+  white-space: nowrap;
+}
+
 .pl:hover {
   transform: translateY(-8px);
   box-shadow: 0 22px 50px rgba(0, 107, 60, 0.16);
@@ -1304,6 +1310,13 @@ footer .lg {
   width: 36px;
 }
 
+.ft-brand {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--head);
+  font-family: var(--font-poppins), 'Poppins', Inter, sans-serif;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sh, .dash, .chip, .phone, .tr2, .b-o, .final .lg, .band::after { animation: none !important; }
   html { scroll-behavior: auto; }
@@ -1322,3 +1335,36 @@ footer .lg {
 [data-theme="dark"] .kp div, [data-theme="dark"] .bar { background: #10261A; }
 [data-theme="dark"] .cyc span, [data-theme="dark"] .tab, [data-theme="dark"] .ib { border-color: #24422f; }
 [data-theme="dark"] .p3 .sh { border-color: var(--o); opacity: 0.85; }
+
+/* ─── Section scroll-reveal ─────────────────────────────────────────── */
+.sec-rv {
+  transform: translateY(32px);
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sec-rv.sec-in {
+  transform: translateY(0);
+}
+
+/* Hero slides in from the top, not from below */
+.hero.sec-rv {
+  transform: none;
+  transition: none;
+}
+
+/* ─── Alternating section backgrounds ───────────────────────────────── */
+.sect-alt {
+  background: var(--tint);
+}
+
+[data-theme="dark"] .sect-alt {
+  background: #06120B;
+}
+
+#modules {
+  background: var(--bg);
+}
+
+#offres {
+  background: var(--bg);
+}

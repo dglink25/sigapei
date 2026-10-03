@@ -23,7 +23,7 @@ export default function Header({
         <div className="nav">
           <a href="#top" className="brand">
             <i className="lg" role="img" aria-label="Logo" />
-            <span>E-Académique</span>
+            <span>SIGAPEI</span>
           </a>
 
           <nav className="links" aria-label="Navigation principale">

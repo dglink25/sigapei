@@ -4,7 +4,7 @@ import React from "react";
 
 export default function SecuritySection() {
   return (
-    <section id="securite" className="band">
+    <section id="securite" className="band sec-rv">
       <div className="w">
         <h2 className="rv">Sécurité &amp; Souveraineté des Données</h2>
         <p className="lead rv">

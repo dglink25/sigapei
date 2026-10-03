@@ -15,12 +15,12 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "E-Académique — La gestion scolaire, de l'école primaire à l'université",
+  title: "sigapei — La gestion scolaire, de l'école primaire à l'université",
   description:
     "Inscriptions, notes, bulletins, paiements, présences et demandes de documents. Une seule base de vérité pour le fondateur, l'enseignant, l'apprenant et le parent.",
   keywords: [
     "SIGAPEI",
-    "E-Académique",
+    "sigapei",
     "Gestion scolaire",
     "Bulletins scolaires",
     "Vie scolaire",

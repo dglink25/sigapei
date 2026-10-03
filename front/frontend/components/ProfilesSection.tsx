@@ -106,7 +106,7 @@ export default function ProfilesSection() {
   const current = profilesData[activeTab];
 
   return (
-    <section id="profils">
+    <section id="profils" className="sec-rv sect-alt">
       <div className="w">
         <h2 className="rv">Un espace pensé pour chacun.</h2>
         <p className="lead rv">
