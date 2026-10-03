@@ -4,9 +4,9 @@ import React from "react";
 
 export default function StepsSection() {
   return (
-    <section id="demarrer">
+    <section id="demarrer" className="sec-rv sect-alt">
       <div className="w">
-        <h2 className="rv">Comment démarrer avec E-Académique ?</h2>
+        <h2 className="rv">Comment démarrer avec sigapei ?</h2>
         <p className="lead rv">
           Une mise en service rapide en 4 étapes simples, sans infrastructure lourde ni installation complexe.
         </p>

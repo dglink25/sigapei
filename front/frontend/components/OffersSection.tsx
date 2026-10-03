@@ -4,7 +4,7 @@ import React from "react";
 
 export default function OffersSection() {
   return (
-    <section id="offres">
+    <section id="offres" className="sec-rv">
       <div className="w">
         <h2 className="rv">Des tarifs adaptés à la taille de votre école.</h2>
         <p className="lead rv">

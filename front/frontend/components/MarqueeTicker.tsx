@@ -4,7 +4,7 @@ import React from "react";
 
 export default function MarqueeTicker() {
   const tickerItems = [
-    "E-Académique • SIGAPEI",
+    "sigapei • SIGAPEI",
     "Une seule base de vérité",
     "Présences en temps réel",
     "Inscriptions en ligne",

@@ -4,7 +4,7 @@ import React from "react";
 
 export default function ModulesSection() {
   return (
-    <section id="modules" className="tint">
+    <section id="modules" className="sec-rv">
       <div className="w">
         <h2 className="rv">Tout ce dont un établissement a besoin.</h2>
         <p className="lead rv">

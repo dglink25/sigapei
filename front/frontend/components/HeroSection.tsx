@@ -31,7 +31,7 @@ export default function HeroSection({
   ];
 
   return (
-    <section className="hero">
+    <section className="hero sec-rv">
       {/* Parallax Background Shapes */}
       <div className="par p1" data-d="30">
         <div className="sh" />
@@ -51,13 +51,15 @@ export default function HeroSection({
           {/* Animated H1 Title (Word by Word) */}
           <h1 id="h1">
             {headlineWords.map((word, idx) => (
-              <span
-                key={idx}
-                className="wd"
-                style={{ animationDelay: `${0.1 + idx * 0.08}s` }}
-              >
-                {word}{" "}
-              </span>
+              <React.Fragment key={idx}>
+                <span
+                  className="wd"
+                  style={{ animationDelay: `${0.1 + idx * 0.08}s` }}
+                >
+                  {word}
+                </span>
+                {" "}
+              </React.Fragment>
             ))}
           </h1>
 
@@ -130,7 +132,7 @@ export default function HeroSection({
               <i />
               <i />
               <i />
-              <b>app.e-academique.com/les-flamboyants/administration</b>
+              <b>app.sigapei.com/les-flamboyants/administration</b>
             </div>
 
             <div className="dbody">

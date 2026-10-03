@@ -106,12 +106,28 @@ export default function Home() {
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
     );
 
     document.querySelectorAll(".rv, .steps, #chart").forEach((el) => observer.observe(el));
 
-    return () => observer.disconnect();
+    // Section-level scroll reveal
+    const secObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("sec-in");
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+    document.querySelectorAll(".sec-rv").forEach((el) => secObserver.observe(el));
+
+    return () => {
+      observer.disconnect();
+      secObserver.disconnect();
+    };
   }, []);
 
   return (
