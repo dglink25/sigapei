@@ -29,12 +29,12 @@ return [
         'fenetre_correction_enseignant_heures' => (int) env('VIESCOLAIRE_CORRECTION_ENSEIGNANT_HEURES', 24),
     ],
 
-    // Schemas externes consultes par jointure directe (section 7.2 / 11).
-    // Aucune donnee n'est dupliquee depuis ces schemas.
-    'schemas_externes' => [
-        'scolarite' => env('DB_SCHEMA_SCOLARITE', 'scolarite'),
-        'rh' => env('DB_SCHEMA_RH', 'rh'),
-    ],
+    // Regle n°1 : ce microservice est proprietaire exclusif du schema
+    // `vie_scolaire`. Il n'existe AUCUNE jointure SQL vers le schema
+    // d'un autre microservice : les donnees Scolarite (apprenants,
+    // classes, emplois du temps) et RH (personnel) se lisent par
+    // appel a leur API interne respective, via app/Integrations.
+    // Voir config/services.php -> services.microservices.urls.
 
     // Modules V2+ dont la structure de donnees est posee des ce lot
     // mais qui ne sont pas exposes par API (section 2.4 / 7.1).

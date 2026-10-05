@@ -2,25 +2,22 @@
 
 namespace App\Integrations;
 
-use Illuminate\Support\Facades\DB;
-
 /**
- * Jointure directe vers le schema rh (section 7.2 / 11 du CDC).
+ * Lecture des donnees RH (identite du personnel).
  *
- * Fournit l'identite du personnel (enseignant, censeur) a l'origine d'un
- * incident disciplinaire ou d'une correction. Le claim sub transmis par la
- * passerelle ("uuid" utilisateur) est resolu en identifiant numerique du
- * personnel dans le schema rh ; le microservice Vie scolaire ne stocke que
- * cet identifiant numerique externe (auteur_id, corrige_par_id, ...).
+ * Regle n°1 : plus aucune jointure SQL vers le schema `rh`. La
+ * resolution du claim `sub` (uuid utilisateur transmis par la
+ * passerelle) en identifiant numerique du personnel passe par l'API
+ * interne du microservice RH (`/interne/...` + `X-Internal-Secret`).
+ *
+ * Le microservice Vie scolaire ne conserve que cet identifiant externe
+ * (auteur_id, corrige_par_id, sanction_appliquee_par_id).
  */
 class RhClient
 {
-    private string $schema;
-
-    public function __construct()
-    {
-        $this->schema = (string) config('vie-scolaire.schemas_externes.rh', 'rh');
-    }
+    public function __construct(
+        private readonly InterneClient $interne,
+    ) {}
 
     public function personnelIdPourUserUuid(int $tenantId, ?string $userUuid): ?int
     {
@@ -28,24 +25,19 @@ class RhClient
             return null;
         }
 
-        $personnel = $this->first('personnel', $tenantId, $userUuid);
+        $personnel = $this->interne->get('rh', '/interne/personnel', [
+            'tenant_id' => $tenantId,
+            'uuid' => $userUuid,
+        ]);
 
-        return $personnel?->id;
+        return $personnel ? (int) $personnel->id : null;
     }
 
     public function personnelParId(int $tenantId, int $id): ?object
     {
-        return DB::table($this->schema.'.personnel')
-            ->where('tenant_id', $tenantId)
-            ->where('id', $id)
-            ->first();
-    }
-
-    private function first(string $table, int $tenantId, string $key): ?object
-    {
-        return DB::table($this->schema.'.'.$table)
-            ->where('tenant_id', $tenantId)
-            ->where('uuid', $key)
-            ->first();
+        return $this->interne->get('rh', '/interne/personnel', [
+            'tenant_id' => $tenantId,
+            'id' => $id,
+        ]);
     }
 }
