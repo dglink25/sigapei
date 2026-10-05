@@ -25,7 +25,7 @@ class EndpointsAlertesDossierTest extends ApiTestCase
             ]);
         }
 
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersInterne())
             ->getJson('/v1/interne/alertes-absences')
             ->assertOk()
             ->assertJsonCount(2, 'alertes')
@@ -47,7 +47,7 @@ class EndpointsAlertesDossierTest extends ApiTestCase
             ]);
         }
 
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersInterne())
             ->getJson('/v1/interne/alertes-absences')
             ->assertOk()
             ->assertJsonCount(0, 'alertes');

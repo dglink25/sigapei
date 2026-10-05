@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Str;
 use Pdo\Mysql;
 
 return [
@@ -17,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'pgsql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -89,14 +88,25 @@ return [
             'url' => env('DB_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
+            'database' => env('DB_DATABASE', 'neondb'),
+            'username' => env('DB_USERNAME', ''),
             'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
+            'charset' => env('DB_CHARSETS', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+
+            /*
+             * Regle n°1 - une seule base, un schema par microservice.
+             * Toutes les tables de ce microservice (y compris celles
+             * de Laravel : migrations, cache, jobs, sessions) sont
+             * creees dans DB_SCHEMA, le schema qui lui appartient
+             * exclusivement. Aucune table d'un autre schema n'est
+             * jamais lue ni ecrite depuis ce microservice.
+             */
+            'search_path' => env('DB_SCHEMA', 'vie_scolaire'),
+
+            // Neon refuse les connexions non chiffrees.
+            'sslmode' => env('DB_SSLMODE', 'require'),
         ],
 
         'sqlsrv' => [
@@ -149,17 +159,26 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+
+            /*
+             * Regle n°2 - Redis est partage entre tous les microservices.
+             * Chaque microservice a son propre REDIS_DB (identite=0,
+             * etablissements=1, vie_scolaire=2) et son propre prefixe de
+             * cles : le prefixe est le second filet de securite contre
+             * le melange des cles, il ne doit jamais etre vide en
+             * environnement partage.
+             */
+            'prefix' => env('REDIS_PREFIX', 'vie_scolaire-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 
         'default' => [
             'url' => env('REDIS_URL'),
-            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'host' => env('REDIS_HOST', 'redis'),
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
-            'database' => env('REDIS_DB', '0'),
+            'database' => env('REDIS_DB', '2'),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),
@@ -168,11 +187,11 @@ return [
 
         'cache' => [
             'url' => env('REDIS_URL'),
-            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'host' => env('REDIS_HOST', 'redis'),
             'username' => env('REDIS_USERNAME'),
             'password' => env('REDIS_PASSWORD'),
             'port' => env('REDIS_PORT', '6379'),
-            'database' => env('REDIS_CACHE_DB', '1'),
+            'database' => env('REDIS_CACHE_DB', '3'),
             'max_retries' => env('REDIS_MAX_RETRIES', 3),
             'backoff_algorithm' => env('REDIS_BACKOFF_ALGORITHM', 'decorrelated_jitter'),
             'backoff_base' => env('REDIS_BACKOFF_BASE', 100),

@@ -25,6 +25,7 @@
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
+        <env name="DB_SCHEMA" value="vie_scolaire"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
@@ -32,5 +33,12 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+
+        <!-- Regle n°3 - secret interne partage, valeur de test. -->
+        <env name="INTERNAL_API_SECRET" value="secret-interne-de-test"/>
+        <!-- Regle n°4 - CAPTCHA partage, valeurs de test. -->
+        <env name="CAPTCHA_PROVIDER" value="recaptcha"/>
+        <env name="CAPTCHA_SECRET_KEY" value="cle-secrete-captcha-de-test"/>
+        <env name="CAPTCHA_MIN_SCORE" value="0.5"/>
     </php>
 </phpunit>
