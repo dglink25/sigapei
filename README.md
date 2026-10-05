@@ -121,7 +121,7 @@ git push                      # fusion automatique vers develop, puis retest
 | [`etablissements`](etablissements) | `4002` | `etablissements` | Onboarding, référentiel géographique panafricain, validation, plans & abonnements | [README](etablissements/README.md) |
 | [`inscription`](inscription) | `4003` | `inscription` | Candidatures, pièces justificatives, tests d'admission, validation bloquante & réinscriptions | [README](inscription/README.md) • [Docs API](inscription/docs/api-documentation.md) (`/docs`) |
 | [`scolarite`](scolarite) | `4004` | `scolarite` | Cycles, classes (programme béninois/français), dossiers apprenants, mutations, emplois du temps | [README](scolarite/README.md) • [Docs API](scolarite/docs/api-documentation.md) (`/docs`) |
-| [`vie-scolaire`](vie-scolaire) | — | `vie_scolaire` | *(à documenter par son responsable)* | — |
+| [`vie-scolaire`](vie-scolaire) | `4005` | `vie_scolaire` | Presences/absences, incidents disciplinaires et sanctions, alertes au seuil d'absences, dossier de vie scolaire | [README](vie-scolaire/README.md) |
 | [`elearning`](elearning) | — | `elearning` | *(à documenter par son responsable)* | — |
 
 Chaque microservice est **autonome dans son propre dossier** (son propre
@@ -295,7 +295,8 @@ secret ne doit être connu que de lui.
 
 - Un port dédié par microservice, choisi une fois pour toutes et documenté
   dans le tableau plus haut (`identite` = 4001, `etablissements` = 4002,
-  etc.) — prenez le numéro suivant libre pour un nouveau microservice et
+  `inscription` = 4003, `scolarite` = 4004, `vie-scolaire` = 4005) —
+  prenez le numéro suivant libre pour un nouveau microservice et
   mettez à jour ce README dans la même pull request.
 - Nom du schéma PostgreSQL = nom du dossier du microservice, en
   minuscules avec underscores si besoin (`vie_scolaire`, pas
