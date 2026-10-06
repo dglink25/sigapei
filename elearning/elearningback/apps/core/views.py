@@ -1,0 +1,21 @@
+"""Vues du socle commun."""
+from rest_framework.generics import RetrieveUpdateAPIView
+
+from apps.core.models import ParametresModule
+from apps.core.serializers import ParametresModuleSerializer
+
+
+class ParametresView(RetrieveUpdateAPIView):
+    """/v1/parametres/ — GET/PUT du singleton de paramètres du tenant.
+
+    La première requête crée le jeu de paramètres avec les valeurs par
+    défaut du module (get_or_create), les PUT suivants le mettent à jour.
+    """
+    serializer_class = ParametresModuleSerializer
+    http_method_names = ['get', 'put', 'head', 'options']
+
+    def get_object(self):
+        parametres, _ = ParametresModule.objects.get_or_create(
+            tenant_id=self.request.tenant_id,
+        )
+        return parametres
