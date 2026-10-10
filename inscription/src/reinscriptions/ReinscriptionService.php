@@ -54,10 +54,25 @@ class ReinscriptionService
             throw new Exception("L'UUID de la nouvelle classe est requis pour une réinscription.");
         }
 
-        // 1. Vérifier la disponibilité via l'API interne de Scolarité
+        // 1. Récupérer la fiche apprenant via l'API interne de Scolarité.
+        //    La colonne inscription.reinscriptions.apprenant_id est NOT NULL :
+        //    on ne peut pas la laisser à null en ne connaissant que l'UUID.
+        $fiche = $this->interne->get('scolarite', '/v1/interne/apprenants', [
+            'uuid' => $apprenantUuid,
+        ]);
+
+        $apprenant = $fiche['donnees'] ?? $fiche ?? null;
+
+        if (empty($apprenant['id'])) {
+            throw new Exception("Dossier apprenant introuvable pour la réinscription.");
+        }
+
+        $apprenantId = (int) $apprenant['id'];
+
+        // 2. Vérifier la disponibilité via l'API interne de Scolarité
         $dispo = $this->scolariteClient->verifierDisponibilite($nouvelleClasseUuid, $tenantId);
 
-        // 2. Demander la mutation du dossier à Scolarité, seule propriétaire
+        // 3. Demander la mutation du dossier à Scolarité, seule propriétaire
         //    de `scolarite.apprenants` et `scolarite.historique_classes`.
         //    Le dossier n'est jamais dupliqué : Scolarité ne fait qu'adapter
         //    la classe existante et journaliser l'historique.
@@ -69,20 +84,25 @@ class ReinscriptionService
 
         $transfert = $resultat['donnees'] ?? $resultat;
 
-        // 3. Tracer la demande dans le schéma inscription (propriété propre)
+        // 4. Tracer la demande dans le schéma inscription (propriété propre).
+        //    Sur Neon, ancienne_classe_id et nouvelle_classe_id sont NOT NULL :
+        //    Scolarité nous renvoie les deux côtés de la mutation.
         $reinscription = Reinscription::create([
-            'tenant_id'      => $tenantId,
-            'apprenant_id'   => $donnees['apprenant_id'] ?? null,
-            'annee_scolaire' => $donnees['annee_scolaire'],
-            'statut'         => 'validee',
-            'date_demande'   => now(),
+            'tenant_id'          => $tenantId,
+            'apprenant_id'       => $apprenantId,
+            'ancienne_classe_id' => (int) ($transfert['ancienne_classe']['id'] ?? $apprenant['classe']['id'] ?? 0),
+            'nouvelle_classe_id' => (int) ($transfert['nouvelle_classe']['id'] ?? $dispo['id'] ?? 0),
+            'annee_scolaire'     => $donnees['annee_scolaire'],
+            'statut'             => 'validee',
+            'date_demande'       => now(),
         ]);
 
         AuditService::journaliser(
             'REINSCRIPTION_APPRENANT',
-            "Apprenant {$apprenantUuid} réinscrit en classe {$dispo['nom']}",
+            "Apprenant {$apprenant['nom']} {$apprenant['prenom']} réinscrit en classe {$dispo['nom']}",
             [
                 'annee_scolaire'  => $donnees['annee_scolaire'],
+                'apprenant_id'    => $apprenantId,
                 'apprenant_uuid'  => $apprenantUuid,
                 'nouvelle_classe' => $dispo['nom'],
             ]
