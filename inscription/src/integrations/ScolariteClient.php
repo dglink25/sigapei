@@ -32,11 +32,14 @@ class ScolariteClient
      */
     public function verifierDisponibilite(string|int $classeRef, mixed $tenantId = null): array
     {
-        $dispo = $this->interne->get('scolarite', '/v1/interne/classes/disponibilite', [
-            'uuid'      => is_numeric($classeRef) ? null : (string) $classeRef,
-            'id'        => is_numeric($classeRef) ? (int) $classeRef : null,
-            'tenant_id' => $tenantId,
-        ]);
+        // Ne transmettre que le paramètre réellement fourni : une clé
+        // présente mais vide fait échouer la validation 422 du contrôleur
+        // qui teste `if ($uuid = $request->query('uuid'))`.
+        $requete = is_numeric($classeRef)
+            ? ['id' => (int) $classeRef]
+            : ['uuid' => (string) $classeRef];
+
+        $dispo = $this->interne->get('scolarite', '/v1/interne/classes/disponibilite', $requete);
 
         if (!$dispo) {
             throw new Exception("Classe visée (réf: {$classeRef}) introuvable dans le schéma scolarité.");
