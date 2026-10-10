@@ -1,122 +1,57 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { Route, Routes } from 'react-router'
 
-function App() {
-  const [count, setCount] = useState(0)
+import { Layout } from './components/Layout.jsx'
+import { Accueil } from './pages/Accueil.jsx'
+import { PageIntrouvable } from './pages/PageIntrouvable.jsx'
+import { ProfilPage } from './pages/ProfilPage.jsx'
+import { CoursDetail } from './pages/cours/CoursDetail.jsx'
+import { CoursFormulaire } from './pages/cours/CoursFormulaire.jsx'
+import { CoursListe } from './pages/cours/CoursListe.jsx'
+import { DevoirDetail } from './pages/devoirs/DevoirDetail.jsx'
+import { DevoirFormulaire } from './pages/devoirs/DevoirFormulaire.jsx'
+import { DevoirsListe } from './pages/devoirs/DevoirsListe.jsx'
+import { QuizDetail } from './pages/quiz/QuizDetail.jsx'
+import { QuizFormulaire } from './pages/quiz/QuizFormulaire.jsx'
+import { QuizListe } from './pages/quiz/QuizListe.jsx'
+import { QuizPassation } from './pages/quiz/QuizPassation.jsx'
+import { TentativeDetail } from './pages/quiz/TentativeDetail.jsx'
+import { RessourcesListe } from './pages/bibliotheque/RessourcesListe.jsx'
+import { MediasListe } from './pages/medias/MediasListe.jsx'
+import { ActiviteApprenantPage } from './pages/admin/ActiviteApprenantPage.jsx'
+import { ParametresPage } from './pages/admin/ParametresPage.jsx'
+import { StatistiquesPage } from './pages/admin/StatistiquesPage.jsx'
 
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<Accueil />} />
+        <Route path="profil" element={<ProfilPage />} />
+        <Route path="cours" element={<CoursListe />} />
+        <Route path="cours/nouveau" element={<CoursFormulaire />} />
+        <Route path="cours/:uuid" element={<CoursDetail />} />
+        <Route path="cours/:uuid/modifier" element={<CoursFormulaire />} />
+        <Route path="devoirs" element={<DevoirsListe />} />
+        <Route path="devoirs/nouveau" element={<DevoirFormulaire />} />
+        <Route path="devoirs/:uuid" element={<DevoirDetail />} />
+        <Route path="quiz" element={<QuizListe />} />
+        <Route path="quiz/nouveau" element={<QuizFormulaire />} />
+        <Route path="quiz/:uuid" element={<QuizDetail />} />
+        <Route path="quiz/:uuid/passer" element={<QuizPassation />} />
+        <Route path="tentatives/:uuid" element={<TentativeDetail />} />
+        <Route path="bibliotheque" element={<RessourcesListe />} />
+        <Route path="medias" element={<MediasListe />} />
+        <Route
+          path="administration/statistiques"
+          element={<StatistiquesPage />}
+        />
+        <Route path="administration/parametres" element={<ParametresPage />} />
+        <Route
+          path="administration/apprenant"
+          element={<ActiviteApprenantPage />}
+        />
+        <Route path="*" element={<PageIntrouvable />} />
+      </Route>
+    </Routes>
   )
 }
-
-export default App

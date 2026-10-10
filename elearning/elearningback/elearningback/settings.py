@@ -37,12 +37,32 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # API REST
+    'rest_framework',
+    # CORS : en-têtes Access-Control-Allow-* pour le frontend.
+    'corsheaders',
+    # Module E-learning
+    'apps.core',
+    'apps.medias',
+    'apps.cours',
+    'apps.bibliotheque',
+    'apps.devoirs',
+    'apps.quiz',
+    'apps.reports',
+    'apps.parcours',
+    'apps.progression',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # CORS : le plus haut possible, avant tout middleware susceptible de
+    # répondre (CommonMiddleware, TenantMiddleware) pour que les erreurs
+    # 400/403 portent aussi les en-têtes CORS.
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    # Isolation multi-tenant : exige X-Tenant-ID sur les routes /v1/.
+    'apps.core.middleware.TenantMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -67,6 +87,25 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'elearningback.wsgi.application'
+
+
+# Django REST Framework
+# https://www.django-rest-framework.org/api-guide/pagination/
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+}
+
+
+# CORS — django-cors-headers
+# https://github.com/adamchainz/django-cors-headers
+# Origines autorisées à appeler l'API depuis un navigateur (le dev Vite et
+# un build servi localement). En production, restreindre aux domaines de
+# la gateway au lieu d'élargir la liste.
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
 
 
 # Database

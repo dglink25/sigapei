@@ -19,6 +19,13 @@ class Cours(BaseModel):
     enseignant_id = models.UUIDField('Enseignant (externe)', db_index=True)
     titre = models.CharField('Titre', max_length=255)
     description = models.TextField('Description', blank=True, default='')
+    coefficient = models.DecimalField(
+        'Coefficient', max_digits=5, decimal_places=2, null=True, blank=True,
+    )
+    volume_horaire = models.DecimalField(
+        'Volume horaire (heures)', max_digits=6, decimal_places=2,
+        null=True, blank=True,
+    )
     statut = models.CharField(
         'Statut', max_length=20, choices=STATUTS,
         default=StatutContenu.BROUILLON, db_index=True,

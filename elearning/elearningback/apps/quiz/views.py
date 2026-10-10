@@ -104,7 +104,9 @@ class QuizViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         nb_existantes = quiz.tentatives.filter(
             apprenant_id=apprenant_id,
         ).count()
-        if nb_existantes >= quiz.tentatives_max:
+        # `tentatives_max` null = quiz d'entraînement, sans limite.
+        if (quiz.tentatives_max is not None
+                and nb_existantes >= quiz.tentatives_max):
             raise ValidationError(
                 {'tentatives_max': f'Nombre maximal de tentatives atteint '
                                    f'({quiz.tentatives_max}).'}
@@ -152,6 +154,13 @@ class TentativesViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
             tentative.quiz.restitution == Restitution.IMMEDIATE
             or tentative.statut == StatutTentative.VALIDE
         )
+        # « Après date limite » : verrouillée jusqu'à la clôture du quiz
+        # (sans date limite configurée, la restitution est immédiate).
+        if (tentative.quiz.restitution == Restitution.APRES_DATE_LIMITE
+                and not restitution_immediate
+                and (tentative.quiz.date_limite is None
+                     or timezone.now() > tentative.quiz.date_limite)):
+            restitution_immediate = True
         if restitution_immediate:
             return Response(TentativeDetailSerializer(tentative).data)
         return Response({

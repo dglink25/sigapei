@@ -40,6 +40,15 @@ class ParametresModule(BaseModel):
     visibilite_parents = models.BooleanField(
         'Visible par les parents', default=True,
     )
+    alertes_sms = models.BooleanField(
+        'Alertes SMS aux apprenants', default=False,
+    )
+    recap_email = models.BooleanField(
+        'Récapitulatif hebdomadaire par e-mail', default=False,
+    )
+    notifications_push = models.BooleanField(
+        'Notifications push', default=False,
+    )
     updated_at = models.DateTimeField('Mis à jour le', auto_now=True)
 
     class Meta:

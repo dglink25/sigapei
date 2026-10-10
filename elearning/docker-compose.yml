@@ -15,6 +15,9 @@ services:
     container_name: elearning-frontend
     ports:
       - "5173:5173"
+    environment:
+      # Dans Docker, le backend est joignable par le nom du service compose.
+      - BACKEND_PROXY=http://backend:8000
     volumes:
       # Montage du code pour le hot-reload Vite
       - ./frontend:/app

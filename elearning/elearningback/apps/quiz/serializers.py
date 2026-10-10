@@ -60,7 +60,13 @@ class OptionCreationSerializer(serializers.ModelSerializer):
 class QuestionCreationSerializer(TenantSerializerMixin,
                                  serializers.ModelSerializer):
     """Création d'une question avec ses options (POST .../questions/)."""
-    options = OptionCreationSerializer(many=True, write_only=True)
+    # Facultatif : une question ouverte n'a pas d'options. La validation
+    # exige toujours au moins une option pour un QCM / vrai-faux.
+    options = OptionCreationSerializer(many=True, write_only=True,
+                                       required=False, default=list)
+    # Facultatif : si le client n'en fournit pas, la vue attribue
+    # automatiquement le dernier ordre du quiz + 1 (voir views.py).
+    ordre = serializers.IntegerField(required=False)
 
     class Meta:
         model = Questions
@@ -106,7 +112,9 @@ class QuizSerializer(TenantSerializerMixin,
     class Meta:
         model = Quiz
         fields = ['uuid', 'matiere_id', 'classe_id', 'titre',
-                  'tentatives_max', 'chrono_secondes', 'restitution',
+                  'tentatives_max', 'chrono_secondes', 'date_limite',
+                  'restitution', 'seuil_validation',
+                  'ordre_aleatoire_questions', 'melanger_options',
                   'statut', 'nb_questions', 'created_at', 'updated_at']
         read_only_fields = ['uuid', 'created_at', 'updated_at']
 
