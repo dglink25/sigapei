@@ -7,7 +7,7 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
     sexe: 'M',
     date_naissance: '',
     lieu_naissance: '',
-    classe_id: classes[0]?.id || 1,
+    classe_id: classes[0]?.id || '',
     parent_nom: '',
     parent_tel: '',
     parent_email: '',
@@ -17,40 +17,29 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
   });
 
   const selectedClass = classes.find(c => c.id === Number(formData.classe_id));
-  const isFull = selectedClass ? selectedClass.inscrits >= selectedClass.capacite : false;
+  const isFull = selectedClass
+    ? (selectedClass.inscrits_actuels ?? selectedClass.inscrits ?? 0) >= selectedClass.capacite
+    : false;
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.nom || !formData.prenom || !formData.date_naissance) {
-      alert('Veuillez remplir les informations obligatoires de l’élève.');
+      alert('Veuillez remplir les informations obligatoires de l'élève.');
       return;
     }
 
+    // Mapping champs front → back
+    // Le backend attend : classe_visee_id, parent_telephone, parent_lien
     const newCandidate = {
-      id: Date.now(),
-      uuid: `CAND-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       nom: formData.nom.toUpperCase(),
       prenom: formData.prenom,
       sexe: formData.sexe,
       date_naissance: formData.date_naissance,
-      lieu_naissance: formData.lieu_naissance || 'Cotonou, Bénin',
-      classe_id: Number(formData.classe_id),
-      statut: 'en_attente',
+      classe_visee_id: Number(formData.classe_id),
       parent_nom: formData.parent_nom,
-      parent_tel: formData.parent_tel,
+      parent_telephone: formData.parent_tel,
       parent_email: formData.parent_email,
-      parent_adresse: formData.parent_adresse,
-      date_soumission: new Date().toISOString().split('T')[0],
-      pieces: [
-        { type: 'Acte d’état civil', file: 's3://inscriptions/dossiers/nouveau/acte.pdf', status: 'conforme' },
-        { type: 'Certificat médical', file: 's3://inscriptions/dossiers/nouveau/certificat.pdf', status: 'conforme' },
-        { type: 'Dernier bulletin', file: 's3://inscriptions/dossiers/nouveau/bulletin.pdf', status: 'en_cours' }
-      ],
-      test: {
-        matiere: 'Évaluation générale',
-        note: parseFloat(formData.note_test) || 12.0,
-        avis: formData.avis_test
-      }
+      parent_lien: 'parent',
     };
 
     onConfirm(newCandidate);
@@ -59,7 +48,7 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-sigapei-black/60 backdrop-blur-sm fade-enter">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl overflow-hidden max-h-[92vh] flex flex-col">
-        
+
         {/* Modal Header */}
         <div className="bg-sigapei-green px-6 py-4 flex items-center justify-between text-white shrink-0">
           <div className="flex items-center space-x-3">
@@ -73,8 +62,8 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               <p className="text-[11px] text-sigapei-cream/80">Enregistrement direct au secrétariat avec pièces justificatives S3</p>
             </div>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
           >
             ✕
@@ -83,18 +72,18 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1">
-          
+
           {/* Section 1 : Informations de l'élève */}
           <div className="space-y-3">
             <h4 className="text-xs font-black uppercase tracking-wider text-sigapei-green border-b border-slate-100 pb-1 flex items-center gap-2">
               <span>1. Identité de l'apprenant</span>
             </h4>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Nom *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="Ex: TOSSOU"
                   value={formData.nom}
@@ -104,8 +93,8 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Prénom(s) *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="Ex: Yannick"
                   value={formData.prenom}
@@ -118,7 +107,7 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Sexe</label>
-                <select 
+                <select
                   value={formData.sexe}
                   onChange={e => setFormData({...formData, sexe: e.target.value})}
                   className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white"
@@ -129,8 +118,8 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Date de naissance *</label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   required
                   value={formData.date_naissance}
                   onChange={e => setFormData({...formData, date_naissance: e.target.value})}
@@ -139,8 +128,8 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Lieu de naissance</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Cotonou"
                   value={formData.lieu_naissance}
                   onChange={e => setFormData({...formData, lieu_naissance: e.target.value})}
@@ -158,21 +147,21 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                   isFull ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'
                 }`}>
-                  {selectedClass.inscrits} / {selectedClass.capacite} places ({selectedClass.capacite - selectedClass.inscrits} disp.)
+                  {(selectedClass.inscrits_actuels ?? selectedClass.inscrits ?? 0)} / {selectedClass.capacite} places ({selectedClass.capacite - (selectedClass.inscrits_actuels ?? selectedClass.inscrits ?? 0)} disp.)
                 </span>
               )}
             </h4>
 
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Sélectionner la classe *</label>
-              <select 
+              <select
                 value={formData.classe_id}
                 onChange={e => setFormData({...formData, classe_id: e.target.value})}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white"
               >
                 {classes.map(cl => (
                   <option key={cl.id} value={cl.id}>
-                    {cl.nom} — ({cl.inscrits}/{cl.capacite} inscrits) {cl.inscrits >= cl.capacite ? '⚠️ COMPLÈTE' : '✅ Places disp.'}
+                    {cl.nom} — ({(cl.inscrits_actuels ?? cl.inscrits ?? 0)}/{cl.capacite} inscrits) {(cl.inscrits_actuels ?? cl.inscrits ?? 0) >= cl.capacite ? '⚠️ COMPLÈTE' : '✅ Places disp.'}
                   </option>
                 ))}
               </select>
@@ -194,8 +183,8 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Nom complet du parent *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="Ex: TOSSOU Sylvain"
                   value={formData.parent_nom}
@@ -205,8 +194,8 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Téléphone international *</label>
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   required
                   placeholder="+229 97 00 00 00"
                   value={formData.parent_tel}
@@ -219,8 +208,8 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Email du parent</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   placeholder="parent@gmail.com"
                   value={formData.parent_email}
                   onChange={e => setFormData({...formData, parent_email: e.target.value})}
@@ -229,8 +218,8 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Adresse de résidence</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Quartier, Ville"
                   value={formData.parent_adresse}
                   onChange={e => setFormData({...formData, parent_adresse: e.target.value})}
@@ -249,10 +238,10 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Note obtenue (/20)</label>
-                <input 
-                  type="number" 
-                  step="0.5" 
-                  min="0" 
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
                   max="20"
                   value={formData.note_test}
                   onChange={e => setFormData({...formData, note_test: e.target.value})}
@@ -261,7 +250,7 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Avis pédagogique</label>
-                <select 
+                <select
                   value={formData.avis_test}
                   onChange={e => setFormData({...formData, avis_test: e.target.value})}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white"
@@ -276,14 +265,14 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
 
           {/* Actions */}
           <div className="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 transition"
             >
               Annuler
             </button>
-            <button 
+            <button
               type="submit"
               className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white text-xs font-black hover:bg-sigapei-green/90 shadow-md transition flex items-center space-x-2"
             >

@@ -17,19 +17,18 @@ class AuditService
      */
     public static function journaliser(string $action, string $cible, array $details = []): void
     {
-        // Le JWT Identité porte `sub` (UUID utilisateur) et `tenantId` (UUID
-        // établissement), tandis que les colonnes d'audit sont des bigint.
-        // On conserve les deux formes : l'UUID tel quel, et l'entier résolu
-        // lorsqu'il est disponible. Aucune valeur n'est inventée.
-        $tenantRef  = app()->bound('current_tenant_id') ? app('current_tenant_id') : null;
+        $tenantId    = app()->bound('current_tenant_id') ? app('current_tenant_id') : null;
+        $tenantRefBrut = app()->bound('current_tenant_ref') ? app('current_tenant_ref') : null;
         $currentUser = app()->bound('current_user') ? app('current_user') : null;
-        $auteurRef  = $currentUser['uuid'] ?? $currentUser['sub'] ?? null;
+        $auteurRef   = $currentUser['uuid'] ?? $currentUser['sub'] ?? null;
 
-        $tenantUuid = is_string($tenantRef) && !is_numeric($tenantRef) ? $tenantRef : null;
+        $tenantUuid = is_string($tenantRefBrut) && !is_numeric($tenantRefBrut) ? $tenantRefBrut : null;
         $auteurUuid = is_string($auteurRef) && !is_numeric($auteurRef) ? $auteurRef : null;
 
-        $tenantId = is_numeric($tenantRef) ? (int) $tenantRef : null;
+        $tenantId = is_numeric($tenantId) ? (int) $tenantId : null;
         $auteurId = is_numeric($auteurRef) ? (int) $auteurRef : null;
+
+        $tenantRef = $tenantRefBrut ?? $tenantId;
 
         // 1. Journalisation système systématique et sécurisée
         Log::info("[AUDIT-SCOLARITE] Tenant: {$tenantRef} | Auteur: {$auteurRef} | Action: {$action} | Cible: {$cible}", $details);
