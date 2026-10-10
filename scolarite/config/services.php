@@ -21,7 +21,12 @@ return [
             'scolarite'     => env('URL_SERVICE_SCOLARITE',     'http://localhost:4004'),
             'vie-scolaire'  => env('URL_SERVICE_VIE_SCOLAIRE',  'http://localhost:4005'),
         ],
-        'timeout' => (int) env('MICROSERVICES_TIMEOUT', 5),
+        // Neon est une base managée distante : la latence d'un aller-retour
+        // dépasse couramment 1 s, et une requête qui traverse plusieurs
+        // appels internes peut dépasser 5 s. Un timeout trop court faisait
+        // échouer la réinscription avec une erreur cURL 28 alors que le
+        // microservice cible répondait correctement.
+        'timeout' => (int) env('MICROSERVICES_TIMEOUT', 15),
     ],
 
     'interne' => [
