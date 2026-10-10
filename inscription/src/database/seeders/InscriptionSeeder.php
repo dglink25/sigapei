@@ -1,6 +1,6 @@
 <?php
 
-namespace App\database\seeders;
+namespace App\Database\Seeders;
 
 use App\candidatures\Candidature;
 use Illuminate\Database\Seeder;
