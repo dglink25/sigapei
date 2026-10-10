@@ -60,7 +60,7 @@ projet — on ne redemande pas d'autres valeurs et on ne cree pas de base.
 
 ```
 DB_CONNECTION=pgsql
-DB_HOST=ep-raspy-brook-b46yo20b-pooler.c-6.us-east-2.aws.neon.tech
+DB_HOST=your-neon-project.pooler.region.aws.neon.tech
 DB_PORT=5432
 DB_DATABASE=neondb
 DB_USERNAME=<fourni par le chef de projet>
@@ -77,7 +77,7 @@ Neon. Ni Laravel ni TypeORM ne le creent automatiquement, parce que leur table d
 suivi des migrations doit elle-meme etre creee dans un schema deja existant :
 
 ```bash
-psql "postgresql://<DB_USERNAME>:<DB_PASSWORD>@ep-raspy-brook-b46yo20b-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require"
+psql "postgresql://<DB_USERNAME>:<DB_PASSWORD>@<DB_HOST>/neondb?sslmode=require"
 CREATE SCHEMA IF NOT EXISTS vie_scolaire;
 \q
 ```
