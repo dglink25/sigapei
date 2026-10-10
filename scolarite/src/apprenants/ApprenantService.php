@@ -93,7 +93,7 @@ class ApprenantService
             throw new Exception("Dossier apprenant introuvable.");
         }
 
-        $situation = $this->financesClient->obtenirSituationFinanciere($apprenant->id, $apprenant->tenant_id);
+        $situation = $this->financesClient->obtenirSituationFinanciere($apprenant->uuid, (int) $apprenant->tenant_id);
 
         return [
             'apprenant' => [
