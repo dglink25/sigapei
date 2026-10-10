@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
  */
 class FakeScolariteClient extends ScolariteClient
 {
+    public function __construct() {}
+
     public function coursParUuid(int $tenantId, string $uuid): ?object
     {
         return DB::table('scolarite_emplois_du_temps')

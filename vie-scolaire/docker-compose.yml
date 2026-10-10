@@ -1,0 +1,89 @@
+# ============================================================
+# vie-scolaire - Orchestration du microservice
+# Demarrage : docker compose up -d --build
+# Microservice expose sur http://localhost:4005
+# Sante :      http://localhost:4005/up
+# ============================================================
+#
+# Regle n°2 - Redis et RabbitMQ sont PARTAGES, pas dupliques.
+# Ce fichier ne declare donc AUCUN conteneur postgres, redis ou
+# rabbitmq : la base est Neon (Regle n°1, hors Docker) et Redis /
+# RabbitMQ sont ceux deja lances par le microservice identite, sur
+# le reseau Docker externe `sigapei`.
+#
+# Aucun `depends_on` n'est declare sur redis ou rabbitmq : ces
+# conteneurs n'appartiennent pas a ce compose, seule leur presence
+# sur le reseau `sigapei` les rend joignables par leur nom.
+#
+# Le reseau externe se cree UNE SEULE FOIS sur la machine :
+#   docker network create sigapei
+#
+# Tests rapides (contexte tenant transmis par la passerelle,
+# voir ResolveTenantContext ; regle n°5) :
+#   curl -H "X-Tenant-Id: 1" http://localhost:4005/api/v1/presences
+#
+# Ecriture avec captcha (regle n°4) et entete de la passerelle :
+#   curl -H "X-Tenant-Id: 1" \
+#        -H "X-User-Id: 00000000-0000-0000-0000-000000000001" \
+#        -H "X-Captcha-Token: <captchaToken>" \
+#        -H "Content-Type: application/json" \
+#        -d '{"cours_uuid":"00000000-0000-0000-0000-000000000003",
+#             "date":"2026-09-26",
+#             "apprenants":[{"uuid":"00000000-0000-0000-0000-000000000004","statut":"present"}]}' \
+#        http://localhost:4005/api/v1/presences
+#
+# Endpoint interne (regle n°3, jamais appele par un client final) :
+#   curl -H "X-Internal-Secret: $INTERNAL_API_SECRET" \
+#        -H "X-Tenant-Id: 1" \
+#        http://localhost:4005/api/v1/interne/alertes-absences
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: viescolaire-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Regle n°6 - port dedie du microservice, fixe une fois pour toutes.
+      - VIESCOLAIRE_PORT=${VIESCOLAIRE_PORT:-4005}
+
+      # Regle n°1 - base Neon partagee : rien ici n'est propre a ce
+      # microservice, seul DB_SCHEMA l'est. Les valeurs viennent du .env.
+      - DB_CONNECTION=pgsql
+      - DB_SCHEMA=${DB_SCHEMA:-vie_scolaire}
+      - DB_SSLMODE=${DB_SSLMODE:-require}
+
+      # Regle n°2 - Redis et RabbitMQ partages, joignables par leur nom
+      # de service sur le reseau `sigapei` (pas localhost).
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_DB=${REDIS_DB:-2}
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-rabbitmq}
+    networks:
+      - sigapei
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: viescolaire-nginx
+    restart: unless-stopped
+    ports:
+      - "${VIESCOLAIRE_PORT:-4005}:80"
+    volumes:
+      - ./docker/nginx-default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/up >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - sigapei
+
+networks:
+  # Reseau partage cree une seule fois : `docker network create sigapei`
+  sigapei:
+    external: true

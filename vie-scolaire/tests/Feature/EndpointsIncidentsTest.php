@@ -13,7 +13,7 @@ class EndpointsIncidentsTest extends ApiTestCase
         $this->seedApprenant(1, '33333333-0000-0000-0000-000000000000', $classeId);
         $this->seedPersonnel(1, '55555555-0000-0000-0000-000000000000');
 
-        $reponse = $this->withHeaders($this->headersTenant())
+        $reponse = $this->withHeaders($this->headersEcriture())
             ->postJson('/v1/incidents', [
                 'apprenant_uuid' => '33333333-0000-0000-0000-000000000000',
                 'type' => 'retard',
@@ -42,7 +42,7 @@ class EndpointsIncidentsTest extends ApiTestCase
 
     public function test_apprenant_introuvable_refuse_le_signalement(): void
     {
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->postJson('/v1/incidents', [
                 'apprenant_uuid' => '99999999-0000-0000-0000-000000000001',
                 'type' => 'comportement',
@@ -57,7 +57,7 @@ class EndpointsIncidentsTest extends ApiTestCase
     {
         $this->seedApprenant(1, '33333333-0000-0000-0000-000000000000');
 
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->postJson('/v1/incidents', [
                 'apprenant_uuid' => '33333333-0000-0000-0000-000000000000',
                 'type' => 'pire_comportement',
@@ -81,7 +81,7 @@ class EndpointsIncidentsTest extends ApiTestCase
             'description' => 'Incident initial',
         ]);
 
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->postJson("/v1/incidents/{$incident->uuid}/sanction", [
                 'sanction' => 'Heure de colle',
             ])
@@ -98,7 +98,7 @@ class EndpointsIncidentsTest extends ApiTestCase
 
     public function test_sanction_sur_incident_inexistant_est_refusee(): void
     {
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->postJson('/v1/incidents/99999999-0000-0000-0000-000000000002/sanction', [
                 'sanction' => 'Heure de colle',
             ])
