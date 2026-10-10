@@ -8,6 +8,7 @@ use App\Models\Presence;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Tests\Support\FakeRhClient;
 use Tests\Support\FakeScolariteClient;
@@ -17,12 +18,24 @@ use Tests\TestCase;
  * Base commune des tests Feature du microservice.
  *
  * Reproduit en SQLite locale les contrats externes du schema scolarite et
- * du schema rh (jointures reelles dans l'application, tables deja presentes
- * ici pour les tests) et remplace les clients d'integration par leurs fakes.
+ * du schema rh et remplace les clients d'integration par leurs fakes :
+ * aucun test ne touche Neon, ni le schema d'un autre microservice
+ * (Regle n°1 - les vraies lectures passent par l'API interne, donc par
+ * HTTP, et sont donc fakees).
  */
 abstract class ApiTestCase extends TestCase
 {
     use RefreshDatabase;
+
+    /**
+     * Reponse simulee du fournisseur CAPTCHA partage (regle n°4).
+     * Un test la surcharge avant d'appeler l'API.
+     *
+     * @var array<string, mixed>
+     */
+    protected array $corpsCaptcha = ['success' => true, 'score' => 0.9];
+
+    protected int $statutCaptcha = 200;
 
     protected function setUp(): void
     {
@@ -38,6 +51,10 @@ abstract class ApiTestCase extends TestCase
             RhClient::class,
             new FakeRhClient,
         );
+
+        // Regle n°4 - le CAPTCHA partage est verifie via HTTP : la reponse
+        // du fournisseur est simulee, aucun appel reel ne sort du test.
+        Http::fake(fn () => Http::response($this->corpsCaptcha, $this->statutCaptcha));
 
         config([
             'vie-scolaire.absences.seuil_defaut' => 2,
@@ -135,6 +152,43 @@ abstract class ApiTestCase extends TestCase
             'X-Tenant-Id' => (string) $tenantId,
             'X-User-Id' => $userUuid,
             'X-User-Role' => $role,
+            'Accept' => 'application/json',
+        ];
+    }
+
+    /**
+     * Regle n°4 - `captchaToken` produit par le front avec la cle publique
+     * du compte CAPTCHA partage, transmis dans l'entete `X-Captcha-Token`.
+     */
+    protected function headersCaptcha(): array
+    {
+        return ['X-Captcha-Token' => 'captcha-token-de-test'];
+    }
+
+    /**
+     * Entetes d'une ecriture : contexte passerelle + captchaToken.
+     *
+     * @return array<string, string>
+     */
+    protected function headersEcriture(int $tenantId = 1, string $role = 'enseignant', ?string $userUuid = '55555555-0000-0000-0000-000000000000'): array
+    {
+        return array_merge(
+            $this->headersTenant($tenantId, $role, $userUuid),
+            $this->headersCaptcha(),
+        );
+    }
+
+    /**
+     * Regle n°3 - entetes d'un appel interne : le secret partage
+     * `X-Internal-Secret`, plus le contexte transmis par l'appelant.
+     *
+     * @return array<string, string>
+     */
+    protected function headersInterne(int $tenantId = 1, ?string $secret = null): array
+    {
+        return [
+            'X-Internal-Secret' => $secret ?? (string) config('services.interne.secret'),
+            'X-Tenant-Id' => (string) $tenantId,
             'Accept' => 'application/json',
         ];
     }

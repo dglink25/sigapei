@@ -22,7 +22,7 @@ class EndpointsPresencesTest extends ApiTestCase
         $apprenant1 = $this->seedApprenant(1, '33333333-0000-0000-0000-000000000000', $classeId);
         $apprenant2 = $this->seedApprenant(1, '33333333-0000-0000-0000-000000000001', $classeId);
 
-        $reponse = $this->withHeaders($this->headersTenant())
+        $reponse = $this->withHeaders($this->headersEcriture())
             ->postJson('/v1/presences', [
                 'cours_uuid' => '22222222-0000-0000-0000-000000000000',
                 'date' => now()->toDateString(),
@@ -61,7 +61,7 @@ class EndpointsPresencesTest extends ApiTestCase
         $apprenant = $this->seedApprenant(1, '33333333-0000-0000-0000-000000000000', $classeId);
 
         for ($i = 0; $i < 2; $i++) {
-            $this->withHeaders($this->headersTenant())
+            $this->withHeaders($this->headersEcriture())
                 ->postJson('/v1/presences', [
                     'cours_uuid' => '22222222-0000-0000-0000-000000000000',
                     'date' => now()->subDays(1 + $i)->toDateString(),
@@ -79,7 +79,7 @@ class EndpointsPresencesTest extends ApiTestCase
     {
         $this->seedApprenant(1, '33333333-0000-0000-0000-000000000000');
 
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->postJson('/v1/presences', [
                 'cours_uuid' => '99999999-0000-0000-0000-000000000000',
                 'date' => now()->toDateString(),
@@ -98,7 +98,7 @@ class EndpointsPresencesTest extends ApiTestCase
         $this->seedCours(1, '22222222-0000-0000-0000-000000000000');
         $this->seedApprenant(1, '33333333-0000-0000-0000-000000000000');
 
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->postJson('/v1/presences', [
                 'cours_uuid' => '22222222-0000-0000-0000-000000000000',
                 'date' => now()->toDateString(),
@@ -114,7 +114,7 @@ class EndpointsPresencesTest extends ApiTestCase
 
     public function test_payload_invalide_est_refuse(): void
     {
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->postJson('/v1/presences', [
                 'cours_uuid' => 'pas-un-uuid',
                 'date' => 'hier',
@@ -163,7 +163,7 @@ class EndpointsPresencesTest extends ApiTestCase
         $this->seedPersonnel(1, '55555555-0000-0000-0000-000000000000');
         $presence = $this->creerPresence(1, 'absent', today());
 
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->putJson("/v1/presences/{$presence->uuid}", [
                 'statut' => 'present',
                 'motif' => 'Erreur de saisie',
@@ -187,7 +187,7 @@ class EndpointsPresencesTest extends ApiTestCase
     {
         $presence = $this->creerPresence(1, 'absent', today(), 50);
 
-        $this->withHeaders($this->headersTenant())
+        $this->withHeaders($this->headersEcriture())
             ->putJson("/v1/presences/{$presence->uuid}", [
                 'statut' => 'present',
             ])
@@ -199,7 +199,7 @@ class EndpointsPresencesTest extends ApiTestCase
         $this->seedPersonnel(1, '55555555-0000-0000-0000-000000000001');
         $presence = $this->creerPresence(1, 'absent', today(), 50);
 
-        $this->withHeaders($this->headersTenant(role: 'censeur', userUuid: '55555555-0000-0000-0000-000000000001'))
+        $this->withHeaders($this->headersEcriture(role: 'censeur', userUuid: '55555555-0000-0000-0000-000000000001'))
             ->putJson("/v1/presences/{$presence->uuid}", [
                 'statut' => 'absent',
             ])
@@ -249,7 +249,7 @@ class EndpointsPresencesTest extends ApiTestCase
             ->assertOk()
             ->assertJsonCount(0, 'presences');
 
-        $this->withHeaders($this->headersTenant(tenantId: 2))
+        $this->withHeaders($this->headersEcriture(tenantId: 2))
             ->putJson("/v1/presences/{$presence->uuid}", ['statut' => 'present'])
             ->assertStatus(404);
     }
