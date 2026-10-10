@@ -147,9 +147,11 @@ Les pièces justificatives (actes de naissance, bulletins scolaires antérieurs,
         │
         ▼
 ┌────────────────────────────────────────────────────────┐
-│ 4. Insertion directe dans scolarite.apprenants         │
-│    - Règle programme pédagogique appliquée             │
-│    - Rattachement parent dans scolarite.parents        │
+│ 4. Création via l'API interne de Scolarité              │
+│    - POST /v1/interne/apprenants                       │
+│    - Scolarité applique la règle du programme          │
+│    - Scolarité refuse si la classe est complète        │
+│    - Rattachement du parent dans scolarite.parents      │
 │    - Statut candidature -> 'validee'                   │
 └────────────────────────────────────────────────────────┘
         │
@@ -173,11 +175,20 @@ Aucune admission ne peut contourner la capacité maximale d'une classe :
 * La vérification s'opère en direct sur `scolarite.classes` au moment de la transaction de validation.
 * Si le nombre d'inscrits actifs atteint la capacité, la validation échoue immédiatement avec le code `ERREUR_VALIDATION_CANDIDATURE` et le message explicite `La classe a atteint sa capacité maximale`.
 
-### 4.4. Création directe sans duplication
+### 4.4. Création via l'API interne, sans duplication
 
-* La validation de la candidature insère immédiatement l'élève dans `scolarite.apprenants`.
-* La ligne de candidature conserve le lien de traçabilité et sert d'archive immuable de l'admission d'origine.
-* Aucune resynchronisation, aucun import/export : la donnée est immédiatement visible par Évaluations, Finances et Vie Scolaire.
+**Règle n°1 du README racine** : Inscription ne touche jamais les tables de
+Scolarité, même si les deux partagent la même base PostgreSQL.
+
+* La validation appelle `POST /v1/interne/apprenants` sur Scolarité, qui est
+  le seul propriétaire du schéma `scolarite`.
+* Scolarité applique elle-même la règle pédagogique (§ 4.2) et refuse une
+  classe à capacité maximale : Inscription ne décide de rien sur un dossier
+  qu'elle ne possède pas.
+* La ligne de candidature conserve le lien de traçabilité et sert d'archive
+  immuable de l'admission d'origine.
+* Aucune resynchronisation, aucun import/export : Évaluations, Finances et Vie
+  Scolaire lisent la donnée chez Scolarité via son API interne.
 
 ### 4.5. Rejet obligatoirement motivé
 
@@ -188,8 +199,22 @@ Aucune admission ne peut contourner la capacité maximale d'une classe :
 ### 4.6. Réinscriptions sans duplication
 
 * Le endpoint `POST /v1/reinscriptions` permet de reconduire un apprenant existant sur une nouvelle année scolaire.
-* Met à jour `classe_id` sur la fiche apprenant existante et consigne le changement dans `scolarite.historique_classes`.
+* La mutation du dossier est demandée à Scolarité via
+  `POST /v1/interne/apprenants/transfert` : Scolarité met à jour `classe_id`
+  sur la fiche existante et consigne `scolarite.historique_classes`.
+* Inscription ne conserve qu'une trace de la demande dans son propre schéma
+  `inscription.reinscriptions`.
 * **Aucun doublon de fiche apprenant n'est créé.**
+
+### 4.7. Convention `tenant_id`
+
+Le claim `tenantId` du JWT Identité est un **uuid**, alors que les colonnes
+`tenant_id` du schéma `inscription` sont des **bigint**. `TenantResolver`
+effectue la conversion via l'API interne d'Établissements. Un `X-Tenant-Id`
+déjà numérique est accepté sans appel réseau quand
+`TWO_TENANT_CONVENTIONS_ENABLED=true`, pour rester compatible avec
+`vie-scolaire`. À retirer dès que la plateforme tranche une convention
+unique.
 
 ---
 
@@ -310,9 +335,10 @@ inscription/
 │   │   ├── Reinscription.php
 │   │   ├── reinscription.controller.php
 │   │   └── reinscription.service.php
-│   ├── integrations/            Clients SQL & API internes (Scolarité, Établissements)
-│   │   ├── scolarite-client.php
-│   │   └── etablissements-client.php
+│   ├── integrations/            Clients des API internes (Scolarité, Identité, Établissements)
+│   │   ├── ScolariteClient.php      Disponibilité + création d'apprenant
+│   │   ├── IdentiteClient.php       Profils et rôles utilisateurs
+│   │   └── EtablissementsClient.php Activation des modules (échec fermé)
 │   ├── docs/                    Contrôleur et données du catalogue /docs
 │   │   ├── DocsController.php
 │   │   └── DocsData.php

@@ -140,22 +140,69 @@ Lorsqu'un élève change de classe en cours d'année (`POST /v1/apprenants/{uuid
 * La classe de destination est vérifiée (capacité et appartenance au même établissement).
 * **La fiche apprenant n'est jamais dupliquée** : seul `classe_id` est mis à jour sur la ligne existante dans `scolarite.apprenants`.
 * Une entrée d'audit et de traçabilité est immédiatement enregistrée dans `scolarite.historique_classes`.
-* Les modules Évaluations, Vie scolaire et Finances voient instantanément la nouvelle classe de l'élève par simple jointure, sans délai de propagation.
+* Les modules Évaluations, Vie scolaire et Finances voient la nouvelle classe
+  de l'élève en interrogeant l'API interne de Scolarité (§ 4.6), et non par
+  jointure SQL sur le schéma `scolarite` : la donnée n'est ni dupliquée ni
+  répliquée, elle reste chez son propriétaire.
 
 ### 4.4. Suivi des paiements de scolarité (Lecture seule pure)
 
 * `GET /v1/apprenants/{uuid}/paiements-scolarite` fournit une vue financière consolidée (échéances, total dû, total réglé, solde restant, statut).
 * **Règle absolue d'architecture** : cette fonction est **strictement en lecture seule**. Aucune facture, aucun reçu ni aucune transaction ne sont émis ou modifiés depuis ce microservice. Cette responsabilité appartient exclusivement au microservice Finances.
+* La vue est obtenue via l'API interne de Finances. Scolarité ne lit plus
+  les tables `finances.*` et ne peut en aucun cas les modifier.
 
 ### 4.5. Emplois du temps
 
 * Planning complet croisant classe, matière, enseignant et créneau horaire.
 * Consultation filtrable par classe, par enseignant ou par jour de la semaine.
 
-### 4.6. Endpoint interne pour la plateforme
+### 4.6. API interne — Scolarité est le seul propriétaire du schéma
 
-* `GET /v1/interne/apprenants/{uuid}/classe` (protégé par `X-Internal-Secret`) :
-* Fournit aux microservices Évaluations, Vie scolaire et Finances les informations d'un élève (classe, cycle, niveau, programme, statut) de façon standardisée sans accès direct à la base de données.
+**Règle n°1 du README racine** : un microservice ne lit ni n'écrit les tables
+d'un autre microservice, même si tous partagent la même base PostgreSQL. Les
+échanges passent par ces endpoints, protégés par `X-Internal-Secret`
+(règle n°3). Aucun de ces appels ne vérifie de JWT (règle n°5) : l'identité
+de l'appelant est portée par le secret interne.
+
+| Méthode | Route | Consommée par |
+|---|---|---|
+| `GET` | `/v1/interne/apprenants` | Vie scolaire, Inscription, Évaluations |
+| `POST` | `/v1/interne/apprenants` | Inscription (validation d'admission) |
+| `POST` | `/v1/interne/apprenants/transfert` | Inscription (réinscription) |
+| `GET` | `/v1/interne/emplois-du-temps` | Vie scolaire, Évaluations |
+| `GET` | `/v1/interne/classes/disponibilite` | Inscription (contrôle de capacité) |
+| `GET` | `/v1/interne/apprenants/{uuid}/classe` | Évaluations, Finances |
+
+`GET /v1/interne/apprenants` accepte les filtres `uuid`, `id`, `uuids`, `ids`,
+`classe_uuid` et `statut` (séparés par des virgules pour les listes).
+
+`POST /v1/interne/apprenants` applique la **règle pédagogique** (section 4.1) :
+c'est Scolarité, propriétaire du schéma, qui décide qu'un élève du programme
+béninois n'a pas de compte, et qui refuse lui-même une classe à capacité
+maximale plutôt que de faire confiance à l'appelant.
+
+`POST /v1/interne/apprenants/transfert` est déclarée **avant** la route
+`/interne/apprenants/{uuid}` afin que le segment paramétré n'absorbe pas le
+mot `transfert`.
+
+### 4.7. Convention `tenant_id` : deux usages à connaître
+
+Le claim `tenantId` du JWT Identité est un **uuid**, alors que les colonnes
+`tenant_id` des schémas `scolarite` et `inscription` sont des **bigint**.
+`TenantResolver` fait la conversion via l'API interne d'Établissements.
+
+Deux conventions coexistent aujourd'hui sur la plateforme :
+
+| Contexte | Format | Origine |
+|---|---|---|
+| Requête utilisateur | uuid | claim `tenantId` du JWT |
+| Appel interne Gateway | entier | header `X-Tenant-Id` |
+
+`TWO_TENANT_CONVENTIONS_ENABLED=true` (défaut `false`) accepte un tenant
+déjà numérique sans appel réseau, ce qui rend Scolarité compatible avec
+`vie-scolaire` qui impose un `X-Tenant-Id` numérique. **À retirer dès que la
+plateforme tranche une convention unique.**
 
 ---
 
@@ -208,6 +255,11 @@ Toutes les routes métier sont sous le préfixe `/v1` :
 | `GET` | `/v1/emplois-du-temps` | Authentifié | Consultation planning (par classe, prof ou jour) |
 | `POST` | `/v1/emplois-du-temps` | Authentifié (Admin/Censeur) | Création ou modification d'un créneau de cours |
 | `GET` | `/v1/interne/apprenants/{uuid}/classe` | Secret partagé (`X-Internal-Secret`) | Endpoint interne pour Évaluations, Finances, Vie scolaire |
+| `GET` | `/v1/interne/apprenants` | Secret partagé | Liste/filtre des apprenants |
+| `POST` | `/v1/interne/apprenants` | Secret partagé | Création d'un apprenant (validation d'admission) |
+| `POST` | `/v1/interne/apprenants/transfert` | Secret partagé | Mutation de classe demandée par un autre microservice |
+| `GET` | `/v1/interne/emplois-du-temps` | Secret partagé | Emplois du temps (filtres classe, enseignant, jour) |
+| `GET` | `/v1/interne/classes/disponibilite` | Secret partagé | Capacité temps réel, contrôle bloquant d'admission |
 
 > [!TIP]
 > Pour consulter les schémas JSON complets de requêtes, réponses réussies et codes d'erreur détaillés, consultez [docs/api-documentation.md](docs/api-documentation.md) ou exécutez `GET http://localhost:4004/docs`.
@@ -250,15 +302,20 @@ scolarite/
 │   │   ├── emploi-du-temps.controller.php
 │   │   ├── emploi-du-temps.service.php
 │   │   └── emploi-du-temps.repository.php
-│   ├── integrations/            Client Finances en lecture seule pure
-│   │   └── finances-client.php
+│   ├── integrations/            Clients API internes (Identité, Établissements, Finances)
+│   │   └── FinancesClient.php   Lecture seule pure via l'API interne de Finances
+│   ├── interne/                 API interne consommée par les autres microservices
+│   │   └── InterneController.php Apprenants, EDT, capacité, création, mutation
 │   ├── docs/                    Contrôleur et données du catalogue /docs
 │   │   ├── DocsController.php
 │   │   └── DocsData.php
 │   ├── common/                  Socle transverse multi-tenant
-│   │   ├── Middleware/VerifyTenantAndJwt.php
-│   │   ├── Scopes/TenantScope.php
+│   │   ├── Middleware/VerifyTenantAndJwt.php  JWT + résolution du tenant
+│   │   ├── Middleware/VerifyRole.php          Contrôle RBAC par rôle
+│   │   ├── Scopes/TenantScope.php             Cloisonnement ORM (échec fermé)
 │   │   ├── Traits/HasTenant.php & HasUuid.php
+│   │   ├── Services/InterneClient.php         Client HTTP des API internes
+│   │   ├── Services/TenantResolver.php        Résolution uuid ↔ bigint
 │   │   ├── Services/AuditService.php
 │   │   └── Responses/ApiResponse.php
 │   └── database/
