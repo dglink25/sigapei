@@ -75,27 +75,26 @@ class ValidationService
             throw new Exception("Validation impossible : la classe '{$dispo['nom']}' a atteint sa capacité maximale ({$dispo['capacite']} places).");
         }
 
-        // 3. Recherche du compte parent dans identite
+        // 3. Recherche du compte parent dans Identité
         $parentCompte = $this->identiteClient->trouverUtilisateurParContact(
             $candidature->parent_email,
             $candidature->parent_telephone
         );
-        $parentIdentiteId = $parentCompte?->id ?? null;
+        $parentIdentiteUuid = $parentCompte->uuid ?? null;
 
-        return DB::transaction(function () use ($candidature, $dispo, $tenantId, $parentIdentiteId) {
-            // 4. Création de l'apprenant dans scolarite
+        return DB::transaction(function () use ($candidature, $dispo, $parentIdentiteUuid) {
+            // 4. Création de l'apprenant via l'API interne de Scolarité.
+            //    Scolarité applique la règle du programme pédagogique et
+            //    reste seul propriétaire de son schéma.
             $apprenant = $this->scolariteClient->creerApprenant([
-                'tenant_id'          => $tenantId,
-                'classe_uuid'        => $dispo['uuid'],
-                'candidature_id'     => $candidature->id,
-                'parent_identite_id' => $parentIdentiteId,
-                'nom'                => $candidature->nom,
-                'prenom'             => $candidature->prenom,
-                'date_naissance'     => $candidature->date_naissance->format('Y-m-d'),
-                'sexe'               => $candidature->sexe,
-                'parent_lien'        => $candidature->parent_lien,
-                // utilisateur_identite_id = null ici ; sera renseigné si programme français secondaire
-                // par l'administrateur lors d'un transfert ultérieur ou via le module SSO
+                'classe_uuid'          => $dispo['uuid'],
+                'candidature_uuid'     => $candidature->uuid,
+                'parent_identite_uuid' => $parentIdentiteUuid,
+                'nom'                  => $candidature->nom,
+                'prenom'               => $candidature->prenom,
+                'date_naissance'       => $candidature->date_naissance->format('Y-m-d'),
+                'sexe'                 => $candidature->sexe,
+                'parent_lien'          => $candidature->parent_lien,
             ]);
 
             // 5. Passage du statut à 'validee'
@@ -111,7 +110,7 @@ class ValidationService
                     'apprenant_uuid'       => $apprenant['uuid'],
                     'classe_nom'           => $dispo['nom'],
                     'programme'            => $dispo['programme'],
-                    'parent_lie'           => ($parentIdentiteId !== null),
+                    'parent_lie'           => ($parentIdentiteUuid !== null),
                     'compte_utilisateur'   => $apprenant['compte_utilisateur_cree'],
                 ]
             );
@@ -123,7 +122,7 @@ class ValidationService
                     'uuid'                  => $apprenant['uuid'],
                     'classe'                => $dispo['nom'],
                     'programme'             => $dispo['programme'],
-                    'parent_lie'            => ($parentIdentiteId !== null),
+                    'parent_lie'            => ($parentIdentiteUuid !== null),
                     'compte_utilisateur_cree' => $apprenant['compte_utilisateur_cree'],
                 ],
                 'message' => 'Candidature validée avec succès et apprenant généré dans la scolarité.',

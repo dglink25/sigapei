@@ -2,98 +2,92 @@
 
 namespace App\integrations;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\common\Services\InterneClient;
 use Throwable;
 
 /**
  * Client d'intégration avec le microservice Identité.
- * Accès en lecture directe au schéma `identite` de la base Neon.
- * Le JWT émis par api-identite contient : sub (UUID), tenantId, roleCode.
+ *
+ * Règle n°1 : plus de lecture directe du schéma `identite`. Les profils et
+ * rôles se récupèrent via l'API interne d'Identité (`/interne/...`).
+ *
+ * Règle n°5 : ce client ne valide aucun JWT — il ne fait que transporter
+ * l'UUID de l'utilisateur à vérifier.
  */
 class IdentiteClient
 {
+    public function __construct(
+        protected InterneClient $interne
+    ) {}
+
     /**
      * Retrouve un utilisateur (enseignant, parent, administrateur)
-     * par son UUID (champ `sub` du JWT identite).
+     * par son UUID (claim `sub` du JWT Identité).
      */
     public function trouverParUuid(string $uuid): ?object
     {
+        if (empty($uuid)) {
+            return null;
+        }
+
         try {
-            return DB::table('identite.utilisateur as u')
-                ->leftJoin('identite.role as r', 'u.role_id', '=', 'r.id')
-                ->select([
-                    'u.id',
-                    'u.uuid',
-                    'u.tenant_id',
-                    'u.nom_complet',
-                    'u.telephone',
-                    'u.email',
-                    'u.matricule',
-                    'u.statut',
-                    'u.photo_url',
-                    'r.code as role_code',
-                    'r.libelle as role_libelle',
-                ])
-                ->where('u.uuid', $uuid)
-                ->first();
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', ['uuid' => $uuid]);
         } catch (Throwable) {
             return null;
         }
+
+        return $donnees ? (object) ($donnees['donnees'] ?? $donnees) : null;
     }
 
     /**
-     * Retrouve un utilisateur par son ID interne.
+     * Retrouve un utilisateur par son identifiant interne.
      */
     public function trouverParId(int $id): ?object
     {
         try {
-            return DB::table('identite.utilisateur as u')
-                ->leftJoin('identite.role as r', 'u.role_id', '=', 'r.id')
-                ->select([
-                    'u.id', 'u.uuid', 'u.nom_complet',
-                    'u.telephone', 'u.email', 'u.matricule',
-                    'u.statut', 'u.photo_url',
-                    'r.code as role_code',
-                ])
-                ->where('u.id', $id)
-                ->first();
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', ['id' => $id]);
         } catch (Throwable) {
             return null;
         }
+
+        return $donnees ? (object) ($donnees['donnees'] ?? $donnees) : null;
     }
 
     /**
-     * Vérifie que l'enseignant existe, est actif et a bien un rôle d'enseignement
-     * dans le microservice Identité.
+     * Vérifie que l'enseignant existe, est actif et a bien un rôle
+     * d'enseignement dans Identité.
      *
-     * Règle de sécurité : échec fermé (fail-closed). Une base Identité vide ou
-     * injoignable ne vaut PAS autorisation : elle vaut refus. Autoriser par
-     * défaut permettrait d'affecter n'importe quel identifiant — y compris
+     * Règle de sécurité : échec fermé (fail-closed). Identité vide ou
+     * injoignable ne vaut PAS autorisation : autoriser par défaut
+     * permettrait d'affecter n'importe quel identifiant — y compris
      * inexistant — à un créneau d'emploi du temps.
      */
     public function estEnseignantActif(string|int $enseignantRef): bool
     {
         try {
-            $colonne = is_numeric($enseignantRef) ? 'u.id' : 'u.uuid';
+            $requete = is_numeric($enseignantRef)
+                ? ['id' => (int) $enseignantRef]
+                : ['uuid' => (string) $enseignantRef];
 
-            return DB::table('identite.utilisateur as u')
-                ->join('identite.role as r', 'u.role_id', '=', 'r.id')
-                ->where($colonne, $enseignantRef)
-                ->whereIn('r.code', ['enseignant', 'administrateur', 'super_admin'])
-                ->where('u.statut', 'actif')
-                ->exists();
-        } catch (Throwable $e) {
-            Log::error('[IDENTITE] Schema identite inaccessible, enseignant refuse par defaut.', [
-                'enseignant_ref' => $enseignantRef,
-                'erreur'         => $e->getMessage(),
-            ]);
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', $requete);
+
+            if (!$donnees) {
+                return false;
+            }
+
+            $utilisateur = $donnees['donnees'] ?? $donnees;
+            $roleCode    = $utilisateur['role_code'] ?? null;
+
+            return in_array($roleCode, ['enseignant', 'administrateur', 'super_admin'], true)
+                && ($utilisateur['statut'] ?? null) === 'actif';
+        } catch (Throwable) {
+            // Identité injoignable : refus.
             return false;
         }
     }
 
     /**
-     * Retrouve un parent par email ou téléphone dans le schéma identite.
+     * Retrouve un parent par email ou téléphone dans Identité.
      */
     public function trouverParentParContact(?string $email, ?string $telephone): ?object
     {
@@ -102,22 +96,23 @@ class IdentiteClient
         }
 
         try {
-            $query = DB::table('identite.utilisateur as u')
-                ->join('identite.role as r', 'u.role_id', '=', 'r.id')
-                ->select(['u.id', 'u.uuid', 'u.nom_complet', 'u.email', 'u.telephone'])
-                ->where('r.code', 'parent');
+            $requete = [];
+            if (!empty($email))     { $requete['email'] = $email; }
+            if (!empty($telephone)) { $requete['telephone'] = $telephone; }
 
-            if (!empty($email) && !empty($telephone)) {
-                $query->where(fn($q) => $q->where('u.email', $email)->orWhere('u.telephone', $telephone));
-            } elseif (!empty($email)) {
-                $query->where('u.email', $email);
-            } else {
-                $query->where('u.telephone', $telephone);
-            }
-
-            return $query->first();
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', $requete);
         } catch (Throwable) {
             return null;
         }
+
+        if (!$donnees) {
+            return null;
+        }
+
+        $utilisateur = $donnees['donnees'] ?? $donnees;
+
+        return ($utilisateur['role_code'] ?? null) === 'parent'
+            ? (object) $utilisateur
+            : null;
     }
 }
