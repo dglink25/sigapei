@@ -43,8 +43,12 @@ class InterneClient
             );
         }
 
+        // Les paramètres sont passés à plat : `Http::get($url, $query)`.
+        // Les encapsuler dans ['query' => $query] produisait une URL
+        // `?query[id]=3` au lieu de `?id=3`, que le contrôleur cible
+        // rejetait en 422 car il ne trouvait ni `uuid` ni `id`.
         try {
-            $response = $this->envoyer($base, $chemin, ['query' => $query]);
+            $response = $this->envoyer($base, $chemin, $query);
         } catch (ConnectionException $exception) {
             throw new RuntimeException(
                 "Microservice « {$microservice} » injoignable sur {$base} : {$exception->getMessage()}",
@@ -85,10 +89,7 @@ class InterneClient
         }
 
         try {
-            $response = Http::withHeaders([
-                (string) config('services.interne.header', 'X-Internal-Secret') => (string) config('services.interne.secret'),
-                'Accept' => 'application/json',
-            ])
+            $response = Http::withHeaders($this->entetes())
                 ->timeout((int) config('services.microservices.timeout', 5))
                 ->acceptJson()
                 ->post($base.'/'.ltrim($chemin, '/'), $payload);
@@ -116,14 +117,54 @@ class InterneClient
         return is_array($donnees) ? $donnees : [];
     }
 
-    private function envoyer(string $base, string $chemin, array $options): Response
+    private function envoyer(string $base, string $chemin, array $query = []): Response
     {
-        return Http::withHeaders([
-            (string) config('services.interne.header', 'X-Internal-Secret') => (string) config('services.interne.secret'),
-            'Accept' => 'application/json',
-        ])
+        return Http::withHeaders($this->entetes())
             ->timeout((int) config('services.microservices.timeout', 5))
             ->acceptJson()
-            ->get($base.'/'.ltrim($chemin, '/'), $options);
+            ->get($base.'/'.ltrim($chemin, '/'), $query);
+    }
+
+    /**
+     * En-têtes communs à tous les appels internes.
+     *
+     * `X-Tenant-Id` est indispensable : sans lui, le middleware du
+     * microservice cible répond 403 TENANT_MANQUANT car il ne peut pas
+     *cloisonner la requête sur un établissement. On transmet le tenant
+     * courant s'il est déjà résolu, sinon la référence brute du jeton.
+     *
+     * `X-User-Id` et `X-User-Role` relayent le contexte utilisateur pour
+     * que la cible puisse journaliser l'auteur de l'action.
+     *
+     * @return array<string, string>
+     */
+    private function entetes(): array
+    {
+        $entetes = [
+            (string) config('services.interne.header', 'X-Internal-Secret') => (string) config('services.interne.secret'),
+            'Accept' => 'application/json',
+        ];
+
+        $tenant = app()->bound('current_tenant_id') ? app('current_tenant_id') : null;
+        if ($tenant === null && app()->bound('current_tenant_ref')) {
+            $tenant = app('current_tenant_ref');
+        }
+        if ($tenant !== null && $tenant !== '') {
+            $entetes['X-Tenant-Id'] = (string) $tenant;
+        }
+
+        if (app()->bound('current_user')) {
+            $user = app('current_user');
+            $uuid = $user['uuid'] ?? $user['sub'] ?? null;
+            if (!empty($uuid)) {
+                $entetes['X-User-Id'] = (string) $uuid;
+            }
+            $role = $user['roleCode'] ?? $user['role_code'] ?? null;
+            if (!empty($role)) {
+                $entetes['X-User-Role'] = (string) $role;
+            }
+        }
+
+        return $entetes;
     }
 }
