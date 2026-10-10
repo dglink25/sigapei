@@ -25,6 +25,22 @@ class VerifyRole
      */
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
+        // Appel interne (passerelle ou autre microservice) : l'authentification
+        // repose sur le secret interne, déjà validé par VerifyTenantAndJwt.
+        // Aucun rôle applicatif n'est disponible, et il ne doit pas l'être :
+        // ces routes ne portent pas de contrôle RBAC.
+        if ($request->header('X-Internal-Secret')) {
+            return $next($request);
+        }
+
+        if (!app()->bound('current_user')) {
+            return ApiResponse::erreur(
+                'Contexte utilisateur manquant — JWT non vérifié en amont.',
+                'NON_AUTHENTIFIE',
+                401
+            );
+        }
+
         $user = app('current_user');
 
         if (empty($user)) {
