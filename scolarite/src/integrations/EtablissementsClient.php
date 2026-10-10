@@ -39,16 +39,13 @@ class EtablissementsClient
     /**
      * Vérifie si un module est actif pour un établissement.
      *
-     * Règle de sécurité : ce contrôle est en ÉCHEC FERME (fail-closed).
-     * Toute situation indécidable (établissement introuvable, aucun module
-     * enregistré, schéma injoignable) vaut « module inactif » et bloque
-     * l'opération. Le CDC exige un contrôle bloquant : un fail-open
-     * permettrait d'admettre des candidats sur un établissement suspendu.
+     * Règle de sécurité : échec fermé (fail-closed). Établissement introuvable,
+     * module absent ou schéma inaccessible valent « module inactif ».
      *
      * @param  string|int  $tenantRef   ID entier ou UUID de l'établissement
-     * @param  string      $module      Nom du module : 'inscription', 'scolarite', etc.
+     * @param  string      $module      Nom du module : 'scolarite', 'inscription', etc.
      */
-    public function estModuleActif(string|int $tenantRef, string $module): bool
+    public function estModuleActif(string|int $tenantRef, string $module = 'scolarite'): bool
     {
         try {
             $etablissementId = $this->resoudreEtablissementId($tenantRef);
@@ -72,14 +69,6 @@ class EtablissementsClient
                     'module'           => $module,
                 ]);
                 return false;
-            }
-
-            if ($statut !== 'actif') {
-                Log::info('[ETABLISSEMENTS] Module explicitement inactif.', [
-                    'etablissement_id' => $etablissementId,
-                    'module'           => $module,
-                    'statut'           => $statut,
-                ]);
             }
 
             return $statut === 'actif';
@@ -110,38 +99,6 @@ class EtablissementsClient
             return $query->first();
         } catch (Throwable) {
             return null;
-        }
-    }
-
-    /**
-     * Retourne la liste des modules actifs pour un établissement.
-     *
-     * Échec fermé : un établissement introuvable ou un schéma inaccessible
-     * renvoie une liste vide (aucun module disponible), pas une liste
-     * permissive par défaut.
-     */
-    public function modulesActifs(string|int $tenantRef): array
-    {
-        try {
-            $etablissementId = $this->resoudreEtablissementId($tenantRef);
-            if ($etablissementId === null) {
-                Log::warning('[ETABLISSEMENTS] Etablissement introuvable, aucun module actif.', [
-                    'tenant_ref' => $tenantRef,
-                ]);
-                return [];
-            }
-
-            return DB::table('etablissements.etablissement_modules')
-                ->where('etablissement_id', $etablissementId)
-                ->where('statut', 'actif')
-                ->pluck('module')
-                ->toArray();
-        } catch (Throwable $e) {
-            Log::error('[ETABLISSEMENTS] Schema etablissements inaccessible, aucun module actif.', [
-                'tenant_ref' => $tenantRef,
-                'erreur'     => $e->getMessage(),
-            ]);
-            return [];
         }
     }
 }

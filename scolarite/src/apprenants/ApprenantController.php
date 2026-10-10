@@ -27,18 +27,19 @@ class ApprenantController extends Controller
     {
         $validated = $request->validate([
             'nouvelle_classe_uuid' => 'required|uuid',
-            'motif' => 'nullable|string|max:255',
+            'motif'                => 'nullable|string|max:255',
         ]);
 
         try {
+            // Récupérer l'UUID (sub) de l'utilisateur authentifié depuis le JWT identite
             $currentUser = app()->bound('current_user') ? app('current_user') : null;
-            $effectueParId = $currentUser['sub'] ?? null;
+            $effectueParUuid = $currentUser['uuid'] ?? $currentUser['sub'] ?? null;
 
             $resultat = $this->service->transferer(
                 $uuid,
                 $validated['nouvelle_classe_uuid'],
                 $validated['motif'] ?? null,
-                $effectueParId
+                $effectueParUuid
             );
 
             return ApiResponse::succes($resultat, 'Transfert effectue avec succes');
