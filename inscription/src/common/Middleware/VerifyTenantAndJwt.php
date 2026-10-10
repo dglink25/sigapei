@@ -53,6 +53,20 @@ class VerifyTenantAndJwt
 
                 app()->instance('current_tenant_id', $tenantId);
                 app()->instance('current_tenant_ref', $tenantHeader);
+
+                // La passerelle transmet l'utilisateur connecté dans des
+                // en-têtes dédiés (Règle n°5). Sans ce contexte, les
+                // services et contrôleurs qui lisent current_user levaient
+                // « Target class [current_user] does not exist ».
+                $currentUser = [
+                    'uuid'       => $request->header('X-User-Id'),
+                    'sub'        => $request->header('X-User-Id'),
+                    'roleCode'   => $request->header('X-User-Role'),
+                    'tenant_ref' => $tenantHeader,
+                ];
+                app()->instance('current_user', $currentUser);
+                $request->merge(['auth_user' => $currentUser]);
+
                 return $next($request);
             }
 
