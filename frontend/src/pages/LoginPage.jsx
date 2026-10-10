@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { authenticate } from '../services/auth';
+import { ROLE_LABELS } from '../config/roles';
 
 const ROLES = [
   {
@@ -12,7 +14,6 @@ const ROLES = [
           d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
     ),
-    hint: 'admin@sigapei.bj / admin123'
   },
   {
     id: 'secretaire',
@@ -25,7 +26,6 @@ const ROLES = [
           d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
       </svg>
     ),
-    hint: 'secretaire@sigapei.bj / sec123'
   },
   {
     id: 'censeur',
@@ -38,7 +38,6 @@ const ROLES = [
           d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     ),
-    hint: 'censeur@sigapei.bj / cen123'
   },
   {
     id: 'enseignant',
@@ -47,11 +46,9 @@ const ROLES = [
     color: 'green',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
       </svg>
     ),
-    hint: 'enseignant@sigapei.bj / ens123'
   },
   {
     id: 'comptable',
@@ -64,7 +61,6 @@ const ROLES = [
           d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
       </svg>
     ),
-    hint: 'comptable@sigapei.bj / cpt123'
   },
   {
     id: 'parent',
@@ -77,18 +73,8 @@ const ROLES = [
           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
-    hint: 'parent@sigapei.bj / par123'
-  }
+  },
 ];
-
-const MOCK_USERS = {
-  'admin@sigapei.bj':       { password: 'admin123',  role: 'admin',       nom: 'Directeur Général',  etablissement: 'Collège Saint-Michel de Cotonou' },
-  'secretaire@sigapei.bj':  { password: 'sec123',    role: 'secretaire',  nom: 'Marie KOFFI',        etablissement: 'Collège Saint-Michel de Cotonou' },
-  'censeur@sigapei.bj':     { password: 'cen123',    role: 'censeur',     nom: 'Jacques AGOSSA',     etablissement: 'Collège Saint-Michel de Cotonou' },
-  'enseignant@sigapei.bj':  { password: 'ens123',    role: 'enseignant',  nom: 'Prof. HOUNSOU',      etablissement: 'Collège Saint-Michel de Cotonou' },
-  'comptable@sigapei.bj':   { password: 'cpt123',    role: 'comptable',   nom: 'Fernand DOSSOU',     etablissement: 'Collège Saint-Michel de Cotonou' },
-  'parent@sigapei.bj':      { password: 'par123',    role: 'parent',      nom: 'Paul AMOUSSOU',      etablissement: 'Collège Saint-Michel de Cotonou' },
-};
 
 export default function LoginPage({ onLogin, onGoRegister }) {
   const [selectedRole, setSelectedRole] = useState(null);
@@ -101,29 +87,27 @@ export default function LoginPage({ onLogin, onGoRegister }) {
   const handleRoleSelect = (roleId) => {
     setSelectedRole(roleId);
     setError('');
-    // Prefill hint email
-    const match = ROLES.find(r => r.id === roleId);
-    if (match) {
-      const [hintEmail, hintPassword] = match.hint.split(' / ');
-      setEmail(hintEmail);
-      setPassword(hintPassword || '');
-    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!selectedRole) { setError('Veuillez sélectionner votre rôle.'); return; }
     if (!email || !password) { setError('Email et mot de passe requis.'); return; }
 
     setLoading(true);
-    setTimeout(() => {
-      const user = MOCK_USERS[email.toLowerCase()];
-      if (!user) { setError('Compte introuvable.'); setLoading(false); return; }
-      if (user.password !== password) { setError('Mot de passe incorrect.'); setLoading(false); return; }
-      if (user.role !== selectedRole) { setError(`Ce compte n'est pas un profil "${ROLES.find(r => r.id === selectedRole)?.label}".`); setLoading(false); return; }
+    try {
+      const user = await authenticate(email, password);
+      if (!user) {
+        setError('Identifiants incorrects ou service indisponible.');
+        setLoading(false);
+        return;
+      }
       onLogin(user);
-    }, 800);
+    } catch (err) {
+      setError(err.message || 'Erreur de connexion.');
+      setLoading(false);
+    }
   };
 
   const selectedRoleData = ROLES.find(r => r.id === selectedRole);
@@ -133,18 +117,16 @@ export default function LoginPage({ onLogin, onGoRegister }) {
 
       {/* ─── Colonne gauche : branding ─────────────────────────────── */}
       <div className="hidden lg:flex w-[45%] bg-sigapei-sidebar flex-col justify-between p-12 relative overflow-hidden">
-        {/* Décorations de fond */}
         <div className="absolute top-0 right-0 w-72 h-72 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/3 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 rounded-full bg-white/5 translate-y-1/3 -translate-x-1/3 pointer-events-none" />
         <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-sigapei-gold/5 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
-        {/* Logo & Nom */}
         <div className="relative z-10">
           <div className="flex items-center space-x-4 mb-2">
-            <img 
-              src="/logo-sigapei.png" 
-              alt="Logo SIGAPEI" 
-              className="w-20 h-20 object-contain drop-shadow-2xl" 
+            <img
+              src="/logo-sigapei.png"
+              alt="Logo SIGAPEI"
+              className="w-20 h-20 object-contain drop-shadow-2xl"
             />
             <div>
               <span className="block text-sigapei-gold font-black text-3xl tracking-tight leading-none">SIGAPEI</span>
@@ -153,7 +135,6 @@ export default function LoginPage({ onLogin, onGoRegister }) {
           </div>
         </div>
 
-        {/* Tagline centrale */}
         <div className="relative z-10 space-y-6">
           <h1 className="text-3xl font-black text-white leading-snug">
             Gérez votre établissement<br />
@@ -164,7 +145,6 @@ export default function LoginPage({ onLogin, onGoRegister }) {
             tous les acteurs de votre école, chacun à sa place.
           </p>
 
-          {/* Statistiques */}
           <div className="grid grid-cols-3 gap-4 pt-4">
             {[
               { val: '7', label: 'Rôles acteurs' },
@@ -179,7 +159,6 @@ export default function LoginPage({ onLogin, onGoRegister }) {
           </div>
         </div>
 
-        {/* Pied branding */}
         <div className="relative z-10 text-[11px] text-sigapei-cream/40">
           © 2026 SIGAPEI · Bénin · v1.0
         </div>
@@ -189,12 +168,11 @@ export default function LoginPage({ onLogin, onGoRegister }) {
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 overflow-y-auto">
         <div className="w-full max-w-md space-y-8">
 
-          {/* Titre & Logo */}
           <div className="flex items-center space-x-3.5">
-            <img 
-              src="/logo-sigapei.png" 
-              alt="Logo SIGAPEI" 
-              className="w-14 h-14 object-contain drop-shadow-md" 
+            <img
+              src="/logo-sigapei.png"
+              alt="Logo SIGAPEI"
+              className="w-14 h-14 object-contain drop-shadow-md"
             />
             <div>
               <h2 className="text-2xl font-black text-slate-900 font-heading">Connexion SIGAPEI</h2>
@@ -230,19 +208,6 @@ export default function LoginPage({ onLogin, onGoRegister }) {
 
           {/* Formulaire */}
           <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* Hint credentials */}
-            {selectedRoleData && (
-              <div className="flex items-start space-x-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
-                <svg className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div className="text-[11px] text-amber-800">
-                  <span className="font-bold">Démo — </span>
-                  <span className="font-mono">{selectedRoleData.hint}</span>
-                </div>
-              </div>
-            )}
 
             {/* Email */}
             <div className="space-y-1">

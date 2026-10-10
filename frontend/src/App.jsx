@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/admin/DashboardView';
@@ -21,23 +21,36 @@ import CreateCandidatureModal from './components/modals/CreateCandidatureModal';
 import Toast from './components/common/Toast';
 import LoginPage from './pages/LoginPage';
 import RegisterEtablissementPage from './pages/RegisterEtablissementPage';
-import { initialClasses, initialCandidatures, initialApprenants } from './data/initialData';
-
-// Rôles qui utilisent le layout Admin (sidebar + header)
-const ADMIN_LAYOUT_ROLES = ['admin', 'secretaire', 'censeur'];
+import { ADMIN_LAYOUT_ROLES, ROLE_LABELS } from './config/roles';
+import {
+  listerCandidatures,
+  listerClasses,
+  validerCandidature,
+  rejeterCandidature,
+  soumettreCandidature,
+  reinscrireApprenant,
+  transfererApprenant,
+  listerEmploisDuTemps,
+} from './services/api';
+import { logout as authLogout, getUser } from './services/auth';
 
 export default function App() {
   // ── Auth ──────────────────────────────────────────────────────
-  const [currentUser, setCurrentUser] = useState(null); // null = non connecté
+  const [currentUser, setCurrentUser] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
 
   // ── Navigation ────────────────────────────────────────────────
   const [currentAdminNav, setCurrentAdminNav] = useState('dashboard');
 
-  // ── Data ──────────────────────────────────────────────────────
-  const [classes, setClasses] = useState(initialClasses);
-  const [candidatures, setCandidatures] = useState(initialCandidatures);
-  const [apprenants, setApprenants] = useState(initialApprenants);
+  // ── Data (chargées depuis les microservices) ──────────────────
+  const [classes, setClasses] = useState([]);
+  const [candidatures, setCandidatures] = useState([]);
+  const [apprenants, setApprenants] = useState([]);
+  const [emploisDuTemps, setEmploisDuTemps] = useState([]);
+
+  // ── Loading / Error states ────────────────────────────────────
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // ── Modals ────────────────────────────────────────────────────
   const [examineCandidateId, setExamineCandidateId] = useState(null);
@@ -57,13 +70,56 @@ export default function App() {
   const [academicYear, setAcademicYear] = useState('2026-2027');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // ── Chargement initial des données ────────────────────────────
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [classesRes, candidaturesRes, apprenantsRes, edtRes] = await Promise.allSettled([
+        listerClasses(),
+        listerCandidatures(),
+        listerCandidatures(), // TODO: remplacer par listerApprenants quand l'endpoint sera prêt
+        listerEmploisDuTemps(),
+      ]);
+
+      if (classesRes.status === 'fulfilled') {
+        const data = classesRes.value?.donnees || classesRes.value || [];
+        setClasses(Array.isArray(data) ? data : []);
+      }
+      if (candidaturesRes.status === 'fulfilled') {
+        const data = candidaturesRes.value?.donnees || candidaturesRes.value || [];
+        setCandidatures(Array.isArray(data) ? data : []);
+      }
+      if (apprenantsRes.status === 'fulfilled') {
+        // Les apprenants ne sont pas encore listés via l'API inscription
+        // On les récupère via les candidatures validées pour l'instant
+        const data = apprenantsRes.value?.donnees || apprenantsRes.value || [];
+        setApprenants(Array.isArray(data) ? data : []);
+      }
+      if (edtRes.status === 'fulfilled') {
+        const data = edtRes.value?.donnees || edtRes.value || [];
+        setEmploisDuTemps(Array.isArray(data) ? data : []);
+      }
+    } catch (e) {
+      setError(e.message || 'Erreur de chargement des données.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchData();
+    }
+  }, [currentUser, fetchData]);
+
   // ── Login / Logout ────────────────────────────────────────────
   const handleLogin = (user) => {
     setCurrentUser(user);
     setShowRegister(false);
-    const defaults = { 
-      admin: 'dashboard', 
-      secretaire: 'candidatures', 
+    const defaults = {
+      admin: 'dashboard',
+      secretaire: 'candidatures',
       censeur: 'matieres',
       enseignant: 'ens_edt',
       comptable: 'cpt_caisse',
@@ -74,94 +130,100 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    authLogout();
     setCurrentUser(null);
     setCurrentAdminNav('dashboard');
     setIsMobileMenuOpen(false);
   };
 
-  // ── Actions ───────────────────────────────────────────────────
-  const handleValidateCandidature = (candId) => {
-    const cand = candidatures.find(c => c.id === candId);
-    if (!cand) return;
-    const targetClass = classes.find(c => c.id === cand.classe_id);
-    if (targetClass && targetClass.inscrits >= targetClass.capacite) {
-      showToast(`Admission bloquée : la classe ${targetClass.nom} a atteint sa capacité maximale (${targetClass.capacite} places).`, 'error');
+  // ── Actions candidatures ───────────────────────────────────────
+  const handleValidateCandidature = async (candUuid) => {
+    const { erreur, donnees } = await validerCandidature(candUuid);
+    if (erreur) {
+      showToast(erreur, 'error');
       return;
     }
-    setCandidatures(prev => prev.map(c => c.id === candId ? { ...c, statut: 'validee' } : c));
-    setClasses(prev => prev.map(c => c.id === cand.classe_id ? { ...c, inscrits: c.inscrits + 1 } : c));
-    const newMatricule = `MAT-2026-${targetClass ? targetClass.nom.replace(/\s+/g, '') : 'SEC'}-${Math.floor(100 + Math.random() * 900)}`;
-    const newStudent = {
-      id: Date.now(), matricule: newMatricule, nom: cand.nom, prenom: cand.prenom,
-      date_naissance: cand.date_naissance, classe_id: cand.classe_id,
-      parent_nom: cand.parent_nom, parent_tel: cand.parent_tel, mutations: []
-    };
-    setApprenants(prev => [newStudent, ...prev]);
+    showToast(`Candidature validée ! Matricule : ${donnees?.apprenant?.uuid || ''}`, 'success');
     setExamineCandidateId(null);
-    showToast(`Candidature ${cand.nom} validée ! Matricule : ${newMatricule}`, 'success');
+    await fetchData();
   };
 
-  const handleConfirmReject = (candId, motif) => {
-    setCandidatures(prev => prev.map(c => c.id === candId ? { ...c, statut: 'rejetee', motif_rejet: motif } : c));
+  const handleConfirmReject = async (candUuid, motif) => {
+    const { erreur, donnees } = await rejeterCandidature(candUuid, motif);
+    if (erreur) {
+      showToast(erreur, 'error');
+      return;
+    }
+    showToast(`Candidature rejetée. Motif enregistré et notifié.`, 'warning');
     setRejectCandidateId(null);
     setExamineCandidateId(null);
-    showToast(`Candidature rejetée. Motif enregistré et notifié.`, 'warning');
+    await fetchData();
   };
 
-  const handleConfirmMutation = (appId, targetClasseId, motif) => {
-    const targetClass = classes.find(c => c.id === targetClasseId);
-    if (targetClass && targetClass.inscrits >= targetClass.capacite) {
-      showToast(`Transfert bloqué : la classe ${targetClass.nom} est complète.`, 'error');
+  const handlePublicSubmitCandidature = async (cand) => {
+    try {
+      const res = await soumettreCandidature(cand);
+      showToast(`Candidature soumise avec succès ! Numéro de dossier : ${res?.uuid || ''}`, 'success');
+      await fetchData();
+      return true;
+    } catch (e) {
+      showToast(e.message || 'Erreur de soumission.', 'error');
+      return false;
+    }
+  };
+
+  // ── Actions apprenants ─────────────────────────────────────────
+  const handleConfirmMutation = async (appUuid, targetClasseUuid, motif) => {
+    const { erreur, donnees } = await transfererApprenant(appUuid, targetClasseUuid, motif);
+    if (erreur) {
+      showToast(erreur, 'error');
       return;
     }
-    setApprenants(prev => prev.map(a => {
-      if (a.id === appId) {
-        const oldClass = classes.find(c => c.id === a.classe_id);
-        const mutationRecord = {
-          date: new Date().toISOString().split('T')[0],
-          de: oldClass ? oldClass.nom : 'Origine',
-          vers: targetClass ? targetClass.nom : 'Destination',
-          motif: motif || 'Mutation administrative'
-        };
-        return { ...a, classe_id: targetClasseId, mutations: [mutationRecord, ...(a.mutations || [])] };
-      }
-      return a;
-    }));
-    const app = apprenants.find(a => a.id === appId);
-    if (app) {
-      setClasses(prev => prev.map(c => {
-        if (c.id === app.classe_id) return { ...c, inscrits: Math.max(0, c.inscrits - 1) };
-        if (c.id === targetClasseId) return { ...c, inscrits: c.inscrits + 1 };
-        return c;
-      }));
-    }
+    showToast(`Mutation enregistrée vers ${donnees?.nouvelle_classe?.nom || ''} !`, 'success');
     setMutationApprenantId(null);
-    showToast(`Mutation enregistrée vers ${targetClass?.nom} !`, 'success');
+    await fetchData();
   };
 
-  const handleCreateClasse = (newClasseData) => {
-    const newCl = { ...newClasseData, id: Date.now() };
-    setClasses(prev => [...prev, newCl]);
-    setIsCreateClasseOpen(false);
-    showToast(`Nouvelle classe « ${newCl.nom} » créée avec succès !`, 'success');
+  const handlePublicReinscription = async (appUuid, targetClasseUuid) => {
+    try {
+      const res = await reinscrireApprenant({
+        apprenant_uuid: appUuid,
+        nouvelle_classe_uuid: targetClasseUuid,
+        annee_scolaire: academicYear,
+      });
+      showToast(`Réinscription validée sans doublon pour ${res?.apprenant_nom || ''} !`, 'success');
+      await fetchData();
+      return true;
+    } catch (e) {
+      showToast(e.message || 'Erreur de réinscription.', 'error');
+      return false;
+    }
   };
 
-  const handlePublicSubmitCandidature = (cand) => {
-    setCandidatures(prev => [cand, ...prev]);
+  const handleCreateClasse = async (newClasseData) => {
+    try {
+      const res = await fetch(`http://localhost:4004/v1/classes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Tenant-Id': localStorage.getItem('sigapei_tenant_id') || '1',
+          'Authorization': `Bearer ${localStorage.getItem('sigapei_token') || ''}`,
+        },
+        body: JSON.stringify(newClasseData),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.erreur || data.message || `Erreur HTTP ${res.status}`);
+      showToast(`Nouvelle classe « ${newClasseData.nom} » créée avec succès !`, 'success');
+      setIsCreateClasseOpen(false);
+      await fetchData();
+    } catch (e) {
+      showToast(e.message || 'Erreur de création.', 'error');
+    }
   };
-
-  const handlePublicReinscription = (appId, targetClasseId) => {
-    handleConfirmMutation(appId, targetClasseId, 'Réinscription rentrée 2026-2027');
-  };
-
-  const pendingCount = candidatures.filter(c => c.statut === 'en_attente').length;
-  const activeExamineCandidate = candidatures.find(c => c.id === examineCandidateId);
-  const activeRejectCandidate = candidatures.find(c => c.id === rejectCandidateId);
-  const activeMutationApprenant = apprenants.find(a => a.id === mutationApprenantId);
 
   // ── Routing ───────────────────────────────────────────────────
 
-  // 1. Non connecté → Login ou Register
   if (!currentUser) {
     if (showRegister) {
       return <RegisterEtablissementPage onBack={() => setShowRegister(false)} onSuccess={() => setShowRegister(false)} />;
@@ -170,6 +232,7 @@ export default function App() {
   }
 
   const role = currentUser.role;
+  const roleInfo = ROLE_LABELS[role] || ROLE_LABELS.admin;
 
   // ── Layout Professionnel Unifié pour TOUS les rôles connectés ──
   return (
@@ -177,7 +240,7 @@ export default function App() {
       <Header
         currentSpace="admin"
         setCurrentSpace={() => {}}
-        pendingCount={pendingCount}
+        pendingCount={candidatures.filter(c => c.statut === 'en_attente').length}
         currentUser={currentUser}
         onLogout={handleLogout}
         academicYear={academicYear}
@@ -187,12 +250,11 @@ export default function App() {
 
       <div className="flex-1 flex overflow-hidden">
         <section className="flex-1 flex overflow-hidden fade-enter">
-          
-          {/* Sidebar latérale universelle responsive */}
+
           <Sidebar
             currentNav={currentAdminNav}
             setCurrentNav={setCurrentAdminNav}
-            pendingCount={pendingCount}
+            pendingCount={candidatures.filter(c => c.statut === 'en_attente').length}
             role={role}
             isOpenMobile={isMobileMenuOpen}
             onCloseMobile={() => setIsMobileMenuOpen(false)}
@@ -200,76 +262,98 @@ export default function App() {
 
           {/* Zone de contenu principale scrollable */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
-            
-            {/* Vues Espace Enseignant */}
-            {role === 'enseignant' && (
-              <EnseignantSpace currentUser={currentUser} activeNav={currentAdminNav} />
+
+            {/* État de chargement */}
+            {loading && (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin w-8 h-8 border-4 border-sigapei-green border-t-transparent rounded-full" />
+                <span className="ml-3 text-sm text-slate-500">Chargement des données…</span>
+              </div>
             )}
 
-            {/* Vues Espace Comptable & Caisse */}
-            {role === 'comptable' && (
-              <ComptableSpace 
-                currentUser={currentUser} 
-                activeNav={currentAdminNav} 
-                onSwitchNav={setCurrentAdminNav}
-              />
+            {/* Erreur de chargement */}
+            {error && !loading && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700 flex items-center justify-between">
+                <span>{error}</span>
+                <button onClick={fetchData} className="text-xs font-bold text-red-600 hover:underline">
+                  Réessayer
+                </button>
+              </div>
             )}
 
-            {/* Vues Espace Parent & Famille */}
-            {role === 'parent' && (
-              <ParentSpace currentUser={currentUser} activeNav={currentAdminNav} />
-            )}
-
-            {/* Vues Espace Candidat */}
-            {role === 'candidat' && (
-              <CandidatSpace
-                classes={classes} candidatures={candidatures} apprenants={apprenants}
-                onSubmitCandidature={handlePublicSubmitCandidature}
-                onReinscription={handlePublicReinscription}
-                showToast={showToast}
-              />
-            )}
-
-            {/* Vues Espace Administration / Secrétariat / Censeur */}
-            {ADMIN_LAYOUT_ROLES.includes(role) && (
+            {!loading && !error && (
               <>
-                {currentAdminNav === 'dashboard' && role === 'admin' && (
-                  <DashboardView
-                    classes={classes} candidatures={candidatures} apprenants={apprenants}
-                    onOpenCreateClasse={() => setIsCreateClasseOpen(true)}
+                {/* Vues Espace Enseignant */}
+                {role === 'enseignant' && (
+                  <EnseignantSpace currentUser={currentUser} activeNav={currentAdminNav} />
+                )}
+
+                {/* Vues Espace Comptable & Caisse */}
+                {role === 'comptable' && (
+                  <ComptableSpace
+                    currentUser={currentUser}
+                    activeNav={currentAdminNav}
                     onSwitchNav={setCurrentAdminNav}
                   />
                 )}
-                {currentAdminNav === 'candidatures' && (
-                  <CandidaturesView
-                    candidatures={candidatures} classes={classes}
-                    onExamine={(id) => setExamineCandidateId(id)}
-                    onOpenCreateCandidature={() => setIsCreateCandidatureOpen(true)}
+
+                {/* Vues Espace Parent & Famille */}
+                {role === 'parent' && (
+                  <ParentSpace currentUser={currentUser} activeNav={currentAdminNav} />
+                )}
+
+                {/* Vues Espace Candidat */}
+                {role === 'candidat' && (
+                  <CandidatSpace
+                    classes={classes} candidatures={candidatures} apprenants={apprenants}
+                    onSubmitCandidature={handlePublicSubmitCandidature}
+                    onReinscription={handlePublicReinscription}
+                    showToast={showToast}
                   />
                 )}
-                {currentAdminNav === 'classes' && role === 'admin' && (
-                  <ClassesView
-                    classes={classes}
-                    onOpenCreateClasse={() => setIsCreateClasseOpen(true)}
-                  />
-                )}
-                {currentAdminNav === 'apprenants' && (
-                  <ApprenantsView
-                    apprenants={apprenants} classes={classes}
-                    onTransfer={role !== 'censeur' ? (id) => setMutationApprenantId(id) : null}
-                  />
-                )}
-                {currentAdminNav === 'emplois' && (
-                  <EmploisView />
-                )}
-                {currentAdminNav === 'finances' && (
-                  <FinancesView />
-                )}
-                {currentAdminNav === 'matieres' && (
-                  <MatieresNotesView classes={classes} academicYear={academicYear} />
-                )}
-                {currentAdminNav === 'annees' && role === 'admin' && (
-                  <AnneeScolaireView currentYear={academicYear} onSelectYear={setAcademicYear} classes={classes} />
+
+                {/* Vues Espace Administration / Secrétariat / Censeur */}
+                {ADMIN_LAYOUT_ROLES.includes(role) && (
+                  <>
+                    {currentAdminNav === 'dashboard' && role === 'admin' && (
+                      <DashboardView
+                        classes={classes} candidatures={candidatures} apprenants={apprenants}
+                        onOpenCreateClasse={() => setIsCreateClasseOpen(true)}
+                        onSwitchNav={setCurrentAdminNav}
+                      />
+                    )}
+                    {currentAdminNav === 'candidatures' && (
+                      <CandidaturesView
+                        candidatures={candidatures} classes={classes}
+                        onExamine={(uuid) => setExamineCandidateId(uuid)}
+                        onOpenCreateCandidature={() => setIsCreateCandidatureOpen(true)}
+                      />
+                    )}
+                    {currentAdminNav === 'classes' && role === 'admin' && (
+                      <ClassesView
+                        classes={classes}
+                        onOpenCreateClasse={() => setIsCreateClasseOpen(true)}
+                      />
+                    )}
+                    {currentAdminNav === 'apprenants' && (
+                      <ApprenantsView
+                        apprenants={apprenants} classes={classes}
+                        onTransfer={role !== 'censeur' ? (uuid) => setMutationApprenantId(uuid) : null}
+                      />
+                    )}
+                    {currentAdminNav === 'emplois' && (
+                      <EmploisView classes={classes} emploisDuTemps={emploisDuTemps} />
+                    )}
+                    {currentAdminNav === 'finances' && (
+                      <FinancesView />
+                    )}
+                    {currentAdminNav === 'matieres' && (
+                      <MatieresNotesView classes={classes} academicYear={academicYear} />
+                    )}
+                    {currentAdminNav === 'annees' && role === 'admin' && (
+                      <AnneeScolaireView currentYear={academicYear} onSelectYear={setAcademicYear} classes={classes} />
+                    )}
+                  </>
                 )}
               </>
             )}
@@ -281,22 +365,24 @@ export default function App() {
       {/* Modals */}
       {examineCandidateId && (
         <ExamineModal
-          candidate={activeExamineCandidate} classes={classes}
+          candidate={candidatures.find(c => c.uuid === examineCandidateId)}
+          classes={classes}
           onClose={() => setExamineCandidateId(null)}
           onValidate={handleValidateCandidature}
-          onOpenReject={(id) => setRejectCandidateId(id)}
+          onOpenReject={(uuid) => setRejectCandidateId(uuid)}
         />
       )}
       {rejectCandidateId && (
         <RejectModal
-          candidate={activeRejectCandidate}
+          candidate={candidatures.find(c => c.uuid === rejectCandidateId)}
           onClose={() => setRejectCandidateId(null)}
           onConfirm={handleConfirmReject}
         />
       )}
       {mutationApprenantId && (
         <MutationModal
-          apprenant={activeMutationApprenant} classes={classes}
+          apprenant={apprenants.find(a => a.uuid === mutationApprenantId)}
+          classes={classes}
           onClose={() => setMutationApprenantId(null)}
           onConfirm={handleConfirmMutation}
         />
@@ -311,10 +397,9 @@ export default function App() {
         <CreateCandidatureModal
           classes={classes}
           onClose={() => setIsCreateCandidatureOpen(false)}
-          onConfirm={(newCand) => {
-            handlePublicSubmitCandidature(newCand);
-            setIsCreateCandidatureOpen(false);
-            showToast(`Candidature guichet ${newCand.nom} enregistrée avec succès !`, 'success');
+          onConfirm={async (newCand) => {
+            const ok = await handlePublicSubmitCandidature(newCand);
+            if (ok) setIsCreateCandidatureOpen(false);
           }}
         />
       )}

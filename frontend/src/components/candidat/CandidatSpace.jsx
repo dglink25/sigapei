@@ -1,12 +1,32 @@
 import React, { useState } from 'react';
 
-export default function CandidatSpace({ 
-  classes, 
-  candidatures, 
-  apprenants, 
-  onSubmitCandidature, 
-  onReinscription, 
-  showToast 
+/**
+ * Normalise une candidature du backend pour l'affichage dans l'espace candidat.
+ */
+function normalizeCandidate(c) {
+  return {
+    uuid: c.uuid,
+    nom: c.nom,
+    prenom: c.prenom,
+    sexe: c.sexe,
+    date_naissance: c.date_naissance,
+    classe_visee_id: c.classe_visee_id,
+    classe_nom: c.classe_visee?.nom || '',
+    statut: c.statut,
+    parent_nom: c.parent_nom,
+    parent_telephone: c.parent_telephone,
+    parent_email: c.parent_email,
+    date_soumission: c.date_soumission,
+  };
+}
+
+export default function CandidatSpace({
+  classes = [],
+  candidatures = [],
+  apprenants = [],
+  onSubmitCandidature,
+  onReinscription,
+  showToast
 }) {
   const [subTab, setSubTab] = useState('form'); // 'form' | 'suivi' | 'reinc'
   const [currentStep, setCurrentStep] = useState(1);
@@ -24,12 +44,21 @@ export default function CandidatSpace({
   const [parentAdresse, setParentAdresse] = useState('');
 
   // Search state
-  const [searchUuid, setSearchUuid] = useState('CAND-2026-8941');
+  const [searchUuid, setSearchUuid] = useState('');
   const [searchResult, setSearchResult] = useState(null);
 
   // Re-registration state
-  const [reincMatricule, setReincMatricule] = useState('MAT-2026-6A-0012');
-  const [reincClasseId, setReincClasseId] = useState(classes[1]?.id || 2);
+  const [reincMatricule, setReincMatricule] = useState('');
+  const [reincClasseId, setReincClasseId] = useState(classes[1]?.id || '');
+
+  const normalizedCandidatures = candidatures.map(normalizeCandidate);
+  const normalizedApprenants = apprenants.map(a => ({
+    uuid: a.uuid,
+    matricule: a.matricule,
+    nom: a.nom,
+    prenom: a.prenom,
+    classe_id: a.classe?.id || a.classe_id,
+  }));
 
   const handleNextStep = (nextStep) => {
     if (nextStep === 2) {
@@ -53,46 +82,37 @@ export default function CandidatSpace({
     setCurrentStep(nextStep);
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    const cl = classes.find(c => c.id === selectedClasseId);
+    const cl = classes.find(c => c.id === Number(selectedClasseId));
     if (!cl) {
       showToast('Veuillez choisir une classe.', 'warning');
       return;
     }
-    if (cl.inscrits >= cl.capacite) {
+    const inscrits = cl.inscrits_actuels ?? cl.inscrits ?? 0;
+    if (inscrits >= cl.capacite) {
       showToast('Cette classe est complète. Veuillez en choisir une autre.', 'error');
       return;
     }
 
-    const newUuid = `CAND-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    // Mapping champs front → back
     const newCand = {
-      id: Date.now(),
-      uuid: newUuid,
       nom: nom.trim().toUpperCase(),
       prenom: prenom.trim(),
       sexe,
       date_naissance: dateNaissance,
-      lieu_naissance: lieuNaissance,
-      classe_id: selectedClasseId,
-      statut: 'en_attente',
+      classe_visee_id: Number(selectedClasseId),
       parent_nom: parentNom.trim(),
-      parent_tel: parentTel.trim(),
+      parent_telephone: parentTel.trim(),
       parent_email: parentEmail.trim(),
-      parent_adresse: parentAdresse.trim(),
-      date_soumission: new Date().toISOString().split('T')[0],
-      pieces: [
-        { type: 'Extrait de naissance', file: `s3://inscriptions/dossiers/${newUuid}/acte.pdf`, status: 'conforme' },
-        { type: 'Bulletins antérieurs', file: `s3://inscriptions/dossiers/${newUuid}/notes.pdf`, status: 'en_cours' }
-      ],
-      test: { matiere: 'Test d\'évaluation', note: 14.0, avis: 'favorable' }
+      parent_lien: 'parent',
     };
 
-    onSubmitCandidature(newCand);
-    showToast(`Candidature soumise avec succès ! Numéro de dossier : ${newUuid}`, 'success');
-    setSearchUuid(newUuid);
+    const ok = await onSubmitCandidature(newCand);
+    if (!ok) return;
+
+    showToast(`Candidature soumise avec succès !`, 'success');
     setSubTab('suivi');
-    setSearchResult(newCand);
 
     // Reset form
     setNom('');
@@ -103,29 +123,35 @@ export default function CandidatSpace({
 
   const handleSearchDossier = () => {
     const q = searchUuid.trim().toUpperCase();
-    const found = candidatures.find(c => c.uuid.toUpperCase() === q);
+    const found = normalizedCandidatures.find(c => c.uuid?.toUpperCase() === q);
     setSearchResult(found || 'not_found');
   };
 
-  const handleReincAction = () => {
-    const app = apprenants.find(a => a.matricule.toUpperCase() === reincMatricule.trim().toUpperCase());
+  const handleReincAction = async () => {
+    const app = normalizedApprenants.find(a => a.matricule?.toUpperCase() === reincMatricule.trim().toUpperCase());
     if (!app) {
       showToast('Aucun dossier trouvé pour ce matricule.', 'error');
       return;
     }
-    const targetCl = classes.find(c => c.id === parseInt(reincClasseId));
-    if (targetCl.inscrits >= targetCl.capacite) {
+    const targetCl = classes.find(c => c.id === Number(reincClasseId));
+    if (!targetCl) {
+      showToast('Veuillez choisir une classe.', 'warning');
+      return;
+    }
+    const inscrits = targetCl.inscrits_actuels ?? targetCl.inscrits ?? 0;
+    if (inscrits >= targetCl.capacite) {
       showToast(`La classe ${targetCl.nom} est complète.`, 'error');
       return;
     }
 
-    onReinscription(app.id, parseInt(reincClasseId));
-    showToast(`Réinscription validée sans doublon pour ${app.nom} en ${targetCl.nom} !`, 'success');
+    const ok = await onReinscription(app.uuid, targetCl.uuid || targetCl.id);
+    if (!ok) return;
+    showToast(`Réinscription validée sans doublon pour ${app.nom} !`, 'success');
   };
 
   return (
     <section className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6 max-w-5xl mx-auto w-full fade-enter">
-      
+
       {/* Space header */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-card border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -139,34 +165,34 @@ export default function CandidatSpace({
             Déposez une nouvelle candidature, suivez votre dossier en direct ou réinscrivez un élève déjà scolarisé.
           </p>
         </div>
-        
+
         {/* Navigation tabs */}
         <div className="flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
-          <button 
-            onClick={() => setSubTab('form')} 
+          <button
+            onClick={() => setSubTab('form')}
             className={`px-4 py-2 rounded-lg transition ${
-              subTab === 'form' 
-                ? 'bg-sigapei-green text-white shadow-sm' 
+              subTab === 'form'
+                ? 'bg-sigapei-green text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Nouvelle Inscription
           </button>
-          <button 
-            onClick={() => setSubTab('suivi')} 
+          <button
+            onClick={() => setSubTab('suivi')}
             className={`px-4 py-2 rounded-lg transition ${
-              subTab === 'suivi' 
-                ? 'bg-sigapei-green text-white shadow-sm' 
+              subTab === 'suivi'
+                ? 'bg-sigapei-green text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Suivi Dossier
           </button>
-          <button 
-            onClick={() => setSubTab('reinc')} 
+          <button
+            onClick={() => setSubTab('reinc')}
             className={`px-4 py-2 rounded-lg transition ${
-              subTab === 'reinc' 
-                ? 'bg-sigapei-green text-white shadow-sm' 
+              subTab === 'reinc'
+                ? 'bg-sigapei-green text-white shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -175,434 +201,345 @@ export default function CandidatSpace({
         </div>
       </div>
 
-      {/* SUB-VIEW 1 : FORMULAIRE CANDIDATURE */}
+      {/* ── SUBTAB: FORMULAIRE NOUVELLE INSCRIPTION ── */}
       {subTab === 'form' && (
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-card border border-slate-100 space-y-8 fade-enter">
-          
-          {/* Stepper */}
-          <div className="relative flex justify-between max-w-2xl mx-auto px-4">
-            <div 
-              className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-sigapei-green z-0 transition-all duration-300"
-              style={{ width: `${currentStep * 25}%` }}
-            ></div>
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-slate-200 w-full -z-10"></div>
-            
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-card border border-slate-100 space-y-6">
+          {/* Step indicator */}
+          <div className="flex items-center gap-2">
             {[1, 2, 3, 4].map(step => (
-              <div key={step} className="flex flex-col items-center relative z-10">
-                <div 
-                  className={`w-10 h-10 rounded-full font-bold text-xs flex items-center justify-center border-4 border-white shadow-sm transition-all ${
-                    step < currentStep 
-                      ? 'bg-sigapei-green text-white' 
-                      : step === currentStep 
-                      ? 'bg-sigapei-gold text-sigapei-black font-black' 
-                      : 'bg-slate-200 text-slate-500'
-                  }`}
-                >
-                  {step < currentStep ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : step}
+              <div key={step} className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black ${
+                  currentStep >= step
+                    ? 'bg-sigapei-green text-white'
+                    : 'bg-slate-200 text-slate-500'
+                }`}>
+                  {step}
                 </div>
-                <span className="text-[11px] font-bold text-slate-600 mt-1">
-                  {step === 1 && 'Identité'}
-                  {step === 2 && 'Classe'}
-                  {step === 3 && 'Parent'}
-                  {step === 4 && 'Pièces & S3'}
-                </span>
+                {step < 4 && <div className={`w-8 h-0.5 ${currentStep > step ? 'bg-sigapei-green' : 'bg-slate-200'}`} />}
               </div>
             ))}
+            <span className="ml-3 text-xs font-bold text-slate-500">
+              {currentStep === 1 && 'Identité de l\'élève'}
+              {currentStep === 2 && 'Classe souhaitée'}
+              {currentStep === 3 && 'Parent / Responsable'}
+              {currentStep === 4 && 'Validation'}
+            </span>
           </div>
 
-          <form onSubmit={handleFormSubmit}>
-            {/* STEP 1 */}
-            {currentStep === 1 && (
-              <div className="space-y-4 max-w-xl mx-auto text-xs fade-enter">
-                <h3 className="text-base font-black text-sigapei-black font-heading border-b border-slate-100 pb-2">
-                  Étape 1 : Identité de l'Apprenant
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Nom de famille *</label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={nom} 
-                      onChange={(e) => setNom(e.target.value)} 
-                      placeholder="Ex: BIO" 
-                      className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-sigapei-green" 
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Prénom(s) *</label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={prenom} 
-                      onChange={(e) => setPrenom(e.target.value)} 
-                      placeholder="Ex: Paul Sèna" 
-                      className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-sigapei-green" 
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Date de naissance *</label>
-                    <input 
-                      type="date" 
-                      required 
-                      value={dateNaissance} 
-                      onChange={(e) => setDateNaissance(e.target.value)} 
-                      className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-sigapei-green" 
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Genre *</label>
-                    <select 
-                      value={sexe} 
-                      onChange={(e) => setSexe(e.target.value)} 
-                      className="w-full p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-sigapei-green"
-                    >
-                      <option value="M">Masculin</option>
-                      <option value="F">Féminin</option>
-                    </select>
-                  </div>
-                </div>
+          {/* Step 1: Identité */}
+          {currentStep === 1 && (
+            <div className="space-y-4 fade-enter">
+              <h3 className="text-sm font-black text-sigapei-black">Étape 1 — Identité de l'élève</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Lieu de naissance *</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={lieuNaissance} 
-                    onChange={(e) => setLieuNaissance(e.target.value)} 
-                    placeholder="Ex: Cotonou, Bénin" 
-                    className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-sigapei-green" 
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nom *</label>
+                  <input
+                    type="text"
+                    value={nom}
+                    onChange={e => setNom(e.target.value)}
+                    placeholder="Ex: ADANHOUN"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
                   />
                 </div>
-                <div className="flex justify-end pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => handleNextStep(2)} 
-                    className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2"
-                  >
-                    <span>Continuer vers la classe</span>
-                    <svg className="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Prénom(s) *</label>
+                  <input
+                    type="text"
+                    value={prenom}
+                    onChange={e => setPrenom(e.target.value)}
+                    placeholder="Ex: Sèna Christian"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
+                  />
                 </div>
               </div>
-            )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Sexe</label>
+                  <select
+                    value={sexe}
+                    onChange={e => setSexe(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none bg-white"
+                  >
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Date de naissance</label>
+                  <input
+                    type="date"
+                    value={dateNaissance}
+                    onChange={e => setDateNaissance(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Lieu de naissance</label>
+                  <input
+                    type="text"
+                    value={lieuNaissance}
+                    onChange={e => setLieuNaissance(e.target.value)}
+                    placeholder="Cotonou"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => handleNextStep(2)}
+                  className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white text-xs font-black hover:bg-sigapei-green-dark transition"
+                >
+                  Suivant →
+                </button>
+              </div>
+            </div>
+          )}
 
-            {/* STEP 2 */}
-            {currentStep === 2 && (
-              <div className="space-y-4 max-w-xl mx-auto text-xs fade-enter">
-                <h3 className="text-base font-black text-sigapei-black font-heading border-b border-slate-100 pb-2">
-                  Étape 2 : Choix de la Classe & Vérification Capacité
-                </h3>
-                <p className="text-slate-500">
-                  Sélectionnez la classe souhaitée. Les classes complètes sont bloquées automatiquement.
-                </p>
-
+          {/* Step 2: Classe */}
+          {currentStep === 2 && (
+            <div className="space-y-4 fade-enter">
+              <h3 className="text-sm font-black text-sigapei-black">Étape 2 — Classe souhaitée</h3>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Sélectionner une classe *</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {classes.map(c => {
-                    const dispo = Math.max(0, c.capacite - c.inscrits);
-                    const isFull = dispo <= 0;
-                    const isSelected = c.id === selectedClasseId;
-
+                  {classes.map(cl => {
+                    const inscrits = cl.inscrits_actuels ?? cl.inscrits ?? 0;
+                    const full = inscrits >= cl.capacite;
                     return (
-                      <div 
-                        key={c.id}
-                        onClick={() => {
-                          if (!isFull) setSelectedClasseId(c.id);
-                        }}
-                        className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between ${
-                          isFull 
-                            ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed' 
-                            : isSelected 
-                            ? 'border-sigapei-green bg-sigapei-cream/40 ring-2 ring-sigapei-green/20 shadow-card' 
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                      <button
+                        key={cl.id}
+                        type="button"
+                        onClick={() => !full && setSelectedClasseId(cl.id)}
+                        disabled={full}
+                        className={`p-4 rounded-xl border-2 text-left transition ${
+                          selectedClasseId === cl.id
+                            ? 'border-sigapei-green bg-sigapei-green/5'
+                            : full
+                              ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
+                              : 'border-slate-200 hover:border-sigapei-green/50'
                         }`}
                       >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <span className="text-sm font-black text-sigapei-black font-heading">{c.nom}</span>
-                            <p className="text-xs text-slate-500 capitalize">{c.cycle} • Niveau {c.niveau}</p>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                            c.programme === 'beninois' 
-                              ? 'bg-amber-100 text-amber-900 border border-amber-200' 
-                              : 'bg-blue-100 text-blue-900 border border-blue-200'
-                          }`}>
-                            Prog. {c.programme.toUpperCase()}
-                          </span>
+                        <div className="font-bold text-sm text-slate-800">{cl.nom}</div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {cl.cycle} • {cl.niveau} • Prog. {cl.programme}
                         </div>
-
-                        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                          <span className="text-slate-500">Places d'admission :</span>
-                          <span className={`font-extrabold ${isFull ? 'text-red-600' : 'text-sigapei-green'}`}>
-                            {isFull ? 'COMPLÈTE (Bloquant)' : `${dispo} place${dispo > 1 ? 's' : ''} disponible${dispo > 1 ? 's' : ''}`}
-                          </span>
+                        <div className={`text-xs font-bold mt-2 ${full ? 'text-red-600' : 'text-sigapei-green'}`}>
+                          {full ? '⚠️ COMPLÈTE' : `${cl.capacite - inscrits} places disponibles`}
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
-
-                <div className="flex justify-between pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => handleNextStep(1)} 
-                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50"
-                  >
-                    Retour
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => handleNextStep(3)} 
-                    className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2"
-                  >
-                    <span>Continuer vers le responsable</span>
-                    <svg className="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
               </div>
-            )}
+              <div className="flex justify-between">
+                <button
+                  onClick={() => setCurrentStep(1)}
+                  className="px-6 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  ← Précédent
+                </button>
+                <button
+                  onClick={() => handleNextStep(3)}
+                  className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white text-xs font-black hover:bg-sigapei-green-dark transition"
+                >
+                  Suivant →
+                </button>
+              </div>
+            </div>
+          )}
 
-            {/* STEP 3 */}
-            {currentStep === 3 && (
-              <div className="space-y-4 max-w-xl mx-auto text-xs fade-enter">
-                <h3 className="text-base font-black text-sigapei-black font-heading border-b border-slate-100 pb-2">
-                  Étape 3 : Informations du Parent / Tuteur Légal
-                </h3>
+          {/* Step 3: Parent */}
+          {currentStep === 3 && (
+            <div className="space-y-4 fade-enter">
+              <h3 className="text-sm font-black text-sigapei-black">Étape 3 — Parent / Responsable</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Nom complet du parent ou tuteur *</label>
-                  <input 
-                    type="text" 
-                    required 
-                    value={parentNom} 
-                    onChange={(e) => setParentNom(e.target.value)} 
-                    placeholder="Ex: BIO Vincent" 
-                    className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-sigapei-green" 
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nom complet du parent *</label>
+                  <input
+                    type="text"
+                    value={parentNom}
+                    onChange={e => setParentNom(e.target.value)}
+                    placeholder="Ex: ADANHOUN Jean-Baptiste"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Téléphone (WhatsApp / SMS) *</label>
-                    <input 
-                      type="tel" 
-                      required 
-                      value={parentTel} 
-                      onChange={(e) => setParentTel(e.target.value)} 
-                      placeholder="+229 97 00 00 00" 
-                      className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-sigapei-green" 
-                    />
-                  </div>
-                  <div>
-                    <label className="font-bold text-slate-700 block mb-1">Adresse électronique</label>
-                    <input 
-                      type="email" 
-                      value={parentEmail} 
-                      onChange={(e) => setParentEmail(e.target.value)} 
-                      placeholder="parent@gmail.com" 
-                      className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-sigapei-green" 
-                    />
-                  </div>
-                </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Adresse de résidence</label>
-                  <input 
-                    type="text" 
-                    value={parentAdresse} 
-                    onChange={(e) => setParentAdresse(e.target.value)} 
-                    placeholder="Quartier, Ville" 
-                    className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-sigapei-green" 
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Téléphone *</label>
+                  <input
+                    type="tel"
+                    value={parentTel}
+                    onChange={e => setParentTel(e.target.value)}
+                    placeholder="+229 97 00 11 22"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
                   />
                 </div>
-                <div className="flex justify-between pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => handleNextStep(2)} 
-                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50"
-                  >
-                    Retour
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => handleNextStep(4)} 
-                    className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2"
-                  >
-                    <span>Continuer vers les pièces</span>
-                    <svg className="w-4 h-4 text-sigapei-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={parentEmail}
+                    onChange={e => setParentEmail(e.target.value)}
+                    placeholder="parent@gmail.com"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Adresse</label>
+                  <input
+                    type="text"
+                    value={parentAdresse}
+                    onChange={e => setParentAdresse(e.target.value)}
+                    placeholder="Quartier, Ville"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
+                  />
                 </div>
               </div>
-            )}
-
-            {/* STEP 4 */}
-            {currentStep === 4 && (
-              <div className="space-y-4 max-w-xl mx-auto text-xs fade-enter">
-                <h3 className="text-base font-black text-sigapei-black font-heading border-b border-slate-100 pb-2">
-                  Étape 4 : Pièces Justificatives (S3) & Sécurité
-                </h3>
-                
-                <div className="p-4 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-center space-y-2">
-                  <svg className="w-8 h-8 text-sigapei-green mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <p className="font-bold text-slate-700">Téléversement des pièces d'inscription</p>
-                  <p className="text-[11px] text-slate-400">Extrait de naissance, Bulletins scolaires, Certificat médical (PDF, max 5 Mo)</p>
-                  <span className="inline-block px-3 py-1 bg-white rounded-lg border border-slate-200 font-mono text-[10px] text-slate-600">
-                    Stockage certifié S3 MinIO / AWS
-                  </span>
-                </div>
-
-                {/* reCAPTCHA v3 mock score */}
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-sigapei-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    <span className="text-xs font-bold text-slate-700">Contrôle reCAPTCHA v3</span>
-                  </div>
-                  <span className="text-[10px] font-mono font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
-                    Score Token: 0.98
-                  </span>
-                </div>
-
-                <div className="flex justify-between pt-4">
-                  <button 
-                    type="button" 
-                    onClick={() => handleNextStep(3)} 
-                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50"
-                  >
-                    Retour
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="px-8 py-3 rounded-xl bg-sigapei-gold text-sigapei-black font-black text-xs hover:bg-sigapei-gold-hover shadow-md transition flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
-                    <span>Soumettre ma candidature</span>
-                  </button>
-                </div>
+              <div className="flex justify-between">
+                <button
+                  onClick={() => setCurrentStep(2)}
+                  className="px-6 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  ← Précédent
+                </button>
+                <button
+                  onClick={() => handleNextStep(4)}
+                  className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white text-xs font-black hover:bg-sigapei-green-dark transition"
+                >
+                  Suivant →
+                </button>
               </div>
-            )}
-          </form>
+            </div>
+          )}
 
+          {/* Step 4: Validation */}
+          {currentStep === 4 && (
+            <div className="space-y-4 fade-enter">
+              <h3 className="text-sm font-black text-sigapei-black">Étape 4 — Validation et soumission</h3>
+              <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-sm">
+                <div><strong>Élève :</strong> {nom} {prenom}</div>
+                <div><strong>Classe :</strong> {classes.find(c => c.id === selectedClasseId)?.nom || '—'}</div>
+                <div><strong>Parent :</strong> {parentNom} ({parentTel})</div>
+              </div>
+              <div className="flex justify-between">
+                <button
+                  onClick={() => setCurrentStep(3)}
+                  className="px-6 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  ← Précédent
+                </button>
+                <button
+                  onClick={handleFormSubmit}
+                  className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white text-xs font-black hover:bg-sigapei-green-dark transition"
+                >
+                  Soumettre la candidature
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* SUB-VIEW 2 : SUIVI DOSSIER PAR UUID */}
+      {/* ── SUBTAB: SUIVI DOSSIER ── */}
       {subTab === 'suivi' && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-card border border-slate-100 space-y-6 fade-enter">
+          <h3 className="text-sm font-black text-sigapei-black">Suivi de votre dossier</h3>
           <div>
-            <h3 className="text-xl font-black text-sigapei-black font-heading">Suivi en Direct de votre Candidature</h3>
-            <p className="text-xs text-slate-500 mt-1">Saisissez l'identifiant unique (UUID) reçu lors de votre dépôt en ligne.</p>
+            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Numéro de dossier (UUID)</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={searchUuid}
+                onChange={e => setSearchUuid(e.target.value)}
+                placeholder="Ex: CAND-2026-8941 ou l'UUID complet"
+                className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
+              />
+              <button
+                onClick={handleSearchDossier}
+                className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white text-xs font-black hover:bg-sigapei-green-dark transition"
+              >
+                Rechercher
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-2 max-w-lg">
-            <input 
-              type="text" 
-              value={searchUuid} 
-              onChange={(e) => setSearchUuid(e.target.value)} 
-              placeholder="Ex: CAND-2026-8941" 
-              className="flex-1 p-3 rounded-xl border border-slate-200 font-mono text-xs font-bold focus:outline-none focus:border-sigapei-green" 
-            />
-            <button 
-              onClick={handleSearchDossier} 
-              className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2"
-            >
-              Rechercher
-            </button>
-          </div>
-
-          {searchResult && searchResult !== 'not_found' && (
-            <div className={`p-6 rounded-2xl border ${
-              searchResult.statut === 'validee' ? 'bg-[#EAF5EF] border-[#BDE3CE]' :
-              searchResult.statut === 'rejetee' ? 'bg-red-50/50 border-red-200' : 'bg-amber-50/50 border-sigapei-gold/40'
-            } space-y-4`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-base font-black text-sigapei-black font-heading">{searchResult.nom} {searchResult.prenom}</span>
-                  <p className="text-xs text-slate-500 font-mono">Dossier n° {searchResult.uuid}</p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${
-                  searchResult.statut === 'validee' ? 'bg-sigapei-green text-white shadow-sm' :
-                  searchResult.statut === 'rejetee' ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-amber-100 text-amber-900 border border-amber-200'
-                }`}>
-                  {searchResult.statut}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs pt-2 border-t border-slate-200">
-                <div><span className="text-slate-400">Date soumission :</span> <strong>{searchResult.date_soumission}</strong></div>
-                <div><span className="text-slate-400">Parent :</span> <strong>{searchResult.parent_nom}</strong></div>
-                <div><span className="text-slate-400">Pièces déposées :</span> <strong>{searchResult.pieces.length} document(s) S3</strong></div>
-              </div>
-
-              {searchResult.statut === 'rejetee' && searchResult.motif_rejet && (
-                <div className="bg-white p-3.5 rounded-xl border border-red-200 text-xs text-red-800">
-                  <strong>Motif du refus notifié :</strong> {searchResult.motif_rejet}
-                </div>
-              )}
+          {searchResult === 'not_found' && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+              Aucun dossier trouvé pour ce numéro. Vérifiez le numéro saisi.
             </div>
           )}
 
-          {searchResult === 'not_found' && (
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-500 italic">
-              Aucun dossier ne correspond à cet identifiant.
+          {searchResult && searchResult !== 'not_found' && (
+            <div className="bg-slate-50 rounded-xl p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-slate-400">Nom :</span>
+                  <strong className="ml-2">{searchResult.nom} {searchResult.prenom}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400">Classe visée :</span>
+                  <strong className="ml-2">{searchResult.classe_nom || '—'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400">Date de dépôt :</span>
+                  <strong className="ml-2">{searchResult.date_soumission || '—'}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400">Statut :</span>
+                  <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${
+                    searchResult.statut === 'validee' ? 'bg-emerald-100 text-emerald-800' :
+                    searchResult.statut === 'rejetee' ? 'bg-red-100 text-red-800' :
+                    'bg-amber-100 text-amber-800'
+                  }`}>
+                    {searchResult.statut || '—'}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* SUB-VIEW 3 : RÉINSCRIPTION SANS DOUBLON */}
+      {/* ── SUBTAB: RÉINSCRIPTION ── */}
       {subTab === 'reinc' && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-card border border-slate-100 space-y-6 fade-enter">
-          <div>
-            <h3 className="text-xl font-black text-sigapei-black font-heading">Réinscription d'un Élève (Année 2026-2027)</h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Conformément à la règle de non-duplication, la réinscription conserve le matricule unique et rattache l'élève à sa nouvelle classe.
-            </p>
-          </div>
-
-          <div className="space-y-4 max-w-lg text-xs">
+          <h3 className="text-sm font-black text-sigapei-black">Réinscription d'un élève déjà scolarisé</h3>
+          <p className="text-xs text-slate-500">
+            La réinscription reconduit l'élève sur la nouvelle année scolaire sans créer de doublon de dossier.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Matricule unique de l'élève *</label>
-              <input 
-                type="text" 
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Matricule de l'élève</label>
+              <input
+                type="text"
                 value={reincMatricule}
-                onChange={(e) => setReincMatricule(e.target.value)}
-                placeholder="Ex: MAT-2026-6A-0012" 
-                className="w-full p-2.5 rounded-xl border border-slate-200 font-mono focus:outline-none focus:border-sigapei-green" 
+                onChange={e => setReincMatricule(e.target.value)}
+                placeholder="Ex: MAT-2026-6A-0012"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none"
               />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Classe de passage / Réinscription *</label>
-              <select 
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nouvelle classe</label>
+              <select
                 value={reincClasseId}
-                onChange={(e) => setReincClasseId(e.target.value)}
-                className="w-full p-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-sigapei-green"
+                onChange={e => setReincClasseId(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-sigapei-green outline-none bg-white"
               >
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.nom} ({c.cycle} • {c.programme.toUpperCase()}) — {c.capacite - c.inscrits} places libres
+                {classes.map(cl => (
+                  <option key={cl.id} value={cl.id}>
+                    {cl.nom} ({cl.programme})
                   </option>
                 ))}
               </select>
             </div>
-            <button 
-              onClick={handleReincAction} 
-              className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white font-bold text-xs hover:bg-sigapei-green-dark transition flex items-center gap-2"
+          </div>
+          <div>
+            <button
+              onClick={handleReincAction}
+              className="px-6 py-2.5 rounded-xl bg-sigapei-green text-white text-xs font-black hover:bg-sigapei-green-dark transition"
             >
-              Valider la Réinscription
+              Valider la réinscription
             </button>
           </div>
         </div>

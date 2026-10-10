@@ -3,6 +3,7 @@
 namespace App\common\Middleware;
 
 use App\common\Responses\ApiResponse;
+use App\common\Services\TenantResolver;
 use Closure;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -32,9 +33,29 @@ class VerifyTenantAndJwt
 
             if (hash_equals($expectedSecret, $internalSecret)) {
                 $tenantHeader = $request->header('X-Tenant-Id', $request->query('tenant_id'));
-                if ($tenantHeader) {
-                    app()->instance('current_tenant_id', $tenantHeader);
+                if (!$tenantHeader) {
+                    return ApiResponse::erreur(
+                        'En-tete X-Tenant-Id obligatoire pour un appel interne.',
+                        'TENANT_MANQUANT',
+                        403
+                    );
                 }
+
+                // Même résolution UUID → entier que pour le chemin JWT, afin que
+                // les appels internes et les appels utilisateur positent
+                // exactement le même type dans le conteneur.
+                try {
+                    $tenantId = app(TenantResolver::class)->resoudre($tenantHeader);
+                } catch (\Throwable $e) {
+                    return ApiResponse::erreur(
+                        'Etablissement de rattachement introuvable : ' . $e->getMessage(),
+                        'TENANT_INVALIDE',
+                        403
+                    );
+                }
+
+                app()->instance('current_tenant_id', $tenantId);
+                app()->instance('current_tenant_ref', $tenantHeader);
                 return $next($request);
             }
 
@@ -59,17 +80,36 @@ class VerifyTenantAndJwt
             $decoded = JWT::decode($jwtToken, new Key($secret, $algo));
 
             // Supporte les deux conventions de JWT (identite: tenantId / convention snake_case: tenant_id)
-            $tenantId = $decoded->tenantId ?? $decoded->tenant_id ?? $request->header('X-Tenant-Id');
-            if (!$tenantId) {
+            $tenantRef = $decoded->tenantId ?? $decoded->tenant_id ?? $request->header('X-Tenant-Id');
+            if (!$tenantRef) {
                 return ApiResponse::erreur('Identifiant de tenant introuvable dans le jeton', 'TENANT_MANQUANT', 403);
+            }
+
+            // Le claim `tenantId` du microservice Identité est un UUID, alors que
+            // les colonnes tenant_id du schéma scolarite sont des bigint. On
+            // résout l'UUID vers l'entier interne AVANT de le publier dans le
+            // conteneur : sans cela, le TenantScope injecte un WHERE tenant_id =
+            // '<uuid>' sur une colonne bigint et PostgreSQL rejette la requête
+            // (22P02) sur la totalité des endpoints.
+            try {
+                $tenantId = app(TenantResolver::class)->resoudre($tenantRef);
+            } catch (\Throwable $e) {
+                return ApiResponse::erreur(
+                    'Etablissement de rattachement introuvable ou non autorise : ' . $e->getMessage(),
+                    'TENANT_INVALIDE',
+                    403
+                );
             }
 
             $userData = (array) $decoded;
             // Normalisation pour compatibilité avec le reste de l'application
             $userData['roleCode'] = $userData['roleCode'] ?? $userData['role_code'] ?? $userData['role'] ?? null;
             $userData['uuid'] = $userData['sub'] ?? null;
+            // Conservé pour les traces : la référence brute du jeton.
+            $userData['tenant_ref'] = $tenantRef;
 
             app()->instance('current_tenant_id', $tenantId);
+            app()->instance('current_tenant_ref', $tenantRef);
             app()->instance('current_user', $userData);
             $request->merge([
                 'auth_user' => $userData,
