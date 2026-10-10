@@ -22,15 +22,29 @@ class Quiz(BaseModel):
     matiere_id = models.UUIDField('Matière (externe)', db_index=True)
     classe_id = models.UUIDField('Classe (externe)', db_index=True)
     titre = models.CharField('Titre', max_length=255)
+    # `null` = tentatives illimitées (quiz d'entraînement).
     tentatives_max = models.PositiveIntegerField(
-        'Nombre maximal de tentatives', default=1,
+        'Nombre maximal de tentatives', default=1, null=True, blank=True,
     )
     chrono_secondes = models.PositiveIntegerField(
         'Durée du chrono (secondes)', null=True, blank=True,
     )
+    date_limite = models.DateTimeField(
+        'Date limite de passage', null=True, blank=True,
+    )
     restitution = models.CharField(
         'Restitution des résultats', max_length=20, choices=Restitution.choices,
         default=Restitution.IMMEDIATE,
+    )
+    seuil_validation = models.DecimalField(
+        'Seuil de validation (note /20)', max_digits=5, decimal_places=2,
+        null=True, blank=True,
+    )
+    ordre_aleatoire_questions = models.BooleanField(
+        'Ordre des questions aléatoire', default=False,
+    )
+    melanger_options = models.BooleanField(
+        'Mélanger les options de réponse', default=False,
     )
     statut = models.CharField(
         'Statut', max_length=20, choices=STATUTS,
@@ -169,8 +183,8 @@ class ReponsesApprenant(BaseModel):
 
     class Meta:
         db_table = 'reponses_apprenant'
-        verbose_name = 'Réponse d'apprenant'
-        verbose_name_plural = 'Réponses d'apprenant'
+        verbose_name = 'Réponse d\'apprenant'
+        verbose_name_plural = 'Réponses d\'apprenant'
         ordering = ['question__ordre']
         constraints = [
             models.UniqueConstraint(

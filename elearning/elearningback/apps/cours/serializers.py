@@ -10,6 +10,9 @@ from apps.medias.serializers import MediaRefSerializer
 class LeconSerializer(TenantSerializerMixin,
                       serializers.ModelSerializer):
     """Leçon — le média est référencé par son `uuid`."""
+    # Facultatif : si le client n'en fournit pas, la vue attribue
+    # automatiquement le dernier ordre du cours + 1 (voir views.py).
+    ordre = serializers.IntegerField(required=False)
     media = serializers.SlugRelatedField(
         slug_field='uuid', queryset=Medias.objects.all(),
         required=False, allow_null=True,
@@ -44,6 +47,7 @@ class CoursSerializer(TenantSerializerMixin,
         model = Cours
         fields = [
             'uuid', 'matiere_id', 'enseignant_id', 'titre', 'description',
+            'coefficient', 'volume_horaire',
             'statut', 'date_publication', 'classes', 'classes_liees',
             'lecons', 'created_at', 'updated_at',
         ]

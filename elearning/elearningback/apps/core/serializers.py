@@ -11,6 +11,7 @@ class ParametresModuleSerializer(TenantSerializerMixin,
         model = ParametresModule
         fields = [
             'uuid', 'tentatives_multiples_defaut', 'restitution_defaut',
-            'visibilite_parents', 'created_at', 'updated_at',
+            'visibilite_parents', 'alertes_sms', 'recap_email',
+            'notifications_push', 'created_at', 'updated_at',
         ]
         read_only_fields = ['uuid', 'created_at', 'updated_at']

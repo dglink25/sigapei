@@ -57,6 +57,51 @@ class DevoirsViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
         return self._deposer(devoir, request)
 
+    @action(detail=True, methods=['get'])
+    def statistiques(self, request, uuid=None):
+        """GET /v1/devoirs/{uuid}/statistiques/ : indicateurs de correction.
+
+        Compteurs de copies, notes agrégées (moyenne, minimum, médiane,
+        maximum) et distribution par tranches sur l'échelle /20 (barème
+        par défaut) — calculés en direct sur les soumissions du devoir,
+        sans dupliquer de données externes.
+        """
+        devoir = self.get_object()
+        soumissions = devoir.soumissions.all()
+        notes = sorted(
+            soumissions.filter(note__isnull=False)
+            .values_list('note', flat=True)
+        )
+
+        def mediane(valeurs):
+            taille = len(valeurs)
+            if taille % 2:
+                return valeurs[taille // 2]
+            return (valeurs[taille // 2 - 1] + valeurs[taille // 2]) / 2
+
+        moyenne = sum(notes) / len(notes) if notes else None
+
+        return Response({
+            'total_soumissions': soumissions.count(),
+            'soumissions_en_retard':
+                soumissions.filter(en_retard=True).count(),
+            'copies_notees': len(notes),
+            'a_corriger': soumissions.filter(note__isnull=True).count(),
+            'notes_reportees':
+                soumissions.filter(note_reportee=True).count(),
+            'moyenne': float(moyenne) if moyenne is not None else None,
+            'note_minimale': float(notes[0]) if notes else None,
+            'note_mediane': float(mediane(notes)) if notes else None,
+            'note_maximale': float(notes[-1]) if notes else None,
+            'distribution': {
+                'moins_de_10': sum(1 for n in notes if n < 10),
+                'de_10_a_12': sum(1 for n in notes if 10 <= n < 12),
+                'de_12_a_14': sum(1 for n in notes if 12 <= n < 14),
+                'de_14_a_16': sum(1 for n in notes if 14 <= n < 16),
+                'de_16_a_20': sum(1 for n in notes if n >= 16),
+            },
+        })
+
     def _deposer(self, devoir, request):
         """Crée la soumission et détermine `en_retard` automatiquement."""
         maintenant = timezone.now()

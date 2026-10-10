@@ -32,6 +32,10 @@ class PolitiqueRetard(models.TextChoices):
 
 class Restitution(models.TextChoices):
     IMMEDIATE = 'immediate', 'Immédiate (résultats visibles dès la soumission)'
+    APRES_DATE_LIMITE = (
+        'apres_date_limite',
+        'Après date limite (verrouillée jusqu\u2019à la clôture du quiz)',
+    )
     DIFFEREE = 'differee', 'Différée (résultats visibles après validation enseignant)'
 
 
