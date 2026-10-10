@@ -2,8 +2,8 @@
 
 namespace App\common\Services;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -11,41 +11,45 @@ use Throwable;
  *
  * PROBLÈME ARCHITECTURAL
  * ---------------------
- * Le JWT émis par le microservice Identité porte un claim `tenantId` qui est
- * un **uuid** :
+ * Le JWT émis par Identité porte un claim `tenantId` qui est un **uuid**,
+ * alors que les colonnes `tenant_id` des schémas `scolarite` et
+ * `inscription` sont des **bigint**. Comparer les deux fait échouer
+ * PostgreSQL (22P02) sur toutes les requêtes Eloquent.
  *
- *     identite/src/database/migrations/…-CreationSchemaIdentite.ts
- *     "tenantId" uuid NULL,
+ * Ce service fait le pont entre les deux représentations. Conformément à la
+ * règle n°1, la résolution ne se fait PAS par jointure SQL : elle passe par
+ * l'API interne du microservice Établissements (`/interne/...` +
+ * `X-Internal-Secret`).
  *
- * Or les colonnes `tenant_id` des schémas `scolarite` et `inscription` sont
- * des **bigint** :
+ * CONVENTION TENANT
+ * -----------------
+ * Deux conventions coexistent aujourd'hui sur la plateforme :
+ *   - vie-scolaire impose un `X-Tenant-Id` numérique (ctype_digit) ;
+ *   - le JWT Identité porte un `tenantId` en uuid.
+ * `TWO_TENANT_CONVENTIONS_ENABLED` permet d'accepter un entier sans
+ * appel réseau, ce qui rend les deux services compatibles. Le jour où la
+ * plateforme alignera tout sur une seule convention, ce drapeau doit être
+ * retiré.
  *
- *     $table->unsignedBigInteger('tenant_id')->index();
- *
- * Comparer un uuid à un bigint fait échouer PostgreSQL (22P02 invalid input
- * syntax for type bigint) sur TOUTES les requêtes Eloquent, via le
- * `TenantScope`. Ce service fait le pont entre les deux représentations en
- * s'appuyant sur la seule table qui porte les deux : `etablissements.etablissements`
- * (colonnes `id` bigint et `uuid`).
- *
- * Le microservice n'écrit jamais dans un autre schéma : seule la lecture de
- * cette table de référence est effectuée, comme pour le contrôle de module.
+ * @var array<string, int|null> Cache de résolution pour la durée de la requête.
  */
 class TenantResolver
 {
-    /** @var array<string|int, int|null> Cache de résolution pour la durée de la requête. */
     private array $cache = [];
+
+    public function __construct(
+        protected InterneClient $interne
+    ) {}
 
     /**
      * Résout une référence de tenant (uuid ou entier) vers l'entier interne.
      *
-     * @throws \RuntimeException si la référence est absente, non résoluble,
-     *                           ou inconnue du référentiel des établissements.
+     * @throws RuntimeException si la référence est absente ou inconnue.
      */
     public function resoudre(string|int|null $tenantRef): int
     {
         if ($tenantRef === null || $tenantRef === '') {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 "Tenant introuvable dans le contexte d'authentification."
             );
         }
@@ -55,20 +59,27 @@ class TenantResolver
         if (array_key_exists($cle, $this->cache)) {
             $resolu = $this->cache[$cle];
             if ($resolu === null) {
-                throw new \RuntimeException("Tenant inconnu du référentiel : {$tenantRef}.");
+                throw new RuntimeException("Tenant inconnu du référentiel : {$tenantRef}.");
             }
             return $resolu;
         }
 
-        // Un entier est déjà l'identifiant interne : on le renvoie tel quel,
-        // après vérification d'existence pour ne pas laisser passer un tenant
-        // inventé par un client.
+        // Un entier est déjà l'identifiant interne. En mode compatibilité
+        // (convention numérique déjà appliquée par la passerelle), on
+        // l'accepte sans appel réseau — c'est le cas de vie-scolaire.
         if (is_numeric($tenantRef)) {
+            if (config('app.two_tenant_conventions_enabled', false)) {
+                $this->cache[$cle] = (int) $tenantRef;
+                return (int) $tenantRef;
+            }
+
             $existe = $this->existeEtablissementParId((int) $tenantRef);
             $this->cache[$cle] = $existe ? (int) $tenantRef : null;
+
             if (!$existe) {
-                throw new \RuntimeException("Tenant inconnu du référentiel : {$tenantRef}.");
+                throw new RuntimeException("Tenant inconnu du référentiel : {$tenantRef}.");
             }
+
             return (int) $tenantRef;
         }
 
@@ -76,8 +87,8 @@ class TenantResolver
         $this->cache[$cle] = $id;
 
         if ($id === null) {
-            throw new \RuntimeException(
-                "Tenant {$tenantRef} absent du référentiel des établissements."
+            throw new RuntimeException(
+                "Tenant {$tenantRef} absent du microservice Établissements."
             );
         }
 
@@ -91,7 +102,7 @@ class TenantResolver
     {
         try {
             return $this->resoudre($tenantRef);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -108,31 +119,42 @@ class TenantResolver
     private function resoudreUuidVersId(string $uuid): ?int
     {
         try {
-            $etab = DB::table('etablissements.etablissements')
-                ->where('uuid', $uuid)
-                ->select('id')
-                ->first();
-
-            return $etab ? (int) $etab->id : null;
+            $reponse = $this->interne->get('etablissements', '/v1/interne/etablissements', ['uuid' => $uuid]);
         } catch (Throwable $e) {
-            Log::error('[TENANT] Referentiel etablissements inaccessible.', [
+            Log::error('[TENANT] Microservice Établissements injoignable.', [
                 'uuid'   => $uuid,
                 'erreur' => $e->getMessage(),
             ]);
             return null;
         }
+
+        if (!$reponse) {
+            return null;
+        }
+
+        $donnees = $reponse['donnees'] ?? $reponse;
+
+        return isset($donnees['id']) ? (int) $donnees['id'] : null;
     }
 
     private function existeEtablissementParId(int $id): bool
     {
         try {
-            return DB::table('etablissements.etablissements')->where('id', $id)->exists();
+            $reponse = $this->interne->get('etablissements', '/v1/interne/etablissements', ['id' => $id]);
         } catch (Throwable $e) {
-            Log::error('[TENANT] Referentiel etablissements inaccessible.', [
+            Log::error('[TENANT] Microservice Établissements injoignable.', [
                 'id'     => $id,
                 'erreur' => $e->getMessage(),
             ]);
             return false;
         }
+
+        if (!$reponse) {
+            return false;
+        }
+
+        $donnees = $reponse['donnees'] ?? $reponse;
+
+        return isset($donnees['id']);
     }
 }
