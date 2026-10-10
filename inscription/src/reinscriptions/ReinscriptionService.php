@@ -3,22 +3,36 @@
 namespace App\reinscriptions;
 
 use App\common\Services\AuditService;
+use App\common\Services\InterneClient;
 use App\common\Services\TenantResolver;
 use App\integrations\ScolariteClient;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Reconduction d'un apprenant existant sur une nouvelle année scolaire.
+ *
+ * Règle n°1 : aucune écriture directe dans le schéma `scolarite`. La
+ * réinscription est une mutation du dossier apprenant, qui appartient à
+ * Scolarité. Elle est donc demandée via l'API interne de Scolarité, qui
+ * reste le seul propriétaire du dossier et de son historique.
+ *
+ * Ce service ne conserve qu'une trace de la demande dans son propre
+ * schéma `inscription.reinscriptions`.
+ */
 class ReinscriptionService
 {
     public function __construct(
-        protected ScolariteClient $scolariteClient
+        protected ScolariteClient $scolariteClient,
+        protected InterneClient $interne
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $donnees
+     * @return array<string, mixed>
+     */
     public function reconduireApprenant(array $donnees): array
     {
-        // Les colonnes scolarite.*.tenant_id sont des bigint alors que le claim
-        // `tenantId` du JWT est un UUID : on résout via le référentiel des
-        // établissements plutôt que de laisser PostgreSQL rejeter la requête.
         try {
             $tenantId = app(TenantResolver::class)->resoudreCourant();
         } catch (\Throwable $e) {
@@ -29,98 +43,59 @@ class ReinscriptionService
             );
         }
 
-        // 1. Trouver l'apprenant dans scolarite.apprenants par UUID ou ID
-        $query = DB::table('scolarite.apprenants')
-            ->where('tenant_id', $tenantId);
+        $apprenantUuid = $donnees['apprenant_uuid'] ?? null;
+        $nouvelleClasseUuid = $donnees['nouvelle_classe_uuid'] ?? null;
 
-        if (!empty($donnees['apprenant_uuid'])) {
-            $query->where('uuid', $donnees['apprenant_uuid']);
-        } else {
-            $query->where('id', $donnees['apprenant_id']);
+        if (empty($apprenantUuid)) {
+            throw new Exception("L'UUID de l'apprenant est requis pour une réinscription.");
         }
 
-        $apprenant = $query->first();
-
-        if (!$apprenant) {
-            throw new Exception("Dossier apprenant introuvable pour la réinscription.");
+        if (empty($nouvelleClasseUuid)) {
+            throw new Exception("L'UUID de la nouvelle classe est requis pour une réinscription.");
         }
 
-        // 2. Résoudre la classe de destination
-        $classeQuery = DB::table('scolarite.classes')
-            ->where('tenant_id', $tenantId);
+        // 1. Vérifier la disponibilité via l'API interne de Scolarité
+        $dispo = $this->scolariteClient->verifierDisponibilite($nouvelleClasseUuid, $tenantId);
 
-        if (!empty($donnees['nouvelle_classe_uuid'])) {
-            $classeQuery->where('uuid', $donnees['nouvelle_classe_uuid']);
-        } else {
-            $classeQuery->where('id', $donnees['nouvelle_classe_id']);
-        }
+        // 2. Demander la mutation du dossier à Scolarité, seule propriétaire
+        //    de `scolarite.apprenants` et `scolarite.historique_classes`.
+        //    Le dossier n'est jamais dupliqué : Scolarité ne fait qu'adapter
+        //    la classe existante et journaliser l'historique.
+        $resultat = $this->interne->post('scolarite', '/v1/interne/apprenants/transfert', [
+            'apprenant_uuid'       => $apprenantUuid,
+            'nouvelle_classe_uuid' => $nouvelleClasseUuid,
+            'motif'               => "Réinscription pour l'année scolaire {$donnees['annee_scolaire']}",
+        ]);
 
-        $nouvelleClasse = $classeQuery->first();
+        $transfert = $resultat['donnees'] ?? $resultat;
 
-        if (!$nouvelleClasse) {
-            throw new Exception("Nouvelle classe de destination introuvable.");
-        }
+        // 3. Tracer la demande dans le schéma inscription (propriété propre)
+        $reinscription = Reinscription::create([
+            'tenant_id'      => $tenantId,
+            'apprenant_id'   => $donnees['apprenant_id'] ?? null,
+            'annee_scolaire' => $donnees['annee_scolaire'],
+            'statut'         => 'validee',
+            'date_demande'   => now(),
+        ]);
 
-        // 3. Vérifier disponibilité de place via ScolariteClient
-        $dispo = $this->scolariteClient->verifierDisponibilite($nouvelleClasse->uuid, $tenantId);
-        if ($dispo['est_complete']) {
-            throw new Exception("Réinscription impossible : la classe '{$dispo['nom']}' a atteint sa capacité maximale ({$dispo['capacite']} places).");
-        }
-
-        return DB::transaction(function () use ($tenantId, $apprenant, $nouvelleClasse, $donnees, $dispo) {
-            // Enregistrer la demande de réinscription
-            $reinscription = Reinscription::create([
-                'tenant_id'          => $tenantId,
-                'apprenant_id'       => $apprenant->id,
-                'ancienne_classe_id' => $apprenant->classe_id,
-                'nouvelle_classe_id' => $nouvelleClasse->id,
-                'annee_scolaire'     => $donnees['annee_scolaire'],
-                'statut'             => 'validee',
-                'date_demande'       => now(),
-            ]);
-
-            // Mettre à jour la classe dans scolarite.apprenants (même dossier, aucune duplication)
-            DB::table('scolarite.apprenants')
-                ->where('id', $apprenant->id)
-                ->update([
-                    'classe_id'  => $nouvelleClasse->id,
-                    'statut'     => 'actif',
-                    'updated_at' => now(),
-                ]);
-
-            // Enregistrer l'historique
-            DB::table('scolarite.historique_classes')->insert([
-                'uuid'               => (string) \Illuminate\Support\Str::uuid(),
-                'tenant_id'          => $tenantId,
-                'apprenant_id'       => $apprenant->id,
-                'ancienne_classe_id' => $apprenant->classe_id,
-                'nouvelle_classe_id' => $nouvelleClasse->id,
-                'motif'              => "Réinscription pour l'année scolaire {$donnees['annee_scolaire']}",
-                'date_transfert'     => now(),
-                'created_at'         => now(),
-                'updated_at'         => now(),
-            ]);
-
-            AuditService::journaliser(
-                'REINSCRIPTION_APPRENANT',
-                "Apprenant {$apprenant->nom} {$apprenant->prenom} réinscrit en classe {$dispo['nom']}",
-                [
-                    'annee_scolaire' => $donnees['annee_scolaire'],
-                    'apprenant_id'   => $apprenant->id,
-                    'apprenant_uuid' => $apprenant->uuid,
-                    'nouvelle_classe' => $dispo['nom'],
-                ]
-            );
-
-            return [
-                'uuid'            => $reinscription->uuid,
-                'apprenant_uuid'  => $apprenant->uuid,
-                'apprenant_nom'   => "{$apprenant->nom} {$apprenant->prenom}",
-                'nouvelle_classe' => $dispo['nom'],
+        AuditService::journaliser(
+            'REINSCRIPTION_APPRENANT',
+            "Apprenant {$apprenantUuid} réinscrit en classe {$dispo['nom']}",
+            [
                 'annee_scolaire'  => $donnees['annee_scolaire'],
-                'statut'          => 'validee',
-                'message'         => 'Dossier apprenant reconduit avec succès sur la nouvelle année scolaire sans duplication.',
-            ];
-        });
+                'apprenant_uuid'  => $apprenantUuid,
+                'nouvelle_classe' => $dispo['nom'],
+            ]
+        );
+
+        return [
+            'uuid'            => $reinscription->uuid,
+            'apprenant_uuid'  => $apprenantUuid,
+            'nouvelle_classe' => $dispo['nom'],
+            'annee_scolaire'  => $donnees['annee_scolaire'],
+            'statut'          => 'validee',
+            'changement_programme' => (bool) ($transfert['changement_programme'] ?? false),
+            'message'         => 'Dossier apprenant reconduit avec succès sur la nouvelle année scolaire sans duplication.',
+        ];
     }
 }

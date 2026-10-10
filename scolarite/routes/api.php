@@ -5,6 +5,7 @@ use App\classes\ClasseController;
 use App\common\Middleware\VerifyTenantAndJwt;
 use App\docs\DocsController;
 use App\emplois_du_temps\EmploiDuTempsController;
+use App\interne\InterneController;
 use Illuminate\Support\Facades\Route;
 
 // Sonde de sante (hors prefixe v1)
@@ -63,5 +64,19 @@ Route::prefix('v1')->middleware([VerifyTenantAndJwt::class])->group(function () 
 
     // --- Endpoints internes (consommes par d'autres microservices via X-Internal-Secret) ---
     // Pas de controle de role ici — le VerifyTenantAndJwt valide le secret interne
+    //
+    // Règle n°1 : Scolarité est le seul propriétaire du schéma `scolarite`.
+    // Les autres microservices lisent ces données par ces routes, jamais par
+    // jointure SQL inter-schémas. Contrat aligné sur
+    // vie-scolaire/app/Integrations/ScolariteClient.php
+    //
+    // ATTENTION : les routes littérales doivent être déclarées AVANT
+    // `/interne/apprenants/{uuid}`, sinon le segment `{uuid}` absorberait
+    // le mot « transfert ».
+    Route::post('/interne/apprenants/transfert', [InterneController::class, 'transfertInterne']);
+    Route::post('/interne/apprenants', [InterneController::class, 'creerApprenant']);
+    Route::get('/interne/apprenants', [InterneController::class, 'apprenants']);
+    Route::get('/interne/emplois-du-temps', [InterneController::class, 'emploisDuTemps']);
+    Route::get('/interne/classes/disponibilite', [InterneController::class, 'disponibilite']);
     Route::get('/interne/apprenants/{uuid}/classe', [ApprenantController::class, 'infoInterneClasse']);
 });
