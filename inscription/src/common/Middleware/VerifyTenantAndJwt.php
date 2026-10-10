@@ -3,6 +3,7 @@
 namespace App\common\Middleware;
 
 use App\common\Responses\ApiResponse;
+use App\common\Services\TenantResolver;
 use Closure;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -32,9 +33,26 @@ class VerifyTenantAndJwt
 
             if (hash_equals($expectedSecret, $internalSecret)) {
                 $tenantHeader = $request->header('X-Tenant-Id', $request->query('tenant_id'));
-                if ($tenantHeader) {
-                    app()->instance('current_tenant_id', $tenantHeader);
+                if (!$tenantHeader) {
+                    return ApiResponse::erreur(
+                        'En-tete X-Tenant-Id obligatoire pour un appel interne.',
+                        'TENANT_MANQUANT',
+                        403
+                    );
                 }
+
+                try {
+                    $tenantId = app(TenantResolver::class)->resoudre($tenantHeader);
+                } catch (\Throwable $e) {
+                    return ApiResponse::erreur(
+                        'Etablissement de rattachement introuvable : ' . $e->getMessage(),
+                        'TENANT_INVALIDE',
+                        403
+                    );
+                }
+
+                app()->instance('current_tenant_id', $tenantId);
+                app()->instance('current_tenant_ref', $tenantHeader);
                 return $next($request);
             }
 
@@ -45,11 +63,25 @@ class VerifyTenantAndJwt
         // Seule la creation (POST /v1/candidatures) est ouverte au public (parent postulant sans compte)
         if ($request->is('*/candidatures') && $request->isMethod('post')) {
             $tenantHeader = $request->header('X-Tenant-Id', $request->input('tenant_id'));
-            if ($tenantHeader) {
-                app()->instance('current_tenant_id', $tenantHeader);
-                return $next($request);
+            if (!$tenantHeader) {
+                return ApiResponse::erreur('Identifiant de l\'etablissement (tenant_id) obligatoire pour soumettre une candidature', 'TENANT_MANQUANT', 422);
             }
-            return ApiResponse::erreur('Identifiant de l\'etablissement (tenant_id) obligatoire pour soumettre une candidature', 'TENANT_MANQUANT', 422);
+
+            // Résolution UUID → entier également sur le chemin public, sans quoi
+            // la candidature enregistrée porterait un tenant inexploitable.
+            try {
+                $tenantId = app(TenantResolver::class)->resoudre($tenantHeader);
+            } catch (\Throwable $e) {
+                return ApiResponse::erreur(
+                    'Etablissement de rattachement introuvable : ' . $e->getMessage(),
+                    'TENANT_INVALIDE',
+                    422
+                );
+            }
+
+            app()->instance('current_tenant_id', $tenantId);
+            app()->instance('current_tenant_ref', $tenantHeader);
+            return $next($request);
         }
 
         // 3. Bearer Token JWT obligatoire pour toutes les autres routes
@@ -70,17 +102,35 @@ class VerifyTenantAndJwt
             $decoded = JWT::decode($jwtToken, new Key($secret, $algo));
 
             // Supporte les deux conventions de JWT (identite: tenantId / convention snake_case: tenant_id)
-            $tenantId = $decoded->tenantId ?? $decoded->tenant_id ?? $request->header('X-Tenant-Id');
-            if (!$tenantId) {
+            $tenantRef = $decoded->tenantId ?? $decoded->tenant_id ?? $request->header('X-Tenant-Id');
+            if (!$tenantRef) {
                 return ApiResponse::erreur('Identifiant de tenant introuvable dans le jeton', 'TENANT_MANQUANT', 403);
+            }
+
+            // Le claim `tenantId` du microservice Identité est un UUID, alors que
+            // les colonnes tenant_id du schéma inscription sont des bigint. On
+            // résout l'UUID vers l'entier interne AVANT de le publier dans le
+            // conteneur, sans quoi le TenantScope produit un WHERE tenant_id =
+            // '<uuid>' sur une colonne bigint et PostgreSQL rejette la requête
+            // (22P02) sur la totalité des endpoints.
+            try {
+                $tenantId = app(TenantResolver::class)->resoudre($tenantRef);
+            } catch (\Throwable $e) {
+                return ApiResponse::erreur(
+                    'Etablissement de rattachement introuvable ou non autorise : ' . $e->getMessage(),
+                    'TENANT_INVALIDE',
+                    403
+                );
             }
 
             $userData = (array) $decoded;
             // Normalisation pour compatibilité avec le reste de l'application
             $userData['roleCode'] = $userData['roleCode'] ?? $userData['role_code'] ?? $userData['role'] ?? null;
             $userData['uuid'] = $userData['sub'] ?? null;
+            $userData['tenant_ref'] = $tenantRef;
 
             app()->instance('current_tenant_id', $tenantId);
+            app()->instance('current_tenant_ref', $tenantRef);
             app()->instance('current_user', $userData);
             $request->merge([
                 'auth_user' => $userData,

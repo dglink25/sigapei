@@ -8,7 +8,7 @@ export default function RejectModal({ candidate, onClose, onConfirm }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!motif.trim()) return;
-    onConfirm(candidate.id, motif);
+    onConfirm(candidate.uuid || candidate.id, motif);
   };
 
   return (

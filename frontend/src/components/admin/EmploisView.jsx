@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { initialClasses } from '../../data/initialData';
 
 const SALLES_DISPONIBLES = [
   { id: 'S01', nom: 'Salle 01 (RDC)', capacite: 50, equipement: 'Projecteur + Tableau blanc' },
@@ -10,65 +9,110 @@ const SALLES_DISPONIBLES = [
   { id: 'LAB-INFO', nom: 'Salle Informatique', capacite: 30, equipement: '30 PC + Fibre' },
 ];
 
-const INITIAL_EDT = {
-  1: [ // 6ème A
-    { id: 1, jour: 'Lundi',    h: '08h-10h', matiere: 'Mathématiques', prof: 'Prof. Mensah',   salle: 'Salle 01 (RDC)' },
-    { id: 2, jour: 'Lundi',    h: '10h-12h', matiere: 'Français',      prof: 'Mme Bio',        salle: 'Salle 01 (RDC)' },
-    { id: 3, jour: 'Mardi',    h: '08h-10h', matiere: 'Histoire-Géo',  prof: 'Mme Lawson',     salle: 'Salle 01 (RDC)' },
-    { id: 4, jour: 'Mardi',    h: '10h-12h', matiere: 'Anglais',       prof: 'M. Smith',       salle: 'Salle 01 (RDC)' },
-    { id: 5, jour: 'Mercredi', h: '08h-10h', matiere: 'EPS',           prof: 'M. Gomez',       salle: 'Terrain de sport' },
-    { id: 6, jour: 'Jeudi',    h: '08h-10h', matiere: 'SVT',           prof: 'Mme Agossa',     salle: 'Labo SVT / Biologie' },
-    { id: 7, jour: 'Vendredi', h: '08h-10h', matiere: 'Physique-Chimie', prof: 'M. Dossou',   salle: 'Salle 01 (RDC)' },
-    { id: 8, jour: 'Vendredi', h: '10h-12h', matiere: 'Informatique',  prof: 'Prof. Hounsou',  salle: 'Salle Informatique' },
-  ]
-};
+/**
+ * Normalise un créneau EDT du backend vers le format attendu par l'UI.
+ * Le backend renvoie heure_debut / heure_fin (time), l'UI affiche une plage "08h-10h".
+ */
+function normalizeCreneau(c, index) {
+  return {
+    id: c.uuid || c.id || index,
+    jour: c.jour || 'Lundi',
+    h: (c.heure_debut && c.heure_fin)
+      ? `${c.heure_debut.slice(0, 5)}-${c.heure_fin.slice(0, 5)}`
+      : (c.creneau || '08h-10h'),
+    matiere: c.matiere || c.matiere_nom || '—',
+    prof: c.enseignant_nom || c.prof || '—',
+    salle: c.salle || '—',
+    classe_id: c.classe_id,
+  };
+}
 
-export default function EmploisView() {
-  const [selectedClasseId, setSelectedClasseId] = useState(1);
-  const [coursList, setCoursList] = useState(INITIAL_EDT);
-  const [activeTab, setActiveTab] = useState('planning'); // 'planning' | 'salles'
+export default function EmploisView({ classes = [], emploisDuTemps = [] }) {
+  const [selectedClasseId, setSelectedClasseId] = useState(classes[0]?.id || null);
+  const [activeTab, setActiveTab] = useState('planning');
 
   // Modal d'ajout de cours
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newCours, setNewCours] = useState({
     jour: 'Lundi',
-    h: '08h-10h',
-    matiere: 'Mathématiques',
-    prof: 'Prof. Mensah',
-    salle: 'Salle 01 (RDC)'
+    heure_debut: '08:00',
+    heure_fin: '10:00',
+    matiere: '',
+    enseignant_id: '',
+    salle: 'Salle 01 (RDC)',
   });
 
   const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
-  const heures = ['08h-10h', '10h-12h', '15h-17h'];
 
-  const currentClasse = initialClasses.find(c => c.id === Number(selectedClasseId)) || initialClasses[0];
-  const classeCours = coursList[selectedClasseId] || [];
+  const currentClasse = classes.find(c => c.id === Number(selectedClasseId)) || classes[0];
 
-  const handleAddCours = (e) => {
+  // Filtrer les créneaux par classe
+  const classeCours = (emploisDuTemps || [])
+    .filter(c => {
+      const cid = c.classe_id || c.classeId;
+      return currentClasse && Number(cid) === Number(currentClasse.id);
+    })
+    .map((c, i) => normalizeCreneau(c, i));
+
+  const handleAddCours = async (e) => {
     e.preventDefault();
-    const newEntry = {
-      id: Date.now(),
-      ...newCours
-    };
+    if (!currentClasse) return;
 
-    setCoursList(prev => ({
-      ...prev,
-      [selectedClasseId]: [...(prev[selectedClasseId] || []), newEntry]
-    }));
+    try {
+      const res = await fetch(`http://localhost:4004/v1/emplois-du-temps`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Tenant-Id': localStorage.getItem('sigapei_tenant_id') || '1',
+          'Authorization': `Bearer ${localStorage.getItem('sigapei_token') || ''}`,
+        },
+        body: JSON.stringify({
+          classe_uuid: currentClasse.uuid,
+          jour: newCours.jour,
+          heure_debut: newCours.heure_debut,
+          heure_fin: newCours.heure_fin,
+          matiere: newCours.matiere,
+          enseignant_id: newCours.enseignant_id || null,
+          salle: newCours.salle,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.erreur || data.message || `Erreur HTTP ${res.status}`);
 
-    setIsAddModalOpen(false);
+      setIsAddModalOpen(false);
+      setNewCours({ jour: 'Lundi', heure_debut: '08:00', heure_fin: '10:00', matiere: '', enseignant_id: '', salle: 'Salle 01 (RDC)' });
+      // Recharger les données
+      window.location.reload();
+    } catch (e) {
+      alert(e.message || 'Erreur d\'enregistrement.');
+    }
   };
 
-  const handleDeleteCours = (id) => {
-    setCoursList(prev => ({
-      ...prev,
-      [selectedClasseId]: (prev[selectedClasseId] || []).filter(c => c.id !== id)
-    }));
+  const handleDeleteCours = async (uuid) => {
+    if (!confirm('Supprimer ce créneau ?')) return;
+    try {
+      const res = await fetch(`http://localhost:4004/v1/emplois-du-temps/${uuid}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'X-Tenant-Id': localStorage.getItem('sigapei_tenant_id') || '1',
+          'Authorization': `Bearer ${localStorage.getItem('sigapei_token') || ''}`,
+        },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.erreur || data.message || `Erreur HTTP ${res.status}`);
+      }
+      window.location.reload();
+    } catch (e) {
+      alert(e.message || 'Erreur de suppression.');
+    }
   };
 
   return (
     <div className="space-y-6 fade-enter">
-      
+
       {/* Header avec sélecteur de classe et boutons */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -84,19 +128,19 @@ export default function EmploisView() {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <select 
-            value={selectedClasseId}
-            onChange={e => setSelectedClasseId(Number(e.target.value))}
+          <select
+            value={selectedClasseId || ''}
+            onChange={e => setSelectedClasseId(e.target.value)}
             className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold bg-white text-slate-800 focus:border-sigapei-green outline-none shadow-sm"
           >
-            {initialClasses.map(c => (
+            {classes.map(c => (
               <option key={c.id} value={c.id}>
                 Classe : {c.nom} ({c.cycle} • {c.programme})
               </option>
             ))}
           </select>
 
-          <button 
+          <button
             onClick={() => setIsAddModalOpen(true)}
             className="px-4 py-2.5 rounded-xl bg-sigapei-gold text-sigapei-black font-black text-xs shadow-md hover:bg-sigapei-gold-hover transition flex items-center space-x-2"
           >
@@ -113,22 +157,22 @@ export default function EmploisView() {
         <button
           onClick={() => setActiveTab('planning')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-            activeTab === 'planning' 
-              ? 'bg-sigapei-green text-white shadow-sm' 
+            activeTab === 'planning'
+              ? 'bg-sigapei-green text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span>Emploi du temps par classe ({currentClasse.nom})</span>
+          <span>Emploi du temps par classe {currentClasse ? `(${currentClasse.nom})` : ''}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('salles')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
-            activeTab === 'salles' 
-              ? 'bg-sigapei-green text-white shadow-sm' 
+            activeTab === 'salles'
+              ? 'bg-sigapei-green text-white shadow-sm'
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -145,14 +189,16 @@ export default function EmploisView() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div>
               <span className="text-xs font-extrabold text-sigapei-black uppercase tracking-wider">
-                Planning Hebdomadaire — {currentClasse.nom}
+                Planning Hebdomadaire — {currentClasse?.nom || 'Sélectionnez une classe'}
               </span>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Cycle {currentClasse.cycle} • Programme {currentClasse.programme} • Capacité : {currentClasse.inscrits}/{currentClasse.capacite} élèves
-              </p>
+              {currentClasse && (
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Cycle {currentClasse.cycle} • Programme {currentClasse.programme} • Capacité : {currentClasse.inscrits_actuels || 0}/{currentClasse.capacite} élèves
+                </p>
+              )}
             </div>
             <span className="text-xs font-bold text-sigapei-green bg-sigapei-green/10 px-3 py-1 rounded-xl">
-              {classeCours.length * 2} Heures programmées
+              {classeCours.length} cours programmés
             </span>
           </div>
 
@@ -220,7 +266,7 @@ export default function EmploisView() {
                 </div>
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-medium">Affectée actuellement à :</span>
-                  <span className="font-bold text-sigapei-green">6ème A / 2nde B</span>
+                  <span className="font-bold text-sigapei-green">—</span>
                 </div>
               </div>
             ))}
@@ -234,7 +280,7 @@ export default function EmploisView() {
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden">
             <div className="bg-sigapei-green px-6 py-4 flex items-center justify-between text-white">
               <h3 className="font-heading font-black text-base text-white">
-                Ajouter un cours — {currentClasse.nom}
+                Ajouter un cours — {currentClasse?.nom || ''}
               </h3>
               <button onClick={() => setIsAddModalOpen(false)} className="text-white hover:text-white/80">
                 ✕
@@ -245,7 +291,7 @@ export default function EmploisView() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Jour</label>
-                  <select 
+                  <select
                     value={newCours.jour}
                     onChange={e => setNewCours({...newCours, jour: e.target.value})}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white"
@@ -255,19 +301,27 @@ export default function EmploisView() {
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Horaire</label>
-                  <select 
-                    value={newCours.h}
-                    onChange={e => setNewCours({...newCours, h: e.target.value})}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white font-mono"
-                  >
-                    {heures.map(h => <option key={h}>{h}</option>)}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={newCours.heure_debut}
+                      onChange={e => setNewCours({...newCours, heure_debut: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white font-mono"
+                    />
+                    <span className="text-slate-400">→</span>
+                    <input
+                      type="time"
+                      value={newCours.heure_fin}
+                      onChange={e => setNewCours({...newCours, heure_fin: e.target.value})}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Matière *</label>
-                <input 
+                <input
                   type="text"
                   required
                   placeholder="Ex: Mathématiques, Français, SVT..."
@@ -279,19 +333,19 @@ export default function EmploisView() {
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Enseignant responsable *</label>
-                <input 
+                <input
                   type="text"
                   required
                   placeholder="Ex: Prof. Mensah, Mme Bio..."
-                  value={newCours.prof}
-                  onChange={e => setNewCours({...newCours, prof: e.target.value})}
+                  value={newCours.enseignant_id}
+                  onChange={e => setNewCours({...newCours, enseignant_id: e.target.value})}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Salle attribuée *</label>
-                <select 
+                <select
                   value={newCours.salle}
                   onChange={e => setNewCours({...newCours, salle: e.target.value})}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:border-sigapei-green outline-none bg-white"
