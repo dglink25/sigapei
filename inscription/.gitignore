@@ -14,3 +14,7 @@
 !/storage/framework/views/.gitkeep
 !/storage/logs/.gitkeep
 .phpunit.result.cache
+
+# PHPUnit
+.phpunit.cache/
+.phpunit.xml.bak
