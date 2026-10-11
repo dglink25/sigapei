@@ -318,9 +318,9 @@ scolarite/
 │   │   ├── Services/TenantResolver.php        Résolution uuid ↔ bigint
 │   │   ├── Services/AuditService.php
 │   │   └── Responses/ApiResponse.php
-│   └── database/
+│   └── Database/                Majuscules requises par PSR-4
 │       ├── migrations/          Création des tables du schéma scolarite
-│       └── seeders/             Données de test (classes béninoises et françaises)
+│       └── Seeders/             Données de test (classes béninoises et françaises)
 ├── tests/
 │   └── Unit/                    Tests unitaires capacité & programmes
 ├── .env.example
