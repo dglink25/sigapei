@@ -33,6 +33,43 @@ class InterneClient
      *
      * @throws RuntimeException si le microservice est injoignable
      */
+    /**
+     * Placeholders refusés par le middleware VerifyTenantAndJwt côté cible.
+     * Reprendre la même liste évite que les deux côtés divergent.
+     */
+    private const SECRETS_PLACEHOLDERS = [
+        'change-me',
+        'secret',
+        'your-secret',
+        'default-secret',
+        'change-me-shared-secret-gateway',
+    ];
+
+    /**
+     * Vérifie qu'un secret interne exploitable est disponible.
+     *
+     * Sans ce garde-fou, un `INTERNAL_API_SECRET` absent ou resté à sa
+     * valeur d'exemple produisait un appel sortant porteur d'un en-tête
+     * vide ou d'un placeholder. La cible répondait alors 403, mais surtout
+     * l'appel partait sur le réseau : un microservice en écoute sur le
+     * réseau local recevait une requête non authentifiée.
+     *
+     * @throws RuntimeException
+     */
+    private function secretInterne(): string
+    {
+        $secret = (string) config('services.interne.secret', '');
+
+        if ($secret === '' || in_array($secret, self::SECRETS_PLACEHOLDERS, true) || strlen($secret) < 8) {
+            throw new RuntimeException(
+                'Secret interne non configuré ou encore placéholder '
+                .'(INTERNAL_API_SECRET) : appel vers un autre microservice refusé.'
+            );
+        }
+
+        return $secret;
+    }
+
     public function get(string $microservice, string $chemin, array $query = []): ?array
     {
         $base = rtrim((string) config("services.microservices.urls.{$microservice}", ''), '/');
@@ -42,6 +79,8 @@ class InterneClient
                 .'(voir services.microservices.urls dans config/services.php).'
             );
         }
+
+        $this->secretInterne();
 
         // Les paramètres sont passés à plat : `Http::get($url, $query)`.
         // Les encapsuler dans ['query' => $query] produisait une URL
@@ -87,6 +126,8 @@ class InterneClient
                 "URL de base du microservice « {$microservice} » non configurée."
             );
         }
+
+        $this->secretInterne();
 
         try {
             $response = Http::withHeaders($this->entetes())
