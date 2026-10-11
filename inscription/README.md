@@ -348,9 +348,9 @@ inscription/
 │   │   ├── Traits/HasTenant.php & HasUuid.php
 │   │   ├── Services/AuditService.php
 │   │   └── Responses/ApiResponse.php
-│   └── database/
+│   └── Database/                Majuscules requises par PSR-4
 │       ├── migrations/          Création des tables du schéma inscription
-│       └── seeders/             Données de test
+│       └── Seeders/             Données de test
 ├── tests/
 │   └── Unit/                    Tests unitaires validation & motifs
 ├── .env.example
