@@ -8,6 +8,12 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { seedRolesSysteme } from './roles/roles.seed';
 
+import * as dns from 'node:dns';
+import * as net from 'node:net';
+
+dns.setDefaultResultOrder('ipv4first');
+net.setDefaultAutoSelectFamily(false);
+
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule, { cors: false });
