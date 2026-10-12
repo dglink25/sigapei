@@ -2,117 +2,114 @@
 
 namespace App\integrations;
 
+use App\common\Services\InterneClient;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RuntimeException;
 
+/**
+ * Client d'intégration avec le microservice Scolarité.
+ *
+ * Règle n°1 : plus aucune jointure SQL inter-schémas. Les lectures passent
+ * par l'API interne de Scolarité (`/interne/...` + `X-Internal-Secret`),
+ * comme le fait vie-scolaire. Le secret interne est présenté par
+ * InterneClient, jamais instancié ici.
+ *
+ * Règle n°5 : ce client ne valide aucun JWT. L'identité de l'appelant est
+ * portée par le secret interne.
+ */
 class ScolariteClient
 {
-    /**
-     * Verifie la disponibilite de place dans une classe du schema scolarite
-     */
-    public function verifierDisponibilite(int $classeId, int $tenantId): array
-    {
-        $classe = DB::table('scolarite.classes')
-            ->where('id', $classeId)
-            ->where('tenant_id', $tenantId)
-            ->first();
+    public function __construct(
+        protected InterneClient $interne
+    ) {}
 
-        if (!$classe) {
-            throw new Exception("Classe visée (id: {$classeId}) introuvable dans le schéma scolarité.");
+    /**
+     * Vérifie la disponibilité de place dans une classe.
+     * Accepte soit l'UUID, soit l'ID entier de la classe.
+     *
+     * @return array<string, mixed>
+     */
+    public function verifierDisponibilite(string|int $classeRef, mixed $tenantId = null): array
+    {
+        // Ne transmettre que le paramètre réellement fourni : une clé
+        // présente mais vide fait échouer la validation 422 du contrôleur
+        // qui teste `if ($uuid = $request->query('uuid'))`.
+        $requete = is_numeric($classeRef)
+            ? ['id' => (int) $classeRef]
+            : ['uuid' => (string) $classeRef];
+
+        $dispo = $this->interne->get('scolarite', '/v1/interne/classes/disponibilite', $requete);
+
+        if (!$dispo) {
+            throw new Exception("Classe visée (réf: {$classeRef}) introuvable dans le schéma scolarité.");
         }
 
-        $inscrits = DB::table('scolarite.apprenants')
-            ->where('classe_id', $classeId)
-            ->where('tenant_id', $tenantId)
-            ->where('statut', 'actif')
-            ->count();
+        $donnees = $dispo['donnees'] ?? $dispo;
 
-        $placesRestantes = max(0, $classe->capacite - $inscrits);
+        if (($donnees['est_complete'] ?? false) === true) {
+            throw new Exception(
+                "Validation impossible : la classe '{$donnees['nom']}' a atteint sa capacité maximale ({$donnees['capacite']} places)."
+            );
+        }
+
+        return $donnees;
+    }
+
+    /**
+     * Crée l'apprenant via l'API interne de Scolarité.
+     *
+     * Règle absolue (immuable) :
+     *   - Programme béninois                    → utilisateur_id = NULL (jamais de compte élève)
+     *   - Programme français + cycle secondaire → compte utilisateur si fourni
+     *   - Cycle universitaire (tout programme)  → compte utilisateur si fourni
+     *
+     * L'application de cette règle est du ressort de Scolarité, seul
+     * propriétaire du schéma. Le client transmet les données et reçoit le
+     * verdict.
+     *
+     * @param  array<string, mixed>  $donnees
+     * @return array<string, mixed>
+     */
+    public function creerApprenant(array $donnees): array
+    {
+        $payload = [
+            'classe_uuid'        => $donnees['classe_uuid'] ?? null,
+            'candidature_uuid'   => $donnees['candidature_uuid'] ?? null,
+            'parent_identite_uuid' => $donnees['parent_identite_uuid'] ?? null,
+            'nom'                => $donnees['nom'] ?? null,
+            'prenom'             => $donnees['prenom'] ?? null,
+            'date_naissance'     => $donnees['date_naissance'] ?? null,
+            'sexe'               => $donnees['sexe'] ?? null,
+            'parent_lien'        => $donnees['parent_lien'] ?? 'parent',
+        ];
+
+        try {
+            $reponse = $this->interne->post('scolarite', '/v1/interne/apprenants', $payload);
+        } catch (RuntimeException $e) {
+            throw new Exception('Création de l\'apprenant impossible : ' . $e->getMessage(), 0, $e);
+        }
+
+        $apprenant = $reponse['donnees'] ?? $reponse;
+
+        if (empty($apprenant['uuid'])) {
+            throw new Exception("Scolarité n'a pas retourné d'UUID d'apprenant.");
+        }
 
         return [
-            'classe_id' => $classe->id,
-            'uuid' => $classe->uuid,
-            'nom' => $classe->nom,
-            'cycle' => $classe->cycle,
-            'niveau' => $classe->niveau,
-            'programme' => $classe->programme,
-            'capacite' => (int) $classe->capacite,
-            'inscrits' => (int) $inscrits,
-            'places_disponibles' => $placesRestantes,
-            'est_complete' => ($placesRestantes <= 0),
+            'uuid'                   => $apprenant['uuid'],
+            'classe_nom'             => $apprenant['classe_nom'] ?? null,
+            'programme'              => $apprenant['programme'] ?? null,
+            'compte_utilisateur_cree'=> (bool) ($apprenant['compte_utilisateur_cree'] ?? false),
         ];
     }
 
     /**
-     * Cree l'apprenant dans scolarite.apprenants selon la regle du programme pedagogique
+     * Résout un profil parent via l'API interne d'Identité.
+     * Conservé ici pour la lisibilité du flux de validation.
      */
-    public function creerApprenant(array $donneesApprenant): array
+    public function matriculePropose(): string
     {
-        $classeId = $donneesApprenant['classe_id'];
-        $tenantId = $donneesApprenant['tenant_id'];
-
-        $classe = DB::table('scolarite.classes')
-            ->where('id', $classeId)
-            ->where('tenant_id', $tenantId)
-            ->first();
-
-        if (!$classe) {
-            throw new Exception("Classe de destination introuvable dans la scolarite.");
-        }
-
-        // --- REGLE CRUCIALE DU PROGRAMME PEDAGOGIQUE ---
-        // Programme beninois : utilisateur_id = NULL quel que soit le cycle (primaire ou secondaire)
-        // Programme francais : compte optionnel primaire, compte actif secondaire
-        // Cycle universitaire : toujours autonome
-        $utilisateurId = null;
-
-        if ($classe->programme === 'beninois') {
-            $utilisateurId = null; // Strictement aucun compte de connexion eleve cree
-        } elseif ($classe->cycle === 'universitaire') {
-            $utilisateurId = $donneesApprenant['utilisateur_id'] ?? null;
-        } elseif ($classe->programme === 'francais' && $classe->cycle === 'secondaire') {
-            $utilisateurId = $donneesApprenant['utilisateur_id'] ?? null;
-        }
-
-        $apprenantUuid = (string) Str::uuid();
-
-        $apprenantId = DB::table('scolarite.apprenants')->insertGetId([
-            'uuid' => $apprenantUuid,
-            'tenant_id' => $tenantId,
-            'classe_id' => $classeId,
-            'utilisateur_id' => $utilisateurId,
-            'candidature_id' => $donneesApprenant['candidature_id'] ?? null,
-            'matricule' => $donneesApprenant['matricule'] ?? ('MAT-' . strtoupper(Str::random(8))),
-            'nom' => $donneesApprenant['nom'],
-            'prenom' => $donneesApprenant['prenom'],
-            'date_naissance' => $donneesApprenant['date_naissance'],
-            'sexe' => $donneesApprenant['sexe'] ?? null,
-            'statut' => 'actif',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // Rattachement du parent si renseigne
-        if (!empty($donneesApprenant['parent_id'])) {
-            DB::table('scolarite.parents_apprenants')->insert([
-                'tenant_id' => $tenantId,
-                'parent_id' => $donneesApprenant['parent_id'],
-                'apprenant_id' => $apprenantId,
-                'lien_parente' => $donneesApprenant['parent_lien'] ?? 'parent',
-                'est_responsable_legal' => true,
-                'est_contact_urgence' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        return [
-            'id' => $apprenantId,
-            'uuid' => $apprenantUuid,
-            'classe_nom' => $classe->nom,
-            'programme' => $classe->programme,
-            'compte_utilisateur_cree' => ($utilisateurId !== null),
-        ];
+        return 'MAT-' . strtoupper(Str::random(8));
     }
 }

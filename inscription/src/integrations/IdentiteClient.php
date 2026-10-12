@@ -2,75 +2,109 @@
 
 namespace App\integrations;
 
-use Illuminate\Support\Facades\DB;
+use App\common\Services\InterneClient;
 use Throwable;
 
 /**
- * Client d'intégration avec le microservice Identité (SSO).
+ * Client d'intégration avec le microservice Identité.
  *
- * Utilise le schéma 'identite' dans la base commune Neon pour :
- * 1. Retrouver un utilisateur (parent, élève, personnel, enseignant) par son email, téléphone ou UUID.
- * 2. Associer automatiquement le parent à la candidature / scolarité s'il possède déjà un compte Identité.
- * 3. Valider l'identité et le rôle des examinateurs / évaluateurs des tests d'admission.
+ * Règle n°1 : plus de lecture directe du schéma `identite`. Les profils et
+ * rôles se récupèrent via l'API interne d'Identité (`/interne/...`).
+ *
+ * Règle n°5 : ce client ne valide aucun JWT — il ne fait que transporter
+ * l'UUID de l'utilisateur à vérifier.
  */
 class IdentiteClient
 {
-    /**
-     * Recherche un utilisateur existant par email ou téléphone dans le schéma identite.
-     */
-    public function trouverUtilisateurParContact(?string $email, ?string $telephone): ?object
-    {
-        try {
-            $query = DB::table('identite.utilisateur');
-
-            if (!empty($email) && !empty($telephone)) {
-                $query->where(function ($q) use ($email, $telephone) {
-                    $q->where('email', $email)->orWhere('telephone', $telephone);
-                });
-            } elseif (!empty($email)) {
-                $query->where('email', $email);
-            } elseif (!empty($telephone)) {
-                $query->where('telephone', $telephone);
-            } else {
-                return null;
-            }
-
-            return $query->first();
-        } catch (Throwable) {
-            return null;
-        }
-    }
+    public function __construct(
+        protected InterneClient $interne
+    ) {}
 
     /**
-     * Recherche un utilisateur par son UUID (identifiant universel api-identite).
+     * Retrouve un utilisateur par son UUID (claim `sub` du JWT).
      */
     public function trouverParUuid(string $uuid): ?object
     {
+        if (empty($uuid)) {
+            return null;
+        }
+
         try {
-            return DB::table('identite.utilisateur')
-                ->where('uuid', $uuid)
-                ->first();
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', ['uuid' => $uuid]);
         } catch (Throwable) {
             return null;
+        }
+
+        return $donnees ? (object) ($donnees['donnees'] ?? $donnees) : null;
+    }
+
+    /**
+     * Retrouve un utilisateur par son identifiant interne.
+     */
+    public function trouverParId(int $id): ?object
+    {
+        try {
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', ['id' => $id]);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $donnees ? (object) ($donnees['donnees'] ?? $donnees) : null;
+    }
+
+    /**
+     * Vérifie qu'un évaluateur (jury / enseignant) existe, est actif et
+     * possède un rôle autorisé dans Identité.
+     *
+     * Règle de sécurité : échec fermé (fail-closed). Un microservice
+     * injoignable vaut REFUS, jamais autorisation — sinon n'importe quel
+     * identifiant pourrait saisir une note d'admission.
+     */
+    public function estEnseignantActif(string|int $enseignantRef): bool
+    {
+        try {
+            $requete = is_numeric($enseignantRef)
+                ? ['id' => (int) $enseignantRef]
+                : ['uuid' => (string) $enseignantRef];
+
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', $requete);
+
+            if (!$donnees) {
+                return false;
+            }
+
+            $utilisateur = $donnees['donnees'] ?? $donnees;
+            $roleCode    = $utilisateur['role_code'] ?? null;
+
+            return in_array($roleCode, ['enseignant', 'administrateur', 'super_admin'], true)
+                && ($utilisateur['statut'] ?? null) === 'actif';
+        } catch (Throwable) {
+            // Identité injoignable : refus.
+            return false;
         }
     }
 
     /**
-     * Vérifie si un utilisateur est bien un enseignant ou administrateur autorisé à évaluer des tests.
+     * Recherche un compte parent existant par email ou téléphone.
+     * Utilisé lors de la validation d'une candidature pour lier le parent
+     * au dossier apprenant.
      */
-    public function verifierEvaluateur(string|int $utilisateurId): bool
+    public function trouverUtilisateurParContact(?string $email, ?string $telephone): ?object
     {
-        try {
-            $user = DB::table('identite.utilisateur as u')
-                ->join('identite.role as r', 'u.role_id', '=', 'r.id')
-                ->where(is_numeric($utilisateurId) ? 'u.id' : 'u.uuid', $utilisateurId)
-                ->whereIn('r.code', ['enseignant', 'administrateur', 'super_admin'])
-                ->where('u.statut', 'actif')
-                ->first();
-
-            return ($user !== null);
-        } catch (Throwable) {
-            return true; // Mode résilient si le schéma identite n'a pas encore de données en local
+        if (empty($email) && empty($telephone)) {
+            return null;
         }
+
+        try {
+            $requete = [];
+            if (!empty($email))    { $requete['email'] = $email; }
+            if (!empty($telephone)) { $requete['telephone'] = $telephone; }
+
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', $requete);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $donnees ? (object) ($donnees['donnees'] ?? $donnees) : null;
     }
 }

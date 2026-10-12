@@ -2,96 +2,117 @@
 
 namespace App\integrations;
 
-use Illuminate\Support\Facades\DB;
+use App\common\Services\InterneClient;
 use Throwable;
 
 /**
- * Client d'intégration avec le microservice Identité (SSO).
+ * Client d'intégration avec le microservice Identité.
  *
- * Utilise le schéma 'identite' dans la base commune Neon pour :
- * 1. Vérifier qu'un enseignant assigné à un emploi du temps existe et a le rôle enseignant.
- * 2. Vérifier les comptes parents liés aux apprenants.
- * 3. Récupérer les informations de profil SSO (nom, email, photo) pour l'affichage de l'apprenant.
+ * Règle n°1 : plus de lecture directe du schéma `identite`. Les profils et
+ * rôles se récupèrent via l'API interne d'Identité (`/interne/...`).
+ *
+ * Règle n°5 : ce client ne valide aucun JWT — il ne fait que transporter
+ * l'UUID de l'utilisateur à vérifier.
  */
 class IdentiteClient
 {
-    /**
-     * Recherche un utilisateur par son UUID ou son ID interne.
-     */
-    public function trouverUtilisateur(string|int $idOuUuid): ?object
-    {
-        try {
-            $colonne = is_numeric($idOuUuid) ? 'id' : 'uuid';
+    public function __construct(
+        protected InterneClient $interne
+    ) {}
 
-            return DB::table('identite.utilisateur as u')
-                ->leftJoin('identite.role as r', 'u.role_id', '=', 'r.id')
-                ->select([
-                    'u.id',
-                    'u.uuid',
-                    'u.tenant_id',
-                    'u.nom_complet',
-                    'u.telephone',
-                    'u.email',
-                    'u.matricule',
-                    'u.statut',
-                    'u.photo_url',
-                    'r.code as role_code',
-                    'r.libelle as role_libelle',
-                ])
-                ->where("u.{$colonne}", $idOuUuid)
-                ->first();
+    /**
+     * Retrouve un utilisateur (enseignant, parent, administrateur)
+     * par son UUID (claim `sub` du JWT Identité).
+     */
+    public function trouverParUuid(string $uuid): ?object
+    {
+        if (empty($uuid)) {
+            return null;
+        }
+
+        try {
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', ['uuid' => $uuid]);
         } catch (Throwable) {
             return null;
         }
+
+        return $donnees ? (object) ($donnees['donnees'] ?? $donnees) : null;
     }
 
     /**
-     * Vérifie si un identifiant correspond à un enseignant actif.
+     * Retrouve un utilisateur par son identifiant interne.
      */
-    public function estEnseignantValide(string|int $enseignantId): bool
+    public function trouverParId(int $id): ?object
     {
         try {
-            $colonne = is_numeric($enseignantId) ? 'u.id' : 'u.uuid';
-
-            $enseignant = DB::table('identite.utilisateur as u')
-                ->join('identite.role as r', 'u.role_id', '=', 'r.id')
-                ->where($colonne, $enseignantId)
-                ->where('r.code', 'enseignant')
-                ->where('u.statut', 'actif')
-                ->first();
-
-            return ($enseignant !== null);
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', ['id' => $id]);
         } catch (Throwable) {
-            return true; // Résilience
+            return null;
+        }
+
+        return $donnees ? (object) ($donnees['donnees'] ?? $donnees) : null;
+    }
+
+    /**
+     * Vérifie que l'enseignant existe, est actif et a bien un rôle
+     * d'enseignement dans Identité.
+     *
+     * Règle de sécurité : échec fermé (fail-closed). Identité vide ou
+     * injoignable ne vaut PAS autorisation : autoriser par défaut
+     * permettrait d'affecter n'importe quel identifiant — y compris
+     * inexistant — à un créneau d'emploi du temps.
+     */
+    public function estEnseignantActif(string|int $enseignantRef): bool
+    {
+        try {
+            $requete = is_numeric($enseignantRef)
+                ? ['id' => (int) $enseignantRef]
+                : ['uuid' => (string) $enseignantRef];
+
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', $requete);
+
+            if (!$donnees) {
+                return false;
+            }
+
+            $utilisateur = $donnees['donnees'] ?? $donnees;
+            $roleCode    = $utilisateur['role_code'] ?? null;
+
+            return in_array($roleCode, ['enseignant', 'administrateur', 'super_admin'], true)
+                && ($utilisateur['statut'] ?? null) === 'actif';
+        } catch (Throwable) {
+            // Identité injoignable : refus.
+            return false;
         }
     }
 
     /**
-     * Recherche un parent par téléphone ou email.
+     * Retrouve un parent par email ou téléphone dans Identité.
      */
     public function trouverParentParContact(?string $email, ?string $telephone): ?object
     {
+        if (empty($email) && empty($telephone)) {
+            return null;
+        }
+
         try {
-            $query = DB::table('identite.utilisateur as u')
-                ->join('identite.role as r', 'u.role_id', '=', 'r.id')
-                ->select(['u.id', 'u.uuid', 'u.nom_complet', 'u.email', 'u.telephone'])
-                ->where('r.code', 'parent');
+            $requete = [];
+            if (!empty($email))     { $requete['email'] = $email; }
+            if (!empty($telephone)) { $requete['telephone'] = $telephone; }
 
-            if (!empty($email) && !empty($telephone)) {
-                $query->where(function ($q) use ($email, $telephone) {
-                    $q->where('u.email', $email)->orWhere('u.telephone', $telephone);
-                });
-            } elseif (!empty($email)) {
-                $query->where('u.email', $email);
-            } elseif (!empty($telephone)) {
-                $query->where('u.telephone', $telephone);
-            } else {
-                return null;
-            }
-
-            return $query->first();
+            $donnees = $this->interne->get('identite', '/v1/interne/utilisateurs', $requete);
         } catch (Throwable) {
             return null;
         }
+
+        if (!$donnees) {
+            return null;
+        }
+
+        $utilisateur = $donnees['donnees'] ?? $donnees;
+
+        return ($utilisateur['role_code'] ?? null) === 'parent'
+            ? (object) $utilisateur
+            : null;
     }
 }
