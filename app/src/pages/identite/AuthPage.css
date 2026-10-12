@@ -1,0 +1,349 @@
+:root {
+  --sg-green: #006b3c;
+  --sg-gold: #e9aa20;
+  --sg-cream: #fff6dd;
+}
+
+.auth-page {
+  /* Plein ecran, quel que soit le conteneur parent (#root, etc.) */
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: left;
+  font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
+  color: var(--sg-cream);
+  /* cover = remplit tout l'ecran, recadre sans deformer */
+  background-color: #04201a;
+  background-image:
+    linear-gradient(180deg, rgba(0, 20, 12, 0.35), rgba(0, 20, 12, 0.55)),
+    url('/bg-sigapei.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-sizing: border-box;
+}
+
+/* Si la carte depasse en hauteur (petit ecran), on peut defiler */
+.auth-card {
+  margin: auto;
+}
+
+.auth-page *,
+.auth-page *::before,
+.auth-page *::after {
+  box-sizing: border-box;
+}
+
+/* ---------- Carte en verre ---------- */
+.auth-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 32px 28px;
+  border-radius: 48px;
+  border: 2px solid rgba(255, 246, 221, 0.55);
+  background: linear-gradient(
+    160deg,
+    rgba(255, 246, 221, 0.14) 0%,
+    rgba(0, 107, 60, 0.18) 45%,
+    rgba(0, 0, 0, 0.28) 100%
+  );
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 246, 221, 0.35);
+}
+
+.auth-back {
+  position: absolute;
+  top: 22px;
+  left: 24px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 246, 221, 0.12);
+  color: var(--sg-cream);
+  cursor: pointer;
+}
+
+.auth-logo {
+  display: block;
+  height: 56px;
+  max-width: 70%;
+  margin: 0 auto 18px;
+  object-fit: contain;
+}
+
+.auth-title {
+  margin: 0 0 22px;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- Choix du mode de connexion ---------- */
+.method-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.method {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border: 1.5px solid rgba(255, 246, 221, 0.6);
+  border-radius: 14px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.18);
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.method input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.method.is-active {
+  border-color: var(--sg-gold);
+  background: rgba(233, 170, 32, 0.22);
+  color: var(--sg-gold);
+}
+
+.method:focus-within {
+  outline: 2px solid var(--sg-gold);
+  outline-offset: 2px;
+}
+
+/* ---------- Libelles et champs ---------- */
+.auth-label {
+  display: block;
+  margin: 0 0 8px 8px;
+  font-size: 0.95rem;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  height: 54px;
+  margin-bottom: 14px;
+  padding: 0 18px;
+  border: 1.5px solid var(--sg-cream);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--sg-cream);
+  font: inherit;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.field::placeholder {
+  color: rgba(255, 246, 221, 0.6);
+}
+
+.field:focus,
+.field:focus-within {
+  border-color: var(--sg-gold);
+  box-shadow: 0 0 0 3px rgba(233, 170, 32, 0.28);
+}
+
+.field.otp {
+  text-align: center;
+  font-size: 1.5rem;
+  letter-spacing: 0.5em;
+}
+
+/* ---------- Champ telephone (react-phone-number-input) ---------- */
+.field-phone {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 0 12px;
+}
+
+.field-phone .PhoneInput {
+  width: 100%;
+  --PhoneInputCountryFlag-height: 1.1em;
+  --PhoneInput-color--focus: var(--sg-gold);
+  --PhoneInputCountrySelectArrow-color: var(--sg-cream);
+}
+
+.field-phone .PhoneInputInput {
+  height: 50px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--sg-cream);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.field-phone .PhoneInputInput::placeholder {
+  color: rgba(255, 246, 221, 0.6);
+}
+
+.field-phone .PhoneInputCountrySelect option {
+  color: #111;
+  background: #fff;
+}
+
+.auth-hint {
+  margin: 0 0 14px 8px;
+  font-size: 0.8rem;
+  color: rgba(255, 246, 221, 0.75);
+}
+
+/* ---------- Boutons ---------- */
+.auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 54px;
+  margin-top: 6px;
+  border: 1.5px solid var(--sg-cream);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #0a8a52, var(--sg-green));
+  color: var(--sg-cream);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.1s;
+}
+
+.auth-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.auth-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.auth-btn.google {
+  background: rgba(255, 246, 221, 0.12);
+  font-size: 1rem;
+  font-weight: 600;
+  text-shadow: none;
+}
+
+.auth-sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 10px;
+  font-size: 0.85rem;
+  color: rgba(255, 246, 221, 0.75);
+}
+
+.auth-sep::before,
+.auth-sep::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 246, 221, 0.35);
+}
+
+/* ---------- Textes ---------- */
+.auth-text {
+  margin: 0 0 16px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.auth-masked {
+  margin: 0 0 20px;
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--sg-gold);
+  word-break: break-all;
+}
+
+.auth-msg.error {
+  margin: 0 0 10px 8px;
+  font-size: 0.88rem;
+  color: #ffb4a6;
+}
+
+.auth-footer {
+  margin: auto 0 0;
+  padding-top: 24px;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.auth-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sg-gold);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.auth-link:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth-link.center {
+  display: block;
+  margin: 16px auto 0;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 30px 20px 24px;
+    border-radius: 40px;
+  }
+  .auth-title {
+    font-size: 1.7rem;
+  }
+}
+
+/* ---------- Connexion sociale ---------- */
+.auth-social {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.auth-social .auth-btn {
+  margin-top: 0;
+}
+.auth-btn.google {
+  color: var(--sg-cream);
+}
