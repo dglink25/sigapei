@@ -2,68 +2,75 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\MetierException;
+use App\Models\Bulletin;
+use App\Models\Periode;
 use App\Services\BulletinService;
-use App\Services\TemplateService;
+use App\Services\ControleAcces;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
-/**
- * Guide suprême 03-structure-projet.md : contrôleur cité explicitement.
- * Endpoints : GET /bulletins/apprenant/{uuid}, GET /bulletins/apprenant/{uuid}/pdf,
- *             POST /periodes/{uuid}/cloturer, GET /classements/classe/{uuid},
- *             POST /modeles-bulletin
- */
+/** Bulletins et classements (CDC Tableau 7) — lecture seule. */
 class BulletinsController extends Controller
 {
     public function __construct(
-        private readonly BulletinService $bulletin,
-        private readonly TemplateService $template,
+        private readonly BulletinService $bulletins,
+        private readonly ControleAcces $acces,
     ) {}
 
-    /**
-     * GET /v1/bulletins/apprenant/{uuid}
-     * Guide requirements §11, §15 : calculé à la volée (période ouverte)
-     * ou instantané (période clôturée).
-     */
-    public function consulter(Request $request, string $uuid): JsonResponse
+    /** GET /v1/bulletins/apprenant/{uuid}?periode_uuid= */
+    public function consulter(Request $request, string $apprenantUuid): JsonResponse
     {
-        return response()->json(['message' => 'Non implémenté'], 501);
+        $d = $request->validate(['periode_uuid' => ['required', 'uuid']]);
+        abort_unless(Str::isUuid($apprenantUuid), 404);
+
+        $apprenant = $this->acces->lectureApprenant($apprenantUuid);
+        $periode = Periode::where('uuid', $d['periode_uuid'])->firstOrFail();
+
+        $bulletin = $this->bulletins->bulletinApprenant($periode, $apprenant);
+        if ($periode->estCloturee()) {
+            $bulletin['versions'] = $this->bulletins->versions($periode, $apprenantUuid);
+        }
+
+        return $this->ok($bulletin);
     }
 
     /**
-     * GET /v1/bulletins/apprenant/{uuid}/pdf
-     * Guide requirements §11.4 : URL signée et expirante.
+     * GET /v1/bulletins/apprenant/{uuid}/pdf?periode_uuid= — URL signée et expirante (CDC §8.2).
+     * Le PDF est produit après la clôture et stocké par le service Documents de la plateforme.
      */
-    public function pdf(Request $request, string $uuid): JsonResponse
+    public function pdf(Request $request, string $apprenantUuid): JsonResponse
     {
-        return response()->json(['message' => 'Non implémenté'], 501);
+        $d = $request->validate(['periode_uuid' => ['required', 'uuid']]);
+        abort_unless(Str::isUuid($apprenantUuid), 404);
+
+        $this->acces->lectureApprenant($apprenantUuid);
+        $periode = Periode::where('uuid', $d['periode_uuid'])->firstOrFail();
+
+        if (! $periode->estCloturee()) {
+            throw MetierException::conflit('Le PDF est disponible après la clôture de la période.', 'PERIODE_NON_CLOTUREE');
+        }
+
+        $bulletin = Bulletin::where('periode_id', $periode->id)->where('apprenant_uuid', $apprenantUuid)->orderByDesc('version')->first()
+            ?? throw MetierException::introuvable('Aucun bulletin archivé pour cette période.');
+
+        if ($bulletin->pdf_document_uuid === null) {
+            throw MetierException::conflit('Le PDF de ce bulletin n\'est pas encore disponible.', 'PDF_EN_ATTENTE');
+        }
+
+        return $this->ok(['document_uuid' => $bulletin->pdf_document_uuid, 'version' => $bulletin->version]);
     }
 
-    /**
-     * POST /v1/periodes/{uuid}/cloturer
-     * Guide requirements §9 : calcul + instantané + PDF async + événement RabbitMQ.
-     */
-    public function cloturerPeriode(Request $request, string $uuid): JsonResponse
+    /** GET /v1/classements/classe/{uuid}?periode_uuid= */
+    public function classement(Request $request, string $classeUuid): JsonResponse
     {
-        // TODO(DECISION-15) : structure ressource "période" à trancher
-        return response()->json(['message' => 'Non implémenté'], 501);
-    }
+        $d = $request->validate(['periode_uuid' => ['required', 'uuid']]);
+        abort_unless(Str::isUuid($classeUuid), 404);
 
-    /**
-     * GET /v1/classements/classe/{uuid}
-     * Guide requirements §8 : rang, moyenne de classe, distribution min/max.
-     */
-    public function classement(Request $request, string $uuid): JsonResponse
-    {
-        return response()->json(['message' => 'Non implémenté'], 501);
-    }
+        $this->acces->gestionClasse($classeUuid);
+        $periode = Periode::where('uuid', $d['periode_uuid'])->firstOrFail();
 
-    /**
-     * POST /v1/modeles-bulletin
-     * Guide requirements §10 : création/mise à jour par tenant et cycle.
-     */
-    public function modele(Request $request): JsonResponse
-    {
-        return response()->json(['message' => 'Non implémenté'], 501);
+        return $this->ok($this->bulletins->classement($periode, $classeUuid));
     }
 }

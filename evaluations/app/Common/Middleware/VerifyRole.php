@@ -30,7 +30,7 @@ class VerifyRole
 
         $roleCode = $user['roleCode'] ?? $user['role_code'] ?? null;
 
-        if (!$roleCode) {
+        if (! $roleCode) {
             return ApiResponse::erreur(
                 'Votre compte ne dispose pas d\'un rôle valide. Contactez votre administrateur.',
                 'ROLE_MANQUANT',
@@ -43,12 +43,12 @@ class VerifyRole
         // individuelle (CDC Tableau 1, steering 04 §1.11). Il n'est autorisé que sur
         // les routes qui le listent explicitement.
 
-        if (!in_array($roleCode, $roles, true)) {
+        if (! in_array($roleCode, $roles, true)) {
             return ApiResponse::erreur(
                 'Vous n\'avez pas les droits nécessaires pour effectuer cette action.',
                 'ACCES_REFUSE',
                 403,
-                "Rôle requis : " . implode(', ', $roles) . ". Rôle actuel : {$roleCode}"
+                'Rôle requis : '.implode(', ', $roles).". Rôle actuel : {$roleCode}"
             );
         }
 

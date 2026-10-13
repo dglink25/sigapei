@@ -7,6 +7,9 @@
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
@@ -14,8 +17,24 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="CACHE_STORE" value="array"/>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_KEY" value="base64:dGVzdC10ZXN0LXRlc3QtdGVzdC10ZXN0LXRlc3QtMTI=" force="true"/>
+        <env name="APP_DEBUG" value="false" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
+        <env name="LOG_CHANNEL" value="stderr" force="true"/>
+        <env name="LOG_LEVEL" value="error" force="true"/>
+        <env name="RABBITMQ_PUBLICATION" value="false" force="true"/>
+        <env name="INTERNAL_API_SECRET" value="secret-de-test-interne-0123456789abcdef" force="true"/>
+        <env name="SCOLARITE_URL" value="http://scolarite.test" force="true"/>
+        <!-- Base PostgreSQL de test : surchargeable par l'environnement (CI) -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="5432"/>
+        <env name="DB_DATABASE" value="sigapei_test"/>
+        <env name="DB_USERNAME" value="postgres"/>
+        <env name="DB_PASSWORD" value="postgres"/>
+        <env name="DB_SCHEMA" value="evaluations" force="true"/>
+        <env name="DB_SSLMODE" value="disable"/>
     </php>
 </phpunit>

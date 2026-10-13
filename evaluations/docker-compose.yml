@@ -1,30 +1,44 @@
 # ============================================================
-# api-evaluations — orchestration locale (CDC §19.1)
-# PostgreSQL et Redis partagés, RabbitMQ mutualisé au niveau plateforme (réseau externe).
+# api-evaluations — orchestration (CDC §19.1)
+# PostgreSQL (Neon), Redis et RabbitMQ partagés : réseau externe `sigapei`.
 # Pré-requis : docker network create sigapei
+# Trois processus, une seule image : API HTTP, worker de file (clôtures), planificateur (escalades).
 # ============================================================
+x-evaluations: &evaluations
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: sigapei/api-evaluations:local
+  restart: unless-stopped
+  env_file:
+    - .env
+  environment:
+    - REDIS_HOST=redis
+    - RABBITMQ_HOST=rabbitmq
+  networks:
+    - sigapei
+
 services:
   api-evaluations:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *evaluations
     container_name: api-evaluations
-    restart: unless-stopped
-    # Port INTERNE uniquement (CDC) : aucun "ports:" — accessible via la Gateway sur le réseau sigapei.
+    # Port INTERNE uniquement : aucun "ports:", accessible via la Gateway sur le réseau sigapei.
     expose:
       - "4006"
-    env_file:
-      - .env
-    environment:
-      - REDIS_HOST=redis
-      - RABBITMQ_HOST=rabbitmq
-    networks:
-      - sigapei
+
+  api-evaluations-worker:
+    <<: *evaluations
+    container_name: api-evaluations-worker
+    command: ["php", "artisan", "queue:work", "rabbitmq", "--queue=evaluations.taches", "--tries=3", "--max-time=3600"]
     healthcheck:
-      test: ["CMD", "php", "-r", "exit(@file_get_contents(\"http://127.0.0.1:4006/health\") ? 0 : 1);"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      disable: true
+
+  api-evaluations-scheduler:
+    <<: *evaluations
+    container_name: api-evaluations-scheduler
+    command: ["php", "artisan", "schedule:work"]
+    healthcheck:
+      disable: true
 
 networks:
   sigapei:

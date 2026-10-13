@@ -34,7 +34,7 @@ class VerifyTenantAndJwt
     public function handle(Request $request, Closure $next): Response
     {
         $attendu = (string) config('services.interne.secret', '');
-        $header  = (string) config('services.interne.header', 'X-Internal-Secret');
+        $header = (string) config('services.interne.header', 'X-Internal-Secret');
 
         if (strlen($attendu) < 32) {
             return ApiResponse::erreur(
@@ -56,8 +56,8 @@ class VerifyTenantAndJwt
         }
 
         $tenantId = (string) $request->header('X-Tenant-Id', '');
-        $userId   = strtolower((string) $request->header('X-User-Id', ''));
-        $role     = (string) $request->header('X-User-Role', '');
+        $userId = strtolower((string) $request->header('X-User-Id', ''));
+        $role = (string) $request->header('X-User-Role', '');
 
         if ($tenantId === '' || ! ctype_digit($tenantId) || (int) $tenantId < 1 || strlen($tenantId) > 18) {
             return ApiResponse::erreur('Contexte établissement manquant ou invalide.', 'TENANT_MANQUANT', 401);
@@ -78,7 +78,7 @@ class VerifyTenantAndJwt
 
         app()->instance('current_tenant_id', (int) $tenantId);
         app()->instance('current_user', [
-            'uuid'     => $userId,
+            'uuid' => $userId,
             'roleCode' => $role,
             'tenantId' => (int) $tenantId,
         ]);

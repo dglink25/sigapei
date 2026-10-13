@@ -9,7 +9,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->singleton(RabbitMQService::class, fn () => new RabbitMQService());
+        $this->app->singleton(RabbitMQService::class, fn () => new RabbitMQService);
     }
 
     public function boot(): void

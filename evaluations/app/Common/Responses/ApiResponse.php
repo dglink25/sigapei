@@ -20,31 +20,34 @@ class ApiResponse
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data'    => $data,
+            'data' => $data,
         ], $status);
     }
 
     /**
-     * @param string $messageUtilisateur  Message simple pour l'utilisateur
-     * @param string $codeTechnique       Code lisible par les devs (jamais exposé tel quel à l'UI)
-     * @param int    $status              Code HTTP
-     * @param string $detailTechnique     Détail dev (affiché seulement en debug, loggé toujours)
+     * @param  string  $messageUtilisateur  Message simple pour l'utilisateur
+     * @param  string  $codeTechnique  Code lisible par les devs (jamais exposé tel quel à l'UI)
+     * @param  int  $status  Code HTTP
+     * @param  string  $detailTechnique  Détail dev (affiché seulement en debug, loggé toujours)
      */
     public static function erreur(
         string $messageUtilisateur,
         string $codeTechnique = 'ERREUR',
-        int    $status = 400,
+        int $status = 400,
         string $detailTechnique = ''
     ): JsonResponse {
         // Toujours loguer le détail technique
         if ($detailTechnique) {
-            Log::error("[{$codeTechnique}] {$detailTechnique}");
+            // Un refus (4xx) est un événement de sécurité à suivre, pas une panne.
+            $status >= 500
+                ? Log::error("[{$codeTechnique}] {$detailTechnique}")
+                : Log::warning("[{$codeTechnique}] {$detailTechnique}");
         }
 
         $body = [
             'success' => false,
             'message' => $messageUtilisateur,
-            'error'   => [
+            'error' => [
                 'code' => $codeTechnique,
             ],
         ];

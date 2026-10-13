@@ -23,5 +23,8 @@ return new class extends Migration
         });
     }
 
-    public function down(): void { Schema::dropIfExists('formules_tarifaires'); }
+    public function down(): void
+    {
+        Schema::dropIfExists('formules_tarifaires');
+    }
 };

@@ -23,7 +23,7 @@ class VerifierSignatureWebhook
         $valide = match ($fournisseur) {
             'fedapay' => $this->fedapay($request),
             'kkiapay' => $this->kkiapay($request),
-            default   => false,
+            default => false,
         };
 
         if (! $valide) {
@@ -53,7 +53,7 @@ class VerifierSignatureWebhook
             return false;
         }
 
-        $attendu = hash_hmac('sha256', $horodatage . '.' . $request->getContent(), $secret);
+        $attendu = hash_hmac('sha256', $horodatage.'.'.$request->getContent(), $secret);
 
         foreach ($parties['s'] ?? [] as $signature) {
             if (hash_equals($attendu, $signature)) {
@@ -67,7 +67,7 @@ class VerifierSignatureWebhook
     private function kkiapay(Request $request): bool
     {
         $secret = (string) config('services.kkiapay.secret', '');
-        $recu   = (string) $request->header('x-kkiapay-secret', '');
+        $recu = (string) $request->header('x-kkiapay-secret', '');
 
         return $secret !== '' && $secret !== 'change-me' && $recu !== '' && hash_equals($secret, $recu);
     }

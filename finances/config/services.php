@@ -12,17 +12,17 @@ return [
 
     // Webhooks des agrégateurs : secret partagé configuré dans leur tableau de bord.
     'fedapay' => [
-        'secret_key'     => env('FEDAPAY_SECRET_KEY'),
-        'environment'    => env('FEDAPAY_ENVIRONMENT', 'sandbox'),
+        'secret_key' => env('FEDAPAY_SECRET_KEY'),
+        'environment' => env('FEDAPAY_ENVIRONMENT', 'sandbox'),
         'webhook_secret' => env('FEDAPAY_WEBHOOK_SECRET'),
         // Fenêtre de validité de l'horodatage signé (anti-rejeu), en secondes.
-        'tolerance'      => (int) env('FEDAPAY_WEBHOOK_TOLERANCE', 300),
+        'tolerance' => (int) env('FEDAPAY_WEBHOOK_TOLERANCE', 300),
     ],
 
     'kkiapay' => [
-        'public_key'  => env('KKIAPAY_PUBLIC_KEY'),
+        'public_key' => env('KKIAPAY_PUBLIC_KEY'),
         'private_key' => env('KKIAPAY_PRIVATE_KEY'),
-        'secret'      => env('KKIAPAY_SECRET'),
-        'sandbox'     => (bool) env('KKIAPAY_SANDBOX', true),
+        'secret' => env('KKIAPAY_SECRET'),
+        'sandbox' => (bool) env('KKIAPAY_SANDBOX', true),
     ],
 ];

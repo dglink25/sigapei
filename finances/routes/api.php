@@ -21,12 +21,12 @@ use Illuminate\Support\Facades\Route;
  */
 Route::prefix('v1')->group(function () {
 
-    Route::middleware('auth.tenant')->group(function () {
+    Route::middleware(['auth.tenant', 'throttle:api'])->group(function () {
         Route::post('/factures', [FactureController::class, 'creer'])
             ->middleware('role:administrateur,personnel');
 
         Route::post('/paiements/initier', [PaiementController::class, 'initier'])
-            ->middleware(['role:parent,administrateur,personnel', 'throttle:20,1']);
+            ->middleware(['role:parent,administrateur,personnel', 'throttle:paiement']);
 
         Route::post('/decaissements', [DecaissementController::class, 'initier'])
             ->middleware('role:personnel,administrateur');
@@ -45,9 +45,9 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::post('/webhooks/fedapay', [PaiementController::class, 'webhookFedapay'])
-        ->middleware(['webhook:fedapay', 'throttle:120,1']);
+        ->middleware(['throttle:webhook', 'webhook:fedapay']);
     Route::post('/webhooks/kkiapay', [PaiementController::class, 'webhookKkiapay'])
-        ->middleware(['webhook:kkiapay', 'throttle:120,1']);
+        ->middleware(['throttle:webhook', 'webhook:kkiapay']);
 
     Route::middleware('secret.interne')->prefix('interne')->group(function () {
         Route::get('/solde/{apprenant_uuid}', [InterneController::class, 'soldeApprenant'])->whereUuid('apprenant_uuid');

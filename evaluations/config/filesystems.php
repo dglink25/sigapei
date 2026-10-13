@@ -1,13 +1,13 @@
 <?php
 
 return [
-    'default' => env('FILESYSTEM_DISK', 's3'),
+    'default' => env('FILESYSTEM_DISK', 'local'),
 
     'disks' => [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            'serve' => false, // jamais de fichier servi directement par l'API
             'throw' => false,
         ],
 

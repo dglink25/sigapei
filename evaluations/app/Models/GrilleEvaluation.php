@@ -2,24 +2,33 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Common\Tenant\Contexte;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
- * Bibliothèque de grilles d'évaluation prédéfinies (CDC §4.2 ; stockage : DECISION-17 à valider).
+ * Barème (CDC §4.2). tenant_id NULL = grille plateforme, visible par tous les établissements.
+ * Pas de AppartientAuTenant : la visibilité est "plateforme + mon établissement".
  */
-class GrilleEvaluation extends Model
+class GrilleEvaluation extends Modele
 {
-    protected $table    = 'grilles_evaluation';
-    protected $hidden   = ['id'];
-    protected $fillable = [
-        'uuid', 'code', 'nom', 'cycle', 'note_min', 'note_max',
-        'avec_coefficients', 'avec_classement', 'echelle_appreciation', 'description',
-    ];
+    protected $table = 'grilles_evaluation';
+
     protected $casts = [
-        'note_min'             => 'float',
-        'note_max'             => 'float',
-        'avec_coefficients'    => 'boolean',
-        'avec_classement'      => 'boolean',
-        'echelle_appreciation' => 'array',
+        'note_min' => 'string',
+        'note_max' => 'string',
+        'avec_coefficients' => 'boolean',
+        'avec_classement' => 'boolean',
+        'active' => 'boolean',
+        'niveaux_competence' => 'array',
     ];
+
+    public function scopeVisibles(Builder $q): Builder
+    {
+        return $q->where(fn ($w) => $w->whereNull('tenant_id')->orWhere('tenant_id', Contexte::tenantId()));
+    }
+
+    public function estPlateforme(): bool
+    {
+        return $this->tenant_id === null;
+    }
 }

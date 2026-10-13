@@ -15,11 +15,12 @@ use Illuminate\Support\Facades\Http;
 class ElearningClient
 {
     private string $baseUrl;
+
     private string $serviceToken;
 
     public function __construct()
     {
-        $this->baseUrl      = config('services.elearning.url', '');
+        $this->baseUrl = config('services.elearning.url', '');
         $this->serviceToken = config('services.elearning.service_token', '');
     }
 
@@ -27,8 +28,8 @@ class ElearningClient
      * Crée un quiz de composition officielle côté E-learning.
      * Guide compositions design §2 étape 2 + §4.
      *
-     * @param array $payload  matière, classe, date, durée, niveau_surveillance
-     * @return string         quiz_elearning_uuid retourné par E-learning
+     * @param  array  $payload  matière, classe, date, durée, niveau_surveillance
+     * @return string quiz_elearning_uuid retourné par E-learning
      *
      * TODO(C0.2) : contrat d'interface à documenter avec Roc avant implémentation.
      */

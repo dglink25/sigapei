@@ -13,13 +13,13 @@ return [
 
     // Microservice Scolarité : appels HTTP /v1/interne/... (jamais de jointure SQL inter-schémas).
     'scolarite' => [
-        'url'     => env('SCOLARITE_URL', 'http://api-scolarite:4004'),
+        'url' => env('SCOLARITE_URL', 'http://api-scolarite:4004'),
         'timeout' => (int) env('SCOLARITE_TIMEOUT', 5),
     ],
 
     // Microservice E-learning (phase 2) : appel API explicite avec jeton de service.
     'elearning' => [
-        'url'           => env('ELEARNING_URL', ''),
+        'url' => env('ELEARNING_URL', ''),
         'service_token' => env('ELEARNING_SERVICE_TOKEN', ''),
     ],
 ];

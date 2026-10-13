@@ -18,7 +18,7 @@ class VerifierSecretInterne
     public function handle(Request $request, Closure $next): Response
     {
         $attendu = (string) config('services.interne.secret', '');
-        $header  = (string) config('services.interne.header', 'X-Internal-Secret');
+        $header = (string) config('services.interne.header', 'X-Internal-Secret');
 
         if ($attendu === '') {
             return ApiResponse::erreur(

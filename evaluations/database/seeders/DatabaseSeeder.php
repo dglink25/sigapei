@@ -8,9 +8,6 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([
-            GrilleEvaluationSeeder::class,
-            ModeleBulletinDefautSeeder::class,
-        ]);
+        $this->call(GrilleEvaluationSeeder::class);
     }
 }

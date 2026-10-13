@@ -2,27 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Common\Tenant\AppartientAuTenant;
 
-/**
- * Anomalie détectée pendant une composition en ligne (phase 2).
- * JAMAIS de donnée biométrique. Journal sans updated_at.
- */
-class SurveillanceIncident extends Model
+/** Phase 2 — compositions en ligne. */
+class SurveillanceIncident extends Modele
 {
+    use AppartientAuTenant;
+
     public $timestamps = false;
 
-    protected $table    = 'surveillance_incident';
-    protected $hidden   = ['id'];
-    protected $fillable = [
-        'uuid', 'evaluation_id', 'apprenant_uuid',
-        'type_anomalie', 'horodatage', 'niveau_preuve',
-    ];
-    protected $casts = ['horodatage' => 'datetime'];
+    protected $table = 'surveillance_incident';
 
-    public function evaluation(): BelongsTo
-    {
-        return $this->belongsTo(Evaluation::class, 'evaluation_id');
-    }
+    protected $hidden = ['id', 'tenant_id', 'evaluation_id'];
 }

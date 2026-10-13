@@ -2,303 +2,417 @@
 
 namespace App\Services;
 
+use App\Support\Decimal;
+use InvalidArgumentException;
+
 /**
- * Moteur UNIQUE de calcul — guide suprême §00 règle 2 + design §2.1 + tasks §2.1-2.4.
+ * Moteur UNIQUE de calcul (CDC §3, §5, §7) : moyennes, rangs, mentions, statistiques.
  *
- * Principes NON NÉGOCIABLES :
- * - Déterministe, sans effet de bord, sans lecture de mise en forme.
- * - Consommé identiquement par l'API web, le PDF et les endpoints internes.
- * - Aucun barème, coefficient, échelle, arrondi codé en dur.
- * - Une note issue d'une composition en ligne suit exactement les mêmes règles.
+ * - Fonctions pures : aucune lecture en base, aucun effet de bord, aucune mise en forme.
+ *   Le même appel produit le même résultat pour la web app, le PDF et l'API interne.
+ * - Arithmétique entière exacte (App\Support\Decimal) : aucun float, donc aucun écart d'arrondi.
+ * - Aucun barème, coefficient, arrondi ou mention codé en dur : tout vient de parametres_notation.
+ * - Une note de composition en ligne suit exactement les mêmes règles qu'une note saisie.
  *
- * Formule (guide design §2.1, littérale de la source §5) :
- *   moyenne = Σ(note × coef_évaluation × coef_matière) / Σ(coef_évaluation × coef_matière)
- *
- * NOTE sur DECISION-04 : le dénominateur est interprété comme
- * Σ(coef_évaluation × coef_matière), ce qui est la seule formulation cohérente
- * avec une moyenne pondérée standard. Cette implémentation est documentée
- * et doit être validée avec le chef de projet.
- *
- * @priority ABSOLUE — tests unitaires 100 % (guide tasks §2.5)
+ * Paramètres attendus ($regles) :
+ *   methode_moyenne       par_matiere | globale
+ *   decimales             0..3
+ *   note_non_saisie       exclure | zero
+ *   absence_non_justifiee exclure | zero
+ *   regle_rattrapage      remplacer | meilleure | moyenne
+ *   type_notation         chiffree | competences
+ *   note_min, note_max    bornes de la grille (chaînes décimales)
+ *   echelle_appreciation  [['min' => '16', 'max' => '20', 'mention' => 'Très bien'], ...]
+ *   classement_actif      bool
  */
-class CalculService
+final class CalculService
 {
-    // -------------------------------------------------------------------------
-    // 2.1 — Moyenne pondérée
-    // -------------------------------------------------------------------------
+    public const STATUTS = ['saisie', 'absent_justifie', 'absent_non_justifie', 'dispense'];
 
     /**
-     * Calcule la moyenne pondérée d'un apprenant sur une période.
+     * Bulletin d'un apprenant pour une période.
      *
-     * @param array $notes  Liste des notes à agréger.
-     *   Chaque élément : [
-     *     'valeur'          => float,   // note saisie
-     *     'coef_evaluation' => float,   // coefficient de l'évaluation
-     *     'coef_matiere'    => float,   // coefficient_defaut de la matière
-     *     'saisie'          => bool,    // false = note non saisie
-     *   ]
-     * @param array $config
-     *   'note_non_saisie' => 'exclure' | 'zero'  (requirements §5.5)
-     *   'arrondi'         => 'demi' | 'entier' | 'deux_decimales'
-     *   'rattrapage'      => null | ['note_originale' => float, 'note_rattrapage' => float, 'regle' => 'max'|'moyenne']
-     *
-     * @return float|null  null si aucune note applicable
+     * @param list<array{
+     *   evaluation_uuid: string, matiere_uuid: string, matiere_nom: string,
+     *   coef_matiere: string, coef_evaluation: string, note_sur: string,
+     *   rattrapage_de: ?string,
+     *   note: null|array{statut: string, valeur: ?string, niveau_competence?: ?string}
+     * }> $evaluations Toutes les évaluations de la classe sur la période, avec la note de l'apprenant (ou null)
+     * @param  array<string, mixed>  $regles
+     * @return array{
+     *   moyenne: ?string, mention: ?string, matieres: list<array<string, mixed>>,
+     *   regles_appliquees: array<string, mixed>, _moyenne_echelle: ?int
+     * }
      */
-    public function calculerMoyenne(array $notes, array $config): ?float
+    public function calculerBulletin(array $evaluations, array $regles): array
     {
-        $noteNonSaisie = $config['note_non_saisie'] ?? 'exclure';
-        $arrondi       = $config['arrondi'] ?? 'demi';
+        $regles = $this->validerRegles($regles);
+        $competences = $regles['type_notation'] === 'competences';
 
-        $numerateur   = 0.0;
-        $denominateur = 0.0;
+        $retenues = $competences ? [] : $this->notesRetenues($evaluations, $regles);
 
-        foreach ($notes as $note) {
-            if (!($note['saisie'] ?? true)) {
-                if ($noteNonSaisie === 'zero') {
-                    $valeur = 0.0;
-                } else {
-                    // 'exclure' : ne pas inclure dans le calcul
-                    continue;
-                }
-            } else {
-                // Règle de rattrapage uniquement sur une note réellement saisie
-                $valeur = $this->appliquerRattrapage((float) $note['valeur'], $note, $config);
-            }
+        // Regroupement par matière, dans l'ordre d'apparition (stable).
+        $matieres = [];
+        foreach ($evaluations as $ev) {
+            $m = $ev['matiere_uuid'];
+            $matieres[$m] ??= [
+                'matiere_uuid' => $m,
+                'matiere_nom' => $ev['matiere_nom'],
+                'coefficient' => $this->coefCentiemes($ev['coef_matiere']),
+                'notes' => [],
+            ];
 
-            $poids         = ($note['coef_evaluation'] ?? 1.0) * ($note['coef_matiere'] ?? 1.0);
-            $numerateur   += $valeur * $poids;
-            $denominateur += $poids;
-        }
-
-        if ($denominateur == 0.0) {
-            return null;
-        }
-
-        $moyenne = $numerateur / $denominateur;
-
-        return $this->arrondir($moyenne, $arrondi);
-    }
-
-    /**
-     * Applique la règle de substitution pour le rattrapage (requirements §5.6, DECISION-13).
-     * Par défaut : maximum entre note originale et rattrapage.
-     */
-    private function appliquerRattrapage(float $valeur, array $note, array $config): float
-    {
-        if (!isset($config['rattrapage'][$note['evaluation_uuid'] ?? ''])) {
-            return $valeur;
-        }
-
-        $r     = $config['rattrapage'][$note['evaluation_uuid']];
-        $regle = $r['regle'] ?? 'max';
-
-        return match ($regle) {
-            'moyenne' => ($valeur + $r['note_rattrapage']) / 2,
-            default   => max($valeur, $r['note_rattrapage']), // 'max'
-        };
-    }
-
-    // -------------------------------------------------------------------------
-    // 2.2 — Rangs, moyenne de classe, distribution (requirements §8)
-    // -------------------------------------------------------------------------
-
-    /**
-     * Calcule les rangs de tous les apprenants d'une classe.
-     * Guide requirements §8.1 : calculé sur la MÊME moyenne que le bulletin.
-     * requirements §8.4 : respecte la désactivation du classement.
-     *
-     * Départage des ex æquo (DECISION-13) : par ordre d'insertion (stable sort).
-     * À valider avec le chef de projet.
-     *
-     * @param array $moyennes  ['apprenant_uuid' => float|null, ...]
-     * @param array $config    ['classement_active' => bool]
-     * @return array           ['apprenant_uuid' => int|null, ...]
-     */
-    public function calculerRangs(array $moyennes, array $config): array
-    {
-        if (!($config['classement_active'] ?? true)) {
-            // Classement désactivé — aucun rang exposé (requirements §8.4)
-            return array_map(fn () => null, $moyennes);
-        }
-
-        // Filtrer les nulls
-        $valides = array_filter($moyennes, fn ($m) => $m !== null);
-
-        // Tri décroissant (stable : arsort préserve l'ordre d'insertion pour les ex æquo)
-        arsort($valides);
-
-        $rangs = [];
-        $rang  = 1;
-        foreach ($valides as $uuid => $moyenne) {
-            $rangs[$uuid] = $rang++;
-        }
-
-        // Apprenants sans moyenne = pas de rang
-        foreach ($moyennes as $uuid => $moyenne) {
-            if (!isset($rangs[$uuid])) {
-                $rangs[$uuid] = null;
-            }
-        }
-
-        return $rangs;
-    }
-
-    /**
-     * Calcule la moyenne de classe et la distribution min/max/moy par matière.
-     * Guide requirements §8.2 + §8.3.
-     *
-     * @param array $notesByApprenant
-     *   [apprenant_uuid => [['matiere_uuid' => string, 'valeur' => float, 'saisie' => bool], ...], ...]
-     * @param array $config  ['note_non_saisie' => 'exclure'|'zero']
-     * @return array [
-     *   'moyenne_classe'  => float|null,
-     *   'par_matiere'     => ['matiere_uuid' => ['min' => float, 'max' => float, 'moyenne' => float]],
-     *   'nb_apprenants'   => int,
-     * ]
-     */
-    public function calculerStatistiquesClasse(array $notesByApprenant, array $config = []): array
-    {
-        $noteNonSaisie   = $config['note_non_saisie'] ?? 'exclure';
-        $notesByMatiere  = [];
-        $moyennesClasse  = [];
-
-        foreach ($notesByApprenant as $apprenantUuid => $notes) {
-            foreach ($notes as $note) {
-                if (!($note['saisie'] ?? true)) {
-                    if ($noteNonSaisie === 'zero') {
-                        $note['valeur'] = 0.0;
-                    } else {
-                        continue;
-                    }
-                }
-                $notesByMatiere[$note['matiere_uuid']][] = $note['valeur'];
-            }
-        }
-
-        // Distribution par matière
-        $parMatiere = [];
-        foreach ($notesByMatiere as $matiereUuid => $valeurs) {
-            if (empty($valeurs)) {
-                continue;
-            }
-            $parMatiere[$matiereUuid] = [
-                'min'     => min($valeurs),
-                'max'     => max($valeurs),
-                'moyenne' => array_sum($valeurs) / count($valeurs),
+            $matieres[$m]['notes'][] = [
+                'evaluation_uuid' => $ev['evaluation_uuid'],
+                'statut' => $ev['note']['statut'] ?? 'non_saisie',
+                'valeur' => $ev['note']['valeur'] ?? null,
+                'niveau_competence' => $ev['note']['niveau_competence'] ?? null,
+                'note_sur' => $ev['note_sur'],
+                'retenue' => isset($retenues[$ev['evaluation_uuid']]),
+                'valeur_retenue' => isset($retenues[$ev['evaluation_uuid']])
+                    ? Decimal::versTexte($retenues[$ev['evaluation_uuid']]['valeur'], $regles['decimales'])
+                    : null,
             ];
         }
 
-        // Moyenne de classe = moyenne des moyennes individuelles
-        foreach ($notesByApprenant as $apprenantUuid => $notes) {
-            $moyenneIndiv = $this->calculerMoyenne($notes, $config);
-            if ($moyenneIndiv !== null) {
-                $moyennesClasse[] = $moyenneIndiv;
+        // Moyenne par matière : Σ(note × coef éval) / Σ(coef éval).
+        $numGlobal = 0;
+        $denGlobal = 0;
+        foreach ($matieres as $m => $ligne) {
+            $num = 0;
+            $den = 0;
+            foreach ($retenues as $r) {
+                if ($r['matiere_uuid'] !== $m) {
+                    continue;
+                }
+                $num += $r['valeur'] * $r['coef_evaluation'];
+                $den += $r['coef_evaluation'];
+
+                // Méthode "globale" (formule littérale CDC §5) : poids = coef éval × coef matière.
+                $numGlobal += $r['valeur'] * $r['coef_evaluation'] * $ligne['coefficient'];
+                $denGlobal += $r['coef_evaluation'] * $ligne['coefficient'];
+            }
+
+            $moyenne = $den > 0 ? Decimal::diviserArrondi($num, $den) : null;
+            $matieres[$m]['_moyenne_echelle'] = $moyenne;
+            $matieres[$m]['moyenne'] = $moyenne === null ? null : Decimal::versTexte($moyenne, $regles['decimales']);
+            $matieres[$m]['coefficient'] = Decimal::versTexte($ligne['coefficient'] * 100, 2);
+        }
+
+        $moyenneGenerale = null;
+        if (! $competences) {
+            if ($regles['methode_moyenne'] === 'globale') {
+                $moyenneGenerale = $denGlobal > 0 ? Decimal::diviserArrondi($numGlobal, $denGlobal) : null;
+            } else {
+                // Σ(moyenne matière × coef matière) / Σ(coef matière), sur les matières ayant une moyenne.
+                $num = 0;
+                $den = 0;
+                foreach ($matieres as $ligne) {
+                    if ($ligne['_moyenne_echelle'] === null) {
+                        continue;
+                    }
+                    $coef = $this->coefCentiemes($ligne['coefficient']);
+                    $num += $ligne['_moyenne_echelle'] * $coef;
+                    $den += $coef;
+                }
+                $moyenneGenerale = $den > 0 ? Decimal::diviserArrondi($num, $den) : null;
             }
         }
 
-        $moyenneClasse = !empty($moyennesClasse)
-            ? array_sum($moyennesClasse) / count($moyennesClasse)
-            : null;
+        $moyenneArrondie = $moyenneGenerale === null ? null : Decimal::arrondir($moyenneGenerale, $regles['decimales']);
 
         return [
-            'moyenne_classe' => $moyenneClasse !== null
-                ? $this->arrondir($moyenneClasse, $config['arrondi'] ?? 'demi')
-                : null,
-            'par_matiere'   => $parMatiere,
-            'nb_apprenants' => count($moyennesClasse),
+            'moyenne' => $moyenneArrondie === null ? null : Decimal::versTexte($moyenneArrondie, $regles['decimales']),
+            'mention' => $moyenneArrondie === null ? null : $this->mention($moyenneArrondie, $regles['echelle_appreciation']),
+            'matieres' => array_values($matieres),
+            'regles_appliquees' => $this->reglesAffichees($regles),
+            '_moyenne_echelle' => $moyenneGenerale,
         ];
     }
 
-    // -------------------------------------------------------------------------
-    // 2.3 — Mention depuis l'échelle d'appréciation du tenant (requirements §5, §6)
-    // -------------------------------------------------------------------------
+    /**
+     * Rangs d'une classe (CDC §7), calculés sur la moyenne ARRONDIE affichée au bulletin :
+     * deux moyennes affichées identiques ont le même rang, le suivant est décalé (1, 2, 2, 4).
+     *
+     * @param  array<string, ?int>  $moyennesEchelle  apprenant_uuid => moyenne à l'échelle 10^4 (non arrondie) ou null
+     * @return array<string, array{rang: ?int, ex_aequo: bool}>
+     */
+    public function calculerRangs(array $moyennesEchelle, int $decimales, bool $classementActif): array
+    {
+        $resultat = [];
+        foreach ($moyennesEchelle as $uuid => $m) {
+            $resultat[$uuid] = ['rang' => null, 'ex_aequo' => false];
+        }
+
+        if (! $classementActif) {
+            return $resultat;
+        }
+
+        $arrondies = [];
+        foreach ($moyennesEchelle as $uuid => $m) {
+            if ($m !== null) {
+                $arrondies[$uuid] = Decimal::arrondir($m, $decimales);
+            }
+        }
+
+        $frequences = array_count_values($arrondies);
+        foreach ($arrondies as $uuid => $valeur) {
+            $meilleurs = 0;
+            foreach ($arrondies as $autre) {
+                if ($autre > $valeur) {
+                    $meilleurs++;
+                }
+            }
+            $resultat[$uuid] = ['rang' => $meilleurs + 1, 'ex_aequo' => $frequences[$valeur] > 1];
+        }
+
+        return $resultat;
+    }
 
     /**
-     * Détermine la mention depuis l'échelle du tenant.
-     * Jamais codée en dur — lue depuis modele_bulletin.echelle_appreciation.
+     * Statistiques de classe (CDC §7) : moyenne de classe et distribution par matière.
      *
-     * @param float $moyenne
-     * @param array $echelle  [['min' => float, 'max' => float, 'mention' => string], ...]
-     * @return string|null
+     * @param  list<array{_moyenne_echelle: ?int, matieres: list<array<string, mixed>>}>  $bulletins
+     * @return array{moyenne_classe: ?string, effectif_classe: int, par_matiere: list<array<string, mixed>>, _moyenne_classe_echelle: ?int}
      */
-    public function determinerMention(float $moyenne, array $echelle): ?string
+    public function statistiquesClasse(array $bulletins, int $decimales): array
     {
-        foreach ($echelle as $tranche) {
-            if ($moyenne >= (float) $tranche['min'] && $moyenne <= (float) $tranche['max']) {
+        $generales = array_values(array_filter(array_column($bulletins, '_moyenne_echelle'), fn ($m) => $m !== null));
+        $moyenneClasse = $generales === [] ? null : Decimal::diviserArrondi(array_sum($generales), count($generales));
+
+        $parMatiere = [];
+        foreach ($bulletins as $b) {
+            foreach ($b['matieres'] as $ligne) {
+                $parMatiere[$ligne['matiere_uuid']] ??= ['matiere_uuid' => $ligne['matiere_uuid'], 'matiere_nom' => $ligne['matiere_nom'], 'valeurs' => []];
+                if ($ligne['_moyenne_echelle'] !== null) {
+                    $parMatiere[$ligne['matiere_uuid']]['valeurs'][] = $ligne['_moyenne_echelle'];
+                }
+            }
+        }
+
+        $distribution = [];
+        foreach ($parMatiere as $m) {
+            $v = $m['valeurs'];
+            $distribution[] = [
+                'matiere_uuid' => $m['matiere_uuid'],
+                'matiere_nom' => $m['matiere_nom'],
+                'effectif' => count($v),
+                'min' => $v === [] ? null : Decimal::versTexte(min($v), $decimales),
+                'max' => $v === [] ? null : Decimal::versTexte(max($v), $decimales),
+                'moyenne' => $v === [] ? null : Decimal::versTexte(Decimal::diviserArrondi(array_sum($v), count($v)), $decimales),
+            ];
+        }
+
+        return [
+            'moyenne_classe' => $moyenneClasse === null ? null : Decimal::versTexte($moyenneClasse, $decimales),
+            'effectif_classe' => count($generales),
+            'par_matiere' => $distribution,
+            '_moyenne_classe_echelle' => $moyenneClasse,
+        ];
+    }
+
+    /**
+     * Mention depuis l'échelle de l'établissement. Tranches [min, max[ ; la dernière inclut max.
+     *
+     * @param  list<array{min: string, max: string, mention: string}>  $echelle
+     */
+    public function mention(int $moyenneEchelle, array $echelle): ?string
+    {
+        $n = count($echelle);
+        foreach (array_values($echelle) as $i => $tranche) {
+            $min = Decimal::versEchelle((string) $tranche['min']);
+            $max = Decimal::versEchelle((string) $tranche['max']);
+            $dansTranche = $moyenneEchelle >= $min && ($moyenneEchelle < $max || ($i === $n - 1 && $moyenneEchelle === $max));
+            if ($dansTranche) {
                 return $tranche['mention'];
             }
         }
+
         return null;
     }
 
-    // -------------------------------------------------------------------------
-    // 2.4 — Support des cycles via grille (requirements §6.4-6.6)
-    // -------------------------------------------------------------------------
-
     /**
-     * Valide qu'une note est dans la plage autorisée par la grille du tenant.
-     * La note max est définie par grille (ex : 20 pour béninois, 10 pour primaire béninois).
+     * Échelle d'appréciation valide : tranches triées, contiguës, couvrant exactement [note_min, note_max].
+     * Appelé à l'enregistrement des paramètres, pour qu'aucune moyenne ne tombe "entre deux mentions".
      *
-     * @param float $valeur
-     * @param array $grille  ['note_min' => float, 'note_max' => float]
-     * @throws \InvalidArgumentException si hors plage
+     * @param  list<array{min: mixed, max: mixed, mention: mixed}>  $echelle
+     *
+     * @throws InvalidArgumentException
      */
-    public function validerNoteDansGrille(float $valeur, array $grille): void
+    public function validerEchelle(array $echelle, string $noteMin, string $noteMax): void
     {
-        $min = (float) ($grille['note_min'] ?? 0);
-        $max = (float) ($grille['note_max'] ?? 20);
+        if ($echelle === []) {
+            throw new InvalidArgumentException("L'échelle d'appréciation doit contenir au moins une tranche.");
+        }
 
-        if ($valeur < $min || $valeur > $max) {
-            throw new \InvalidArgumentException(
-                "La note {$valeur} est hors de la plage autorisée ({$min} – {$max}) pour cette grille."
-            );
+        $precedent = Decimal::versEchelle($noteMin);
+        foreach (array_values($echelle) as $i => $t) {
+            $mention = trim((string) ($t['mention'] ?? ''));
+            if ($mention === '' || mb_strlen($mention) > 60) {
+                throw new InvalidArgumentException('Tranche '.($i + 1).' : libellé de mention obligatoire (60 caractères maximum).');
+            }
+            $min = Decimal::versEchelle((string) ($t['min'] ?? ''));
+            $max = Decimal::versEchelle((string) ($t['max'] ?? ''));
+            if ($min !== $precedent) {
+                throw new InvalidArgumentException('Tranche '.($i + 1).' : elle doit commencer exactement où la précédente se termine (tranches triées et contiguës).');
+            }
+            if ($max <= $min) {
+                throw new InvalidArgumentException('Tranche '.($i + 1).' : la borne haute doit être supérieure à la borne basse.');
+            }
+            $precedent = $max;
+        }
+
+        if ($precedent !== Decimal::versEchelle($noteMax)) {
+            throw new InvalidArgumentException("La dernière tranche doit se terminer à la note maximale de la grille ({$noteMax}).");
         }
     }
 
     /**
-     * Construit le résumé complet d'un bulletin individuel.
-     * Appelé identiquement par l'API web, la génération PDF et l'endpoint interne.
-     * Guide design §2.1 : "Déterministe, sans effet de bord."
+     * Contrôle d'une valeur saisie contre le barème de l'épreuve (0 à note_sur, 2 décimales maximum).
      *
-     * @param array $notes    Notes de l'apprenant sur la période
-     * @param array $config   Paramètres du tenant (arrondi, note_non_saisie, etc.)
-     * @param array $echelle  Échelle d'appréciation depuis modele_bulletin
-     * @return array [
-     *   'moyenne'               => float|null,
-     *   'mention'               => string|null,
-     *   'politique_note_manquante' => string,  // affiché dans le bulletin (requirements §5.5)
-     * ]
+     * @throws InvalidArgumentException
      */
-    public function calculerResumeBulletin(array $notes, array $config, array $echelle): array
+    public function validerValeur(string $valeur, string $noteSur): void
     {
-        $moyenne = $this->calculerMoyenne($notes, $config);
-
-        return [
-            'moyenne'                  => $moyenne,
-            'mention'                  => $moyenne !== null
-                ? $this->determinerMention($moyenne, $echelle)
-                : null,
-            // Requirements §5.5 : ce choix DOIT être visible dans le bulletin généré
-            'politique_note_manquante' => ($config['note_non_saisie'] ?? 'exclure') === 'zero'
-                ? 'Notes non saisies comptées comme 0'
-                : 'Notes non saisies exclues du calcul',
-        ];
+        if (! preg_match('/^\d{1,3}(\.\d{1,2})?$/', $valeur)) {
+            throw new InvalidArgumentException('La note doit être un nombre positif avec au plus 2 décimales.');
+        }
+        if (Decimal::versEchelle($valeur) > Decimal::versEchelle($noteSur)) {
+            throw new InvalidArgumentException("La note ne peut pas dépasser le barème de l'épreuve ({$noteSur}).");
+        }
     }
 
-    // -------------------------------------------------------------------------
-    // Arrondi paramétrable (requirements §5.4)
-    // -------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------
 
     /**
-     * @param float  $valeur
-     * @param string $regle  'demi' | 'entier' | 'deux_decimales'
+     * Notes effectivement prises en compte, ramenées sur la grille, après règles d'absence,
+     * de note manquante et de rattrapage.
+     *
+     * @return array<string, array{matiere_uuid: string, valeur: int, coef_evaluation: int}>
      */
-    public function arrondir(float $valeur, string $regle): float
+    private function notesRetenues(array $evaluations, array $regles): array
     {
-        return match ($regle) {
-            'entier'          => (float) round($valeur),
-            'deux_decimales'  => round($valeur, 2),
-            default           => round($valeur * 2) / 2, // demi (ex : 13.3 → 13.5)
+        $noteMax = Decimal::versEchelle($regles['note_max']);
+        $valeurs = [];
+        $rattrapages = [];
+
+        foreach ($evaluations as $ev) {
+            $valeur = $this->valeurEffective($ev, $regles, $noteMax);
+
+            if ($ev['rattrapage_de'] !== null) {
+                // Un rattrapage n'est jamais compté seul : il ne sert qu'à corriger l'épreuve d'origine,
+                // et seulement s'il a réellement été passé (note saisie).
+                if (($ev['note']['statut'] ?? null) === 'saisie') {
+                    $rattrapages[$ev['rattrapage_de']] = $valeur;
+                }
+
+                continue;
+            }
+
+            $valeurs[$ev['evaluation_uuid']] = [
+                'matiere_uuid' => $ev['matiere_uuid'],
+                'valeur' => $valeur,
+                'coef_evaluation' => $this->coefCentiemes($ev['coef_evaluation']),
+            ];
+        }
+
+        foreach ($rattrapages as $origine => $r) {
+            if (! array_key_exists($origine, $valeurs)) {
+                continue; // épreuve d'origine absente de la période : rattrapage ignoré
+            }
+            $initiale = $valeurs[$origine]['valeur'];
+            $valeurs[$origine]['valeur'] = match (true) {
+                $initiale === null => $r,
+                $regles['regle_rattrapage'] === 'remplacer' => $r,
+                $regles['regle_rattrapage'] === 'meilleure' => max($initiale, $r),
+                default => Decimal::diviserArrondi($initiale + $r, 2),
+            };
+        }
+
+        return array_filter($valeurs, fn ($v) => $v['valeur'] !== null);
+    }
+
+    /** Valeur ramenée sur la grille (échelle 10^4), ou null si la note est exclue du calcul. */
+    private function valeurEffective(array $ev, array $regles, int $noteMax): ?int
+    {
+        $note = $ev['note'];
+
+        if ($note === null) {
+            return $regles['note_non_saisie'] === 'zero' ? 0 : null;
+        }
+
+        return match ($note['statut']) {
+            'saisie' => $this->normaliser((string) $note['valeur'], (string) $ev['note_sur'], $noteMax),
+            'absent_non_justifie' => $regles['absence_non_justifiee'] === 'zero' ? 0 : null,
+            'absent_justifie', 'dispense' => null,
+            default => throw new InvalidArgumentException("Statut de note inconnu : {$note['statut']}."),
         };
+    }
+
+    /** valeur / note_sur × note_max, exact puis arrondi à 4 décimales internes. */
+    private function normaliser(string $valeur, string $noteSur, int $noteMax): int
+    {
+        $v = Decimal::versEchelle($valeur);
+        $sur = Decimal::versEchelle($noteSur);
+
+        if ($sur <= 0 || $v < 0 || $v > $sur) {
+            throw new InvalidArgumentException("Note incohérente avec le barème de l'épreuve ({$valeur} / {$noteSur}).");
+        }
+
+        return Decimal::diviserArrondi($v * $noteMax, $sur);
+    }
+
+    /** Coefficient (2 décimales maximum, > 0) en centièmes : "1.5" => 150. */
+    private function coefCentiemes(string|int $coef): int
+    {
+        $e = Decimal::versEchelle(is_int($coef) ? (string) $coef : $coef);
+        if ($e <= 0 || $e % 100 !== 0) {
+            throw new InvalidArgumentException("Coefficient invalide : {$coef} (strictement positif, 2 décimales maximum).");
+        }
+
+        return intdiv($e, 100);
+    }
+
+    private function validerRegles(array $r): array
+    {
+        $attendus = [
+            'methode_moyenne' => ['par_matiere', 'globale'],
+            'note_non_saisie' => ['exclure', 'zero'],
+            'absence_non_justifiee' => ['exclure', 'zero'],
+            'regle_rattrapage' => ['remplacer', 'meilleure', 'moyenne'],
+            'type_notation' => ['chiffree', 'competences'],
+        ];
+        foreach ($attendus as $cle => $valeurs) {
+            if (! in_array($r[$cle] ?? null, $valeurs, true)) {
+                throw new InvalidArgumentException("Paramètre de notation invalide : {$cle}.");
+            }
+        }
+        if (! is_int($r['decimales'] ?? null) || $r['decimales'] < 0 || $r['decimales'] > 3) {
+            throw new InvalidArgumentException('Paramètre de notation invalide : decimales (0 à 3).');
+        }
+        if (! isset($r['note_max'], $r['note_min']) || ! is_array($r['echelle_appreciation'] ?? null)) {
+            throw new InvalidArgumentException('Paramètres de notation incomplets (bornes de grille, échelle).');
+        }
+        $r['note_max'] = (string) $r['note_max'];
+        $r['note_min'] = (string) $r['note_min'];
+
+        return $r;
+    }
+
+    /** Règles rappelées sur le bulletin (CDC §5 : le choix doit être visible et documenté). */
+    private function reglesAffichees(array $r): array
+    {
+        return [
+            'methode_moyenne' => $r['methode_moyenne'],
+            'decimales' => $r['decimales'],
+            'note_sur' => $r['note_max'],
+            'politique_note_manquante' => $r['note_non_saisie'] === 'zero'
+                ? 'Notes non saisies comptées comme 0'
+                : 'Notes non saisies exclues du calcul',
+            'politique_absence' => $r['absence_non_justifiee'] === 'zero'
+                ? 'Absences non justifiées comptées comme 0'
+                : 'Absences non justifiées exclues du calcul',
+            'regle_rattrapage' => $r['regle_rattrapage'],
+        ];
     }
 }

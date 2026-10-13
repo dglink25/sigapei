@@ -13,19 +13,21 @@ return [
         'sync' => ['driver' => 'sync'],
 
         'rabbitmq' => [
-            'driver'   => 'rabbitmq',
-            'queue'    => env('RABBITMQ_QUEUE', 'evaluations.pdf'),
-            'host'     => env('RABBITMQ_HOST', 'rabbitmq'),
-            'port'     => (int) env('RABBITMQ_PORT', 5672),
-            'login'    => env('RABBITMQ_USER'),
+            'driver' => 'rabbitmq',
+            'queue' => env('RABBITMQ_QUEUE', 'evaluations.taches'),
+            'host' => env('RABBITMQ_HOST', 'rabbitmq'),
+            'port' => (int) env('RABBITMQ_PORT', 5672),
+            'login' => env('RABBITMQ_USER'),
             'password' => env('RABBITMQ_PASSWORD'),
-            'vhost'    => env('RABBITMQ_VHOST', '/'),
-            'hosts'    => [[
-                'host'     => env('RABBITMQ_HOST', 'rabbitmq'),
-                'port'     => (int) env('RABBITMQ_PORT', 5672),
-                'user'     => env('RABBITMQ_USER'),
+            'vhost' => env('RABBITMQ_VHOST', '/'),
+            // false en test : aucun événement n'est émis.
+            'publication_active' => (bool) env('RABBITMQ_PUBLICATION', true),
+            'hosts' => [[
+                'host' => env('RABBITMQ_HOST', 'rabbitmq'),
+                'port' => (int) env('RABBITMQ_PORT', 5672),
+                'user' => env('RABBITMQ_USER'),
                 'password' => env('RABBITMQ_PASSWORD'),
-                'vhost'    => env('RABBITMQ_VHOST', '/'),
+                'vhost' => env('RABBITMQ_VHOST', '/'),
             ]],
         ],
     ],

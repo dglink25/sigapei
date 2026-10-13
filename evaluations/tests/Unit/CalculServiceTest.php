@@ -3,344 +3,413 @@
 namespace Tests\Unit;
 
 use App\Services\CalculService;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests unitaires du CalculService — guide tasks §2.5.
- * "100 % des règles de barème, y compris reproductibilité et identité
- *  des résultats web/PDF/API interne."
- *
- * NFR guide tasks §2.6 : bulletin individuel < 500 ms.
+ * Moteur de calcul — priorité absolue (CDC §21 : 100 % des règles de barème).
  */
 class CalculServiceTest extends TestCase
 {
-    private CalculService $service;
+    private CalculService $calcul;
+
+    private const ECHELLE = [
+        ['min' => '0', 'max' => '10', 'mention' => 'Insuffisant'],
+        ['min' => '10', 'max' => '12', 'mention' => 'Passable'],
+        ['min' => '12', 'max' => '14', 'mention' => 'Assez bien'],
+        ['min' => '14', 'max' => '16', 'mention' => 'Bien'],
+        ['min' => '16', 'max' => '20', 'mention' => 'Très bien'],
+    ];
 
     protected function setUp(): void
     {
-        parent::setUp();
-        $this->service = new CalculService();
+        $this->calcul = new CalculService;
     }
 
-    // =========================================================================
-    // ARRONDI (requirements §5.4)
-    // =========================================================================
-
-    public function test_arrondi_demi_vers_haut(): void
+    private function regles(array $surcharge = []): array
     {
-        $this->assertSame(13.5, $this->service->arrondir(13.3, 'demi'));
-        $this->assertSame(14.0, $this->service->arrondir(13.8, 'demi'));
-        $this->assertSame(13.5, $this->service->arrondir(13.5, 'demi'));
-        $this->assertSame(0.0,  $this->service->arrondir(0.0,  'demi'));
-        $this->assertSame(20.0, $this->service->arrondir(20.0, 'demi'));
+        return array_merge([
+            'methode_moyenne' => 'par_matiere',
+            'decimales' => 2,
+            'note_non_saisie' => 'exclure',
+            'absence_non_justifiee' => 'zero',
+            'regle_rattrapage' => 'meilleure',
+            'type_notation' => 'chiffree',
+            'note_min' => '0',
+            'note_max' => '20',
+            'echelle_appreciation' => self::ECHELLE,
+            'classement_actif' => true,
+        ], $surcharge);
     }
 
-    public function test_arrondi_entier(): void
+    private function ev(string $id, string $matiere, ?string $valeur, array $opts = []): array
     {
-        $this->assertSame(13.0, $this->service->arrondir(13.4, 'entier'));
-        $this->assertSame(14.0, $this->service->arrondir(13.5, 'entier'));
-        $this->assertSame(0.0,  $this->service->arrondir(0.0,  'entier'));
-        $this->assertSame(20.0, $this->service->arrondir(20.0, 'entier'));
-    }
+        $statut = $opts['statut'] ?? 'saisie';
 
-    public function test_arrondi_deux_decimales(): void
-    {
-        $this->assertSame(13.33, $this->service->arrondir(13.333, 'deux_decimales'));
-        $this->assertSame(13.34, $this->service->arrondir(13.336, 'deux_decimales'));
-    }
-
-    public function test_arrondi_valeur_inconnue_utilise_demi(): void
-    {
-        // Règle par défaut = demi
-        $this->assertSame(13.5, $this->service->arrondir(13.3, 'inconnu'));
-    }
-
-    // =========================================================================
-    // MENTION (requirements §5, §6.3 — jamais codée en dur)
-    // =========================================================================
-
-    private function echelleBeninoise(): array
-    {
         return [
-            ['min' => 18,   'max' => 20,    'mention' => 'Excellent'],
-            ['min' => 16,   'max' => 17.99, 'mention' => 'Très Bien'],
-            ['min' => 14,   'max' => 15.99, 'mention' => 'Bien'],
-            ['min' => 12,   'max' => 13.99, 'mention' => 'Assez Bien'],
-            ['min' => 10,   'max' => 11.99, 'mention' => 'Passable'],
-            ['min' => 0,    'max' => 9.99,  'mention' => 'Insuffisant'],
-        ];
-    }
-
-    public function test_mention_excellent(): void
-    {
-        $this->assertSame('Excellent',   $this->service->determinerMention(18.0,  $this->echelleBeninoise()));
-        $this->assertSame('Excellent',   $this->service->determinerMention(20.0,  $this->echelleBeninoise()));
-    }
-
-    public function test_mention_passable(): void
-    {
-        $this->assertSame('Passable',    $this->service->determinerMention(10.0,  $this->echelleBeninoise()));
-        $this->assertSame('Passable',    $this->service->determinerMention(11.99, $this->echelleBeninoise()));
-    }
-
-    public function test_mention_insuffisant(): void
-    {
-        $this->assertSame('Insuffisant', $this->service->determinerMention(9.99,  $this->echelleBeninoise()));
-        $this->assertSame('Insuffisant', $this->service->determinerMention(0.0,   $this->echelleBeninoise()));
-    }
-
-    public function test_mention_null_si_hors_echelle(): void
-    {
-        $this->assertNull($this->service->determinerMention(25.0, $this->echelleBeninoise()));
-        $this->assertNull($this->service->determinerMention(-1.0, $this->echelleBeninoise()));
-    }
-
-    public function test_mention_null_si_echelle_vide(): void
-    {
-        $this->assertNull($this->service->determinerMention(15.0, []));
-    }
-
-    // =========================================================================
-    // MOYENNE PONDÉRÉE (requirements §5.1-5.9)
-    // =========================================================================
-
-    private function configBase(string $noteNonSaisie = 'exclure', string $arrondi = 'demi'): array
-    {
-        return ['note_non_saisie' => $noteNonSaisie, 'arrondi' => $arrondi];
-    }
-
-    /** Cas simple : une matière, un devoir, coef 1×1 */
-    public function test_moyenne_simple_une_matiere(): void
-    {
-        $notes = [
-            ['valeur' => 14.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 1.0, 'saisie' => true],
-        ];
-        $this->assertSame(14.0, $this->service->calculerMoyenne($notes, $this->configBase()));
-    }
-
-    /** Deux matières, coefficients différents */
-    public function test_moyenne_deux_matieres_coefficients(): void
-    {
-        // Math coef 4, Français coef 2 : (16×4 + 12×2) / (4+2) = (64+24)/6 = 14.67 → arrondi demi = 14.5
-        $notes = [
-            ['valeur' => 16.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 4.0, 'saisie' => true],
-            ['valeur' => 12.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 2.0, 'saisie' => true],
-        ];
-        $this->assertSame(14.5, $this->service->calculerMoyenne($notes, $this->configBase('exclure', 'demi')));
-    }
-
-    /** Coefficient évaluation ET matière (formule complète) */
-    public function test_moyenne_coef_evaluation_et_matiere(): void
-    {
-        // Note 18, coef_eval=2, coef_mat=3 — seule note → moyenne = 18
-        $notes = [
-            ['valeur' => 18.0, 'coef_evaluation' => 2.0, 'coef_matiere' => 3.0, 'saisie' => true],
-        ];
-        $this->assertSame(18.0, $this->service->calculerMoyenne($notes, $this->configBase()));
-    }
-
-    /** Note non saisie → exclure (requirements §5.5) */
-    public function test_note_non_saisie_exclure(): void
-    {
-        $notes = [
-            ['valeur' => 16.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 1.0, 'saisie' => true],
-            ['valeur' => 0.0,  'coef_evaluation' => 1.0, 'coef_matiere' => 1.0, 'saisie' => false],
-        ];
-        // Seule la note saisie compte → 16.0
-        $this->assertSame(16.0, $this->service->calculerMoyenne($notes, $this->configBase('exclure')));
-    }
-
-    /** Note non saisie → compter comme 0 (requirements §5.5) */
-    public function test_note_non_saisie_zero(): void
-    {
-        $notes = [
-            ['valeur' => 16.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 1.0, 'saisie' => true],
-            ['valeur' => 0.0,  'coef_evaluation' => 1.0, 'coef_matiere' => 1.0, 'saisie' => false],
-        ];
-        // (16×1 + 0×1) / 2 = 8.0
-        $this->assertSame(8.0, $this->service->calculerMoyenne($notes, $this->configBase('zero')));
-    }
-
-    /** Aucune note applicable → null */
-    public function test_moyenne_null_si_aucune_note(): void
-    {
-        $this->assertNull($this->service->calculerMoyenne([], $this->configBase()));
-    }
-
-    /** Aucune note saisie + politique exclure → null */
-    public function test_moyenne_null_si_toutes_non_saisies_et_exclure(): void
-    {
-        $notes = [
-            ['valeur' => 0.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 1.0, 'saisie' => false],
-        ];
-        $this->assertNull($this->service->calculerMoyenne($notes, $this->configBase('exclure')));
-    }
-
-    /** Reproductibilité : même résultat appelé deux fois (requirements §5.2, §5.3) */
-    public function test_reproductibilite_meme_resultat_appels_multiples(): void
-    {
-        $notes = [
-            ['valeur' => 15.0, 'coef_evaluation' => 2.0, 'coef_matiere' => 3.0, 'saisie' => true],
-            ['valeur' => 11.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 2.0, 'saisie' => true],
-        ];
-        $config   = $this->configBase('exclure', 'deux_decimales');
-        $premier  = $this->service->calculerMoyenne($notes, $config);
-        $deuxieme = $this->service->calculerMoyenne($notes, $config);
-        $this->assertSame($premier, $deuxieme);
-    }
-
-    /** Composition en ligne : mêmes règles qu'une note manuelle (requirements §5.9) */
-    public function test_composition_en_ligne_memes_regles(): void
-    {
-        $noteManuelle = [
-            ['valeur' => 14.0, 'coef_evaluation' => 2.0, 'coef_matiere' => 3.0, 'saisie' => true],
-        ];
-        $noteComposition = [
-            ['valeur' => 14.0, 'coef_evaluation' => 2.0, 'coef_matiere' => 3.0, 'saisie' => true],
-        ];
-        $config = $this->configBase();
-        $this->assertSame(
-            $this->service->calculerMoyenne($noteManuelle, $config),
-            $this->service->calculerMoyenne($noteComposition, $config)
-        );
-    }
-
-    // =========================================================================
-    // RANGS (requirements §8)
-    // =========================================================================
-
-    public function test_rangs_ordre_decroissant(): void
-    {
-        $moyennes = ['a' => 16.0, 'b' => 12.0, 'c' => 18.0];
-        $rangs    = $this->service->calculerRangs($moyennes, ['classement_active' => true]);
-
-        $this->assertSame(2, $rangs['a']);
-        $this->assertSame(3, $rangs['b']);
-        $this->assertSame(1, $rangs['c']);
-    }
-
-    public function test_rangs_null_si_classement_desactive(): void
-    {
-        // Requirements §8.4 : classement désactivable
-        $moyennes = ['a' => 16.0, 'b' => 12.0];
-        $rangs    = $this->service->calculerRangs($moyennes, ['classement_active' => false]);
-
-        $this->assertNull($rangs['a']);
-        $this->assertNull($rangs['b']);
-    }
-
-    public function test_rangs_null_si_moyenne_null(): void
-    {
-        $moyennes = ['a' => 16.0, 'b' => null];
-        $rangs    = $this->service->calculerRangs($moyennes, ['classement_active' => true]);
-
-        $this->assertSame(1, $rangs['a']);
-        $this->assertNull($rangs['b']);
-    }
-
-    // =========================================================================
-    // STATISTIQUES DE CLASSE (requirements §8.2, §8.3)
-    // =========================================================================
-
-    public function test_statistiques_classe_moyenne_et_distribution(): void
-    {
-        $notesByApprenant = [
-            'ap1' => [
-                ['matiere_uuid' => 'mat1', 'valeur' => 16.0, 'saisie' => true, 'coef_evaluation' => 1, 'coef_matiere' => 1],
-            ],
-            'ap2' => [
-                ['matiere_uuid' => 'mat1', 'valeur' => 12.0, 'saisie' => true, 'coef_evaluation' => 1, 'coef_matiere' => 1],
+            'evaluation_uuid' => $id,
+            'matiere_uuid' => $matiere,
+            'matiere_nom' => strtoupper($matiere),
+            'coef_matiere' => $opts['coef_matiere'] ?? '1',
+            'coef_evaluation' => $opts['coef_evaluation'] ?? '1',
+            'note_sur' => $opts['note_sur'] ?? '20',
+            'rattrapage_de' => $opts['rattrapage_de'] ?? null,
+            'note' => ($opts['sans_note'] ?? false) ? null : [
+                'statut' => $statut,
+                'valeur' => $statut === 'saisie' ? $valeur : null,
             ],
         ];
-
-        $stats = $this->service->calculerStatistiquesClasse($notesByApprenant, $this->configBase());
-
-        $this->assertSame(14.0, $stats['moyenne_classe']);
-        $this->assertSame(2,    $stats['nb_apprenants']);
-        $this->assertSame(12.0, $stats['par_matiere']['mat1']['min']);
-        $this->assertSame(16.0, $stats['par_matiere']['mat1']['max']);
-        $this->assertSame(14.0, $stats['par_matiere']['mat1']['moyenne']);
     }
 
-    // =========================================================================
-    // VALIDATION GRILLE (requirements §6.4-6.6)
-    // =========================================================================
+    // ---------------------------------------------------------------- Moyennes
 
-    public function test_validation_note_dans_grille_valide(): void
+    public function test_moyenne_par_matiere_puis_coefficients(): void
     {
-        $this->expectNotToPerformAssertions();
-        $this->service->validerNoteDansGrille(15.0, ['note_min' => 0, 'note_max' => 20]);
+        // Maths (coef 4) : 12 et 16 -> 14 ; Français (coef 2) : 11 -> (14×4 + 11×2) / 6 = 13
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('e1', 'maths', '12', ['coef_matiere' => '4']),
+            $this->ev('e2', 'maths', '16', ['coef_matiere' => '4']),
+            $this->ev('e3', 'fr', '11', ['coef_matiere' => '2']),
+        ], $this->regles());
+
+        $this->assertSame('13.00', $r['moyenne']);
+        $this->assertSame('14.00', $r['matieres'][0]['moyenne']);
+        $this->assertSame('11.00', $r['matieres'][1]['moyenne']);
+        $this->assertSame('4.00', $r['matieres'][0]['coefficient']);
+        $this->assertSame('Assez bien', $r['mention']);
     }
 
-    public function test_validation_note_hors_grille_leve_exception(): void
+    public function test_methode_globale_formule_litterale_du_cdc(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->service->validerNoteDansGrille(25.0, ['note_min' => 0, 'note_max' => 20]);
+        // Σ(note × coef éval × coef matière) / Σ(coef éval × coef matière)
+        // (12×1×4 + 16×1×4 + 11×1×2) / (4 + 4 + 2) = 134 / 10 = 13,4
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('e1', 'maths', '12', ['coef_matiere' => '4']),
+            $this->ev('e2', 'maths', '16', ['coef_matiere' => '4']),
+            $this->ev('e3', 'fr', '11', ['coef_matiere' => '2']),
+        ], $this->regles(['methode_moyenne' => 'globale']));
+
+        $this->assertSame('13.40', $r['moyenne']);
     }
 
-    public function test_validation_note_negative_leve_exception(): void
+    public function test_coefficient_d_evaluation(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->service->validerNoteDansGrille(-1.0, ['note_min' => 0, 'note_max' => 20]);
+        // (10×1 + 16×2) / 3 = 14
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('e1', 'maths', '10'),
+            $this->ev('e2', 'maths', '16', ['coef_evaluation' => '2']),
+        ], $this->regles());
+
+        $this->assertSame('14.00', $r['moyenne']);
     }
 
-    // =========================================================================
-    // RÉSUMÉ BULLETIN (requirements §5.2 — identité web/PDF/API interne)
-    // =========================================================================
-
-    public function test_resume_bulletin_identique_peu_importe_le_contexte(): void
+    public function test_coefficients_decimaux(): void
     {
-        $notes  = [
-            ['valeur' => 16.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 2.0, 'saisie' => true],
-            ['valeur' => 12.0, 'coef_evaluation' => 1.0, 'coef_matiere' => 1.0, 'saisie' => true],
+        // (12×1,5 + 15×0,5) / 2 = 12,75
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('e1', 'maths', '12', ['coef_matiere' => '1.5']),
+            $this->ev('e2', 'svt', '15', ['coef_matiere' => '0.5']),
+        ], $this->regles());
+
+        $this->assertSame('12.75', $r['moyenne']);
+    }
+
+    public function test_epreuve_notee_sur_un_autre_bareme_est_ramenee_sur_20(): void
+    {
+        // 7/10 -> 14/20 ; 30/40 -> 15/20 ; moyenne 14,5
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('e1', 'maths', '7', ['note_sur' => '10']),
+            $this->ev('e2', 'maths', '30', ['note_sur' => '40']),
+        ], $this->regles());
+
+        $this->assertSame('14.50', $r['moyenne']);
+        $this->assertSame('14.00', $r['matieres'][0]['notes'][0]['valeur_retenue']);
+    }
+
+    public function test_arrondi_deux_decimales_par_defaut_et_parametrable(): void
+    {
+        $evs = [
+            $this->ev('e1', 'maths', '10'),
+            $this->ev('e2', 'maths', '11'),
+            $this->ev('e3', 'maths', '11'),
+        ]; // 32/3 = 10,6666...
+
+        $this->assertSame('10.67', $this->calcul->calculerBulletin($evs, $this->regles())['moyenne']);
+        $this->assertSame('10.667', $this->calcul->calculerBulletin($evs, $this->regles(['decimales' => 3]))['moyenne']);
+        $this->assertSame('10.7', $this->calcul->calculerBulletin($evs, $this->regles(['decimales' => 1]))['moyenne']);
+        $this->assertSame('11', $this->calcul->calculerBulletin($evs, $this->regles(['decimales' => 0]))['moyenne']);
+    }
+
+    public function test_aucune_imprecision_flottante(): void
+    {
+        // En float, (0.1 + 0.2) × 10 donnerait 3.0000000000000004.
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('e1', 'maths', '0.1'),
+            $this->ev('e2', 'maths', '0.2'),
+        ], $this->regles(['decimales' => 3]));
+
+        $this->assertSame('0.150', $r['moyenne']);
+    }
+
+    // ---------------------------------------------------------------- Notes manquantes, absences
+
+    public function test_note_non_saisie_exclue_ou_comptee_zero(): void
+    {
+        $evs = [
+            $this->ev('e1', 'maths', '14'),
+            $this->ev('e2', 'maths', null, ['sans_note' => true]),
         ];
-        $config  = $this->configBase('exclure', 'demi');
-        $echelle = $this->echelleBeninoise();
 
-        // Simuler appel depuis l'API web, puis depuis le PDF, puis depuis l'endpoint interne
-        $resumeWeb    = $this->service->calculerResumeBulletin($notes, $config, $echelle);
-        $resumePdf    = $this->service->calculerResumeBulletin($notes, $config, $echelle);
-        $resumeIntern = $this->service->calculerResumeBulletin($notes, $config, $echelle);
+        $exclue = $this->calcul->calculerBulletin($evs, $this->regles());
+        $this->assertSame('14.00', $exclue['moyenne']);
+        $this->assertSame('Notes non saisies exclues du calcul', $exclue['regles_appliquees']['politique_note_manquante']);
 
-        $this->assertSame($resumeWeb['moyenne'],  $resumePdf['moyenne']);
-        $this->assertSame($resumeWeb['moyenne'],  $resumeIntern['moyenne']);
-        $this->assertSame($resumeWeb['mention'],  $resumePdf['mention']);
-        $this->assertSame($resumeWeb['mention'],  $resumeIntern['mention']);
+        $zero = $this->calcul->calculerBulletin($evs, $this->regles(['note_non_saisie' => 'zero']));
+        $this->assertSame('7.00', $zero['moyenne']);
+        $this->assertSame('Notes non saisies comptées comme 0', $zero['regles_appliquees']['politique_note_manquante']);
     }
 
-    public function test_resume_bulletin_affiche_politique_note_manquante(): void
+    public function test_absences_et_dispenses(): void
     {
-        $notes  = [];
-        $config  = $this->configBase('zero');
-        $echelle = $this->echelleBeninoise();
+        $evs = [
+            $this->ev('e1', 'maths', '16'),
+            $this->ev('e2', 'maths', null, ['statut' => 'absent_justifie']),
+            $this->ev('e3', 'maths', null, ['statut' => 'dispense']),
+            $this->ev('e4', 'maths', null, ['statut' => 'absent_non_justifie']),
+        ];
 
-        $resume = $this->service->calculerResumeBulletin($notes, $config, $echelle);
-        $this->assertStringContainsString('0', $resume['politique_note_manquante']);
+        // Justifiée et dispense exclues ; non justifiée = 0 par défaut -> (16 + 0) / 2
+        $this->assertSame('8.00', $this->calcul->calculerBulletin($evs, $this->regles())['moyenne']);
+        // Non justifiée exclue -> 16
+        $this->assertSame('16.00', $this->calcul->calculerBulletin($evs, $this->regles(['absence_non_justifiee' => 'exclure']))['moyenne']);
     }
 
-    // =========================================================================
-    // PERFORMANCE (requirements §5.8, guide NFR §2.6 : < 500 ms)
-    // =========================================================================
-
-    public function test_calcul_bulletin_individuel_inferieur_500ms(): void
+    public function test_aucune_note_donne_moyenne_nulle(): void
     {
-        // 30 évaluations — cas réaliste d'un trimestre secondaire
-        $notes = [];
-        for ($i = 0; $i < 30; $i++) {
-            $notes[] = [
-                'valeur'          => mt_rand(0, 200) / 10,
-                'coef_evaluation' => mt_rand(1, 3),
-                'coef_matiere'    => mt_rand(1, 5),
-                'saisie'          => true,
-            ];
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('e1', 'maths', null, ['statut' => 'absent_justifie']),
+        ], $this->regles());
+
+        $this->assertNull($r['moyenne']);
+        $this->assertNull($r['mention']);
+        $this->assertNull($r['matieres'][0]['moyenne']);
+    }
+
+    public function test_matiere_sans_note_ne_pese_pas_dans_la_moyenne_generale(): void
+    {
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('e1', 'maths', '12', ['coef_matiere' => '4']),
+            $this->ev('e2', 'fr', null, ['statut' => 'dispense', 'coef_matiere' => '3']),
+        ], $this->regles());
+
+        $this->assertSame('12.00', $r['moyenne']);
+    }
+
+    // ---------------------------------------------------------------- Rattrapage
+
+    public function test_rattrapage_meilleure_remplacer_moyenne(): void
+    {
+        $evs = [
+            $this->ev('exam', 'maths', '8'),
+            $this->ev('ratt', 'maths', '12', ['rattrapage_de' => 'exam']),
+        ];
+
+        $this->assertSame('12.00', $this->calcul->calculerBulletin($evs, $this->regles())['moyenne']);
+        $this->assertSame('12.00', $this->calcul->calculerBulletin($evs, $this->regles(['regle_rattrapage' => 'remplacer']))['moyenne']);
+        $this->assertSame('10.00', $this->calcul->calculerBulletin($evs, $this->regles(['regle_rattrapage' => 'moyenne']))['moyenne']);
+
+        $pire = [
+            $this->ev('exam', 'maths', '8'),
+            $this->ev('ratt', 'maths', '5', ['rattrapage_de' => 'exam']),
+        ];
+        $this->assertSame('8.00', $this->calcul->calculerBulletin($pire, $this->regles())['moyenne']);
+        $this->assertSame('5.00', $this->calcul->calculerBulletin($pire, $this->regles(['regle_rattrapage' => 'remplacer']))['moyenne']);
+    }
+
+    public function test_rattrapage_non_passe_est_ignore(): void
+    {
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('exam', 'maths', '8'),
+            $this->ev('ratt', 'maths', null, ['rattrapage_de' => 'exam', 'statut' => 'absent_non_justifie']),
+        ], $this->regles(['regle_rattrapage' => 'remplacer']));
+
+        $this->assertSame('8.00', $r['moyenne']);
+    }
+
+    public function test_rattrapage_apres_absence_justifiee(): void
+    {
+        $r = $this->calcul->calculerBulletin([
+            $this->ev('exam', 'maths', null, ['statut' => 'absent_justifie']),
+            $this->ev('ratt', 'maths', '13', ['rattrapage_de' => 'exam']),
+        ], $this->regles(['regle_rattrapage' => 'moyenne']));
+
+        $this->assertSame('13.00', $r['moyenne']);
+    }
+
+    // ---------------------------------------------------------------- Grille de compétences
+
+    public function test_grille_competences_sans_moyenne_chiffree(): void
+    {
+        $ev = $this->ev('e1', 'lecture', null, ['sans_note' => true]);
+        $ev['note'] = ['statut' => 'saisie', 'valeur' => null, 'niveau_competence' => 'A'];
+
+        $r = $this->calcul->calculerBulletin([$ev], $this->regles(['type_notation' => 'competences']));
+
+        $this->assertNull($r['moyenne']);
+        $this->assertSame('A', $r['matieres'][0]['notes'][0]['niveau_competence']);
+    }
+
+    // ---------------------------------------------------------------- Rangs
+
+    public function test_rangs_avec_ex_aequo(): void
+    {
+        $rangs = $this->calcul->calculerRangs([
+            'a' => 150000, 'b' => 120000, 'c' => 150000, 'd' => 90000, 'e' => null,
+        ], 2, true);
+
+        $this->assertSame(['rang' => 1, 'ex_aequo' => true], $rangs['a']);
+        $this->assertSame(['rang' => 1, 'ex_aequo' => true], $rangs['c']);
+        $this->assertSame(['rang' => 3, 'ex_aequo' => false], $rangs['b']);
+        $this->assertSame(['rang' => 4, 'ex_aequo' => false], $rangs['d']);
+        $this->assertSame(['rang' => null, 'ex_aequo' => false], $rangs['e']);
+    }
+
+    public function test_rang_calcule_sur_la_moyenne_affichee(): void
+    {
+        // 12,344 et 12,341 s'affichent tous deux 12,34 : même rang.
+        $rangs = $this->calcul->calculerRangs(['a' => 123440, 'b' => 123410], 2, true);
+        $this->assertSame(1, $rangs['a']['rang']);
+        $this->assertSame(1, $rangs['b']['rang']);
+        $this->assertTrue($rangs['a']['ex_aequo']);
+
+        // Avec 3 décimales, ils se départagent.
+        $rangs = $this->calcul->calculerRangs(['a' => 123440, 'b' => 123410], 3, true);
+        $this->assertSame(1, $rangs['a']['rang']);
+        $this->assertSame(2, $rangs['b']['rang']);
+    }
+
+    public function test_classement_desactive(): void
+    {
+        $rangs = $this->calcul->calculerRangs(['a' => 150000, 'b' => 120000], 2, false);
+        $this->assertNull($rangs['a']['rang']);
+        $this->assertNull($rangs['b']['rang']);
+    }
+
+    // ---------------------------------------------------------------- Statistiques de classe
+
+    public function test_statistiques_classe(): void
+    {
+        $b1 = $this->calcul->calculerBulletin([$this->ev('e1', 'maths', '10'), $this->ev('e2', 'fr', '14')], $this->regles());
+        $b2 = $this->calcul->calculerBulletin([$this->ev('e1', 'maths', '16'), $this->ev('e2', 'fr', null, ['statut' => 'absent_justifie'])], $this->regles());
+
+        $s = $this->calcul->statistiquesClasse([$b1, $b2], 2);
+
+        $this->assertSame('14.00', $s['moyenne_classe']); // (12 + 16) / 2
+        $this->assertSame(2, $s['effectif_classe']);
+        $this->assertSame(['matiere_uuid' => 'maths', 'matiere_nom' => 'MATHS', 'effectif' => 2, 'min' => '10.00', 'max' => '16.00', 'moyenne' => '13.00'], $s['par_matiere'][0]);
+        $this->assertSame(1, $s['par_matiere'][1]['effectif']);
+    }
+
+    // ---------------------------------------------------------------- Mentions
+
+    public function test_mentions_bornes(): void
+    {
+        $this->assertSame('Insuffisant', $this->calcul->mention(99999, self::ECHELLE));   // 9,9999
+        $this->assertSame('Passable', $this->calcul->mention(100000, self::ECHELLE));     // 10 pile
+        $this->assertSame('Bien', $this->calcul->mention(159999, self::ECHELLE));
+        $this->assertSame('Très bien', $this->calcul->mention(200000, self::ECHELLE));    // borne haute incluse
+        $this->assertNull($this->calcul->mention(200001, self::ECHELLE));
+    }
+
+    public function test_echelle_valide(): void
+    {
+        $this->calcul->validerEchelle(self::ECHELLE, '0', '20');
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_echelle_avec_trou_refusee(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->calcul->validerEchelle([
+            ['min' => '0', 'max' => '9.99', 'mention' => 'Insuffisant'],
+            ['min' => '10', 'max' => '20', 'mention' => 'Admis'],
+        ], '0', '20');
+    }
+
+    public function test_echelle_incomplete_refusee(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->calcul->validerEchelle([['min' => '0', 'max' => '18', 'mention' => 'X']], '0', '20');
+    }
+
+    public function test_echelle_sans_libelle_refusee(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->calcul->validerEchelle([['min' => '0', 'max' => '20', 'mention' => ' ']], '0', '20');
+    }
+
+    // ---------------------------------------------------------------- Contrôles
+
+    public function test_valeur_hors_bareme_refusee(): void
+    {
+        $this->calcul->validerValeur('20', '20');
+        $this->calcul->validerValeur('9.75', '10');
+        $this->addToAssertionCount(2);
+
+        foreach (['20.5', '-1', '12.345', 'abc', ''] as $invalide) {
+            try {
+                $this->calcul->validerValeur($invalide, '20');
+                $this->fail("Valeur acceptée à tort : {$invalide}");
+            } catch (InvalidArgumentException) {
+                $this->addToAssertionCount(1);
+            }
         }
-        $config  = $this->configBase('exclure', 'demi');
-        $echelle = $this->echelleBeninoise();
+    }
 
-        $debut = microtime(true);
-        $this->service->calculerResumeBulletin($notes, $config, $echelle);
-        $dureeMs = (microtime(true) - $debut) * 1000;
+    public function test_note_superieure_au_bareme_en_base_est_rejetee(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->calcul->calculerBulletin([$this->ev('e1', 'maths', '12', ['note_sur' => '10'])], $this->regles());
+    }
 
-        $this->assertLessThan(500, $dureeMs, "Calcul bulletin dépassé : {$dureeMs}ms (seuil : 500ms)");
+    public function test_coefficient_invalide(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->calcul->calculerBulletin([$this->ev('e1', 'maths', '12', ['coef_matiere' => '0'])], $this->regles());
+    }
+
+    public function test_parametres_invalides(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->calcul->calculerBulletin([], $this->regles(['decimales' => 5]));
+    }
+
+    // ---------------------------------------------------------------- Reproductibilité et performance
+
+    public function test_reproductible(): void
+    {
+        $evs = [
+            $this->ev('e1', 'maths', '13.25', ['coef_matiere' => '3']),
+            $this->ev('e2', 'pc', '9.5', ['coef_matiere' => '2', 'coef_evaluation' => '2']),
+        ];
+
+        $premier = $this->calcul->calculerBulletin($evs, $this->regles());
+        for ($i = 0; $i < 50; $i++) {
+            $this->assertSame($premier, $this->calcul->calculerBulletin($evs, $this->regles()));
+        }
+    }
+
+    public function test_bulletin_individuel_sous_500_ms(): void
+    {
+        $evs = [];
+        for ($m = 0; $m < 15; $m++) {
+            for ($e = 0; $e < 10; $e++) {
+                $evs[] = $this->ev("e{$m}-{$e}", "m{$m}", (string) (($m + $e) % 21), ['coef_matiere' => (string) ($m % 5 + 1)]);
+            }
+        }
+
+        $debut = hrtime(true);
+        $this->calcul->calculerBulletin($evs, $this->regles());
+        $this->assertLessThan(500, (hrtime(true) - $debut) / 1e6);
     }
 }

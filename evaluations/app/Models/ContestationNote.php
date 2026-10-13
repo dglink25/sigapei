@@ -2,24 +2,30 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Common\Tenant\AppartientAuTenant;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * Contestation d'une note — statuts : ouverte | en_examen | resolue | rejetee (CDC §9).
- */
-class ContestationNote extends Model
+class ContestationNote extends Modele
 {
-    protected $table    = 'contestation_note';
-    protected $hidden   = ['id'];
-    protected $fillable = [
-        'uuid', 'tenant_id', 'note_id', 'demandeur_uuid',
-        'statut', 'motif', 'date_ouverture',
+    use AppartientAuTenant;
+
+    protected $table = 'contestation_note';
+
+    protected $hidden = ['id', 'tenant_id', 'note_id'];
+
+    protected $casts = [
+        'ouverte_le' => 'datetime',
+        'escaladee_le' => 'datetime',
+        'cloturee_le' => 'datetime',
     ];
-    protected $casts = ['date_ouverture' => 'datetime'];
 
     public function note(): BelongsTo
     {
         return $this->belongsTo(Note::class, 'note_id');
+    }
+
+    public function estActive(): bool
+    {
+        return in_array($this->statut, ['ouverte', 'en_examen'], true);
     }
 }

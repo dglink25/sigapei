@@ -1,5 +1,8 @@
 <?php
 
+use Monolog\Formatter\JsonFormatter;
+use Monolog\Handler\StreamHandler;
+
 return [
     'default' => env('LOG_CHANNEL', 'stack'),
     'deprecations' => ['channel' => null, 'trace' => false],
@@ -13,9 +16,9 @@ return [
         'stderr' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
-            'handler' => Monolog\Handler\StreamHandler::class,
+            'handler' => StreamHandler::class,
             'with' => ['stream' => 'php://stderr'],
-            'formatter' => Monolog\Formatter\JsonFormatter::class,
+            'formatter' => JsonFormatter::class,
         ],
     ],
 ];

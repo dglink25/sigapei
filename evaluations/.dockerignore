@@ -1,17 +1,12 @@
-# Aucun secret ni artefact local dans l'image (secrets injectés via GitHub Actions Secrets en production)
+vendor
+node_modules
 .env
 .env.*
 !.env.example
-.git
-.github
-vendor
-node_modules
 tests
-phpunit.xml
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
-bootstrap/cache/*.php
-Dockerfile
-docker-compose.yml
+.phpunit.result.cache
+.git

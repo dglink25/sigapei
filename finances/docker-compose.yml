@@ -25,7 +25,9 @@ services:
     restart: unless-stopped
     env_file: [.env]
     environment: [REDIS_HOST=redis, RABBITMQ_HOST=rabbitmq]
-    entrypoint: ["/bin/sh", "/app/docker/scheduler-entrypoint.sh"]
+    command: ["php", "artisan", "schedule:work"]
+    healthcheck:
+      disable: true
     networks: [sigapei]
     depends_on: [api-finances]
 
