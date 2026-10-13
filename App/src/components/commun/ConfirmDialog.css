@@ -1,0 +1,13 @@
+.cd-overlay { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 16px; background: rgba(2, 20, 12, 0.55); backdrop-filter: blur(6px); }
+.cd { --accent: #006b3c; --soft: rgba(0, 107, 60, 0.12); width: min(440px, 100%); padding: 30px 26px 24px; text-align: center; color: #14281e; background: #fff6dd; border-radius: 24px; border-top: 6px solid var(--accent); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45); font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif; }
+.cd--danger { --accent: #b3261e; --soft: rgba(179, 38, 30, 0.12); }
+.cd--warning { --accent: #e9aa20; --soft: rgba(233, 170, 32, 0.22); }
+.cd-icon { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; color: var(--accent); background: var(--soft); }
+.cd--warning .cd-icon { color: #9a6a00; }
+.cd-title { margin: 0 0 8px; font-size: 1.2rem; }
+.cd-msg { margin: 0 0 14px; line-height: 1.55; color: #3c4f44; }
+.cd-actions { display: flex; gap: 10px; margin-top: 18px; }
+.cd-btn { flex: 1; height: 46px; border: 1.5px solid rgba(0, 0, 0, 0.18); border-radius: 12px; background: transparent; color: #14281e; font: inherit; font-weight: 600; cursor: pointer; }
+.cd-btn--main { border-color: var(--accent); background: var(--accent); color: #fff6dd; }
+.cd--warning .cd-btn--main { color: #14281e; }
+.cd-btn:disabled { opacity: 0.6; cursor: wait; }
