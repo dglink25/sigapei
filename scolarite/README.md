@@ -1,4 +1,4 @@
-# scolarite — Microservice Scolarité — SIGAPEI
+# scolarite - Microservice Scolarité - SIGAPEI
 
 Microservice de gestion administrative et pédagogique de la plateforme **SIGAPEI** :
 cycles, niveaux, filières et classes, calcul de capacité en temps réel, tenue du dossier unique de l'apprenant,
@@ -157,7 +157,7 @@ Lorsqu'un élève change de classe en cours d'année (`POST /v1/apprenants/{uuid
 * Planning complet croisant classe, matière, enseignant et créneau horaire.
 * Consultation filtrable par classe, par enseignant ou par jour de la semaine.
 
-### 4.6. API interne — Scolarité est le seul propriétaire du schéma
+### 4.6. API interne - Scolarité est le seul propriétaire du schéma
 
 **Règle n°1 du README racine** : un microservice ne lit ni n'écrit les tables
 d'un autre microservice, même si tous partagent la même base PostgreSQL. Les
@@ -217,7 +217,7 @@ plateforme tranche une convention unique.**
 
 ---
 
-## 6. RabbitMQ — Bus d'événements inter-microservices
+## 6. RabbitMQ - Bus d'événements inter-microservices
 
 Événements publiés sur l'exchange `sigapei.events` au format standard `@nestjs/microservices` :
 

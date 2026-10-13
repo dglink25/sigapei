@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  * du CDC : DisciplineService).
  *
  * Regle de gestion (section 9) : un incident peut exister sans sanction ;
- * une sanction ne peut jamais exister sans incident associe — modelisee ici
+ * une sanction ne peut jamais exister sans incident associe - modelisee ici
  * comme un etat de l'incident.
  */
 class DisciplineService
@@ -27,7 +27,7 @@ class DisciplineService
     ) {}
 
     /**
-     * POST /incidents — signale un nouvel incident disciplinaire.
+     * POST /incidents - signale un nouvel incident disciplinaire.
      *
      * @param  array{apprenant_uuid: string, type: string, description: string}  $data
      * @return array<string, mixed>
@@ -65,7 +65,7 @@ class DisciplineService
     }
 
     /**
-     * GET /incidents — liste filtrable par classe ou apprenant.
+     * GET /incidents - liste filtrable par classe ou apprenant.
      *
      * @param  array<string, mixed>  $filters
      * @return array<int, array<string, mixed>>
@@ -104,7 +104,7 @@ class DisciplineService
     }
 
     /**
-     * POST /incidents/{uuid}/sanction — associe une sanction a un incident
+     * POST /incidents/{uuid}/sanction - associe une sanction a un incident
      * existant.
      *
      * @return array<string, mixed>

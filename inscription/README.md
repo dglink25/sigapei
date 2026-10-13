@@ -1,4 +1,4 @@
-# inscription — Microservice Inscription (Admissions) — SIGAPEI
+# inscription - Microservice Inscription (Admissions) - SIGAPEI
 
 Microservice de gestion du parcours d'admission et de réinscription de la plateforme **SIGAPEI** :
 constitution des dossiers de candidature, gestion des pièces justificatives (stockage objet S3/MinIO),
@@ -231,7 +231,7 @@ Pour maintenir des temps de réponse sous 500 ms même en pic de rentrée scolai
 
 ---
 
-## 6. RabbitMQ — Bus d'événements inter-microservices
+## 6. RabbitMQ - Bus d'événements inter-microservices
 
 Ce microservice publie ses événements métier sur l'exchange `sigapei.events` au format standard `@nestjs/microservices` :
 ```json

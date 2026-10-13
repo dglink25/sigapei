@@ -58,7 +58,7 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               </svg>
             </div>
             <div>
-              <h3 className="font-heading font-black text-lg text-white">Saisie Guichet — Nouvelle Candidature</h3>
+              <h3 className="font-heading font-black text-lg text-white">Saisie Guichet - Nouvelle Candidature</h3>
               <p className="text-[11px] text-sigapei-cream/80">Enregistrement direct au secrétariat avec pièces justificatives S3</p>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function CreateCandidatureModal({ classes, onClose, onConfirm }) 
               >
                 {classes.map(cl => (
                   <option key={cl.id} value={cl.id}>
-                    {cl.nom} — ({(cl.inscrits_actuels ?? cl.inscrits ?? 0)}/{cl.capacite} inscrits) {(cl.inscrits_actuels ?? cl.inscrits ?? 0) >= cl.capacite ? '⚠️ COMPLÈTE' : '✅ Places disp.'}
+                    {cl.nom} - ({(cl.inscrits_actuels ?? cl.inscrits ?? 0)}/{cl.capacite} inscrits) {(cl.inscrits_actuels ?? cl.inscrits ?? 0) >= cl.capacite ? '⚠️ COMPLÈTE' : '✅ Places disp.'}
                   </option>
                 ))}
               </select>

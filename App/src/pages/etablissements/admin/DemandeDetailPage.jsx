@@ -61,7 +61,7 @@ function SectionCard({ section, review, mark, onToggle, onMotif, existing, child
 
 const Rows = ({ rows }) => (
   <dl className="ad-rows">
-    {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v || '—'}</dd></div>)}
+    {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v || '-'}</dd></div>)}
   </dl>
 )
 

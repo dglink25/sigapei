@@ -8,7 +8,7 @@ dist/
 build/
 *.tsbuildinfo
 
-# Environnement — NE JAMAIS versionner (contient des secrets)
+# Environnement - NE JAMAIS versionner (contient des secrets)
 .env
 .env.local
 .env.development.local

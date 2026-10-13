@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Table vie_scolaire.transport — V2+, HORS LOT (section 2.4 / 7.1 / 9 du CDC).
+ * Table vie_scolaire.transport - V2+, HORS LOT (section 2.4 / 7.1 / 9 du CDC).
  * Structure identique a "cantine", voir cette migration pour le contexte.
  */
 return new class extends Migration

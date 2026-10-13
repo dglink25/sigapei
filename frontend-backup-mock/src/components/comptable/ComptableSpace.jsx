@@ -54,8 +54,8 @@ const INITIAL_PAIEMENTS = [
     paye: 0,      
     reste: 175000, 
     statut: 'retard',    
-    date_dernier: '—',
-    mode_dernier: '—',
+    date_dernier: '-',
+    mode_dernier: '-',
     tranches: [
       { num: 1, label: 'Tranche 1 (Rentrée)', attendu: 75000, paye: 0, echeance: '2026-09-15', regle: false },
       { num: 2, label: 'Tranche 2 (Mi-parcours)', attendu: 60000, paye: 0, echeance: '2027-01-15', regle: false },
@@ -267,7 +267,7 @@ export default function ComptableSpace({
                 >
                   {elevesPaiements.map(el => (
                     <option key={el.id} value={el.id}>
-                      {el.nom} — {el.classe} ({el.matricule}) • Reste dû : {el.reste.toLocaleString('fr-FR')} FCFA
+                      {el.nom} - {el.classe} ({el.matricule}) • Reste dû : {el.reste.toLocaleString('fr-FR')} FCFA
                     </option>
                   ))}
                 </select>

@@ -9,7 +9,7 @@ class DocsData
         return [
             'service' => 'api-inscription',
             'version' => '1.0.0',
-            'description' => 'Microservice de gestion des admissions et réinscriptions — SIGAPEI',
+            'description' => 'Microservice de gestion des admissions et réinscriptions - SIGAPEI',
             'port' => 4003,
             'prefixe_api' => '/v1',
             'authentication' => [

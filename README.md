@@ -122,7 +122,7 @@ git push                      # fusion automatique vers develop, puis retest
 | [`inscription`](inscription) | `4003` | `inscription` | Candidatures, pièces justificatives, tests d'admission, validation bloquante & réinscriptions | [README](inscription/README.md) • [Docs API](inscription/docs/api-documentation.md) (`/docs`) |
 | [`scolarite`](scolarite) | `4004` | `scolarite` | Cycles, classes (programme béninois/français), dossiers apprenants, mutations, emplois du temps | [README](scolarite/README.md) • [Docs API](scolarite/docs/api-documentation.md) (`/docs`) |
 | [`vie-scolaire`](vie-scolaire) | `4005` | `vie_scolaire` | Presences/absences, incidents disciplinaires et sanctions, alertes au seuil d'absences, dossier de vie scolaire | [README](vie-scolaire/README.md) |
-| [`elearning`](elearning) | — | `elearning` | *(à documenter par son responsable)* | — |
+| [`elearning`](elearning) | - | `elearning` | *(à documenter par son responsable)* | - |
 
 Chaque microservice est **autonome dans son propre dossier** (son propre
 `composer.json`/`package.json`, son propre `Dockerfile`, ses propres
@@ -141,14 +141,14 @@ microservice ou reprend un microservice existant** : elle décrit ce qui doit
 pas ces réglages microservice par microservice : recopiez le principe
 ci-dessous.
 
-### Règle n°1 — Une seule base de données, un schéma par microservice
+### Règle n°1 - Une seule base de données, un schéma par microservice
 
 Tous les microservices se connectent à la **même** base PostgreSQL managée
 (Neon), avec le **même hôte, le même nom de base, le même utilisateur et le
-même mot de passe** — seul le schéma change d'un microservice à l'autre.
+même mot de passe** - seul le schéma change d'un microservice à l'autre.
 
 1. **Demandez au chef de projet** les identifiants Neon (hôte, port,
-   `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`) — ce sont exactement les
+   `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`) - ce sont exactement les
    mêmes que ceux déjà utilisés par `identite` et `etablissements`, jamais
    des identifiants différents par microservice. Ne les redemandez pas
    ailleurs, ne créez pas de nouvelle base.
@@ -178,7 +178,7 @@ même mot de passe** — seul le schéma change d'un microservice à l'autre.
    ```
    Sans cette étape, la première commande de migration échoue avec une
    erreur du type *"no schema has been selected to create in"* (Laravel) ou
-   *"schema ... does not exist"* (TypeORM/NestJS) — c'est normal, c'est
+   *"schema ... does not exist"* (TypeORM/NestJS) - c'est normal, c'est
    uniquement dû à l'ordre dans lequel chaque framework crée sa table de
    suivi des migrations, pas à un problème de droits ou de configuration.
 4. Lancez ensuite vos migrations normalement :
@@ -196,7 +196,7 @@ inter-schémas : passez par l'API interne (`/interne/...` + header
 `X-Internal-Secret`) ou par un événement RabbitMQ de ce microservice,
 jamais par un accès direct à ses tables.
 
-### Règle n°2 — Redis et RabbitMQ sont partagés, pas dupliqués
+### Règle n°2 - Redis et RabbitMQ sont partagés, pas dupliqués
 
 Ne faites pas tourner votre propre conteneur Redis ou RabbitMQ par
 microservice : tous se connectent aux **mêmes** instances (celles déjà
@@ -222,7 +222,7 @@ lancées par `identite`), sur un réseau Docker partagé.
    ```
 4. Chaque microservice utilise un **numéro de base Redis différent**
    (`REDIS_DB`) pour ne pas mélanger ses clés de cache avec celles des
-   autres — `identite` utilise `0`, `etablissements` utilise `1`, prenez le
+   autres - `identite` utilise `0`, `etablissements` utilise `1`, prenez le
    numéro suivant disponible pour votre microservice et notez-le ici.
 5. RabbitMQ : ne créez pas votre propre exchange/queue sans en discuter
    avec l'équipe. Le principe déjà en place (voir
@@ -234,7 +234,7 @@ lancées par `identite`), sur un réseau Docker partagé.
    consommé dans le README de votre microservice, sur le même modèle que le
    tableau déjà présent dans `etablissements/README.md`.
 
-### Règle n°3 — Secret interne partagé (`INTERNAL_API_SECRET`)
+### Règle n°3 - Secret interne partagé (`INTERNAL_API_SECRET`)
 
 Tous les endpoints `/interne/*` (appelés uniquement par la passerelle API
 ou par un autre microservice, jamais par un client final) sont protégés par
@@ -242,14 +242,14 @@ un **même** secret partagé sur toute la plateforme, envoyé dans le header
 `X-Internal-Secret`.
 
 - Demandez la valeur au chef de projet, mettez-la telle quelle dans le
-  `.env` de votre microservice (`INTERNAL_API_SECRET=...`) — ne générez
+  `.env` de votre microservice (`INTERNAL_API_SECRET=...`) - ne générez
   jamais votre propre valeur différente, sinon les autres microservices ne
   pourront plus vous appeler et vous ne pourrez plus les appeler.
 - Protégez vos propres endpoints `/interne/*` avec ce même mécanisme
   (reprenez `VerifierSecretInterne` côté Laravel ou `InternalSecretGuard`
   côté NestJS selon votre stack).
 
-### Règle n°4 — CAPTCHA partagé (reCAPTCHA v3 / hCaptcha)
+### Règle n°4 - CAPTCHA partagé (reCAPTCHA v3 / hCaptcha)
 
 Un seul compte reCAPTCHA (ou hCaptcha) est créé pour toute la plateforme,
 avec un site enregistré par domaine/sous-domaine front-end concerné. Ne
@@ -257,7 +257,7 @@ créez pas votre propre compte CAPTCHA par microservice.
 
 - Demandez au chef de projet : `CAPTCHA_PROVIDER` (`recaptcha` ou
   `hcaptcha`), `CAPTCHA_SECRET_KEY` (clé **secrète**, côté serveur
-  uniquement) et `CAPTCHA_MIN_SCORE` — mêmes valeurs que celles déjà
+  uniquement) et `CAPTCHA_MIN_SCORE` - mêmes valeurs que celles déjà
   utilisées par `identite`.
 - Toute route publique qui accepte une soumission libre (formulaire de
   connexion, d'inscription, de demande, etc.) doit vérifier un
@@ -271,7 +271,7 @@ créez pas votre propre compte CAPTCHA par microservice.
   front-end) dans le `.env` d'un microservice backend : elle n'a rien à y
   faire, seule la clé secrète y est nécessaire.
 
-### Règle n°5 — JWT et identité de l'utilisateur courant
+### Règle n°5 - JWT et identité de l'utilisateur courant
 
 Aucun microservice autre qu'`identite` ne vérifie un mot de passe ou
 n'émet de jeton : pour savoir *qui* appelle une route protégée, un
@@ -279,7 +279,7 @@ microservice a deux options, jamais une troisième :
 
 1. **Cas normal (via la Gateway)** : la passerelle API a déjà validé le
    JWT et transmet le contexte utilisateur (uuid, `tenantId`, `roleCode`)
-   dans des headers internes — consommez ces headers, ne re-vérifiez pas le
+   dans des headers internes - consommez ces headers, ne re-vérifiez pas le
    JWT vous-même.
 2. **Cas d'un appel direct entre microservices** (sans passer par la
    Gateway) : appelez `GET identite/interne/introspection?token=...` avec
@@ -291,16 +291,16 @@ Ne dupliquez jamais la logique de vérification de signature JWT
 (`JWT_ACCESS_SECRET`) dans un autre microservice que `identite` : ce
 secret ne doit être connu que de lui.
 
-### Règle n°6 — Convention de port et de nommage
+### Règle n°6 - Convention de port et de nommage
 
 - Un port dédié par microservice, choisi une fois pour toutes et documenté
   dans le tableau plus haut (`identite` = 4001, `etablissements` = 4002,
-  `inscription` = 4003, `scolarite` = 4004, `vie-scolaire` = 4005) —
+  `inscription` = 4003, `scolarite` = 4004, `vie-scolaire` = 4005) -
   prenez le numéro suivant libre pour un nouveau microservice et
   mettez à jour ce README dans la même pull request.
 - Nom du schéma PostgreSQL = nom du dossier du microservice, en
   minuscules avec underscores si besoin (`vie_scolaire`, pas
-  `vie-scolaire` — Postgres accepte les tirets dans un identifiant entre
+  `vie-scolaire` - Postgres accepte les tirets dans un identifiant entre
   guillemets mais cela complique inutilement toutes les requêtes SQL brutes
   et les migrations manuelles).
 - Chaque microservice a son propre `Dockerfile` et son propre
@@ -309,7 +309,7 @@ secret ne doit être connu que de lui.
 
 ### Ce qu'il ne faut jamais faire
 
-- Committer un fichier `.env` réel (mots de passe, clés API, secrets) —
+- Committer un fichier `.env` réel (mots de passe, clés API, secrets) -
   seul `.env.example` avec des valeurs `change-me` va dans Git.
 - Créer une nouvelle base de données pour un microservice : tous partagent
   `neondb`, un schéma par microservice.

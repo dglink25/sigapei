@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import './NoticeModal.css'
 
 /* ────────────────────────────────────────────────────────
-   Icônes SVG animées — cercle qui se trace + symbole
+   Icônes SVG animées - cercle qui se trace + symbole
    r=20 → circonférence = 2π×20 ≈ 125.66
 ──────────────────────────────────────────────────────── */
 

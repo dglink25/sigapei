@@ -1,4 +1,4 @@
-# Documentation Complète de l'API — inscription (Admissions)
+# Documentation Complète de l'API - inscription (Admissions)
 
 Microservice de gestion du parcours d'admission et de réinscription de la plateforme **SIGAPEI**.
 

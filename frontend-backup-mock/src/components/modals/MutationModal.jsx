@@ -67,7 +67,7 @@ export default function MutationModal({
             >
               {classes.map(c => (
                 <option key={c.uuid || c.id} value={c.uuid || c.id}>
-                  {c.nom} — {c.programme?.toUpperCase()} ({c.inscrits_actuels ?? c.inscrits ?? 0}/{c.capacite} inscrits)
+                  {c.nom} - {c.programme?.toUpperCase()} ({c.inscrits_actuels ?? c.inscrits ?? 0}/{c.capacite} inscrits)
                 </option>
               ))}
             </select>

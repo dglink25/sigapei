@@ -9,12 +9,12 @@ import { StatusBadge } from '../../../components/etablissements/ui'
 import './admin.css'
 
 export const depuis = (iso) => {
-  if (!iso) return '—'
+  if (!iso) return '-'
   const j = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
   if (j <= 0) return "Aujourd'hui"
   return j === 1 ? 'Il y a 1 jour' : `Il y a ${j} jours`
 }
-export const dateFr = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '—')
+export const dateFr = (iso) => (iso ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '-')
 
 const TABS = [
   { id: 'soumise', label: 'À instruire' },
@@ -90,8 +90,8 @@ export default function DemandesPage() {
                   {rows.map((d) => (
                     <tr key={d.uuid} onClick={() => navigate(ADMIN_PATHS.detail(d.uuid))} tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && navigate(ADMIN_PATHS.detail(d.uuid))}>
                       <td><code>{d.reference}</code></td>
-                      <td><strong>{d.form.nom || '—'}</strong></td>
-                      <td>{d.form.dirigeant_nom || '—'}</td>
+                      <td><strong>{d.form.nom || '-'}</strong></td>
+                      <td>{d.form.dirigeant_nom || '-'}</td>
                       <td>{dateFr(d.dateSoumission)}<small>{depuis(d.dateSoumission)}</small></td>
                       <td><StatusBadge statut={d.statut} /></td>
                     </tr>

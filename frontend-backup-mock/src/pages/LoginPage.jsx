@@ -141,7 +141,7 @@ export default function LoginPage({ onLogin, onGoRegister }) {
             <span className="text-sigapei-gold">avec précision.</span>
           </h1>
           <p className="text-sigapei-cream/70 text-sm leading-relaxed max-w-xs">
-            Inscriptions, scolarité, emplois du temps, finances — un seul outil,
+            Inscriptions, scolarité, emplois du temps, finances - un seul outil,
             tous les acteurs de votre école, chacun à sa place.
           </p>
 

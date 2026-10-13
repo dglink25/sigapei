@@ -19,7 +19,7 @@
   --sg-radius-sm:   10px;
 }
 
-/* ===== Fond de page — plus d'image ===== */
+/* ===== Fond de page - plus d'image ===== */
 .dm-page {
   position: fixed; inset: 0; overflow-y: auto;
   display: flex; align-items: flex-start; justify-content: center;
@@ -33,7 +33,7 @@
 }
 .dm-page *, .dm-page *::before, .dm-page *::after { box-sizing: border-box; }
 
-/* ===== Carte principale — layout deux colonnes ===== */
+/* ===== Carte principale - layout deux colonnes ===== */
 .dm-card {
   display: flex;
   width: 100%; max-width: 960px;

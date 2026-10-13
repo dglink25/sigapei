@@ -60,6 +60,6 @@ export function Stepper({ steps, current, onGo }) {
 }
 
 export function StatusBadge({ statut }) {
-  const s = STATUTS[statut] ?? { label: statut || '—', tone: 'neutral' }
+  const s = STATUTS[statut] ?? { label: statut || '-', tone: 'neutral' }
   return <span className={`ad-badge ad-badge--${s.tone}`}>{s.label}</span>
 }
