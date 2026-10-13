@@ -1,0 +1,31 @@
+# ============================================================
+# api-evaluations — orchestration locale (CDC §19.1)
+# PostgreSQL et Redis partagés, RabbitMQ mutualisé au niveau plateforme (réseau externe).
+# Pré-requis : docker network create sigapei
+# ============================================================
+services:
+  api-evaluations:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-evaluations
+    restart: unless-stopped
+    # Port INTERNE uniquement (CDC) : aucun "ports:" — accessible via la Gateway sur le réseau sigapei.
+    expose:
+      - "4006"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+    networks:
+      - sigapei
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents(\"http://127.0.0.1:4006/health\") ? 0 : 1);"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  sigapei:
+    external: true

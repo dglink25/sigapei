@@ -122,6 +122,9 @@ git push                      # fusion automatique vers develop, puis retest
 | [`inscription`](inscription) | `4003` | `inscription` | Candidatures, pièces justificatives, tests d'admission, validation bloquante & réinscriptions | [README](inscription/README.md) • [Docs API](inscription/docs/api-documentation.md) (`/docs`) |
 | [`scolarite`](scolarite) | `4004` | `scolarite` | Cycles, classes (programme béninois/français), dossiers apprenants, mutations, emplois du temps | [README](scolarite/README.md) • [Docs API](scolarite/docs/api-documentation.md) (`/docs`) |
 | [`vie-scolaire`](vie-scolaire) | `4005` | `vie_scolaire` | Presences/absences, incidents disciplinaires et sanctions, alertes au seuil d'absences, dossier de vie scolaire | [README](vie-scolaire/README.md) |
+| [`evaluations`](evaluations) | `4006` | `evaluations` | Notes, barèmes, coefficients, moyennes, classements, bulletins (calcul à la volée), contestations | [README](evaluations/README.md) |
+| [`demandes`](demandes) | `4007` | `demandes` | Guichet unique de documents (apprenants, personnel, enseignants), permissions d'absence, réclamations | [README](demandes/README.md) (`/docs`) |
+| [`finances`](finances) | `4008` | `finances` | Double flux entrant/sortant, FedaPay/KkiaPay, décaissements à double validation, abonnement & hibernation | [README](finances/README.md) |
 | [`elearning`](elearning) | — | `elearning` | *(à documenter par son responsable)* | — |
 
 Chaque microservice est **autonome dans son propre dossier** (son propre
@@ -224,6 +227,10 @@ lancées par `identite`), sur un réseau Docker partagé.
    (`REDIS_DB`) pour ne pas mélanger ses clés de cache avec celles des
    autres — `identite` utilise `0`, `etablissements` utilise `1`, prenez le
    numéro suivant disponible pour votre microservice et notez-le ici.
+   Attribution actuelle : `identite`=0, `etablissements`=1, `inscription`=2,
+   `scolarite`=3, `evaluations`=4, `finances`=5, `demandes`=6
+   (`vie-scolaire` utilise aussi `2` dans son `.env.example` : à corriger par
+   son responsable, prochain numéro libre `7`).
 5. RabbitMQ : ne créez pas votre propre exchange/queue sans en discuter
    avec l'équipe. Le principe déjà en place (voir
    `etablissements/README.md`, section RabbitMQ) est qu'un microservice
@@ -295,7 +302,8 @@ secret ne doit être connu que de lui.
 
 - Un port dédié par microservice, choisi une fois pour toutes et documenté
   dans le tableau plus haut (`identite` = 4001, `etablissements` = 4002,
-  `inscription` = 4003, `scolarite` = 4004, `vie-scolaire` = 4005) —
+  `inscription` = 4003, `scolarite` = 4004, `vie-scolaire` = 4005,
+  `evaluations` = 4006, `demandes` = 4007, `finances` = 4008) —
   prenez le numéro suivant libre pour un nouveau microservice et
   mettez à jour ce README dans la même pull request.
 - Nom du schéma PostgreSQL = nom du dossier du microservice, en

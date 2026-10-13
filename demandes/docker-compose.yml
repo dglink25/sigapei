@@ -1,0 +1,38 @@
+# ============================================================
+# api-demandes - Orchestration Docker
+# Demarrage : docker compose up -d --build
+# Port interne 4007 (non publie sur l'hote, acces via la Gateway)
+#
+# IMPORTANT : ce microservice REUTILISE le Redis et le RabbitMQ deja
+# demarres par la stack api-identite (meme reseau Docker partage "sigapei"),
+# et se connecte a la MEME base PostgreSQL unique (Neon), schema "demandes".
+#
+# Pre-requis, une seule fois :
+#   docker network create sigapei
+# ============================================================
+services:
+  api-demandes:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-demandes
+    restart: unless-stopped
+    # Port INTERNE uniquement : accessible via la Gateway sur le reseau sigapei.
+    expose:
+      - "4007"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - RABBITMQ_URL=amqp://sigapei:${RABBITMQ_PASSWORD}@rabbitmq:5672/
+    networks:
+      - sigapei
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:4007/sante', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  sigapei:
+    external: true
