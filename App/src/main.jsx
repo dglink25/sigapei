@@ -5,7 +5,7 @@ import './index.css'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
 import { NotifyProvider } from './context/NotifyContext'
-import { AuthProvider } from './context/AuthContext'
+import { AuthProvider } from './pages/identite'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
