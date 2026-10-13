@@ -40,11 +40,11 @@ class ValidationService
      * dossier en statut "correction_demandee" et genere un premier lien
      * de correction a usage unique.
      */
-    public function demanderCorrection(string $demandeUuid, array $champsACorreiger): DemandeEtablissement
+    public function demanderCorrection(string $demandeUuid, array $champsACorriger): DemandeEtablissement
     {
         $demande = DemandeEtablissement::where('uuid', $demandeUuid)->firstOrFail();
 
-        $demande->champs_a_corriger = $champsACorreiger;
+        $demande->champs_a_corriger = $champsACorriger;
         $demande->statut = 'correction_demandee';
         $demande->save();
 
@@ -52,7 +52,7 @@ class ValidationService
 
         $this->rabbitmq->publier('demande.correction_demandee', [
             'demandeUuid' => $demande->uuid,
-            'champsACorreiger' => $champsACorreiger,
+            'champsACorriger' => $champsACorriger,
             'lienCorrection' => $this->tokenService->urlCorrection($tokenClair),
             'dirigeantEmail' => $demande->dirigeant_email,
             'dirigeantTelephone' => $demande->dirigeant_telephone,
@@ -101,7 +101,7 @@ class ValidationService
 
             $this->rabbitmq->publier('demande.correction_relance', [
                 'demandeUuid' => $demande->uuid,
-                'champsACorreiger' => $demande->champs_a_corriger,
+                'champsACorriger' => $demande->champs_a_corriger,
                 'lienCorrection' => $this->tokenService->urlCorrection($tokenClair),
                 'dirigeantEmail' => $demande->dirigeant_email,
                 'dirigeantTelephone' => $demande->dirigeant_telephone,

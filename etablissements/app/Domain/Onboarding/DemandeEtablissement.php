@@ -11,6 +11,7 @@ class DemandeEtablissement extends Model
     protected $table = 'demandes_etablissement';
 
     protected $fillable = [
+        'uuid',
         'donnees_formulaire',
         'arrondissement_id',
         'adresse_complete',
@@ -28,6 +29,8 @@ class DemandeEtablissement extends Model
         'date_soumission',
         'etablissement_id',
     ];
+
+    protected $hidden = ['id', 'arrondissement_id', 'etablissement_id', 'lien_correction_token'];
 
     protected $casts = [
         'donnees_formulaire' => 'array',

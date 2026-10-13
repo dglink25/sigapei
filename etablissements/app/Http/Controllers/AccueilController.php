@@ -23,7 +23,10 @@ class AccueilController extends Controller
         $contenu = $this->etablissementService->contenu($slug);
 
         if (! $contenu) {
-            return response()->json(['success' => false, 'error' => ['code' => 'ETABLISSEMENT_INTROUVABLE']], 404);
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'ETABLISSEMENT_INTROUVABLE', 'message' => 'Aucun établissement ne correspond à ce slug.'],
+            ], 404);
         }
 
         return response()->json(['success' => true, 'accueil' => $contenu]);
