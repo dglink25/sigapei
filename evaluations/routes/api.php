@@ -28,6 +28,9 @@ Route::get('/health', fn () => response()->json([
     'horodatage' => now()->toIso8601String(),
 ]));
 
+// Contrat OpenAPI 3 (même convention que les autres microservices : GET /docs public, sans donnée).
+Route::get('/docs', fn () => response((string) file_get_contents(base_path('docs/openapi.json')), 200, ['Content-Type' => 'application/json']));
+
 Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth.tenant', 'throttle:api'])->group(function () {

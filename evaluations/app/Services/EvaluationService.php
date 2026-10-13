@@ -68,7 +68,7 @@ class EvaluationService
         $evaluation->rattrapage_de_id = $rattrapageDe?->id;
         $evaluation->save();
 
-        return $evaluation->load('periode', 'matiere');
+        return $evaluation->fresh(['periode', 'matiere']);
     }
 
     public function verrouillerSaisie(Evaluation $evaluation): Evaluation

@@ -59,7 +59,7 @@ class ContestationService
             throw MetierException::conflit('Une contestation est déjà en cours pour cette note.', 'CONTESTATION_EN_COURS');
         }
 
-        return $contestation;
+        return $contestation->fresh();
     }
 
     public function traiter(ContestationNote $contestation, string $statut, ?string $reponse): ContestationNote

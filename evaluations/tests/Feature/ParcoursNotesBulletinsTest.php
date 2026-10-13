@@ -60,6 +60,17 @@ class ParcoursNotesBulletinsTest extends ApiTestCase
             ->assertJsonPath('data.ponderation_types.devoir_surveille.mode', 'individuel');
     }
 
+    public function test_coefficient_par_niveau(): void
+    {
+        $this->commeAdmin()->putJson("/v1/matieres/{$this->c['maths']}/coefficients", [
+            'coefficients' => [['cycle' => 'secondaire', 'niveau' => '3e', 'coefficient' => '5']],
+        ])->assertOk()->assertJsonPath('data.coefficients.0.coefficient', '5.00');
+
+        $this->remplirNotes();
+        $this->en('apprenant', $this->eleveUser)->getJson("/v1/bulletins/apprenant/{$this->alice}?periode_uuid={$this->c['periode']}")
+            ->assertOk()->assertJsonPath('data.matieres.0.coefficient', '5.00');
+    }
+
     // ---------------------------------------------------------------- Évaluations
 
     public function test_enseignant_non_affecte_ne_peut_pas_creer_d_evaluation(): void

@@ -5,6 +5,7 @@ Compositions en ligne surveillées : phase 2, bloquée par le contrat d'interfac
 
 - **Port interne** : `4006` (non publié, accès via la Gateway sur le réseau `sigapei`)
 - **Préfixe API** : `/v1/...` — **Santé** : `GET /health` (et `/sante`)
+- **Documentation** : [docs/api-documentation.md](docs/api-documentation.md) — contrat OpenAPI 3 : [docs/openapi.json](docs/openapi.json), servi sur `GET /docs`
 - **Stack** : Laravel 12, PHP 8.4, PostgreSQL schéma `evaluations`, Redis DB `4`, RabbitMQ
 - **Processus** (même image) : API (nginx + php-fpm), worker de file (clôtures), planificateur (escalades)
 

@@ -31,6 +31,7 @@ return new class extends Migration
 
         Schema::create('coefficients_matiere', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique()->default(DB::raw('gen_random_uuid()'));
             $table->unsignedBigInteger('tenant_id');
             $table->foreignId('matiere_id')->constrained('matieres')->restrictOnDelete();
             $table->string('cycle', 20);

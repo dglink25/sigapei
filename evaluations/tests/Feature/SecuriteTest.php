@@ -12,6 +12,11 @@ class SecuriteTest extends ApiTestCase
         $this->getJson('/health')->assertOk()->assertJsonPath('statut', 'ok');
     }
 
+    public function test_contrat_openapi_publie(): void
+    {
+        $this->get('/docs')->assertOk()->assertJsonPath('openapi', '3.0.3')->assertJsonPath('info.title', 'SIGAPEI — API Évaluations');
+    }
+
     public function test_contexte_gateway_sans_secret_refuse_meme_avec_un_role_administrateur(): void
     {
         $this->en('administrateur', $this->admin, secret: null)->getJson('/v1/matieres')
