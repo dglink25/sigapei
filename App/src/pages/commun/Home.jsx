@@ -10,7 +10,7 @@ const profilesData = [
     desc: "Supervision globale du réseau ou de l'établissement, suivi des recettes en temps réel, statistiques d'assiduité et contrôle d'accès instantané.",
     features: [
       "Tableau de bord consolidé pour l'ensemble des établissements du groupe",
-      'Gestion immédiate du statut d\'accès (activation / suspension en un clic)',
+      "Gestion immédiate du statut d'accès (activation / suspension en un clic)",
       'Traçabilité intégrale de toutes les transactions et actes administratifs',
       'Suivi analytique du taux de recouvrement et des impayés',
     ],
@@ -120,25 +120,9 @@ export default function Home() {
   const [activeNav, setActiveNav] = useState('top')
   const [activeTab, setActiveTab] = useState(0)
 
-  // Counter states
   const [apprenants, setApprenants] = useState(0)
   const [presence, setPresence] = useState(0)
   const [recettes, setRecettes] = useState(0)
-
-  // Theme — appliqué sur <html> comme dans le web-site
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
-  }, [isDark])
-
-  // Sidebar — classe sur <body> comme dans le web-site
-  useEffect(() => {
-    if (isSide) {
-      document.body.classList.add('side')
-    } else {
-      document.body.classList.remove('side')
-    }
-    return () => document.body.classList.remove('side')
-  }, [isSide])
 
   // Animate KPI numbers on mount
   useEffect(() => {
@@ -158,13 +142,15 @@ export default function Home() {
 
   // Scroll listener — parallax + active nav
   useEffect(() => {
+    const root = document.getElementById('hp')
+    if (!root) return
     const handleScroll = () => {
       const sy = window.scrollY
-      document.querySelectorAll('.par').forEach((el) => {
+      root.querySelectorAll('.hp-par').forEach((el) => {
         const d = parseFloat(el.getAttribute('data-d') || '0')
         el.style.transform = `translateY(${sy * d * 0.015}px)`
       })
-      const sections = document.querySelectorAll('section[id]')
+      const sections = root.querySelectorAll('section[id]')
       let current = 'top'
       sections.forEach((sec) => {
         const top = sec.offsetTop - 140
@@ -178,14 +164,16 @@ export default function Home() {
 
   // Intersection Observer — scroll reveal
   useEffect(() => {
+    const root = document.getElementById('hp')
+    if (!root) return
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('in')
-            if (entry.target.id === 'chart') {
-              const bars = entry.target.querySelectorAll('i[data-h]')
-              bars.forEach((bar) => {
+            if (entry.target.id === 'hp-chart') {
+              entry.target.querySelectorAll('i[data-h]').forEach((bar) => {
                 const h = bar.getAttribute('data-h')
                 if (h) bar.style.height = `${h}%`
               })
@@ -195,7 +183,7 @@ export default function Home() {
       },
       { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
     )
-    document.querySelectorAll('.rv, .steps, #chart').forEach((el) => observer.observe(el))
+    root.querySelectorAll('.hp-rv, .hp-steps, #hp-chart').forEach((el) => observer.observe(el))
 
     const secObserver = new IntersectionObserver(
       (entries) => {
@@ -205,7 +193,7 @@ export default function Home() {
       },
       { threshold: 0.05 }
     )
-    document.querySelectorAll('.sec-rv').forEach((el) => secObserver.observe(el))
+    root.querySelectorAll('.hp-sec-rv').forEach((el) => secObserver.observe(el))
 
     return () => { observer.disconnect(); secObserver.disconnect() }
   }, [])
@@ -213,47 +201,48 @@ export default function Home() {
   const current = profilesData[activeTab]
 
   return (
-    <>
+    <div
+      id="hp"
+      data-theme={isDark ? 'dark' : 'light'}
+      data-side={isSide ? 'true' : 'false'}
+    >
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <header id="hd">
-        <div className="nav">
-          <a href="#top" className="brand">
-            <i className="lg" role="img" aria-label="Logo" />
+      <header id="hp-hd">
+        <div className="hp-nav">
+          <a href="#hp-top" className="hp-brand">
+            <i className="hp-lg" role="img" aria-label="Logo" />
             <span>SIGAPEI</span>
           </a>
 
-          <nav className="links" aria-label="Navigation principale">
-            <a href="#profils" className={activeNav === 'profils' ? 'act' : ''}>Pour qui</a>
-            <a href="#modules" className={activeNav === 'modules' ? 'act' : ''}>Modules</a>
-            <a href="#demarrer" className={activeNav === 'demarrer' ? 'act' : ''}>Démarrer</a>
-            <a href="#securite" className={activeNav === 'securite' ? 'act' : ''}>Sécurité</a>
-            <a href="#offres" className={activeNav === 'offres' ? 'act' : ''}>Offres</a>
+          <nav className="hp-links" aria-label="Navigation principale">
+            <a href="#hp-profils" className={activeNav === 'hp-profils' ? 'act' : ''}>Pour qui</a>
+            <a href="#hp-modules" className={activeNav === 'hp-modules' ? 'act' : ''}>Modules</a>
+            <a href="#hp-demarrer" className={activeNav === 'hp-demarrer' ? 'act' : ''}>Démarrer</a>
+            <a href="#hp-securite" className={activeNav === 'hp-securite' ? 'act' : ''}>Sécurité</a>
+            <a href="#hp-offres" className={activeNav === 'hp-offres' ? 'act' : ''}>Offres</a>
           </nav>
 
-          <div className="acts">
+          <div className="hp-acts">
             <button
-              className="ib"
-              id="th"
+              className="hp-ib"
               onClick={() => setIsDark(!isDark)}
               aria-label="Basculer entre mode jour et nuit"
-              title={isDark ? 'Passer en mode jour' : 'Passer en mode nuit'}
             >
-              <svg className="sun" viewBox="0 0 24 24">
+              <svg className="hp-sun" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
               </svg>
-              <svg className="moon" viewBox="0 0 24 24">
+              <svg className="hp-moon" viewBox="0 0 24 24">
                 <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
               </svg>
             </button>
 
             <button
-              className="ib"
-              id="lay"
+              className="hp-ib"
+              id="hp-lay"
               onClick={() => setIsSide(!isSide)}
               aria-label="Basculer entre barre de navigation et barre latérale"
               aria-pressed={isSide}
-              title={isSide ? 'Passer en mode Topbar' : 'Passer en mode Sidebar'}
             >
               <svg viewBox="0 0 24 24">
                 <rect x="3" y="4" width="18" height="16" rx="3" />
@@ -261,76 +250,76 @@ export default function Home() {
               </svg>
             </button>
 
-            <a className="btn b-g" href="/demande">Inscrire mon école</a>
+            <a className="hp-btn hp-b-g" href="/demande">Inscrire mon école</a>
           </div>
         </div>
       </header>
 
       {/* Scrim overlay */}
-      <div className="scrim" id="scrim" onClick={() => setIsSide(false)} />
+      <div className="hp-scrim" onClick={() => setIsSide(false)} />
 
       {/* ── Page ───────────────────────────────────────────────────── */}
-      <div id="page">
-        <main id="top">
+      <div id="hp-page">
+        <main id="hp-top">
 
           {/* ── Hero ─────────────────────────────────────────────── */}
-          <section className="hero sec-rv">
-            <div className="par p1" data-d="30"><div className="sh" /></div>
-            <div className="par p2" data-d="-22"><div className="sh" /></div>
-            <div className="par p3" data-d="18"><div className="sh" /></div>
-            <div className="par p4" data-d="-34"><div className="sh" /></div>
+          <section className="hp-hero hp-sec-rv">
+            <div className="hp-par p1" data-d="30"><div className="hp-sh" /></div>
+            <div className="hp-par p2" data-d="-22"><div className="hp-sh" /></div>
+            <div className="hp-par p3" data-d="18"><div className="hp-sh" /></div>
+            <div className="hp-par p4" data-d="-34"><div className="hp-sh" /></div>
 
-            <div className="w">
+            <div className="hp-w">
               <div>
-                <h1 id="h1">
+                <h1 id="hp-h1">
                   {headlineWords.map((word, idx) => (
                     <span key={idx}>
-                      <span className="wd" style={{ animationDelay: `${0.1 + idx * 0.08}s` }}>{word}</span>
+                      <span className="hp-wd" style={{ animationDelay: `${0.1 + idx * 0.08}s` }}>{word}</span>
                       {' '}
                     </span>
                   ))}
                 </h1>
 
-                <p className="lead hi">
+                <p className="hp-lead hp-hi">
                   Inscriptions, notes, bulletins, paiements, présences et demandes de documents.
                   Une seule base de vérité pour le fondateur, l&apos;enseignant, l&apos;apprenant et le parent.
                 </p>
 
-                <div className="cta hi">
-                  <a className="btn b-o" href="/demande">Inscrire mon établissement</a>
-                  <a className="btn b-l" href="#modules">Découvrir les modules</a>
+                <div className="hp-cta hp-hi">
+                  <a className="hp-btn hp-b-o" href="/demande">Inscrire mon établissement</a>
+                  <a className="hp-btn hp-b-l" href="#hp-modules">Découvrir les modules</a>
                 </div>
 
-                <div className="cyc hi">
-                  <span><i className="dia" />Primaire</span>
-                  <span><i className="dia" />Secondaire</span>
-                  <span><i className="dia" />Universitaire</span>
-                  <span><i className="dia" />Installable sur mobile</span>
+                <div className="hp-cyc hp-hi">
+                  <span><i className="hp-dia" />Primaire</span>
+                  <span><i className="hp-dia" />Secondaire</span>
+                  <span><i className="hp-dia" />Universitaire</span>
+                  <span><i className="hp-dia" />Installable sur mobile</span>
                 </div>
               </div>
 
-              <div className="vis">
-                <div className="chip c1">
-                  <i className="dia" />
+              <div className="hp-vis">
+                <div className="hp-chip hp-c1">
+                  <i className="hp-dia" />
                   <div>Paiement reçu<small>MTN MoMo · 25 000 FCFA</small></div>
                 </div>
-                <div className="chip c2">
-                  <i className="dia" />
+                <div className="hp-chip hp-c2">
+                  <i className="hp-dia" />
                   <div>Bulletin publié<small>6e A · parents notifiés</small></div>
                 </div>
-                <div className="chip c3">
-                  <i className="dia" />
+                <div className="hp-chip hp-c3">
+                  <i className="hp-dia" />
                   <div>Absence signalée<small>Parent prévenu en direct</small></div>
                 </div>
 
-                <div className={`dash${isSuspended ? ' off' : ''}`} id="dash" aria-label="Aperçu du tableau de bord">
-                  <div className="bar">
+                <div className={`hp-dash${isSuspended ? ' off' : ''}`} aria-label="Aperçu du tableau de bord">
+                  <div className="hp-bar">
                     <i /><i /><i />
                     <b>app.sigapei.com/les-flamboyants/administration</b>
                   </div>
 
-                  <div className="dbody">
-                    <div className="dash-side">
+                  <div className="hp-dbody">
+                    <div className="hp-dash-side">
                       <div className="on">Tableau de bord</div>
                       <div>Apprenants</div>
                       <div>Notes</div>
@@ -339,28 +328,27 @@ export default function Home() {
                       <div>Personnel</div>
                     </div>
 
-                    <div className="main">
-                      <div className="top">
+                    <div className="hp-dmain">
+                      <div className="hp-dtop">
                         <strong>Les Flamboyants</strong>
                         <button
-                          className="sw"
-                          id="sw"
+                          className="hp-sw"
                           onClick={() => setIsSuspended(!isSuspended)}
                           aria-pressed={isSuspended}
-                          aria-label="Simuler une suspension de l'établissement"
+                          aria-label="Simuler une suspension"
                         >
                           <b>{isSuspended ? 'Suspendu' : 'Actif'}</b>
                           <span />
                         </button>
                       </div>
 
-                      <div className="kp">
+                      <div className="hp-kp">
                         <div><small>Apprenants</small><b>{apprenants}</b></div>
                         <div><small>Présence</small><b><span>{presence}</span> %</b></div>
                         <div><small>Recettes FCFA</small><b><span>{recettes}</span> M</b></div>
                       </div>
 
-                      <div className="chart" id="chart" aria-hidden="true">
+                      <div className="hp-chart" id="hp-chart" aria-hidden="true">
                         <i data-h="45" />
                         <i data-h="60" />
                         <i data-h="52" />
@@ -370,17 +358,17 @@ export default function Home() {
                         <i data-h="80" />
                       </div>
 
-                      <div className="alert">
-                        <i className="dia" />
+                      <div className="hp-alert">
+                        <i className="hp-dia" />
                         12 soldes impayés depuis plus de 30 jours
                       </div>
                     </div>
                   </div>
 
-                  <div className="lock">
+                  <div className="hp-lock">
                     <strong>Accès suspendu</strong>
                     Cet établissement est suspendu. Contactez la plateforme E-Académique.
-                    <small style={{ color: 'var(--mut)' }}>Effet immédiat, une seule écriture en base.</small>
+                    <small>Effet immédiat, une seule écriture en base.</small>
                   </div>
                 </div>
               </div>
@@ -388,40 +376,34 @@ export default function Home() {
           </section>
 
           {/* ── Marquee Ticker ───────────────────────────────────── */}
-          <div className="tk" aria-hidden="true">
-            <div className="tr2" id="tk">
+          <div className="hp-tk" aria-hidden="true">
+            <div className="hp-tr2">
               <span>
                 {tickerItems.map((item, idx) => (
-                  <span key={idx}>
-                    <i className="dia" />
-                    <span>{item}</span>
-                  </span>
+                  <span key={idx}><i className="hp-dia" /><span>{item}</span></span>
                 ))}
               </span>
               <span>
                 {tickerItems.map((item, idx) => (
-                  <span key={`r${idx}`}>
-                    <i className="dia" />
-                    <span>{item}</span>
-                  </span>
+                  <span key={`r${idx}`}><i className="hp-dia" /><span>{item}</span></span>
                 ))}
               </span>
             </div>
           </div>
 
           {/* ── Profiles Section ─────────────────────────────────── */}
-          <section id="profils" className="sec-rv sect-alt">
-            <div className="w">
-              <h2 className="rv">Un espace pensé pour chacun.</h2>
-              <p className="lead rv">
+          <section id="hp-profils" className="hp-sec-rv hp-sect-alt">
+            <div className="hp-w">
+              <h2 className="hp-rv">Un espace pensé pour chacun.</h2>
+              <p className="hp-lead hp-rv">
                 Chaque profil voit uniquement ce qui lui sert, avec des droits définis par le fondateur.
               </p>
 
-              <div className="tabs rv" role="tablist" id="tabs">
+              <div className="hp-tabs hp-rv" role="tablist">
                 {profilesData.map((p, idx) => (
                   <button
                     key={p.id}
-                    className="tab"
+                    className="hp-tab"
                     role="tab"
                     aria-selected={activeTab === idx}
                     onClick={() => setActiveTab(idx)}
@@ -431,36 +413,36 @@ export default function Home() {
                 ))}
               </div>
 
-              <div className="panel rv" id="panel" role="tabpanel">
+              <div className="hp-panel hp-rv" role="tabpanel">
                 <div>
-                  <span className="tag ok" style={{ marginBottom: 8, display: 'inline-block' }}>{current.role}</span>
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--head)', marginTop: 4, marginBottom: 12 }}>
+                  <span className="hp-tag hp-ok" style={{ marginBottom: 8, display: 'inline-block' }}>{current.role}</span>
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--hp-head)', marginTop: 4, marginBottom: 12 }}>
                     {current.title}
                   </h3>
-                  <p style={{ color: 'var(--mut)', fontSize: '0.95rem', lineHeight: 1.6 }}>{current.desc}</p>
+                  <p style={{ color: 'var(--hp-mut)', fontSize: '0.95rem', lineHeight: 1.6 }}>{current.desc}</p>
                   <ul>
                     {current.features.map((feat, fIdx) => (
                       <li key={fIdx}>
-                        <i className="dia" />
+                        <i className="hp-dia" />
                         <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="phone">
-                  <div className="scr">
+                <div className="hp-phone">
+                  <div className="hp-scr">
                     <div>
                       <h4>{current.phoneTitle}</h4>
                       <small>{current.phoneSubtitle}</small>
                     </div>
                     {current.rows.map((r, rIdx) => (
-                      <div key={rIdx} className="row">
+                      <div key={rIdx} className="hp-row">
                         <div>
                           <div style={{ fontSize: '11px', color: '#5B6B62', fontWeight: 600 }}>{r.label}</div>
                           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F241A' }}>{r.val}</div>
                         </div>
-                        <span className={`tag ${r.status}`}>{r.tag}</span>
+                        <span className={`hp-tag hp-${r.status}`}>{r.tag}</span>
                       </div>
                     ))}
                   </div>
@@ -470,46 +452,46 @@ export default function Home() {
           </section>
 
           {/* ── Modules Section ──────────────────────────────────── */}
-          <section id="modules" className="sec-rv">
-            <div className="w">
-              <h2 className="rv">Tout ce dont un établissement a besoin.</h2>
-              <p className="lead rv">
+          <section id="hp-modules" className="hp-sec-rv">
+            <div className="hp-w">
+              <h2 className="hp-rv">Tout ce dont un établissement a besoin.</h2>
+              <p className="hp-lead hp-rv">
                 Chaque information existe à un seul endroit. Elle est partagée entre modules, jamais recopiée.
               </p>
 
-              <div className="mods" id="mods">
-                <div className="mod big rv">
-                  <i className="dia" />
+              <div className="hp-mods">
+                <div className="hp-mod hp-big hp-rv">
+                  <i className="hp-dia" />
                   <h3>Finances et paiements</h3>
                   <p>Frais de scolarité, reçus automatiques, intégration Mobile Money (MTN, Orange, Moov, Wave) et banques. Suivi en direct des impayés et recouvrement.</p>
                 </div>
-                <div className="mod rv">
-                  <i className="dia" />
+                <div className="hp-mod hp-rv">
+                  <i className="hp-dia" />
                   <h3>Scolarité &amp; Bulletins</h3>
                   <p>Calcul automatique des moyennes, gestion des coefficients par série et édition des bulletins officiels en PDF sécurisés.</p>
                 </div>
-                <div className="mod rv">
-                  <i className="dia" />
+                <div className="hp-mod hp-rv">
+                  <i className="hp-dia" />
                   <h3>Vie Scolaire &amp; Présences</h3>
                   <p>Appel numérique en classe sur mobile, gestion des retards/absences et alertes directes transmises aux parents.</p>
                 </div>
-                <div className="mod rv">
-                  <i className="dia" />
+                <div className="hp-mod hp-rv">
+                  <i className="hp-dia" />
                   <h3>Inscriptions &amp; Réinscriptions</h3>
                   <p>Portail de pré-inscription en ligne, numérisation des pièces justificatives et validation des dossiers d&apos;admission.</p>
                 </div>
-                <div className="mod rv">
-                  <i className="dia" />
+                <div className="hp-mod hp-rv">
+                  <i className="hp-dia" />
                   <h3>E-Learning &amp; Devoirs</h3>
                   <p>Bibliothèque numérique, dépôt de cours, devoirs à rendre et quiz d&apos;évaluation accessibles 24/7.</p>
                 </div>
-                <div className="mod rv">
-                  <i className="dia" />
+                <div className="hp-mod hp-rv">
+                  <i className="hp-dia" />
                   <h3>Supervision Multi-Écoles</h3>
                   <p>Consolidation des données pour les groupes scolaires, comparatifs inter-écoles et tableaux de bord consolidés.</p>
                 </div>
-                <div className="mod rv">
-                  <i className="dia" />
+                <div className="hp-mod hp-rv">
+                  <i className="hp-dia" />
                   <h3>Identité &amp; Cartes QR-Code</h3>
                   <p>Gestion fine des rôles et génération automatique des cartes d&apos;étudiants sécurisées avec QR-Code.</p>
                 </div>
@@ -518,30 +500,30 @@ export default function Home() {
           </section>
 
           {/* ── Steps Section ────────────────────────────────────── */}
-          <section id="demarrer" className="sec-rv sect-alt">
-            <div className="w">
-              <h2 className="rv">Comment démarrer avec sigapei ?</h2>
-              <p className="lead rv">
+          <section id="hp-demarrer" className="hp-sec-rv hp-sect-alt">
+            <div className="hp-w">
+              <h2 className="hp-rv">Comment démarrer avec sigapei ?</h2>
+              <p className="hp-lead hp-rv">
                 Une mise en service rapide en 4 étapes simples, sans infrastructure lourde ni installation complexe.
               </p>
 
-              <div className="steps in">
-                <div className="st">
+              <div className="hp-steps in">
+                <div className="hp-st">
                   <em>01</em>
                   <h3>Inscription de l&apos;école</h3>
                   <p>Création de votre espace établissement personnalisé en moins de 2 minutes.</p>
                 </div>
-                <div className="st">
+                <div className="hp-st">
                   <em>02</em>
                   <h3>Import des effectifs</h3>
                   <p>Importation facile des apprenants et enseignants via fichier Excel / CSV.</p>
                 </div>
-                <div className="st">
+                <div className="hp-st">
                   <em>03</em>
                   <h3>Paramétrage des cycles</h3>
                   <p>Configuration des classes, séries, coefficients et frais de scolarité.</p>
                 </div>
-                <div className="st">
+                <div className="hp-st">
                   <em>04</em>
                   <h3>Ouverture des accès</h3>
                   <p>Envoi des identifiants sécurisés aux enseignants, apprenants et parents.</p>
@@ -551,29 +533,29 @@ export default function Home() {
           </section>
 
           {/* ── Security Section ─────────────────────────────────── */}
-          <section id="securite" className="band sec-rv">
-            <div className="w">
-              <h2 className="rv">Sécurité &amp; Souveraineté des Données</h2>
-              <p className="lead rv">
+          <section id="hp-securite" className="hp-band hp-sec-rv">
+            <div className="hp-w">
+              <h2 className="hp-rv">Sécurité &amp; Souveraineté des Données</h2>
+              <p className="hp-lead hp-rv">
                 Vos données scolaires et financières sont chiffrées et protégées selon les normes internationales les plus strictes.
               </p>
 
-              <div className="trust">
-                <div className="tr">
-                  <div className="n">99.9%</div>
+              <div className="hp-trust">
+                <div className="hp-tr">
+                  <div className="hp-n">99.9%</div>
                   <p>Disponibilité garantie avec haute fiabilité et sauvegardes automatiques en temps réel.</p>
                 </div>
-                <div className="tr">
-                  <div className="n">256-bit</div>
+                <div className="hp-tr">
+                  <div className="hp-n">256-bit</div>
                   <p>Toutes les transactions financières et données personnelles sont intégralement chiffrées.</p>
                 </div>
-                <div className="tr">
-                  <div className="n">Conforme</div>
+                <div className="hp-tr">
+                  <div className="hp-n">Conforme</div>
                   <p>Respect strict des lois et réglementations sur la protection des données personnelles.</p>
                 </div>
               </div>
 
-              <div className="pay">
+              <div className="hp-pay">
                 <span>MTN Mobile Money</span>
                 <span>Orange Money</span>
                 <span>Moov Money</span>
@@ -585,78 +567,78 @@ export default function Home() {
           </section>
 
           {/* ── Offers Section ───────────────────────────────────── */}
-          <section id="offres" className="sec-rv">
-            <div className="w">
-              <h2 className="rv">Des tarifs adaptés à la taille de votre école.</h2>
-              <p className="lead rv">
+          <section id="hp-offres" className="hp-sec-rv">
+            <div className="hp-w">
+              <h2 className="hp-rv">Des tarifs adaptés à la taille de votre école.</h2>
+              <p className="hp-lead hp-rv">
                 Pas de frais cachés. Choisissez la formule correspondant à votre effectif d&apos;apprenants.
               </p>
 
-              <div className="plans">
-                <div className="pl">
+              <div className="hp-plans">
+                <div className="hp-pl">
                   <h3>Primaire &amp; Maternelle</h3>
-                  <div className="who">Écoles élémentaires &amp; préscolaires</div>
+                  <div className="hp-who">Écoles élémentaires &amp; préscolaires</div>
                   <ul>
-                    <li><i className="dia" />Appel numérique quotidien</li>
-                    <li><i className="dia" />Bulletins simples &amp; compétences</li>
-                    <li><i className="dia" />Suivi des frais de scolarité</li>
-                    <li><i className="dia" />Alertes SMS aux parents</li>
+                    <li><i className="hp-dia" />Appel numérique quotidien</li>
+                    <li><i className="hp-dia" />Bulletins simples &amp; compétences</li>
+                    <li><i className="hp-dia" />Suivi des frais de scolarité</li>
+                    <li><i className="hp-dia" />Alertes SMS aux parents</li>
                   </ul>
-                  <a className="btn b-l" href="/demande">Demander un devis</a>
+                  <a className="hp-btn hp-b-l" href="/demande">Demander un devis</a>
                 </div>
 
-                <div className="pl hot">
-                  <span className="pop">Le plus choisi</span>
+                <div className="hp-pl hp-hot">
+                  <span className="hp-pop">Le plus choisi</span>
                   <h3>Collège &amp; Lycée</h3>
-                  <div className="who">Établissements secondaires</div>
+                  <div className="hp-who">Établissements secondaires</div>
                   <ul>
-                    <li><i className="dia" />Gestion des séries &amp; coefs</li>
-                    <li><i className="dia" />Bulletins PDF sécurisés</li>
-                    <li><i className="dia" />Paiements Mobile Money</li>
-                    <li><i className="dia" />Cartes d&apos;élèves QR-Code</li>
-                    <li><i className="dia" />E-Learning &amp; Devoirs</li>
+                    <li><i className="hp-dia" />Gestion des séries &amp; coefs</li>
+                    <li><i className="hp-dia" />Bulletins PDF sécurisés</li>
+                    <li><i className="hp-dia" />Paiements Mobile Money</li>
+                    <li><i className="hp-dia" />Cartes d&apos;élèves QR-Code</li>
+                    <li><i className="hp-dia" />E-Learning &amp; Devoirs</li>
                   </ul>
-                  <a className="btn b-o" href="/demande">Choisir cette formule</a>
+                  <a className="hp-btn hp-b-o" href="/demande">Choisir cette formule</a>
                 </div>
 
-                <div className="pl">
+                <div className="hp-pl">
                   <h3>Université &amp; Supérieur</h3>
-                  <div className="who">Facultés &amp; Grands Instituts</div>
+                  <div className="hp-who">Facultés &amp; Grands Instituts</div>
                   <ul>
-                    <li><i className="dia" />Système LMD &amp; Crédits ECTS</li>
-                    <li><i className="dia" />Portail d&apos;examens &amp; délibérations</li>
-                    <li><i className="dia" />Gestion des vacataires</li>
-                    <li><i className="dia" />Suivi des mémoires &amp; stages</li>
+                    <li><i className="hp-dia" />Système LMD &amp; Crédits ECTS</li>
+                    <li><i className="hp-dia" />Portail d&apos;examens &amp; délibérations</li>
+                    <li><i className="hp-dia" />Gestion des vacataires</li>
+                    <li><i className="hp-dia" />Suivi des mémoires &amp; stages</li>
                   </ul>
-                  <a className="btn b-l" href="/demande">Demander un devis</a>
+                  <a className="hp-btn hp-b-l" href="/demande">Demander un devis</a>
                 </div>
 
-                <div className="pl">
+                <div className="hp-pl">
                   <h3>Groupe Scolaire</h3>
-                  <div className="who">Réseaux multi-établissements</div>
+                  <div className="hp-who">Réseaux multi-établissements</div>
                   <ul>
-                    <li><i className="dia" />Dashboard consolidé réseau</li>
-                    <li><i className="dia" />Transferts d&apos;élèves inter-écoles</li>
-                    <li><i className="dia" />Supervision budgétaire groupe</li>
-                    <li><i className="dia" />Support dédié 24/7 &amp; API</li>
+                    <li><i className="hp-dia" />Dashboard consolidé réseau</li>
+                    <li><i className="hp-dia" />Transferts d&apos;élèves inter-écoles</li>
+                    <li><i className="hp-dia" />Supervision budgétaire groupe</li>
+                    <li><i className="hp-dia" />Support dédié 24/7 &amp; API</li>
                   </ul>
-                  <a className="btn b-l" href="/demande">Contact Groupe</a>
+                  <a className="hp-btn hp-b-l" href="/demande">Contact Groupe</a>
                 </div>
               </div>
             </div>
           </section>
 
           {/* ── Final CTA ────────────────────────────────────────── */}
-          <section id="final" className="final sec-rv">
-            <div className="w">
-              <i className="lg" style={{ width: 96, height: 96, margin: '0 auto 22px' }} role="img" aria-label="Logo sigapei" />
-              <h2 className="rv">Prêt à moderniser la gestion de votre établissement ?</h2>
-              <p className="rv">
+          <section id="hp-final" className="hp-final hp-sec-rv">
+            <div className="hp-w">
+              <i className="hp-lg" style={{ width: 96, height: 96, margin: '0 auto 22px' }} role="img" aria-label="Logo sigapei" />
+              <h2 className="hp-rv">Prêt à moderniser la gestion de votre établissement ?</h2>
+              <p className="hp-rv">
                 Rejoignez les centaines d&apos;écoles qui font confiance à sigapei pour leur transformation numérique.
               </p>
-              <div className="cta rv" style={{ marginTop: 24 }}>
-                <a className="btn b-o" href="/demande">Inscrire mon établissement</a>
-                <a className="btn b-l" href="#profils">Explorer les fonctionnalités</a>
+              <div className="hp-cta hp-rv" style={{ marginTop: 24 }}>
+                <a className="hp-btn hp-b-o" href="/demande">Inscrire mon établissement</a>
+                <a className="hp-btn hp-b-l" href="#hp-profils">Explorer les fonctionnalités</a>
               </div>
             </div>
           </section>
@@ -664,11 +646,11 @@ export default function Home() {
         </main>
 
         {/* ── Footer ───────────────────────────────────────────────── */}
-        <footer>
-          <div className="w">
+        <footer className="hp-footer">
+          <div className="hp-w">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <i className="lg" style={{ width: 36, height: 36 }} role="img" aria-label="Logo" />
-              <span className="ft-brand">SIGAPEI</span>
+              <i className="hp-lg" style={{ width: 36, height: 36 }} role="img" aria-label="Logo" />
+              <span className="hp-ft-brand">SIGAPEI</span>
             </div>
             <div>© 2026 SIGAPEI. Tous droits réservés.</div>
             <div style={{ display: 'flex', gap: 16, fontSize: '0.75rem' }}>
@@ -679,6 +661,6 @@ export default function Home() {
           </div>
         </footer>
       </div>
-    </>
+    </div>
   )
 }
