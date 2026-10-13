@@ -1,1 +1,7 @@
 Django==6.1.1
+# DRF : socle de toutes les API /v1/ (serializers, viewsets, routers).
+djangorestframework
+# CORS : en-têtes Access-Control-Allow-* pour le frontend (Vite/React).
+django-cors-headers
+# S3/MinIO : URLs pré-signées (import paresseux dans apps/medias/services.py).
+boto3
