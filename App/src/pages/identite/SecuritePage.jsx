@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser'
-import { Fingerprint, LogOut, Monitor, Smartphone, Tablet, Trash2 } from 'lucide-react'
-import { ENV } from '../config/env'
-import { useAuth } from '../context/AuthContext'
-import { useNotify } from '../context/NotifyContext'
-import { authService } from '../services/auth.service'
-import { unwrap } from '../lib/http'
-import { getDeviceId } from '../lib/device'
-import { roleOf } from '../components/routes'
-import './Home.css'
+import { ArrowLeft, Fingerprint, Monitor, Smartphone, Tablet, Trash2 } from 'lucide-react'
+import { useNotify } from '../../context/NotifyContext'
+import { unwrap } from '../../lib/http'
+import { authService } from './services/auth.service'
+import { getDeviceId } from './lib/device'
+import { HOME_PATH } from './config'
+import './SecuritePage.css'
 
-const DeviceIcon = ({ type }) => (type === 'mobile' ? <Smartphone size={20} /> : type === 'tablette' ? <Tablet size={20} /> : <Monitor size={20} />)
+const DeviceIcon = ({ type }) =>
+  type === 'mobile' ? <Smartphone size={20} /> : type === 'tablette' ? <Tablet size={20} /> : <Monitor size={20} />
 
-export default function Home() {
-  const { user, logout } = useAuth()
+/** Securite du compte : empreinte de l'appareil + appareils connectes (page protegee par <RequireAuth />). */
+export default function SecuritePage() {
   const notify = useNotify()
   const [devices, setDevices] = useState([])
   const [busy, setBusy] = useState(false)
@@ -58,36 +58,27 @@ export default function Home() {
   }
 
   const here = getDeviceId()
-  const nom = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
 
   return (
-    <div className="home">
-      <header className="home-header">
-        <div className="home-brand">
-          <img src="/sigapei.png" alt={ENV.appName} />
-          <div>
-            <strong>{nom}</strong>
-            <span>{user?.role?.libelle ?? roleOf(user) ?? ''}</span>
-          </div>
-        </div>
-        <button type="button" className="home-logout" onClick={() => logout('manual')}>
-          <LogOut size={18} /> Se déconnecter
-        </button>
+    <div className="sec">
+      <header className="sec-header">
+        <Link to={HOME_PATH} className="sec-back"><ArrowLeft size={18} /> Retour</Link>
+        <h1>Sécurité du compte</h1>
       </header>
 
-      <main className="home-main">
-        <section className="home-card">
-          <h2>Sécurité du compte</h2>
+      <main className="sec-main">
+        <section className="sec-card">
+          <h2>Connexion par empreinte</h2>
           <p>Activez la connexion par matricule + empreinte digitale sur cet appareil.</p>
-          <button type="button" className="home-btn" onClick={enableFingerprint} disabled={busy}>
+          <button type="button" className="sec-btn" onClick={enableFingerprint} disabled={busy}>
             <Fingerprint size={20} /> {busy ? 'Enregistrement…' : 'Activer l’empreinte sur cet appareil'}
           </button>
         </section>
 
-        <section className="home-card">
+        <section className="sec-card">
           <h2>Vos appareils connectés</h2>
           {devices.length === 0 && <p>Aucun appareil à afficher.</p>}
-          <ul className="home-devices">
+          <ul className="sec-devices">
             {devices.map((d) => (
               <li key={d.uuid}>
                 <DeviceIcon type={d.type} />

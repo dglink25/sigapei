@@ -1,6 +1,6 @@
 import { ENV } from '../config/env'
-import { tokenStore, extractSession } from './tokenStore'
-import { authEvents } from './authEvents'
+import { tokenStore, extractSession } from '../pages/identite/lib/tokenStore'
+import { authEvents } from '../pages/identite/lib/authEvents'
 
 export class ApiError extends Error {
   constructor({ status = 0, kind = 'http', title = 'Erreur', message = '', details = null, sessionExpired = false } = {}) {

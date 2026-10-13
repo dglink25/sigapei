@@ -335,15 +335,6 @@
   }
 }
 
-/* ---------- Connexion sociale ---------- */
-.auth-social {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.auth-social .auth-btn {
-  margin-top: 0;
-}
 .auth-btn.google {
   color: var(--sg-cream);
 }

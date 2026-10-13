@@ -7,12 +7,13 @@ import examples from 'libphonenumber-js/examples.mobile.json'
 import { Phone, Mail, Fingerprint, ArrowLeft } from 'lucide-react'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { ENV } from '../../config/env'
-import { useAuth } from '../../context/AuthContext'
 import { useNotify } from '../../context/NotifyContext'
-import { authService } from '../../services/auth.service'
 import { unwrap } from '../../lib/http'
-import { getCaptchaToken } from '../../lib/captcha'
-import { getProviderIdToken } from '../../lib/firebase'
+import { useAuth } from './AuthContext'
+import { authService } from './services/auth.service'
+import { getCaptchaToken } from './lib/captcha'
+import { getGoogleIdToken } from './lib/firebase'
+import { HOME_PATH, LOGIN_PATH } from './config'
 import './AuthPage.css'
 
 const METHODS = [
@@ -39,12 +40,6 @@ const GoogleIcon = () => (
   </svg>
 )
 
-const GithubIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.95.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a10.9 10.9 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.42-2.7 5.4-5.27 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z" />
-  </svg>
-)
-
 export default function AuthPage() {
   const { login } = useAuth()
   const notify = useNotify()
@@ -53,7 +48,8 @@ export default function AuthPage() {
 
   // L'URL /login#recuperer ouvre directement le parcours de recuperation
   const mode = location.hash === '#recuperer' ? 'recover' : 'login'
-  const redirectTo = location.state?.from?.pathname ?? '/'
+  const from = location.state?.from
+  const redirectTo = from ? from.pathname + (from.search ?? '') + (from.hash ?? '') : HOME_PATH
 
   const [step, setStep] = useState('identifier') // identifier | confirm | otp | done
   const [method, setMethod] = useState('phone')
@@ -95,7 +91,7 @@ export default function AuthPage() {
   const identifiant = method === 'phone' ? phone : method === 'email' ? email.trim().toLowerCase() : matricule
 
   function switchMode(next) {
-    navigate({ pathname: '/login', hash: next === 'recover' ? '#recuperer' : '' }, { state: location.state })
+    navigate({ pathname: LOGIN_PATH, hash: next === 'recover' ? '#recuperer' : '' }, { state: location.state })
   }
 
   function back() {
@@ -155,9 +151,9 @@ export default function AuthPage() {
     })
   }
 
-  function socialLogin(provider) {
+  function googleLogin() {
     return run(async () => {
-      const idToken = await getProviderIdToken(provider)
+      const idToken = await getGoogleIdToken()
       await finishLogin(await authService.firebase(idToken))
     })
   }
@@ -294,7 +290,7 @@ export default function AuthPage() {
 
             <div className="auth-sep"><span>ou</span></div>
 
-            <button type="button" className="auth-btn google" onClick={() => socialLogin('google')} disabled={loading}>
+            <button type="button" className="auth-btn google" onClick={googleLogin} disabled={loading}>
               <GoogleIcon /> Continuer avec Google
             </button>
           </form>
@@ -304,14 +300,13 @@ export default function AuthPage() {
         {mode === 'recover' && step === 'identifier' && (
           <form onSubmit={submitSearch} noValidate>
             <label className="auth-label" htmlFor="nom">Nom complet ou identifiant de récupération</label>
-            <input id="nom" className="field" type="text" autoComplete="name" placeholder="Ex. : Mon nom complet" autoFocus       
+            <input id="nom" className="field" type="text" autoComplete="name" placeholder="Ex. : Mon Nom complet"
               value={nom} onChange={(e) => setNom(e.target.value)} />
 
             <button className="auth-btn" type="submit" disabled={loading}>
               {loading ? 'Recherche…' : 'Rechercher mon compte'}
             </button>
           </form>
-          
         )}
 
         {/* ===== Recuperation : confirmation du compte ===== */}
