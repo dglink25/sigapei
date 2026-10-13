@@ -13,7 +13,19 @@ class ParametresNotation extends Modele
 
     protected $hidden = ['id', 'tenant_id', 'grille_id'];
 
+    /** Défaut béninois : (moyenne des interrogations + chaque devoir + chaque composition) / nombre d'éléments. */
+    public const PONDERATION_DEFAUT = [
+        'interrogation' => ['mode' => 'bloc', 'poids' => '1'],
+        'devoir_surveille' => ['mode' => 'individuel', 'poids' => '1'],
+        'composition' => ['mode' => 'individuel', 'poids' => '1'],
+        'examen_officiel' => ['mode' => 'individuel', 'poids' => '1'],
+        'evaluation_competence' => ['mode' => 'individuel', 'poids' => '1'],
+        'composition_en_ligne' => ['mode' => 'individuel', 'poids' => '1'],
+        'note_elearning' => ['mode' => 'individuel', 'poids' => '1'],
+    ];
+
     protected $casts = [
+        'ponderation_types' => 'array',
         'decimales' => 'integer',
         'classement_actif' => 'boolean',
         'echelle_appreciation' => 'array',
@@ -31,7 +43,7 @@ class ParametresNotation extends Modele
         $grille = $this->grille;
 
         return [
-            'methode_moyenne' => $this->methode_moyenne,
+            'ponderation_types' => array_replace(self::PONDERATION_DEFAUT, $this->ponderation_types ?? []),
             'decimales' => $this->decimales,
             'note_non_saisie' => $this->note_non_saisie,
             'absence_non_justifiee' => $this->absence_non_justifiee,

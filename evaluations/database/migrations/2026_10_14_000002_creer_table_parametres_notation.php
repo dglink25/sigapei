@@ -10,8 +10,11 @@ use Illuminate\Support\Facades\Schema;
  * Séparé de modele_bulletin (mise en page) : le CDC §4.1 interdit de mélanger mise en forme
  * et logique de calcul.
  *
- *  - methode_moyenne      : par_matiere (défaut : moyenne par matière puis Σ(moy×coef matière)/Σcoef)
- *                           | globale (formule littérale CDC §5 : Σ(note×coef éval×coef matière)/Σ(coef éval×coef matière))
+ *  - Calcul (décision projet) : moyenne de chaque matière, puis moyenne générale =
+ *    Σ(moyenne matière × coef matière) / Σ(coef matière).
+ *  - ponderation_types    : comment les types d'épreuve forment la moyenne d'une matière.
+ *                           Défaut béninois : interrogations regroupées en UNE note (leur moyenne),
+ *                           chaque devoir/composition compte pour une note => (MI + D1 + D2) / 3.
  *  - decimales            : précision des moyennes (défaut 2), arrondi au plus proche (demi vers le haut)
  *  - note_non_saisie      : exclure | zero (choix affiché sur le bulletin, CDC §5)
  *  - absence_non_justifiee: zero | exclure
@@ -30,7 +33,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tenant_id');
             $table->string('cycle', 20);
             $table->foreignId('grille_id')->constrained('grilles_evaluation')->restrictOnDelete();
-            $table->string('methode_moyenne', 12)->default('par_matiere');
+            $table->jsonb('ponderation_types');
             $table->unsignedSmallInteger('decimales')->default(2);
             $table->string('note_non_saisie', 10)->default('exclure');
             $table->string('absence_non_justifiee', 10)->default('zero');
@@ -45,7 +48,6 @@ return new class extends Migration
         });
 
         DB::statement("ALTER TABLE parametres_notation ADD CONSTRAINT pn_cycle_chk CHECK (cycle IN ('primaire','secondaire','universitaire'))");
-        DB::statement("ALTER TABLE parametres_notation ADD CONSTRAINT pn_methode_chk CHECK (methode_moyenne IN ('par_matiere','globale'))");
         DB::statement('ALTER TABLE parametres_notation ADD CONSTRAINT pn_decimales_chk CHECK (decimales BETWEEN 0 AND 3)');
         DB::statement("ALTER TABLE parametres_notation ADD CONSTRAINT pn_non_saisie_chk CHECK (note_non_saisie IN ('exclure','zero'))");
         DB::statement("ALTER TABLE parametres_notation ADD CONSTRAINT pn_absence_chk CHECK (absence_non_justifiee IN ('exclure','zero'))");

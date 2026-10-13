@@ -2,6 +2,7 @@
 
 namespace Tests\Unit;
 
+use App\Models\ParametresNotation;
 use App\Services\CalculService;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
@@ -29,7 +30,7 @@ class CalculServiceTest extends TestCase
     private function regles(array $surcharge = []): array
     {
         return array_merge([
-            'methode_moyenne' => 'par_matiere',
+            'ponderation_types' => ParametresNotation::PONDERATION_DEFAUT,
             'decimales' => 2,
             'note_non_saisie' => 'exclure',
             'absence_non_justifiee' => 'zero',
@@ -48,6 +49,7 @@ class CalculServiceTest extends TestCase
 
         return [
             'evaluation_uuid' => $id,
+            'type' => $opts['type'] ?? 'devoir_surveille',
             'matiere_uuid' => $matiere,
             'matiere_nom' => strtoupper($matiere),
             'coef_matiere' => $opts['coef_matiere'] ?? '1',
@@ -79,17 +81,58 @@ class CalculServiceTest extends TestCase
         $this->assertSame('Assez bien', $r['mention']);
     }
 
-    public function test_methode_globale_formule_litterale_du_cdc(): void
+    public function test_defaut_beninois_interrogations_en_un_bloc_puis_devoirs(): void
     {
-        // Σ(note × coef éval × coef matière) / Σ(coef éval × coef matière)
-        // (12×1×4 + 16×1×4 + 11×1×2) / (4 + 4 + 2) = 134 / 10 = 13,4
+        // Interros 12, 14, 16 -> MI = 14 ; devoirs 10 et 13 -> (14 + 10 + 13) / 3 = 12,33
         $r = $this->calcul->calculerBulletin([
-            $this->ev('e1', 'maths', '12', ['coef_matiere' => '4']),
-            $this->ev('e2', 'maths', '16', ['coef_matiere' => '4']),
-            $this->ev('e3', 'fr', '11', ['coef_matiere' => '2']),
-        ], $this->regles(['methode_moyenne' => 'globale']));
+            $this->ev('i1', 'maths', '12', ['type' => 'interrogation']),
+            $this->ev('i2', 'maths', '14', ['type' => 'interrogation']),
+            $this->ev('i3', 'maths', '16', ['type' => 'interrogation']),
+            $this->ev('d1', 'maths', '10'),
+            $this->ev('d2', 'maths', '13'),
+        ], $this->regles());
 
-        $this->assertSame('13.40', $r['moyenne']);
+        $this->assertSame('12.33', $r['moyenne']);
+        $this->assertSame(['interrogation' => '14.00'], $r['matieres'][0]['moyennes_blocs']);
+    }
+
+    public function test_le_nombre_d_interrogations_ne_change_pas_leur_poids(): void
+    {
+        // 5 interros à 20 pèsent autant qu'une seule : (20 + 10) / 2 = 15
+        $evs = [$this->ev('d1', 'maths', '10')];
+        for ($i = 0; $i < 5; $i++) {
+            $evs[] = $this->ev("i{$i}", 'maths', '20', ['type' => 'interrogation']);
+        }
+
+        $this->assertSame('15.00', $this->calcul->calculerBulletin($evs, $this->regles())['moyenne']);
+    }
+
+    public function test_ponderation_parametrable_par_etablissement(): void
+    {
+        $evs = [
+            $this->ev('i1', 'maths', '12', ['type' => 'interrogation']),
+            $this->ev('d1', 'maths', '10'),
+            $this->ev('c1', 'maths', '16', ['type' => 'composition']),
+        ];
+
+        // Défaut : (12 + 10 + 16) / 3 = 12,67
+        $this->assertSame('12.67', $this->calcul->calculerBulletin($evs, $this->regles())['moyenne']);
+
+        // Composition coefficient 2 : (12 + 10 + 16×2) / 4 = 13,50
+        $ponderation = ParametresNotation::PONDERATION_DEFAUT;
+        $ponderation['composition']['poids'] = '2';
+        $this->assertSame('13.50', $this->calcul->calculerBulletin($evs, $this->regles(['ponderation_types' => $ponderation]))['moyenne']);
+
+        // Interrogations comptées une par une : identique ici (une seule interro)
+        $ponderation = ParametresNotation::PONDERATION_DEFAUT;
+        $ponderation['interrogation']['mode'] = 'individuel';
+        $this->assertSame('12.67', $this->calcul->calculerBulletin($evs, $this->regles(['ponderation_types' => $ponderation]))['moyenne']);
+    }
+
+    public function test_ponderation_invalide_refusee(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->calcul->calculerBulletin([], $this->regles(['ponderation_types' => ['interrogation' => ['mode' => 'moyenne', 'poids' => '1']]]));
     }
 
     public function test_coefficient_d_evaluation(): void

@@ -43,11 +43,13 @@ vendor/bin/pint --test
 
 ## 3. Règles de calcul (`CalculService`, fonctions pures, arithmétique entière exacte)
 
+Méthode unique (décision projet) : **moyenne de chaque matière, puis moyenne générale = Σ(moyenne matière × coefficient matière) / Σ(coefficients)**. Le coefficient d'une épreuve multiplie son poids (1 par défaut).
+
 Paramétrables par établissement **et** par cycle (`PUT /v1/parametres-notation/{cycle}`) :
 
 | Paramètre | Valeurs (défaut en gras) |
 |---|---|
-| `methode_moyenne` | **`par_matiere`** : moyenne par matière Σ(note×coef éval)/Σcoef éval, puis Σ(moy. matière×coef matière)/Σcoef matière · `globale` : formule littérale CDC §5 Σ(note×coef éval×coef matière)/Σ(coef éval×coef matière) |
+| `ponderation_types` | Comment chaque type d'épreuve compte dans la moyenne d'une matière. **Défaut béninois** : `interrogation` = **bloc** (toutes les interros forment une seule note : leur moyenne), `devoir_surveille`, `composition`, `examen_officiel`... = **individuel** (chaque note compte), poids **1** partout ⇒ moyenne matière = (MI + D1 + D2) / 3. Modifiable par type : mode `bloc`/`individuel` et poids (ex. composition poids 2). |
 | `decimales` | **2** (0 à 3), arrondi au plus proche, demi vers le haut |
 | `note_non_saisie` | **`exclure`** · `zero` (affiché sur le bulletin) |
 | `absence_non_justifiee` | **`zero`** · `exclure` (absence justifiée et dispense : toujours exclues) |

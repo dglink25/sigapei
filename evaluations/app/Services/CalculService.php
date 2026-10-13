@@ -15,7 +15,9 @@ use InvalidArgumentException;
  * - Une note de composition en ligne suit exactement les mêmes règles qu'une note saisie.
  *
  * Paramètres attendus ($regles) :
- *   methode_moyenne       par_matiere | globale
+ *   ponderation_types     [type => ['mode' => 'bloc'|'individuel', 'poids' => '1']]
+ *                         bloc : toutes les notes de ce type forment UNE note (leur moyenne) ;
+ *                         individuel : chaque note compte séparément. Type absent : individuel, poids 1.
  *   decimales             0..3
  *   note_non_saisie       exclure | zero
  *   absence_non_justifiee exclure | zero
@@ -34,7 +36,7 @@ final class CalculService
      *
      * @param list<array{
      *   evaluation_uuid: string, matiere_uuid: string, matiere_nom: string,
-     *   coef_matiere: string, coef_evaluation: string, note_sur: string,
+     *   type: string, coef_matiere: string, coef_evaluation: string, note_sur: string,
      *   rattrapage_de: ?string,
      *   note: null|array{statut: string, valeur: ?string, niveau_competence?: ?string}
      * }> $evaluations Toutes les évaluations de la classe sur la période, avec la note de l'apprenant (ou null)
@@ -75,48 +77,32 @@ final class CalculService
             ];
         }
 
-        // Moyenne par matière : Σ(note × coef éval) / Σ(coef éval).
-        $numGlobal = 0;
-        $denGlobal = 0;
+        // 1) Moyenne de chaque matière (défaut béninois : (moyenne des interrogations + devoir 1 + devoir 2 ...) / nombre d'éléments).
         foreach ($matieres as $m => $ligne) {
-            $num = 0;
-            $den = 0;
-            foreach ($retenues as $r) {
-                if ($r['matiere_uuid'] !== $m) {
-                    continue;
-                }
-                $num += $r['valeur'] * $r['coef_evaluation'];
-                $den += $r['coef_evaluation'];
-
-                // Méthode "globale" (formule littérale CDC §5) : poids = coef éval × coef matière.
-                $numGlobal += $r['valeur'] * $r['coef_evaluation'] * $ligne['coefficient'];
-                $denGlobal += $r['coef_evaluation'] * $ligne['coefficient'];
-            }
-
-            $moyenne = $den > 0 ? Decimal::diviserArrondi($num, $den) : null;
+            [$moyenne, $blocs] = $this->moyenneMatiere(
+                array_filter($retenues, fn ($r) => $r['matiere_uuid'] === $m),
+                $regles['ponderation_types'],
+            );
             $matieres[$m]['_moyenne_echelle'] = $moyenne;
             $matieres[$m]['moyenne'] = $moyenne === null ? null : Decimal::versTexte($moyenne, $regles['decimales']);
+            $matieres[$m]['moyennes_blocs'] = array_map(fn ($b) => Decimal::versTexte($b, $regles['decimales']), $blocs);
             $matieres[$m]['coefficient'] = Decimal::versTexte($ligne['coefficient'] * 100, 2);
         }
 
+        // 2) Moyenne générale = Σ(moyenne matière × coef matière) / Σ(coef matière), matières ayant une moyenne.
         $moyenneGenerale = null;
         if (! $competences) {
-            if ($regles['methode_moyenne'] === 'globale') {
-                $moyenneGenerale = $denGlobal > 0 ? Decimal::diviserArrondi($numGlobal, $denGlobal) : null;
-            } else {
-                // Σ(moyenne matière × coef matière) / Σ(coef matière), sur les matières ayant une moyenne.
-                $num = 0;
-                $den = 0;
-                foreach ($matieres as $ligne) {
-                    if ($ligne['_moyenne_echelle'] === null) {
-                        continue;
-                    }
-                    $coef = $this->coefCentiemes($ligne['coefficient']);
-                    $num += $ligne['_moyenne_echelle'] * $coef;
-                    $den += $coef;
+            $num = 0;
+            $den = 0;
+            foreach ($matieres as $ligne) {
+                if ($ligne['_moyenne_echelle'] === null) {
+                    continue;
                 }
-                $moyenneGenerale = $den > 0 ? Decimal::diviserArrondi($num, $den) : null;
+                $coef = $this->coefCentiemes($ligne['coefficient']);
+                $num += $ligne['_moyenne_echelle'] * $coef;
+                $den += $coef;
             }
+            $moyenneGenerale = $den > 0 ? Decimal::diviserArrondi($num, $den) : null;
         }
 
         $moyenneArrondie = $moyenneGenerale === null ? null : Decimal::arrondir($moyenneGenerale, $regles['decimales']);
@@ -288,7 +274,7 @@ final class CalculService
      * Notes effectivement prises en compte, ramenées sur la grille, après règles d'absence,
      * de note manquante et de rattrapage.
      *
-     * @return array<string, array{matiere_uuid: string, valeur: int, coef_evaluation: int}>
+     * @return array<string, array{matiere_uuid: string, type: string, valeur: int, coef_evaluation: int}>
      */
     private function notesRetenues(array $evaluations, array $regles): array
     {
@@ -311,6 +297,7 @@ final class CalculService
 
             $valeurs[$ev['evaluation_uuid']] = [
                 'matiere_uuid' => $ev['matiere_uuid'],
+                'type' => $ev['type'],
                 'valeur' => $valeur,
                 'coef_evaluation' => $this->coefCentiemes($ev['coef_evaluation']),
             ];
@@ -330,6 +317,45 @@ final class CalculService
         }
 
         return array_filter($valeurs, fn ($v) => $v['valeur'] !== null);
+    }
+
+    /**
+     * Moyenne d'une matière à partir de ses notes retenues.
+     *  - type en mode "bloc" (ex. interrogations) : moyenne de ses notes (pondérée par le coefficient
+     *    de chaque épreuve), qui compte ensuite comme UNE note de poids `poids` ;
+     *  - type en mode "individuel" (ex. devoirs) : chaque note compte, poids = `poids` × coef de l'épreuve.
+     *
+     * @return array{0: ?int, 1: array<string, int>} [moyenne, moyennes des blocs par type]
+     */
+    private function moyenneMatiere(array $retenues, array $ponderation): array
+    {
+        $blocs = [];
+        $num = 0;
+        $den = 0;
+
+        foreach ($retenues as $r) {
+            $regle = $ponderation[$r['type']] ?? ['mode' => 'individuel', 'poids' => '1'];
+            if ($regle['mode'] === 'bloc') {
+                $blocs[$r['type']]['num'] = ($blocs[$r['type']]['num'] ?? 0) + $r['valeur'] * $r['coef_evaluation'];
+                $blocs[$r['type']]['den'] = ($blocs[$r['type']]['den'] ?? 0) + $r['coef_evaluation'];
+
+                continue;
+            }
+            // Poids à l'échelle 10^4 (centièmes × centièmes), commun aux blocs et aux notes individuelles.
+            $poids = $this->coefCentiemes((string) $regle['poids']) * $r['coef_evaluation'];
+            $num += $r['valeur'] * $poids;
+            $den += $poids;
+        }
+
+        $moyennesBlocs = [];
+        foreach ($blocs as $type => $b) {
+            $moyennesBlocs[$type] = Decimal::diviserArrondi($b['num'], $b['den']);
+            $poids = $this->coefCentiemes((string) $ponderation[$type]['poids']) * 100;
+            $num += $moyennesBlocs[$type] * $poids;
+            $den += $poids;
+        }
+
+        return [$den > 0 ? Decimal::diviserArrondi($num, $den) : null, $moyennesBlocs];
     }
 
     /** Valeur ramenée sur la grille (échelle 10^4), ou null si la note est exclue du calcul. */
@@ -376,7 +402,6 @@ final class CalculService
     private function validerRegles(array $r): array
     {
         $attendus = [
-            'methode_moyenne' => ['par_matiere', 'globale'],
             'note_non_saisie' => ['exclure', 'zero'],
             'absence_non_justifiee' => ['exclure', 'zero'],
             'regle_rattrapage' => ['remplacer', 'meilleure', 'moyenne'],
@@ -393,6 +418,15 @@ final class CalculService
         if (! isset($r['note_max'], $r['note_min']) || ! is_array($r['echelle_appreciation'] ?? null)) {
             throw new InvalidArgumentException('Paramètres de notation incomplets (bornes de grille, échelle).');
         }
+        if (! is_array($r['ponderation_types'] ?? null)) {
+            throw new InvalidArgumentException('Paramètre de notation invalide : ponderation_types.');
+        }
+        foreach ($r['ponderation_types'] as $type => $regle) {
+            if (! in_array($regle['mode'] ?? null, ['bloc', 'individuel'], true)) {
+                throw new InvalidArgumentException("Pondération invalide pour « {$type} » : mode bloc ou individuel.");
+            }
+            $this->coefCentiemes((string) ($regle['poids'] ?? ''));
+        }
         $r['note_max'] = (string) $r['note_max'];
         $r['note_min'] = (string) $r['note_min'];
 
@@ -403,7 +437,7 @@ final class CalculService
     private function reglesAffichees(array $r): array
     {
         return [
-            'methode_moyenne' => $r['methode_moyenne'],
+            'ponderation_types' => $r['ponderation_types'],
             'decimales' => $r['decimales'],
             'note_sur' => $r['note_max'],
             'politique_note_manquante' => $r['note_non_saisie'] === 'zero'

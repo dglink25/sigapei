@@ -55,7 +55,9 @@ class ParcoursNotesBulletinsTest extends ApiTestCase
     public function test_decimales_par_defaut_deux(): void
     {
         $this->commeAdmin()->getJson('/v1/parametres-notation/secondaire')->assertOk()
-            ->assertJsonPath('data.decimales', 2)->assertJsonPath('data.methode_moyenne', 'par_matiere');
+            ->assertJsonPath('data.decimales', 2)
+            ->assertJsonPath('data.ponderation_types.interrogation.mode', 'bloc')
+            ->assertJsonPath('data.ponderation_types.devoir_surveille.mode', 'individuel');
     }
 
     // ---------------------------------------------------------------- Évaluations

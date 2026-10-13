@@ -254,6 +254,7 @@ class BulletinService
                 $note = $notes->get($apprenantUuid)?->get($ev->id);
                 $lignes[] = [
                     'evaluation_uuid' => $ev->uuid,
+                    'type' => $ev->type,
                     'matiere_uuid' => $ev->matiere->uuid,
                     'matiere_nom' => $ev->matiere->nom,
                     'coef_matiere' => $ev->matiere->coefficientPour($periode->cycle, (string) ($classe['niveau'] ?? '')),

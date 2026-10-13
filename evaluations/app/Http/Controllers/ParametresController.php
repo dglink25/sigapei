@@ -6,6 +6,7 @@ use App\Common\Tenant\Contexte;
 use App\Exceptions\MetierException;
 use App\Models\GrilleEvaluation;
 use App\Models\ModeleBulletin;
+use App\Models\ParametresNotation;
 use App\Services\CalculService;
 use App\Services\ParametresService;
 use Illuminate\Http\JsonResponse;
@@ -89,7 +90,10 @@ class ParametresController extends Controller
 
         $d = $request->validate([
             'grille_uuid' => ['required', 'uuid'],
-            'methode_moyenne' => ['sometimes', Rule::in(['par_matiere', 'globale'])],
+            // Ex. {"interrogation": {"mode": "bloc", "poids": "1"}, "composition": {"mode": "individuel", "poids": "2"}}
+            'ponderation_types' => ['sometimes', 'array:'.implode(',', array_keys(ParametresNotation::PONDERATION_DEFAUT))],
+            'ponderation_types.*.mode' => ['required', Rule::in(['bloc', 'individuel'])],
+            'ponderation_types.*.poids' => ['required', 'decimal:0,2', 'gt:0', 'max:99'],
             'decimales' => ['sometimes', 'integer', 'between:0,3'],
             'note_non_saisie' => ['sometimes', Rule::in(['exclure', 'zero'])],
             'absence_non_justifiee' => ['sometimes', Rule::in(['exclure', 'zero'])],

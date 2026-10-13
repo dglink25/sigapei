@@ -46,7 +46,7 @@ class ParametresService
 
         $parametres = ParametresNotation::firstOrNew(['cycle' => $cycle]);
         $parametres->fill([
-            'methode_moyenne' => $donnees['methode_moyenne'] ?? $parametres->methode_moyenne ?? 'par_matiere',
+            'ponderation_types' => $this->ponderation($donnees['ponderation_types'] ?? null, $parametres->ponderation_types),
             'decimales' => $donnees['decimales'] ?? $parametres->decimales ?? 2,
             'note_non_saisie' => $donnees['note_non_saisie'] ?? $parametres->note_non_saisie ?? 'exclure',
             'absence_non_justifiee' => $donnees['absence_non_justifiee'] ?? $parametres->absence_non_justifiee ?? 'zero',
@@ -60,5 +60,13 @@ class ParametresService
         $parametres->save();
 
         return $parametres->load('grille');
+    }
+
+    /** Fusionne la pondération envoyée avec l'existante puis le défaut ; poids normalisés en texte. */
+    private function ponderation(?array $envoyee, ?array $existante): array
+    {
+        $resultat = array_replace(ParametresNotation::PONDERATION_DEFAUT, $existante ?? [], $envoyee ?? []);
+
+        return array_map(fn ($r) => ['mode' => $r['mode'], 'poids' => (string) $r['poids']], $resultat);
     }
 }
