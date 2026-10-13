@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Table vie_scolaire.presences — section 6 et 40 du CDC.
+ * Table vie_scolaire.presences - section 6 et 40 du CDC.
  *
  * apprenant_id et cours_id sont des cles etrangeres EXTERNES vers le
  * schema scolarite (scolarite.apprenants, scolarite.emplois_du_temps).

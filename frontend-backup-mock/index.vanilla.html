@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SIGAPEI — Système Intégré de Gestion Administrative et Pédagogique</title>
+  <title>SIGAPEI - Système Intégré de Gestion Administrative et Pédagogique</title>
   
   <!-- Polices Officielles (Charte Graphique SIGAPEI - Page 6) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -846,8 +846,8 @@
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nouvelle Classe Demandée <span class="text-red-500">*</span></label>
               <select id="reinc-select-classe" class="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-200 bg-white">
-                <option value="5ème A (Prog. Béninois)">5ème A — Programme Béninois (Capacité disponible)</option>
-                <option value="5ème B (Prog. Français)">5ème B — Programme Français (Capacité disponible)</option>
+                <option value="5ème A (Prog. Béninois)">5ème A - Programme Béninois (Capacité disponible)</option>
+                <option value="5ème B (Prog. Français)">5ème B - Programme Français (Capacité disponible)</option>
               </select>
             </div>
           </div>
@@ -1063,8 +1063,8 @@
       </div>
       
       <div class="bg-slate-50 p-3.5 rounded-2xl text-xs space-y-1">
-        <p><strong>Élève :</strong> <span id="mut-info-nom" class="font-bold text-slate-900">—</span></p>
-        <p><strong>Classe actuelle :</strong> <span id="mut-info-classe" class="text-sigapei-green font-semibold">—</span></p>
+        <p><strong>Élève :</strong> <span id="mut-info-nom" class="font-bold text-slate-900">-</span></p>
+        <p><strong>Classe actuelle :</strong> <span id="mut-info-classe" class="text-sigapei-green font-semibold">-</span></p>
       </div>
 
       <div>
@@ -1413,7 +1413,7 @@
       const cl = memoryClasses.find(x => x.id === c.classe_id) || memoryClasses[0];
       const isFull = cl.inscrits >= cl.capacite;
 
-      document.getElementById('examine-modal-title').innerText = `${c.nom} ${c.prenom} — Candidature`;
+      document.getElementById('examine-modal-title').innerText = `${c.nom} ${c.prenom} - Candidature`;
 
       document.getElementById('examine-modal-content').innerHTML = `
         <div class="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-2xl text-xs">
@@ -1452,7 +1452,7 @@
             </div>
             <div class="text-right">
               <span class="text-base font-black font-mono ${c.test && c.test.note >= 12 ? 'text-sigapei-green' : 'text-red-600'}">
-                ${c.test ? c.test.note : '—'} / 20
+                ${c.test ? c.test.note : '-'} / 20
               </span>
               <p class="text-[10px] font-extrabold uppercase ${c.test && c.test.note >= 12 ? 'text-sigapei-green' : 'text-red-600'}">
                 ${c.test ? c.test.avis : 'Non noté'}
@@ -1664,7 +1664,7 @@
         .filter(c => c.id !== a.classe_id)
         .map(c => `
           <option value="${c.id}" data-prog="${c.programme}">
-            ${c.nom} — Programme ${c.programme.toUpperCase()} (${c.inscrits >= c.capacite ? 'COMPLÈTE' : `${c.capacite - c.inscrits} places disponibles`})
+            ${c.nom} - Programme ${c.programme.toUpperCase()} (${c.inscrits >= c.capacite ? 'COMPLÈTE' : `${c.capacite - c.inscrits} places disponibles`})
           </option>
         `).join('');
 
@@ -1772,9 +1772,9 @@
       const grid = document.getElementById('grid-admin-edt');
       const jours = ['Heures', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
       const cours = [
-        { h: '08h - 10h', c1: 'Mathématiques (M. Mensah)', c2: 'Histoire-Géo (Mme Lawson)', c3: '—', c4: 'Mathématiques (M. Mensah)', c5: 'Physique-Chimie (M. Dossou)' },
+        { h: '08h - 10h', c1: 'Mathématiques (M. Mensah)', c2: 'Histoire-Géo (Mme Lawson)', c3: '-', c4: 'Mathématiques (M. Mensah)', c5: 'Physique-Chimie (M. Dossou)' },
         { h: '10h - 12h', c1: 'Français (Mme Bio)', c2: 'Anglais (M. Smith)', c3: 'EPS (Stade)', c4: 'Français (Mme Bio)', c5: 'SVT (Labo)' },
-        { h: '15h - 17h', c1: 'SVT (Labo)', c2: 'Informatique', c3: '—', c4: 'Histoire-Géo', c5: 'Arts Plastiques' },
+        { h: '15h - 17h', c1: 'SVT (Labo)', c2: 'Informatique', c3: '-', c4: 'Histoire-Géo', c5: 'Arts Plastiques' },
       ];
 
       grid.innerHTML = jours.map(j => `<div class="p-2.5 font-bold text-xs bg-slate-100 rounded-xl text-slate-700">${j}</div>`).join('') +

@@ -45,7 +45,7 @@ class EmploiDuTempsService
         // Sécurité multi-tenant : on n'attribue JAMAIS un tenant par défaut.
         // L'ancien code faisait `is_numeric($tenantRef) ? (int)$tenantRef : 1`,
         // ce qui écrivait tout créneau issu d'un tenant UUID dans l'établissement
-        // n°1 — une fuite inter-tenant silencieuse. Si le tenant est absent ou
+        // n°1 - une fuite inter-tenant silencieuse. Si le tenant est absent ou
         // inexploitable, on refuse l'opération.
         if (empty($donnees['tenant_id'])) {
             // Résolution UUID → entier via le référentiel des établissements.

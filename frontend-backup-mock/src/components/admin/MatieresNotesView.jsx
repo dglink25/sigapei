@@ -233,7 +233,7 @@ export default function MatieresNotesView({ classes = initialClasses, academicYe
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-xs font-extrabold text-sigapei-black uppercase tracking-wider">
-                Grille des Coefficients — {currentClasse.nom}
+                Grille des Coefficients - {currentClasse.nom}
               </span>
               <p className="text-xs text-slate-500 mt-0.5">
                 Cycle {currentClasse.cycle} • Programme {currentClasse.programme} • Total coefficients : <strong className="text-sigapei-green font-mono">{totalCoefficients}</strong>
@@ -415,7 +415,7 @@ export default function MatieresNotesView({ classes = initialClasses, academicYe
               <p className="text-2xl font-black text-emerald-700 font-heading">
                 {studentsSynthesis[0]?.moyenneGenerale || 0} / 20
               </p>
-              <p className="text-[11px] text-slate-400">{studentsSynthesis[0]?.nom || '—'}</p>
+              <p className="text-[11px] text-slate-400">{studentsSynthesis[0]?.nom || '-'}</p>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
               <span className="text-[10px] font-bold text-slate-400 uppercase">Taux de Réussite (≥ 10/20)</span>
@@ -432,7 +432,7 @@ export default function MatieresNotesView({ classes = initialClasses, academicYe
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
               <div>
                 <span className="text-xs font-black text-slate-900 uppercase">
-                  Classement & Tableau d’Honneur — {currentClasse.nom} ({selectedPeriode})
+                  Classement & Tableau d’Honneur - {currentClasse.nom} ({selectedPeriode})
                 </span>
                 <p className="text-[11px] text-slate-500">Validation Censeur & Génération des Bulletins Officiels</p>
               </div>

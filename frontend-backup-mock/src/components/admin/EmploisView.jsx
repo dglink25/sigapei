@@ -20,9 +20,9 @@ function normalizeCreneau(c, index) {
     h: (c.heure_debut && c.heure_fin)
       ? `${c.heure_debut.slice(0, 5)}-${c.heure_fin.slice(0, 5)}`
       : (c.creneau || '08h-10h'),
-    matiere: c.matiere || c.matiere_nom || '—',
-    prof: c.enseignant_nom || c.prof || '—',
-    salle: c.salle || '—',
+    matiere: c.matiere || c.matiere_nom || '-',
+    prof: c.enseignant_nom || c.prof || '-',
+    salle: c.salle || '-',
     classe_id: c.classe_id,
   };
 }
@@ -189,7 +189,7 @@ export default function EmploisView({ classes = [], emploisDuTemps = [] }) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div>
               <span className="text-xs font-extrabold text-sigapei-black uppercase tracking-wider">
-                Planning Hebdomadaire — {currentClasse?.nom || 'Sélectionnez une classe'}
+                Planning Hebdomadaire - {currentClasse?.nom || 'Sélectionnez une classe'}
               </span>
               {currentClasse && (
                 <p className="text-[11px] text-slate-400 mt-0.5">
@@ -266,7 +266,7 @@ export default function EmploisView({ classes = [], emploisDuTemps = [] }) {
                 </div>
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-medium">Affectée actuellement à :</span>
-                  <span className="font-bold text-sigapei-green">—</span>
+                  <span className="font-bold text-sigapei-green">-</span>
                 </div>
               </div>
             ))}
@@ -280,7 +280,7 @@ export default function EmploisView({ classes = [], emploisDuTemps = [] }) {
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden">
             <div className="bg-sigapei-green px-6 py-4 flex items-center justify-between text-white">
               <h3 className="font-heading font-black text-base text-white">
-                Ajouter un cours — {currentClasse?.nom || ''}
+                Ajouter un cours - {currentClasse?.nom || ''}
               </h3>
               <button onClick={() => setIsAddModalOpen(false)} className="text-white hover:text-white/80">
                 ✕

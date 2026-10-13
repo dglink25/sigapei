@@ -61,21 +61,21 @@ export default function FinancesView() {
           </thead>
           <tbody className="divide-y divide-slate-100 font-medium">
             <tr>
-              <td className="p-3.5 font-bold text-slate-900">1ère Tranche — Frais d'inscription & Rentrée</td>
+              <td className="p-3.5 font-bold text-slate-900">1ère Tranche - Frais d'inscription & Rentrée</td>
               <td className="p-3.5 text-slate-500">15 Septembre 2026</td>
               <td className="p-3.5 font-mono">60 000 FCFA</td>
               <td className="p-3.5"><span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#EAF5EF] text-sigapei-green border border-[#BDE3CE]">CLÔTURÉE (98%)</span></td>
               <td className="p-3.5 text-right font-mono font-bold text-sigapei-green">1 452 / 1 482</td>
             </tr>
             <tr>
-              <td className="p-3.5 font-bold text-slate-900">2ème Tranche — Premier Trimestre</td>
+              <td className="p-3.5 font-bold text-slate-900">2ème Tranche - Premier Trimestre</td>
               <td className="p-3.5 text-slate-500">15 Novembre 2026</td>
               <td className="p-3.5 font-mono">60 000 FCFA</td>
               <td className="p-3.5"><span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-200">EN COURS D'APPEL</span></td>
               <td className="p-3.5 text-right font-mono font-bold text-amber-800">890 / 1 482</td>
             </tr>
             <tr>
-              <td className="p-3.5 font-bold text-slate-900">3ème Tranche — Solde Fin d'Année</td>
+              <td className="p-3.5 font-bold text-slate-900">3ème Tranche - Solde Fin d'Année</td>
               <td className="p-3.5 text-slate-500">15 Février 2027</td>
               <td className="p-3.5 font-mono">60 000 FCFA</td>
               <td className="p-3.5"><span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-600">NON ÉCHUE</span></td>

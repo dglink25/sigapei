@@ -1,5 +1,5 @@
 # ============================================================
-# sigapei-frontend — Interface Réactive (Espace Harold)
+# sigapei-frontend - Interface Réactive (Espace Harold)
 # Application exposée sur http://localhost:3000
 # ============================================================
 version: "3.9"

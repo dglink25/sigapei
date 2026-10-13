@@ -47,7 +47,7 @@ export default function ExamineModal({
           <div>
             <span className="text-[10px] font-black text-sigapei-gold uppercase tracking-wider">Instruction Dossier</span>
             <h3 className="text-xl font-black text-sigapei-black font-heading">
-              {candidate.nom} {candidate.prenom} — Candidature
+              {candidate.nom} {candidate.prenom} - Candidature
             </h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold">

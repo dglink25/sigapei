@@ -17,7 +17,7 @@ Route::get('/sante', function () {
     ]);
 });
 
-// Documentation interactive — catalogue complet des endpoints (public, pas de JWT requis)
+// Documentation interactive - catalogue complet des endpoints (public, pas de JWT requis)
 Route::get('/docs', [DocsController::class, 'catalogue']);
 
 // Routes metier sous le prefixe v1, protegees par VerifyTenantAndJwt
@@ -63,7 +63,7 @@ Route::prefix('v1')->middleware([VerifyTenantAndJwt::class])->group(function () 
         ->middleware('role:administrateur,personnel');
 
     // --- Endpoints internes (consommes par d'autres microservices via X-Internal-Secret) ---
-    // Pas de controle de role ici — le VerifyTenantAndJwt valide le secret interne
+    // Pas de controle de role ici - le VerifyTenantAndJwt valide le secret interne
     //
     // Règle n°1 : Scolarité est le seul propriétaire du schéma `scolarite`.
     // Les autres microservices lisent ces données par ces routes, jamais par
