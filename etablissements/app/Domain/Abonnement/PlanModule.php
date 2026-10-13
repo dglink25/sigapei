@@ -10,6 +10,9 @@ class PlanModule extends Model
 
     protected $fillable = ['plan_id', 'module', 'fonctionnalite', 'inclus'];
 
+    // Regle transversale : aucun identifiant interne n'est expose par l'API.
+    protected $hidden = ['id', 'plan_id'];
+
     public function plan()
     {
         return $this->belongsTo(Plan::class);

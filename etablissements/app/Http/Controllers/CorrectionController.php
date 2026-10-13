@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Validation\CorrectionTokenService;
 use App\Domain\Validation\ValidationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,23 +14,26 @@ use Illuminate\Http\Request;
  */
 class CorrectionController extends Controller
 {
-    public function __construct(private ValidationService $validationService) {}
+    public function __construct(
+        private ValidationService $validationService,
+        private CorrectionTokenService $tokenService,
+    ) {}
 
     public function afficher(string $token): JsonResponse
     {
-        $demande = app(\App\Domain\Validation\CorrectionTokenService::class)->resoudre($token);
+        $demande = $this->tokenService->resoudre($token);
 
         if (! $demande) {
             return response()->json([
                 'success' => false,
-                'error' => ['code' => 'LIEN_CORRECTION_INVALIDE', 'message' => 'Ce lien est invalide ou a expire.'],
+                'error' => ['code' => 'LIEN_CORRECTION_INVALIDE', 'message' => 'Ce lien est invalide ou a expiré.'],
             ], 404);
         }
 
         return response()->json([
             'success' => true,
             'demandeUuid' => $demande->uuid,
-            'champsACorreiger' => $demande->champs_a_corriger,
+            'champsACorriger' => $demande->champs_a_corriger,
             'donneesFormulaire' => $demande->donnees_formulaire,
         ]);
     }

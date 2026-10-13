@@ -2,17 +2,20 @@
 
 use App\Http\Controllers\AccueilController;
 use App\Http\Controllers\CorrectionController;
+use App\Http\Controllers\DocsController;
 use App\Http\Controllers\EtablissementController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\InterneController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
-/**
- * Toutes les routes sont exposees sous /v1 (prefixe applique ci-dessous),
- * conformement au sous-domaine api-etablissements.sigapei.com/v1/...
- * (section 14 du cahier des charges).
- */
+
+Route::pattern('uuid', '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
+
+// --- Documentation interactive (hors prefixe /v1, comme sur api-identite) ---
+Route::get('/docs', [DocsController::class, 'interfaceSwagger']);
+Route::get('/docs-json', [DocsController::class, 'specification']);
+
 Route::prefix('v1')->group(function () {
 
     // --- Page d'accueil publique (section 3) ---
