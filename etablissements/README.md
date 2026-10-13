@@ -1,4 +1,4 @@
-# etablissements — Microservice Établissements — Plateforme SIGAPEI
+# etablissements - Microservice Établissements - Plateforme SIGAPEI
 
 Onboarding multi-étapes d'un établissement, référentiel géographique
 panafricain (54 pays), workflow de validation par le Super Administrateur,
@@ -71,7 +71,7 @@ networks:
 ... et changez chaque `networks: - e-academique` en `networks: - sigapei`
 dans les services `identite`, `redis`, `rabbitmq` (le service `postgres`
 local peut rester tel quel ou être retiré si, comme c'est probablement votre
-cas, vous utilisez un Postgres managé distant — voir la conversation
+cas, vous utilisez un Postgres managé distant - voir la conversation
 précédente sur Neon). Relancez ensuite `docker compose up -d` côté
 identite, puis côté etablissements.
 
@@ -86,10 +86,10 @@ Même base **unique** que les 11 autres microservices, schéma dédié
 - `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` : vos
   identifiants habituels (Neon, RDS, ou Postgres local).
 - `DB_SSLMODE=require` si votre Postgres managé l'exige (cas de Neon, par
-  exemple — voir `config/database.php`, option `sslmode` transmise au
+  exemple - voir `config/database.php`, option `sslmode` transmise au
   driver PDO pgsql).
 - Le schéma `etablissements` est créé automatiquement par la première
-  migration (`CREATE SCHEMA IF NOT EXISTS`) — inutile de le créer à la main,
+  migration (`CREATE SCHEMA IF NOT EXISTS`) - inutile de le créer à la main,
   contrairement à `identite` où Neon a nécessité une commande manuelle
   la première fois (ce n'était dû qu'à l'ordre d'exécution de TypeORM, pas
   à une limite de Neon).
@@ -114,7 +114,7 @@ logo) sont téléversés vers un stockage objet, jamais dans la base :
 Identique à `identite` : `CAPTCHA_PROVIDER`, `CAPTCHA_SECRET_KEY`,
 `CAPTCHA_MIN_SCORE`. Le contrôleur d'onboarding (`OnboardingController::soumettre`)
 valide un `captchaToken` avant soumission finale (section 9 du cahier des
-charges) — branchez-y le même `RecaptchaProvider` que sur Identité si vous
+charges) - branchez-y le même `RecaptchaProvider` que sur Identité si vous
 voulez éviter de dupliquer le code entre les deux dépôts.
 
 ### 3.5. Paiement des abonnements (FedaPay / KkiaPay)
@@ -128,7 +128,7 @@ voulez éviter de dupliquer le code entre les deux dépôts.
   transactions) et `KKIAPAY_SANDBOX`.
 - Les deux intégrations (`app/Domain/Abonnement/FedaPayProvider.php` et
   `KkiaPayProvider.php`) suivent la structure documentée de leurs API
-  respectives au moment de l'écriture — **vérifiez les endpoints exacts
+  respectives au moment de l'écriture - **vérifiez les endpoints exacts
   dans leur documentation officielle avant mise en production**, ces API
   évoluent.
 
@@ -151,7 +151,7 @@ l'affiche). `CORRECTION_TOKEN_TTL_HEURES=72` conforme au cahier des charges.
 Ce microservice **publie** des événements sur la queue consommée par
 `identite` (`RABBITMQ_QUEUE_IDENTITE`, `identite.rpc` par défaut), au
 format exact attendu par le transport RMQ de NestJS
-(`{"pattern": "...", "data": {...}}`) — voir `app/Services/RabbitMQService.php`.
+(`{"pattern": "...", "data": {...}}`) - voir `app/Services/RabbitMQService.php`.
 
 | Événement publié | Déclenché quand | Consommateur prévu |
 |---|---|---|
@@ -166,7 +166,7 @@ format exact attendu par le transport RMQ de NestJS
 microservice consomme l'événement `etablissement.valide` et crée
 effectivement le compte administrateur (section 7.4, point 4 du cahier des
 charges). Voir les fichiers fournis séparément (`interne.rpc.controller.ts`
-mis à jour) — sans cet ajout, l'établissement est bien créé mais aucun
+mis à jour) - sans cet ajout, l'établissement est bien créé mais aucun
 compte administrateur n'est créé automatiquement.
 
 ---
@@ -202,7 +202,7 @@ code en cas de collision). Exemple : « Complexe Scolaire Kisito » → `kisito8
 | `GET /sante` | Sonde de santé (hors préfixe `/v1`) |
 
 Une génération Swagger/OpenAPI (comme sur `identite`) peut être ajoutée
-via le paquet `darkaonline/l5-swagger` si vous le souhaitez — non incluse
+via le paquet `darkaonline/l5-swagger` si vous le souhaitez - non incluse
 ici pour rester dans le périmètre demandé ; dites-le moi si vous voulez que
 je l'ajoute.
 

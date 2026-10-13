@@ -94,7 +94,7 @@ export default function ApprenantsView({ apprenants = [], classes = [], onTransf
                       </td>
                       <td className="py-3 px-4">
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sigapei-green/10 text-sigapei-green">
-                          {cl?.nom || '—'}
+                          {cl?.nom || '-'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -103,7 +103,7 @@ export default function ApprenantsView({ apprenants = [], classes = [], onTransf
                             ? 'bg-amber-100 text-amber-900'
                             : 'bg-blue-100 text-blue-900'
                         }`}>
-                          {cl?.programme || '—'}
+                          {cl?.programme || '-'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -113,14 +113,14 @@ export default function ApprenantsView({ apprenants = [], classes = [], onTransf
                           <span className="text-slate-400 text-[10px]">Aucun</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-slate-500">{a.parent_nom || '—'}</td>
+                      <td className="py-3 px-4 text-slate-500">{a.parent_nom || '-'}</td>
                       <td className="py-3 px-4">
                         {a.historique_classes?.length > 0 ? (
                           <span className="text-amber-600 font-bold text-[10px]">
                             {a.historique_classes.length} mutation(s)
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-[10px]">—</span>
+                          <span className="text-slate-400 text-[10px]">-</span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">

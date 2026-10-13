@@ -11,7 +11,7 @@ use Illuminate\Support\ServiceProvider;
  * Le pooler Neon nécessite que l'ID d'endpoint soit transmis dans le DSN PDO
  * via options='endpoint=<id>' quand libpq ne supporte pas SNI.
  *
- * Cette approche bind 'db.connector.pgsql' dans le container Laravel —
+ * Cette approche bind 'db.connector.pgsql' dans le container Laravel -
  * c'est le point d'entrée officiel documenté dans ConnectionFactory::createConnector().
  * Elle s'applique à TOUTES les connexions pgsql sans toucher au code vendor.
  */

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   NoticeModal — SIGAPEI
+   NoticeModal - SIGAPEI
    Charte : Vert #006B3C · Or #E9AA20 · Crème #FFF6DD
 ═══════════════════════════════════════════════════════ */
 
@@ -68,7 +68,7 @@
 }
 
 /* ══════════════════════════════════════════════════════
-   SVG — cercle tracé + symbole
+   SVG - cercle tracé + symbole
    r = 20 → C = 2π×20 ≈ 125.7
 ══════════════════════════════════════════════════════ */
 .nsvg {
@@ -100,7 +100,7 @@
   animation: n-draw 0.28s ease-out 0.55s forwards;
 }
 
-/* Croix — branche 1 */
+/* Croix - branche 1 */
 .nsvg-path--x1 {
   fill: none;
   stroke: var(--c-stroke);
@@ -110,7 +110,7 @@
   animation: n-draw 0.22s ease-out 0.54s forwards;
 }
 
-/* Croix — branche 2 */
+/* Croix - branche 2 */
 .nsvg-path--x2 {
   fill: none;
   stroke: var(--c-stroke);
@@ -130,7 +130,7 @@
   animation: n-draw 0.22s ease-out 0.54s forwards;
 }
 
-/* Point — warning */
+/* Point - warning */
 .nsvg-dot--warning {
   fill: var(--c-stroke);
   opacity: 0;
@@ -138,7 +138,7 @@
   animation: n-dot 0.18s ease-out 0.74s forwards;
 }
 
-/* Point haut — info */
+/* Point haut - info */
 .nsvg-dot--info-top {
   fill: var(--c-stroke);
   opacity: 0;

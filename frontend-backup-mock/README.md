@@ -1,6 +1,6 @@
-# frontend — Interface Réactive SIGAPEI (Espace Harold)
+# frontend - Interface Réactive SIGAPEI (Espace Harold)
 
-Interface web de la plateforme **SIGAPEI** — Système Intégré de Gestion Administrative et Pédagogique des Établissements d'Instruction —, développée en **React 18 + Vite 6 + Tailwind CSS 3**.
+Interface web de la plateforme **SIGAPEI** - Système Intégré de Gestion Administrative et Pédagogique des Établissements d'Instruction -, développée en **React 18 + Vite 6 + Tailwind CSS 3**.
 
 Elle couvre l'ensemble des **7 rôles métier** définis dans le cahier des charges Harold et consomme directement les microservices `inscription` (port 4003) et `scolarite` (port 4004) via le réseau Docker partagé `sigapei`.
 
@@ -14,7 +14,7 @@ Elle couvre l'ensemble des **7 rôles métier** définis dans le cahier des char
 
 ## 1. Démarrage rapide
 
-### 1.1. Avec Docker (recommandé — image de production Nginx)
+### 1.1. Avec Docker (recommandé - image de production Nginx)
 
 ```bash
 cp .env.example .env
@@ -49,7 +49,7 @@ Ce frontend fait partie de la plateforme SIGAPEI (12 microservices). Il respecte
 
 1. **Réseau Docker commun (`sigapei`)** : Rejoint le réseau externe partagé où tournent déjà `api-inscription` et `api-scolarite`.
 2. **Zéro logique métier dans le frontend** : toutes les règles de gestion (contrôle de capacité, validation de candidature, mutations sans doublon) sont dans les microservices Laravel. Le frontend est une **vue pure** des données.
-3. **Données mock en développement** : tant que les APIs ne sont pas câblées, les données de démonstration proviennent de `src/data/initialData.js`. Chaque composant est architecturé pour recevoir ses props de données via `App.jsx` — le remplacement par des appels `fetch` est trivial.
+3. **Données mock en développement** : tant que les APIs ne sont pas câblées, les données de démonstration proviennent de `src/data/initialData.js`. Chaque composant est architecturé pour recevoir ses props de données via `App.jsx` - le remplacement par des appels `fetch` est trivial.
 
 ---
 
@@ -84,25 +84,25 @@ Le frontend implémente les **7 rôles acteurs** du cahier des charges Harold, c
 | **Enseignant** | `enseignant@sigapei.bj` | `ens123` | Mon Emploi du Temps |
 | **Comptable** | `comptable@sigapei.bj` | `cpt123` | Tableau de bord Finances |
 | **Parent** | `parent@sigapei.bj` | `par123` | Suivi enfant |
-| **Candidat / Public** | *(accès sans connexion)* | — | Espace candidature public |
+| **Candidat / Public** | *(accès sans connexion)* | - | Espace candidature public |
 
 ### Matrice des accès par rôle
 
 | Module | Admin | Secrétaire | Censeur | Enseignant | Comptable | Parent | Candidat |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Tableau de bord KPIs | ✅ | — | — | — | — | — | — |
-| Instruction Candidatures | ✅ | ✅ | — | — | — | — | — |
-| Saisie Guichet (dossier) | ✅ | ✅ | — | — | — | — | — |
-| Classes & Capacité | ✅ | — | — | — | — | — | — |
-| Dossiers & Mutations | ✅ | ✅ | ✅ | — | — | — | — |
-| Emplois du Temps | ✅ | — | ✅ | 👁 | — | 👁 | — |
-| Frais de Scolarité | ✅ | ✅ | — | — | ✅ | 👁 | — |
-| Matières & Coefficients | ✅ | — | ✅ | — | — | — | — |
-| Saisie Notes & Devoirs | ✅ | — | ✅ | ✅ | — | — | — |
-| Bulletins Officiels | ✅ | — | ✅ | — | — | 👁 | — |
-| Années Scolaires & Rentrée | ✅ | — | — | — | — | — | — |
+| Tableau de bord KPIs | ✅ | - | - | - | - | - | - |
+| Instruction Candidatures | ✅ | ✅ | - | - | - | - | - |
+| Saisie Guichet (dossier) | ✅ | ✅ | - | - | - | - | - |
+| Classes & Capacité | ✅ | - | - | - | - | - | - |
+| Dossiers & Mutations | ✅ | ✅ | ✅ | - | - | - | - |
+| Emplois du Temps | ✅ | - | ✅ | 👁 | - | 👁 | - |
+| Frais de Scolarité | ✅ | ✅ | - | - | ✅ | 👁 | - |
+| Matières & Coefficients | ✅ | - | ✅ | - | - | - | - |
+| Saisie Notes & Devoirs | ✅ | - | ✅ | ✅ | - | - | - |
+| Bulletins Officiels | ✅ | - | ✅ | - | - | 👁 | - |
+| Années Scolaires & Rentrée | ✅ | - | - | - | - | - | - |
 
-> ✅ Lecture + Écriture · 👁 Lecture seule · — Non visible
+> ✅ Lecture + Écriture · 👁 Lecture seule · - Non visible
 
 ---
 
@@ -234,9 +234,9 @@ Le thème est entièrement défini dans `tailwind.config.js` avec les tokens off
 
 | Token Tailwind | Valeur HEX | Usage |
 |---|---|---|
-| `sigapei-green` | `#006B3C` | Couleur primaire — Header, boutons CTA |
+| `sigapei-green` | `#006B3C` | Couleur primaire - Header, boutons CTA |
 | `sigapei-sidebar` | `#004D2B` | Fond Sidebar et mini-headers |
-| `sigapei-gold` | `#E9AA20` | Couleur accent — badges, icônes actifs, coefficients |
+| `sigapei-gold` | `#E9AA20` | Couleur accent - badges, icônes actifs, coefficients |
 | `sigapei-cream` | `#FFF6DD` | Texte sur fond vert |
 | `sigapei-canvas` | `#F8FAFC` | Fond général de l'application |
 | `sigapei-black` | `#000000` | Texte principal |
@@ -250,7 +250,7 @@ Le thème est entièrement défini dans `tailwind.config.js` avec les tokens off
 
 ## 8. État global & Architecture React
 
-L'état de l'application est centralisé dans `App.jsx` et transmis par props aux composants enfants. Pas de librairie d'état externe (Redux, Zustand) — la gestion par props est suffisante pour la taille actuelle du projet.
+L'état de l'application est centralisé dans `App.jsx` et transmis par props aux composants enfants. Pas de librairie d'état externe (Redux, Zustand) - la gestion par props est suffisante pour la taille actuelle du projet.
 
 ```
 App.jsx
@@ -267,7 +267,7 @@ App.jsx
     └── isCreateCandidatureOpen
 ```
 
-**Routing par rôle** (pas de React Router — routage par état) :
+**Routing par rôle** (pas de React Router - routage par état) :
 
 ```
 null (non connecté) → LoginPage ou RegisterEtablissementPage
@@ -287,18 +287,18 @@ enseignant / comptable / parent / candidat → AppHeader simplifié (espace prop
 
 ---
 
-## 10. Dockerisation — Détails techniques
+## 10. Dockerisation - Détails techniques
 
 ### Architecture multi-stage
 
 Le Dockerfile utilise **deux étapes** distinctes pour minimiser la taille de l'image finale :
 
 ```
-Étape 1 — builder (node:22-alpine)
+Étape 1 - builder (node:22-alpine)
   npm ci
   npm run build → dist/
 
-Étape 2 — production (nginx:stable-alpine)
+Étape 2 - production (nginx:stable-alpine)
   COPY dist/ → /usr/share/nginx/html
   nginx -g "daemon off;"
 ```
@@ -307,7 +307,7 @@ Le Dockerfile utilise **deux étapes** distinctes pour minimiser la taille de l'
 
 ### Configuration Nginx (`docker/nginx.conf`)
 
-- **SPA fallback** : `try_files $uri $uri/ /index.html` — toutes les routes React sont gérées côté client.
+- **SPA fallback** : `try_files $uri $uri/ /index.html` - toutes les routes React sont gérées côté client.
 - **Cache immutable** : les assets Vite (hachés par contenu) sont mis en cache 1 an par le navigateur.
 - **Compression gzip** : tous les assets text/JS/CSS sont compressés (~60% de réduction du poids).
 - **Headers de sécurité** : `X-Frame-Options`, `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`.

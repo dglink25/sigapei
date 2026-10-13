@@ -8,7 +8,7 @@ use App\Presences\PresenceService;
 use Illuminate\Http\JsonResponse;
 
 /**
- * GET /apprenants/{uuid}/dossier-vie-scolaire — vue consolidee des
+ * GET /apprenants/{uuid}/dossier-vie-scolaire - vue consolidee des
  * presences, absences et incidents d'un apprenant (section 8 du CDC).
  * Consultee par le parent, l'apprenant lui-meme et les profils habilites.
  */

@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Common\TenantModel;
 
 /**
- * Formule de transport scolaire souscrite et statut de paiement — V2+,
+ * Formule de transport scolaire souscrite et statut de paiement - V2+,
  * HORS LOT. Structure identique a "cantine", voir ce modele pour le contexte.
  */
 class Transport extends TenantModel

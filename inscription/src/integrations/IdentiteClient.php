@@ -11,7 +11,7 @@ use Throwable;
  * Règle n°1 : plus de lecture directe du schéma `identite`. Les profils et
  * rôles se récupèrent via l'API interne d'Identité (`/interne/...`).
  *
- * Règle n°5 : ce client ne valide aucun JWT — il ne fait que transporter
+ * Règle n°5 : ce client ne valide aucun JWT - il ne fait que transporter
  * l'UUID de l'utilisateur à vérifier.
  */
 class IdentiteClient
@@ -57,7 +57,7 @@ class IdentiteClient
      * possède un rôle autorisé dans Identité.
      *
      * Règle de sécurité : échec fermé (fail-closed). Un microservice
-     * injoignable vaut REFUS, jamais autorisation — sinon n'importe quel
+     * injoignable vaut REFUS, jamais autorisation - sinon n'importe quel
      * identifiant pourrait saisir une note d'admission.
      */
     public function estEnseignantActif(string|int $enseignantRef): bool

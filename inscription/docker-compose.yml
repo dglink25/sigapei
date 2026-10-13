@@ -1,5 +1,5 @@
 # ============================================================
-# api-inscription — Orchestration Docker
+# api-inscription - Orchestration Docker
 # Demarrage : docker compose up -d --build
 # Microservice expose sur http://localhost:4003 (Sante : /sante, Docs : /docs)
 #

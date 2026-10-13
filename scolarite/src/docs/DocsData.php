@@ -9,7 +9,7 @@ class DocsData
         return [
             'service' => 'api-scolarite',
             'version' => '1.0.0',
-            'description' => 'Microservice de gestion scolaire (cycles, classes, apprenants, mutations, emplois du temps, paiements) — SIGAPEI',
+            'description' => 'Microservice de gestion scolaire (cycles, classes, apprenants, mutations, emplois du temps, paiements) - SIGAPEI',
             'port' => 4004,
             'prefixe_api' => '/v1',
             'authentication' => [
