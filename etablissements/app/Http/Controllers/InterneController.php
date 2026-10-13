@@ -22,9 +22,13 @@ class InterneController extends Controller
 
     public function marquerCorrections(Request $request, string $uuid): JsonResponse
     {
-        $donnees = $request->validate(['champsACorreiger' => ['required', 'array']]);
+        // Chaque section a corriger doit etre accompagnee d'un motif (section 7.2).
+        $donnees = $request->validate([
+            'champsACorriger' => ['required', 'array', 'min:1'],
+            'champsACorriger.*' => ['required', 'string', 'min:3'],
+        ]);
 
-        $demande = $this->validationService->demanderCorrection($uuid, $donnees['champsACorreiger']);
+        $demande = $this->validationService->demanderCorrection($uuid, $donnees['champsACorriger']);
 
         return response()->json(['success' => true, 'demandeUuid' => $demande->uuid, 'statut' => $demande->statut]);
     }
@@ -61,7 +65,10 @@ class InterneController extends Controller
         $resolution = $this->validationService->resoudreSlug($slug);
 
         if (! $resolution) {
-            return response()->json(['success' => false, 'error' => ['code' => 'SLUG_INTROUVABLE']], 404);
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'SLUG_INTROUVABLE', 'message' => 'Aucun établissement ne correspond à ce slug.'],
+            ], 404);
         }
 
         return response()->json(['success' => true, ...$resolution]);

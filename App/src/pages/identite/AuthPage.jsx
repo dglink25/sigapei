@@ -6,14 +6,14 @@ import { getExampleNumber, getCountryCallingCode, isValidPhoneNumber } from 'lib
 import examples from 'libphonenumber-js/examples.mobile.json'
 import { Phone, Mail, Fingerprint, ArrowLeft } from 'lucide-react'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
-import { ENV } from '../../config/env'
-import { useNotify } from '../../context/NotifyContext'
-import { unwrap } from '../../lib/http'
-import { useAuth } from './AuthContext'
-import { authService } from './services/auth.service'
-import { getCaptchaToken } from './lib/captcha'
-import { getGoogleIdToken } from './lib/firebase'
-import { HOME_PATH, LOGIN_PATH } from './config'
+import { ENV } from '../../config/commun/env'
+import { useNotify } from '../../context/commun/NotifyContext'
+import { unwrap } from '../../lib/commun/http'
+import { useAuth } from '../../context/identite/AuthContext'
+import { authService } from '../../services/identite/auth.service'
+import { getCaptchaToken } from '../../lib/identite/captcha'
+import { getGoogleIdToken } from '../../lib/identite/firebase'
+import { HOME_PATH, LOGIN_PATH } from '../../config/identite/routes'
 import './AuthPage.css'
 
 const METHODS = [
@@ -300,7 +300,7 @@ export default function AuthPage() {
         {mode === 'recover' && step === 'identifier' && (
           <form onSubmit={submitSearch} noValidate>
             <label className="auth-label" htmlFor="nom">Nom complet ou identifiant de récupération</label>
-            <input id="nom" className="field" type="text" autoComplete="name" placeholder="Ex. : Mon Nom complet"
+            <input id="nom" className="field" type="text" autoComplete="name" placeholder="Ex. : Jean Dupont"
               value={nom} onChange={(e) => setNom(e.target.value)} />
 
             <button className="auth-btn" type="submit" disabled={loading}>
