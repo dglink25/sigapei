@@ -27,9 +27,11 @@ export default function App() {
       <Route path={PATHS.demande} element={<DemandePage />} />
       <Route path={PATHS.correctionRoute} element={<CorrectionPage />} />
 
+      {/* Page d'accueil publique (landing page) */}
+      <Route path={HOME_PATH} element={<Home />} />
+
       {/* Routes protegees : sans session -> redirection automatique vers /login */}
       <Route element={<RequireAuth />}>
-        <Route path={HOME_PATH} element={<Home />} />
         <Route path={SECURITY_PATH} element={<SecuritePage />} />
       </Route>
 
