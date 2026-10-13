@@ -15,7 +15,7 @@ import { TentativeConnexion } from '../audit/tentative-connexion.entity';
 // Desactive l'algorithme "Happy Eyeballs" (actif par defaut depuis Node 18/20) :
 // celui-ci alterne les tentatives IPv6/IPv4 avec un timeout tres court par
 // adresse (~250ms), ce qui echoue systematiquement sur un reseau a latence
-// elevee ou avec des adresses IPv6 injoignables — alors qu'une connexion
+// elevee ou avec des adresses IPv6 injoignables - alors qu'une connexion
 // classique (comme celle de `psql`/`nc`) sur une seule adresse IPv4, avec le
 // timeout TCP normal du systeme, aboutit sans probleme. On revient donc a ce
 // comportement "classique" : une seule adresse (IPv4 en priorite), timeout OS.

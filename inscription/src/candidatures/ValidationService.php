@@ -65,7 +65,7 @@ class ValidationService
             throw new Exception("Le module 'Inscription' n'est pas actif pour cet établissement.");
         }
 
-        // 2. Vérification disponibilité — la classe visée est référencée par son id
+        // 2. Vérification disponibilité - la classe visée est référencée par son id
         // ou son uuid selon la candidature. Le tenant est transmis tel quel :
         // ScolariteClient refuse explicitement une valeur non numérique.
         $classeRef = $candidature->classe_visee_uuid ?? $candidature->classe_visee_id;

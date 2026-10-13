@@ -33,7 +33,7 @@ class AlerteAbsenceService
     }
 
     /**
-     * GET /interne/alertes-absences — apprenants ayant depasse le seuil
+     * GET /interne/alertes-absences - apprenants ayant depasse le seuil
      * d'absences sur la periode glissante, consomme par le back-office du
      * censeur.
      *

@@ -140,7 +140,7 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [])
 
-  // Scroll listener — parallax + active nav
+  // Scroll listener - parallax + active nav
   useEffect(() => {
     const root = document.getElementById('hp')
     if (!root) return
@@ -162,7 +162,7 @@ export default function Home() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Intersection Observer — scroll reveal
+  // Intersection Observer - scroll reveal
   useEffect(() => {
     const root = document.getElementById('hp')
     if (!root) return

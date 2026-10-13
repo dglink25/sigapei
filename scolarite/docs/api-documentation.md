@@ -1,4 +1,4 @@
-# Documentation Complète de l'API — scolarite
+# Documentation Complète de l'API - scolarite
 
 Microservice de gestion administrative et pédagogique de la plateforme **SIGAPEI**.
 

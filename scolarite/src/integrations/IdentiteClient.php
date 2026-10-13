@@ -11,7 +11,7 @@ use Throwable;
  * Règle n°1 : plus de lecture directe du schéma `identite`. Les profils et
  * rôles se récupèrent via l'API interne d'Identité (`/interne/...`).
  *
- * Règle n°5 : ce client ne valide aucun JWT — il ne fait que transporter
+ * Règle n°5 : ce client ne valide aucun JWT - il ne fait que transporter
  * l'UUID de l'utilisateur à vérifier.
  */
 class IdentiteClient
@@ -59,8 +59,8 @@ class IdentiteClient
      *
      * Règle de sécurité : échec fermé (fail-closed). Identité vide ou
      * injoignable ne vaut PAS autorisation : autoriser par défaut
-     * permettrait d'affecter n'importe quel identifiant — y compris
-     * inexistant — à un créneau d'emploi du temps.
+     * permettrait d'affecter n'importe quel identifiant - y compris
+     * inexistant - à un créneau d'emploi du temps.
      */
     public function estEnseignantActif(string|int $enseignantRef): bool
     {

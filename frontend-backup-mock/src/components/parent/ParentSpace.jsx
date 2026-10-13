@@ -51,7 +51,7 @@ export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }
   const days = [
     { name: 'Lundi', c1: 'Mathématiques (08h - 10h)', c2: 'Français (10h - 12h)', c3: 'SVT (15h - 17h)' },
     { name: 'Mardi', c1: 'Histoire-Géo (08h - 10h)', c2: 'Anglais (10h - 12h)', c3: 'Informatique (15h - 17h)' },
-    { name: 'Mercredi', c1: '—', c2: 'EPS (Stade) (10h - 12h)', c3: '—' },
+    { name: 'Mercredi', c1: '-', c2: 'EPS (Stade) (10h - 12h)', c3: '-' },
     { name: 'Jeudi', c1: 'Mathématiques (08h - 10h)', c2: 'Français (10h - 12h)', c3: 'Histoire-Géo (15h - 17h)' },
     { name: 'Vendredi', c1: 'Physique-Chimie (08h - 10h)', c2: 'SVT (10h - 12h)', c3: 'Arts Plastiques (15h - 17h)' }
   ];
@@ -207,7 +207,7 @@ export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }
           <div className="pt-4 space-y-4 fade-enter">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
               <div>
-                <h3 className="text-sm font-black text-slate-900">Relevé périodique des notes — Trimestre 1</h3>
+                <h3 className="text-sm font-black text-slate-900">Relevé périodique des notes - Trimestre 1</h3>
                 <p className="text-xs text-slate-500">Moyennes calculées avec coefficients officiels</p>
               </div>
               <div className="text-right">
@@ -319,12 +319,12 @@ export default function ParentSpace({ currentUser, activeNav = 'par_dashboard' }
             <div className="border-l-2 border-sigapei-green/30 pl-4 ml-2 space-y-4 text-xs">
               <div className="relative">
                 <span className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-sigapei-green border-2 border-white"></span>
-                <p className="font-bold text-slate-800">Rentrée 2026-2027 — Inscription en {activeEnfant.classe}</p>
+                <p className="font-bold text-slate-800">Rentrée 2026-2027 - Inscription en {activeEnfant.classe}</p>
                 <p className="text-slate-500 text-[11px]">Dossier d'admission validé avec conformité des pièces S3.</p>
               </div>
               <div className="relative">
                 <span className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-300 border-2 border-white"></span>
-                <p className="font-bold text-slate-800">Année 2025-2026 — Cycle Précédent</p>
+                <p className="font-bold text-slate-800">Année 2025-2026 - Cycle Précédent</p>
                 <p className="text-slate-500 text-[11px]">Admis en classe supérieure avec félicitations du conseil des maîtres.</p>
               </div>
             </div>

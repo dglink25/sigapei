@@ -1,4 +1,4 @@
-# api-identite — Microservice Identite (SSO) — sigapei
+# api-identite - Microservice Identite (SSO) - sigapei
 
 Microservice d'authentification sans mot de passe de la plateforme sigapei :
 matricule + empreinte digitale, telephone + OTP (SMS + WhatsApp), e-mail + OTP,
@@ -45,7 +45,7 @@ pointant vers `localhost` au lieu des noms de service Docker (`DB_HOST=localhost
 ## 2. Configuration a realiser vous-meme (obligatoire)
 
 Toute la configuration se fait via le fichier `.env` (copie de `.env.example`).
-**Rien de ce qui suit n'est fonctionnel avec les valeurs par defaut** — elles
+**Rien de ce qui suit n'est fonctionnel avec les valeurs par defaut** - elles
 sont volontairement des placeholders (`change-me`, `xxxxxx`) a remplacer.
 
 ### 2.1. Base de donnees PostgreSQL
@@ -57,7 +57,7 @@ unique de la plateforme (partagee avec les 11 autres microservices).
   identifiants PostgreSQL habituels.
 - `DB_SCHEMA=identite` : ne pas modifier, sauf convention d'equipe differente.
 - `DB_SYNCHRONIZE=false` **en production** (TypeORM ne doit jamais modifier le
-  schema automatiquement en prod — mettez en place de vraies migrations
+  schema automatiquement en prod - mettez en place de vraies migrations
   `npm run typeorm migration:generate`). En local, vous pouvez temporairement
   mettre `true` pour laisser TypeORM creer les tables.
 - Le script `docker/init-db.sql` cree automatiquement le schema `identite` et
@@ -111,7 +111,7 @@ SIM/modems GSM, et exposer une API HTTP simple (`POST /messages`,
   par des virgules (utilises en round-robin).
 
 Ce depot n'inclut **pas** le logiciel de passerelle SMS lui-meme (il tourne
-sur un serveur avec acces physique aux boitiers SIM) — seulement le client
+sur un serveur avec acces physique aux boitiers SIM) - seulement le client
 HTTP qui s'y connecte (`src/integrations/sms/sms-gateway-maison.provider.ts`).
 
 ### 2.7. E-mail transactionnel (SMTP + mot de passe d'application)
@@ -186,7 +186,7 @@ les appels a `GET /interne/introspection`.
 | GitHub | (aucun, via Firebase) | Jeton d'identite Firebase deja verifie par GitHub | Firebase |
 
 Pour Google/GitHub : la verification d'identite est deja faite par le
-fournisseur (Firebase) — l'API retrouve simplement le compte existant par
+fournisseur (Firebase) - l'API retrouve simplement le compte existant par
 e-mail et **connecte systematiquement** l'utilisateur sans OTP
 supplementaire. Aucune inscription n'est declenchee si le compte n'existe pas.
 
@@ -232,7 +232,7 @@ uniquement), journal d'audit des tentatives de connexion.
 
 ---
 
-## 5. RabbitMQ — bus d'evenements inter-microservices
+## 5. RabbitMQ - bus d'evenements inter-microservices
 
 Deux canaux distincts, tous deux geres par ce microservice :
 
@@ -297,7 +297,7 @@ ci-dessus. Le SMS (passerelle maison) utilise un gabarit plus court
 
 **La liste complete, avec le format exact de chaque requete et de chaque
 reponse (schemas JSON, codes d'erreur, exemples), est generee automatiquement
-et disponible sur `/docs` une fois le service demarre** (Swagger/OpenAPI —
+et disponible sur `/docs` une fois le service demarre** (Swagger/OpenAPI -
 JSON brut sur `/docs-json`, importable dans Postman/Insomnia).
 
 Resume des groupes de routes (prefixees par `/v1`) :

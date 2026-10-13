@@ -1,5 +1,5 @@
 # ============================================================
-# api-scolarite — Orchestration Docker
+# api-scolarite - Orchestration Docker
 # Demarrage : docker compose up -d --build
 # Microservice expose sur http://localhost:4004 (Sante : /sante, Docs : /docs)
 #

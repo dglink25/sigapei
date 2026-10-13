@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Table vie_scolaire.audit_logs — section 10 du CDC.
+ * Table vie_scolaire.audit_logs - section 10 du CDC.
  *
  * Journalise de facon inalterable les corrections de presence, les
  * incidents disciplinaires et les sanctions. Chaque entree porte tenant_id,

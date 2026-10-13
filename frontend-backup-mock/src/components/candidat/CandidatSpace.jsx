@@ -229,7 +229,7 @@ export default function CandidatSpace({
           {/* Step 1: Identité */}
           {currentStep === 1 && (
             <div className="space-y-4 fade-enter">
-              <h3 className="text-sm font-black text-sigapei-black">Étape 1 — Identité de l'élève</h3>
+              <h3 className="text-sm font-black text-sigapei-black">Étape 1 - Identité de l'élève</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nom *</label>
@@ -298,7 +298,7 @@ export default function CandidatSpace({
           {/* Step 2: Classe */}
           {currentStep === 2 && (
             <div className="space-y-4 fade-enter">
-              <h3 className="text-sm font-black text-sigapei-black">Étape 2 — Classe souhaitée</h3>
+              <h3 className="text-sm font-black text-sigapei-black">Étape 2 - Classe souhaitée</h3>
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Sélectionner une classe *</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -351,7 +351,7 @@ export default function CandidatSpace({
           {/* Step 3: Parent */}
           {currentStep === 3 && (
             <div className="space-y-4 fade-enter">
-              <h3 className="text-sm font-black text-sigapei-black">Étape 3 — Parent / Responsable</h3>
+              <h3 className="text-sm font-black text-sigapei-black">Étape 3 - Parent / Responsable</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nom complet du parent *</label>
@@ -416,10 +416,10 @@ export default function CandidatSpace({
           {/* Step 4: Validation */}
           {currentStep === 4 && (
             <div className="space-y-4 fade-enter">
-              <h3 className="text-sm font-black text-sigapei-black">Étape 4 — Validation et soumission</h3>
+              <h3 className="text-sm font-black text-sigapei-black">Étape 4 - Validation et soumission</h3>
               <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-sm">
                 <div><strong>Élève :</strong> {nom} {prenom}</div>
-                <div><strong>Classe :</strong> {classes.find(c => c.id === selectedClasseId)?.nom || '—'}</div>
+                <div><strong>Classe :</strong> {classes.find(c => c.id === selectedClasseId)?.nom || '-'}</div>
                 <div><strong>Parent :</strong> {parentNom} ({parentTel})</div>
               </div>
               <div className="flex justify-between">
@@ -479,11 +479,11 @@ export default function CandidatSpace({
                 </div>
                 <div>
                   <span className="text-slate-400">Classe visée :</span>
-                  <strong className="ml-2">{searchResult.classe_nom || '—'}</strong>
+                  <strong className="ml-2">{searchResult.classe_nom || '-'}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400">Date de dépôt :</span>
-                  <strong className="ml-2">{searchResult.date_soumission || '—'}</strong>
+                  <strong className="ml-2">{searchResult.date_soumission || '-'}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400">Statut :</span>
@@ -492,7 +492,7 @@ export default function CandidatSpace({
                     searchResult.statut === 'rejetee' ? 'bg-red-100 text-red-800' :
                     'bg-amber-100 text-amber-800'
                   }`}>
-                    {searchResult.statut || '—'}
+                    {searchResult.statut || '-'}
                   </span>
                 </div>
               </div>
