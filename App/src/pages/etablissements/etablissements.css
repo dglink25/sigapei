@@ -26,10 +26,18 @@
   padding: 32px 16px 48px;
   background-color: var(--sg-bg);
   font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
-  font-size: 18px;           /* base identique à /login */
+  font-size: 18px;
   line-height: 1.5;
   color: var(--sg-text);
   box-sizing: border-box;
+}
+/* Mode centré (états de feedback : erreur, lien invalide, succès) */
+.dm-page:has(.dm-card--center) {
+  align-items: center;
+  background-color: #04201a;
+  background-image: linear-gradient(180deg, rgba(0,20,12,0.45), rgba(0,20,12,0.68)), url('/bg-sigapei.jpg');
+  background-size: cover; background-position: center;
+  color: var(--sg-cream);
 }
 .dm-page *, .dm-page *::before, .dm-page *::after { box-sizing: border-box; }
 
@@ -384,18 +392,27 @@ select.dm-input option { color: var(--sg-text); background: #fff; }
 .dm-foot { margin: 16px 0 0; text-align: center; font-size: 1rem; color: var(--sg-muted); }
 .dm-saved { color: var(--sg-muted); text-align: center; font-size: 0.88rem; }
 
-/* ===== Écran confirmation finale ===== */
+/* ===== Écran confirmation / feedback centré ===== */
 .dm-card--center {
   max-width: 520px;
   flex-direction: column;
   align-items: center;
   text-align: center;
   padding: 48px 40px;
+  /* Style glassmorphism sur fond sombre */
+  border-radius: 40px;
+  border: 2px solid rgba(255,246,221,0.45);
+  background: linear-gradient(160deg, rgba(255,246,221,0.13), rgba(0,107,60,0.18) 50%, rgba(0,0,0,0.28));
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,246,221,0.3);
 }
+.dm-card--center .dm-logo   { filter: none; }
+.dm-card--center .dm-title  { color: var(--sg-cream); font-size: 1.7rem; margin-bottom: 12px; }
+.dm-card--center .dm-sub    { color: rgba(255,246,221,0.85); max-width: 420px; }
+.dm-card--center .dm-btn    { margin-top: 24px; }
 .dm-card--center .dm-bigicon { margin: 0 auto 18px; }
-.dm-card--center .dm-title { color: var(--sg-green); font-size: 1.7rem; margin-bottom: 12px; }
-.dm-card--center .dm-sub { color: var(--sg-muted); max-width: 420px; }
-.dm-card--center .dm-btn { margin-top: 24px; }
+.dm-card--center .dm-link   { color: var(--sg-gold); }
 
 .dm-bigicon {
   display: grid; place-items: center;

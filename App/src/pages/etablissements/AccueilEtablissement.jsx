@@ -107,7 +107,7 @@ export default function AccueilEtablissement() {
           </div>
           <h2 className="ae-hero-titre">Bienvenue à <strong>{data.nom}</strong></h2>
           <p className="ae-hero-sub">
-            Géré sur la plateforme {ENV.appName} — Système Intégré de Gestion et
+            Géré sur la plateforme {ENV.appName} - Système Intégré de Gestion et
             d'Administration des Établissements Privés d'Enseignement Intégrés
           </p>
           <div className="ae-hero-actions">
@@ -162,7 +162,7 @@ export default function AccueilEtablissement() {
         <div className="ae-cta-inner">
           <BookOpen size={32} className="ae-cta-icon" />
           <h3>Accédez à votre espace</h3>
-          <p>Élèves, enseignants, parents et administration — connectez-vous pour accéder aux services de l'établissement.</p>
+          <p>Élèves, enseignants, parents et administration - connectez-vous pour accéder aux services de l'établissement.</p>
           <Link to={LOGIN_PATH} className="ae-btn ae-btn--gold">
             <LogIn size={16} /> Se connecter
           </Link>

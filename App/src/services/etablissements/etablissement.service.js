@@ -32,7 +32,7 @@ export const geoService = {
 }
 
 export const accueilService = {
-  /** GET /v1/etablissements/{slug}/accueil — public, sans auth */
+  /** GET /v1/etablissements/{slug}/accueil - public, sans auth */
   lire: async (slug) => {
     const r = await api.get(`/etablissements/${slug}/accueil`, PUBLIC)
     return r?.accueil ?? r
@@ -40,11 +40,10 @@ export const accueilService = {
 }
 
 export const demandeService = {
-  /** Cree (sans uuid) ou fusionne (avec uuid) le brouillon -> { success, demandeUuid, statut } */
   enregistrerBrouillon: (payload) => api.post('/demandes', payload, PUBLIC),
-  /** -> { success, demandeUuid, statut: 'soumise', dateSoumission } */
   soumettre: (uuid, captchaToken) =>
     api.post(`/demandes/${uuid}/soumettre`, { confirmationAuthenticite: true, acceptationConditions: true, captchaToken }, PUBLIC),
+  supprimerBrouillon: (uuid) => api.delete(`/demandes/${uuid}`, PUBLIC),
 }
 
 export const correctionService = {
@@ -57,12 +56,11 @@ export const correctionService = {
 /** Back-office Super Administrateur : routes /interne/* (X-Internal-Secret ajoute par le proxy / la Gateway). */
 export const adminService = {
   lister: async () => listFrom(await adminApi.get('/interne/demandes'), 'demandes', 'items'),
-  afficher: async (uuid) => {
-    const r = await adminApi.get(`/interne/demandes/${uuid}`)
-    return r?.demande ?? r
-  },
+  afficher: async (uuid) => { const r = await adminApi.get(`/interne/demandes/${uuid}`); return r?.demande ?? r },
   marquerCorrections: (uuid, champsACorriger) => adminApi.post(`/interne/demandes/${uuid}/corrections`, { champsACorriger }),
   valider: (uuid) => adminApi.post(`/interne/demandes/${uuid}/valider`),
+  supprimerBrouillon: (uuid) => adminApi.delete(`/interne/demandes/${uuid}`),
+  supprimerBrouillons: (uuids) => adminApi.post('/interne/demandes/supprimer', { uuids }),
   listerEtablissements: async () => listFrom(await adminApi.get('/interne/etablissements'), 'etablissements', 'items'),
   suspendreEtablissement: (uuid) => adminApi.post(`/interne/etablissements/${uuid}/suspendre`),
   reactiverEtablissement: (uuid) => adminApi.post(`/interne/etablissements/${uuid}/reactiver`),

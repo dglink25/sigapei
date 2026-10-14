@@ -128,4 +128,30 @@ class OnboardingController extends Controller{
             'dateSoumission' => $demande->date_soumission,
         ]);
     }
+
+    /**
+     * Supprime un brouillon (statut = brouillon uniquement).
+     * Appelé quand l'utilisateur clique « Recommencer » pour repartir de zéro.
+     */
+    public function supprimerBrouillon(string $uuid): JsonResponse
+    {
+        $demande = \App\Domain\Onboarding\DemandeEtablissement::where('uuid', $uuid)->first();
+
+        if (! $demande) {
+            return response()->json(['success' => true]); // idempotent : déjà supprimé
+        }
+
+        if ($demande->statut !== 'brouillon') {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'DEMANDE_NON_SUPPRIMABLE', 'message' => 'Seul un brouillon peut être supprimé.'],
+            ], 409);
+        }
+
+        // Supprimer les documents associés
+        $demande->documents()->delete();
+        $demande->delete();
+
+        return response()->json(['success' => true]);
+    }
 }

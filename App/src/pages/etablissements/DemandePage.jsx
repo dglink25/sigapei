@@ -157,7 +157,15 @@ export default function DemandePage() {
     }
   }
 
-  function reset() {
+  async function reset() {
+    // Supprimer le brouillon côté serveur si un UUID existe
+    if (uuid) {
+      try {
+        await demandeService.supprimerBrouillon(uuid)
+      } catch {
+        // Pas bloquant : on efface le local quand même
+      }
+    }
     clearDraft()
     setForm(EMPTY_FORM); setDocs({}); setUuid(null); setStep(1); setErrors({}); setSavedAt(null); setAskReset(false)
     notify.info('Nouvelle demande', 'Le brouillon a été effacé.')
