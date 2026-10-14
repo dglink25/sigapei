@@ -49,52 +49,114 @@ export class InterneRpcController {
       data: {
         tenantUuid: string;
         nomEtablissement: string;
+        code: string;
+        slug: string;
+        matricule: string;
+        urlAccueil?: string;
         dirigeantNom: string;
         dirigeantEmail?: string;
         dirigeantTelephone?: string;
       };
     },
   ) {
-    const evenement = data?.data ?? (data as any);
-    const { tenantUuid, dirigeantNom, dirigeantEmail, dirigeantTelephone } = evenement;
+    const ev = data?.data ?? (data as any);
+    const {
+      tenantUuid, nomEtablissement, code, slug, matricule, urlAccueil,
+      dirigeantNom, dirigeantEmail, dirigeantTelephone,
+    } = ev;
 
+    /* ── 1. Créer le compte administrateur ── */
     try {
       if (dirigeantEmail) {
         const existant = await this.utilisateursService.trouverParEmail(dirigeantEmail.toLowerCase());
         if (existant) {
           this.logger.log(`Compte deja existant pour ${dirigeantEmail}, evenement ignore (idempotence).`);
-          return;
+          // Même si le compte existe, on envoie quand même les notifications ci-dessous
+        } else {
+          const roles    = await this.rolesService.lister();
+          const roleAdmin = roles.find((r) => r.code === 'administrateur');
+          if (!roleAdmin) {
+            this.logger.error("Role 'administrateur' introuvable.");
+          } else {
+            let telephoneE164: string | null = null;
+            if (dirigeantTelephone) {
+              try { telephoneE164 = normaliserTelephoneE164(dirigeantTelephone).e164; } catch { /* ignore */ }
+            }
+            await this.utilisateursService.creerUtilisateurAdministrateur({
+              tenantId: tenantUuid,
+              roleId:   roleAdmin.id,
+              nomComplet: dirigeantNom,
+              email:    dirigeantEmail?.toLowerCase() ?? null,
+              telephone: telephoneE164,
+            });
+            this.logger.log(`Compte administrateur créé pour ${nomEtablissement} (${tenantUuid}).`);
+          }
         }
       }
-
-      const roles = await this.rolesService.lister();
-      const roleAdmin = roles.find((r) => r.code === 'administrateur');
-      if (!roleAdmin) {
-        this.logger.error("Role 'administrateur' introuvable : impossible de creer le compte.");
-        return;
-      }
-
-      let telephoneE164: string | null = null;
-      if (dirigeantTelephone) {
-        try {
-          telephoneE164 = normaliserTelephoneE164(dirigeantTelephone).e164;
-        } catch {
-          this.logger.warn(`Telephone dirigeant invalide (${dirigeantTelephone}), compte cree sans telephone.`);
-        }
-      }
-
-      await this.utilisateursService.creerUtilisateurAdministrateur({
-        tenantId: tenantUuid,
-        roleId: roleAdmin.id,
-        nomComplet: dirigeantNom,
-        email: dirigeantEmail?.toLowerCase() ?? null,
-        telephone: telephoneE164,
-      });
-
-      this.logger.log(`Compte administrateur cree pour le tenant ${tenantUuid} (${dirigeantEmail ?? telephoneE164}).`);
     } catch (err) {
-      this.logger.error(`Echec creation compte administrateur pour tenant ${tenantUuid}: ${(err as Error).message}`);
+      this.logger.error(`Échec création compte admin pour ${tenantUuid}: ${(err as Error).message}`);
     }
+
+    /* ── 2. Notifications WhatsApp + e-mail au dirigeant ── */
+    const url = urlAccueil ?? `https://${slug}.sigapei.com`;
+
+    const msgWa =
+      `*SIGAPEI — Établissement validé*\n\n` +
+      `Félicitations, ${dirigeantNom} !\n\n` +
+      `Votre établissement *${nomEtablissement}* a été validé et est désormais actif sur SIGAPEI.\n\n` +
+      `*Vos identifiants administrateur :*\n` +
+      `Identifiant de connexion : ${dirigeantEmail ?? dirigeantTelephone}\n` +
+      `Matricule établissement : ${matricule}\n` +
+      `Code public : ${code}\n\n` +
+      `*Page d'accueil de votre établissement :*\n${url}\n\n` +
+      `Connectez-vous dès maintenant pour accéder à votre espace de gestion.`;
+
+    const promesses: Promise<any>[] = [];
+
+    if (dirigeantTelephone) {
+      try {
+        const tel = normaliserTelephoneE164(dirigeantTelephone).e164;
+        promesses.push(this.whatsapp.envoyerMessage(tel, msgWa));
+      } catch { /* numéro invalide */ }
+    }
+
+    if (dirigeantEmail) {
+      promesses.push(
+        this.email.envoyerNotificationOnboarding(dirigeantEmail.toLowerCase(), {
+          sujet: `Votre établissement ${nomEtablissement} est validé — SIGAPEI`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto">
+              <h2 style="color:#006B3C">SIGAPEI — Établissement validé</h2>
+              <p>Félicitations, <strong>${dirigeantNom}</strong> !</p>
+              <p>
+                Votre établissement <strong>${nomEtablissement}</strong> a été validé
+                et est désormais actif sur la plateforme SIGAPEI.
+              </p>
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0"/>
+              <h3 style="color:#1a2a1e;font-size:15px">Vos identifiants</h3>
+              <table style="width:100%;border-collapse:collapse;font-size:14px">
+                <tr><td style="padding:6px 0;color:#5a6b5f;width:180px">Identifiant de connexion</td><td><strong>${dirigeantEmail ?? dirigeantTelephone}</strong></td></tr>
+                <tr><td style="padding:6px 0;color:#5a6b5f">Matricule établissement</td><td><strong style="letter-spacing:2px">${matricule}</strong></td></tr>
+                <tr><td style="padding:6px 0;color:#5a6b5f">Code public</td><td><strong>${code}</strong></td></tr>
+              </table>
+              <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0"/>
+              <p>
+                <a href="${url}"
+                   style="display:inline-block;padding:12px 24px;background:#006B3C;color:#FFF6DD;
+                          border-radius:8px;text-decoration:none;font-weight:bold">
+                  Accéder à mon espace établissement
+                </a>
+              </p>
+              <p style="font-size:12px;color:#9ca3af;margin-top:24px">
+                SIGAPEI — Ne répondez pas à cet e-mail automatique.
+              </p>
+            </div>`,
+        }),
+      );
+    }
+
+    await Promise.allSettled(promesses);
+    this.logger.log(`Notifications établissement.valide envoyées pour ${nomEtablissement} (${code}).`);
   }
 
   @EventPattern('demande.soumise')

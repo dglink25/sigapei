@@ -6,11 +6,7 @@ use App\Domain\Validation\ValidationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/**
- * Endpoints internes (section 14) : back-office Super Administrateur et
- * passerelle API (Gateway) uniquement. Proteges par le middleware
- * secret.interne (header X-Internal-Secret), identique a api-identite.
- */
+
 class InterneController extends Controller
 {
     public function __construct(private ValidationService $validationService) {}
@@ -26,31 +22,36 @@ class InterneController extends Controller
             ->with('documents')
             ->firstOrFail();
 
-        // Génère des URLs pré-signées S3 (ou URLs directes selon le driver)
-        $documents = $demande->documents->map(function ($doc) {
+        $s3Configure = !empty(env('AWS_ACCESS_KEY_ID')) && !empty(env('AWS_SECRET_ACCESS_KEY')) && !empty(env('AWS_BUCKET'));
+
+        $documents = $demande->documents->map(function ($doc) use ($s3Configure) {
             $url = null;
-            try {
-                $disk = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default', 's3'));
-                $url = method_exists($disk, 'temporaryUrl')
-                    ? $disk->temporaryUrl($doc->chemin_stockage, now()->addMinutes(60))
-                    : $disk->url($doc->chemin_stockage);
-            } catch (\Throwable) {
-                // URL indisponible (driver local ou stockage non configuré)
+
+            if ($s3Configure) {
+                try {
+                    $disk = \Illuminate\Support\Facades\Storage::disk('s3');
+                    $url  = method_exists($disk, 'temporaryUrl')
+                        ? $disk->temporaryUrl($doc->chemin_stockage, now()->addMinutes(60))
+                        : $disk->url($doc->chemin_stockage);
+                } catch (\Throwable) {
+                    $url = null;
+                }
             }
 
             return [
-                'uuid'     => $doc->uuid,
-                'type'     => $doc->type,
-                'nom'      => basename($doc->chemin_stockage),
-                'mime'     => $doc->mime_type,
-                'taille'   => $doc->taille_octets,
-                'url'      => $url,
+                'uuid'   => $doc->uuid,
+                'type'   => $doc->type,
+                'nom'    => basename($doc->chemin_stockage),
+                'mime'   => $doc->mime_type,
+                'taille' => $doc->taille_octets,
+                'url'    => $url,
+                'chemin' => $doc->chemin_stockage, // utile pour debug en dev
             ];
         });
 
         return response()->json([
-            'success'  => true,
-            'demande'  => array_merge($demande->toArray(), ['documents' => $documents]),
+            'success' => true,
+            'demande' => array_merge($demande->toArray(), ['documents' => $documents->values()]),
         ]);
     }
 
