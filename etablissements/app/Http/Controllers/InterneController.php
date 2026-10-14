@@ -81,6 +81,30 @@ class InterneController extends Controller
         ]);
     }
 
+    public function supprimerBrouillon(string $uuid): JsonResponse
+    {
+        $demande = \App\Domain\Onboarding\DemandeEtablissement::where('uuid', $uuid)->first();
+        if (!$demande) return response()->json(['success' => true]);
+        if ($demande->statut !== 'brouillon') {
+            return response()->json(['success' => false, 'error' => ['code' => 'NON_SUPPRIMABLE', 'message' => 'Seul un brouillon peut être supprimé.']], 409);
+        }
+        $demande->documents()->delete();
+        $demande->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function supprimerBrouillons(Request $request): JsonResponse
+    {
+        $donnees = $request->validate(['uuids' => ['required', 'array', 'min:1'], 'uuids.*' => ['required', 'uuid']]);
+        $supprimes = 0;
+        foreach ($donnees['uuids'] as $uuid) {
+            $demande = \App\Domain\Onboarding\DemandeEtablissement::where('uuid', $uuid)
+                ->where('statut', 'brouillon')->first();
+            if ($demande) { $demande->documents()->delete(); $demande->delete(); $supprimes++; }
+        }
+        return response()->json(['success' => true, 'supprimes' => $supprimes]);
+    }
+
     public function suspendre(string $uuid): JsonResponse
     {
         $etablissement = $this->validationService->suspendre($uuid);

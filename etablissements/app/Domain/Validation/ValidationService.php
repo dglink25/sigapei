@@ -190,7 +190,7 @@ class ValidationService{
             'code'             => $etablissement->code,
             'slug'             => $etablissement->slug,
             'matricule'        => $etablissement->matricule,
-            'urlAccueil'       => env('FRONT_URL_BASE', 'http://localhost:5173') . '/etablissements/' . $etablissement->slug,
+            'urlAccueil'       => env('FRONT_URL_BASE', '') . '/etablissements/' . $etablissement->slug,
             'dirigeantNom'     => $demande->dirigeant_nom,
             'dirigeantEmail'   => $demande->dirigeant_email,
             'dirigeantTelephone' => $demande->dirigeant_telephone,

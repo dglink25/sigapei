@@ -13,11 +13,12 @@ import './etablissements.css'
 const COMPONENTS = { etablissement: StepEtablissement, localisation: StepLocalisation, dirigeant: StepDirigeant, documents: StepDocuments }
 const tokenInvalide = (err) => err?.code === 'LIEN_CORRECTION_INVALIDE' || err?.status === 404 || Boolean(err?.details?.error?.details?.token)
 
-function Shell({ children, center }) {
+/** Layout centré pour les pages de statut (chargement, erreur, succès) */
+function Shell({ children }) {
   return (
     <main className="dm-page">
-      <section className={`dm-card ${center ? 'dm-card--center' : ''}`}>
-        <img className="dm-logo" src="/sigapei.png" alt={ENV.appName} />
+      <section className="dm-card dm-card--center">
+        <img className="dm-logo" src="/sigapei.png" alt={ENV.appName} style={{ height: 52, marginBottom: 8 }} />
         {children}
       </section>
     </main>

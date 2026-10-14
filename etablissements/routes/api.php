@@ -45,6 +45,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/demandes', [OnboardingController::class, 'enregistrerBrouillon']);
     Route::post('/demandes/{uuid}/documents', [OnboardingController::class, 'televerserDocument']);
     Route::post('/demandes/{uuid}/soumettre', [OnboardingController::class, 'soumettre']);
+    Route::delete('/demandes/{uuid}', [OnboardingController::class, 'supprimerBrouillon']);
 
     // --- Correction via lien signe (section 7.2), sans authentification ---
     Route::get('/corrections/{token}', [CorrectionController::class, 'afficher']);
@@ -61,6 +62,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/demandes/{uuid}', [InterneController::class, 'afficherDemande']);
         Route::post('/demandes/{uuid}/corrections', [InterneController::class, 'marquerCorrections']);
         Route::post('/demandes/{uuid}/valider', [InterneController::class, 'valider']);
+        Route::delete('/demandes/{uuid}', [InterneController::class, 'supprimerBrouillon']);
+        Route::post('/demandes/supprimer', [InterneController::class, 'supprimerBrouillons']);
         Route::post('/etablissements/{uuid}/suspendre', [InterneController::class, 'suspendre']);
         Route::post('/etablissements/{uuid}/reactiver', [InterneController::class, 'reactiver']);
         Route::get('/resolution-slug/{slug}', [InterneController::class, 'resolutionSlug']);

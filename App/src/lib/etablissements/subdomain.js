@@ -1,15 +1,3 @@
-/**
- * Gestion des sous-domaines établissements.
- *
- * En développement (VITE_BASE_DOMAIN vide) :
- *   URL = http://localhost:5173/etablissements/{slug}
- *
- * En production (VITE_BASE_DOMAIN=sigapei.com) :
- *   URL = https://{slug}.sigapei.com
- *
- * Détection automatique : si le sous-domaine actuel existe et n'est pas
- * "www" ou "app", on considère que c'est un slug établissement.
- */
 
 const BASE_DOMAIN = (import.meta.env.VITE_BASE_DOMAIN || '').trim()
 

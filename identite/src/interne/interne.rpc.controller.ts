@@ -101,7 +101,7 @@ export class InterneRpcController {
     const url = urlAccueil ?? `https://${slug}.sigapei.com`;
 
     const msgWa =
-      `*SIGAPEI — Établissement validé*\n\n` +
+      `*SIGAPEI - Établissement validé*\n\n` +
       `Félicitations, ${dirigeantNom} !\n\n` +
       `Votre établissement *${nomEtablissement}* a été validé et est désormais actif sur SIGAPEI.\n\n` +
       `*Vos identifiants administrateur :*\n` +
@@ -123,10 +123,10 @@ export class InterneRpcController {
     if (dirigeantEmail) {
       promesses.push(
         this.email.envoyerNotificationOnboarding(dirigeantEmail.toLowerCase(), {
-          sujet: `Votre établissement ${nomEtablissement} est validé — SIGAPEI`,
+          sujet: `Votre établissement ${nomEtablissement} est validé - SIGAPEI`,
           html: `
             <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto">
-              <h2 style="color:#006B3C">SIGAPEI — Établissement validé</h2>
+              <h2 style="color:#006B3C">SIGAPEI - Établissement validé</h2>
               <p>Félicitations, <strong>${dirigeantNom}</strong> !</p>
               <p>
                 Votre établissement <strong>${nomEtablissement}</strong> a été validé
@@ -148,7 +148,7 @@ export class InterneRpcController {
                 </a>
               </p>
               <p style="font-size:12px;color:#9ca3af;margin-top:24px">
-                SIGAPEI — Ne répondez pas à cet e-mail automatique.
+                SIGAPEI - Ne répondez pas à cet e-mail automatique.
               </p>
             </div>`,
         }),
