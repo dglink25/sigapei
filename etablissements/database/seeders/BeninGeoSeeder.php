@@ -12,10 +12,10 @@ use Illuminate\Support\Str;
  * 'sigapei') pour que la cascade du formulaire d'onboarding fonctionne
  * immediatement sur le pays de lancement de la plateforme.
  *
- * Les arrondissements ne sont pas inclus ici : a charger depuis une source
- * officielle (voir docs/referentiel-geographique.md). La commande
- * `geo:importer` ignore le Benin par defaut (--sauf=BJ) pour ne pas creer de
- * doublons avec ces donnees. Idempotent : relancable sans risque.
+ * REPLI HORS LIGNE uniquement, et non lance par `db:seed` : la voie normale est
+ * `php artisan geo:geonames BJ` (3 niveaux, arrondissements compris). Si ces donnees
+ * sont deja en base, `geo:geonames BJ --remplacer` les remplace proprement.
+ * Les arrondissements ne sont pas inclus ici. Idempotent : relancable sans risque.
  */
 class BeninGeoSeeder extends Seeder
 {

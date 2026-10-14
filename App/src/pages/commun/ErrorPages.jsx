@@ -1,4 +1,8 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/identite/AuthContext'
 import { ENV } from '../../config/commun/env'
+import { redirectionPostLogin, roleCodeOf } from '../../config/identite/routes'
 import './ErrorPages.css'
 
 /* Volontairement sans dependance au routeur : utilisable meme dans l'ErrorBoundary. */
@@ -34,11 +38,29 @@ export const NotFoundPage = () => (
   />
 )
 
-export const ForbiddenPage = () => (
-  <ErrorPage
-    code="403"
-    title="Accès refusé"
-    message="Votre rôle ne vous permet pas d'accéder à cette page. Contactez l'administrateur de votre établissement si vous pensez qu'il s'agit d'une erreur."
-    actions={[{ label: "Retour à l'accueil", href: '/', primary: true }]}
-  />
-)
+/**
+ * Page 403 - avec redirection automatique vers l'espace du rôle après 5 s.
+ */
+export function ForbiddenPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [compte, setCompte] = useState(5)
+  const destination = redirectionPostLogin(roleCodeOf(user))
+
+  useEffect(() => {
+    if (compte <= 0) { navigate(destination, { replace: true }); return undefined }
+    const t = setTimeout(() => setCompte((c) => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [compte, navigate, destination])
+
+  return (
+    <ErrorPage
+      code="403"
+      title="Accès refusé"
+      message={`Votre rôle ne vous permet pas d'accéder à cette page. Redirection automatique dans ${compte} seconde${compte > 1 ? 's' : ''}…`}
+      actions={[
+        { label: 'Retourner maintenant', onClick: () => navigate(destination, { replace: true }), primary: true },
+      ]}
+    />
+  )
+}

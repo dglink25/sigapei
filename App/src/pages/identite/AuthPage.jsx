@@ -13,7 +13,7 @@ import { useAuth } from '../../context/identite/AuthContext'
 import { authService } from '../../services/identite/auth.service'
 import { getCaptchaToken } from '../../lib/identite/captcha'
 import { getGoogleIdToken } from '../../lib/identite/firebase'
-import { HOME_PATH, LOGIN_PATH } from '../../config/identite/routes'
+import { HOME_PATH, LOGIN_PATH, redirectionPostLogin } from '../../config/identite/routes'
 import Loader from '../../components/commun/Loader'
 import './AuthPage.css'
 
@@ -115,7 +115,12 @@ export default function AuthPage() {
     const u = await login(session)
     const nomComplet = u?.nomComplet ?? u?.nom_complet ?? ''
     notify.success('Connexion réussie', nomComplet ? `Bienvenue, ${nomComplet}.` : `Bienvenue sur ${ENV.appName}.`)
-    navigate(redirectTo, { replace: true })
+    // role est une chaîne directe dans la réponse API : { role: "super_admin" }
+    const roleCode = u?.role?.code ?? u?.roleCode ?? (typeof u?.role === 'string' ? u.role : null) ?? ''
+    const dest = from
+      ? from.pathname + (from.search ?? '') + (from.hash ?? '')
+      : redirectionPostLogin(roleCode)
+    navigate(dest, { replace: true })
   }
 
   function validateLogin() {

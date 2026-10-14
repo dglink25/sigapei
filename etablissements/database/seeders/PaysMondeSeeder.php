@@ -16,19 +16,21 @@ use Illuminate\Support\Facades\DB;
  * doublon, aucun uuid existant modifie. Idempotent : relancable sans risque.
  *
  * Les subdivisions (departements, communes, arrondissements) ne sont pas
- * dans ce fichier : voir BeninGeoSeeder et la commande `php artisan geo:importer`.
+ * dans ce fichier : voir la commande `php artisan geo:geonames` (et geo:arbre pour les trous).
  */
 class PaysMondeSeeder extends Seeder
 {
     /** Libelles des niveaux par defaut (valables quand aucune specificite locale n'est connue). */
     private const LIBELLES_PAR_DEFAUT = ['Département / Région', 'Commune / Ville', 'Arrondissement / Quartier'];
 
-    /** Specificites locales connues : code ISO2 => [niveau 1, niveau 2, niveau 3]. */
+    /**
+     * Specificites locales connues : code ISO2 => [niveau 1, niveau 2, niveau 3].
+     * Les niveaux suivent la profondeur administrative de GeoNames (ADM1, ADM2, ADM3).
+     */
     private const LIBELLES_SPECIFIQUES = [
         'BJ' => ['Département', 'Commune', 'Arrondissement'],
-        'FR' => ['Région', 'Commune', 'Arrondissement'],
-        'US' => ['État', 'Ville', 'Quartier'],
-        'CA' => ['Province', 'Ville', 'Quartier'],
+        'FR' => ['Région', 'Département', 'Arrondissement'],
+        'US' => ['État', 'Comté', 'Subdivision'],
     ];
 
     public function run(): void

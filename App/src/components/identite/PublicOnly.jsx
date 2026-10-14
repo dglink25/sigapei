@@ -1,18 +1,39 @@
+import { useEffect, useRef } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/identite/AuthContext'
-import Splash from './Splash'
-import { HOME_PATH } from '../../config/identite/routes'
+import { useNotify } from '../../context/commun/NotifyContext'
+import Loader from '../commun/Loader'
+import { redirectionPostLogin, roleCodeOf } from '../../config/identite/routes'
 
-/** Pages reservees aux visiteurs (ex. /login) : un utilisateur deja connecte est renvoye vers l'application. */
+/**
+ * Pages réservées aux visiteurs (ex. /login).
+ * Un utilisateur déjà connecté est redirigé vers son espace avec une notification info.
+ */
 export default function PublicOnly({ children }) {
-  const { status } = useAuth()
+  const { status, user } = useAuth()
+  const notify   = useNotify()
   const location = useLocation()
+  const notified = useRef(false)
 
-  if (status === 'loading') return <Splash />
+  useEffect(() => { notified.current = false }, [location.pathname])
+
+  if (status === 'loading') return <Loader label="Chargement de votre session…" />
+
   if (status === 'authenticated') {
+    if (!notified.current) {
+      notified.current = true
+      const nom = user?.nomComplet ?? user?.nom_complet ?? ''
+      notify.info(
+        'Session active',
+        nom ? `Vous êtes connecté en tant que ${nom}.` : 'Vous êtes déjà connecté.',
+      )
+    }
     const from = location.state?.from
-    const target = from ? from.pathname + (from.search ?? '') + (from.hash ?? '') : HOME_PATH
-    return <Navigate to={target} replace />
+    const destination = from
+      ? from.pathname + (from.search ?? '') + (from.hash ?? '')
+      : redirectionPostLogin(roleCodeOf(user))
+    return <Navigate to={destination} replace />
   }
+
   return children ?? <Outlet />
 }
