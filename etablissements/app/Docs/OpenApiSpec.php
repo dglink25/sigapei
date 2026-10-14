@@ -343,7 +343,7 @@ MD;
                 'post' => [
                     'tags' => ['Onboarding'],
                     'summary' => 'Soumet la demande finalisée (étape 5)',
-                    'description' => "La localisation doit être complète (pays, département, commune, arrondissement si la commune en possède, adresse), sinon `422` avec le détail par champ. Seul un brouillon peut être soumis (`409` sinon). Passe la demande au statut `soumise`, horodate la soumission et publie l'événement `demande.soumise` (notifications WhatsApp + e-mail à l'établissement, au dirigeant et au Super Administrateur, envoyées par le microservice Communication).\n\nLe jeton CAPTCHA est vérifié côté serveur avant tout traitement.",
+                    'description' => "La localisation doit être complète : le pays est obligatoire, puis chaque niveau (département, commune, arrondissement) l'est tant que le référentiel en propose pour le niveau choisi ; l'adresse est obligatoire. Sinon `422` avec le détail par champ. Seul un brouillon peut être soumis (`409` sinon). Passe la demande au statut `soumise`, horodate la soumission et publie l'événement `demande.soumise` (notifications WhatsApp + e-mail à l'établissement, au dirigeant et au Super Administrateur, envoyées par le microservice Communication).\n\nLe jeton CAPTCHA est vérifié côté serveur avant tout traitement.",
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
                     'requestBody' => [
                         'required' => true,
@@ -580,7 +580,7 @@ MD;
                 'post' => [
                     'tags' => ['Interne'],
                     'summary' => 'Valide définitivement la demande',
-                    'description' => "La localisation doit être complète (pays, département, commune, arrondissement si la commune en possède, adresse), sinon `422` : demander alors une correction. En **une seule transaction** : crée l'établissement (statut `actif`) avec son code public, son slug et son matricule, enregistre ses cycles autorisés et passe la demande à `validee`. Publie ensuite `etablissement.valide`, que le microservice Identité consomme pour créer le compte administrateur du dirigeant.\n\nSlug : minuscules, sans accents, suffixe numérique en cas de collision (`jean-marie-2`). Matricule : mot significatif le plus court du nom + code à 4 chiffres (ex. `kisito8945`).",
+                    'description' => "La localisation doit être complète (même règle qu'à la soumission), sinon `422` : demander alors une correction. En **une seule transaction** : crée l'établissement (statut `actif`) avec son code public, son slug et son matricule, enregistre ses cycles autorisés et passe la demande à `validee`. Publie ensuite `etablissement.valide`, que le microservice Identité consomme pour créer le compte administrateur du dirigeant.\n\nSlug : minuscules, sans accents, suffixe numérique en cas de collision (`jean-marie-2`). Matricule : mot significatif le plus court du nom + code à 4 chiffres (ex. `kisito8945`).",
                     'security' => $secret,
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
                     'responses' => [
@@ -796,7 +796,7 @@ MD;
                         ],
                         'localisation' => [
                             'type' => 'object',
-                            'description' => 'Étape 2 - Localisation (valeurs issues des listes en cascade `/geo/...`). Pays, département et commune sont obligatoires à la soumission ; l\'arrondissement l\'est seulement si la commune en possède dans le référentiel.',
+                            'description' => 'Étape 2 - Localisation (valeurs issues des listes en cascade `/geo/...`). Le pays est obligatoire ; chaque niveau suivant l\'est tant que le référentiel en propose pour le niveau choisi (un pays ou une commune sans subdivision connue n\'en exige pas).',
                             'properties' => [
                                 'pays_uuid' => ['type' => 'string', 'format' => 'uuid'],
                                 'departement_uuid' => ['type' => 'string', 'format' => 'uuid'],

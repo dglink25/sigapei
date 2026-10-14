@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
  * etc.) et complete automatiquement les niveaux superieurs.
  *
  *  - resoudre()          : tolerant, utilise pendant la saisie (brouillon partiel) ;
- *  - exigerComplete()    : strict, utilise a la soumission et a la validation.
+ *  - exigerComplete()    : strict mais adapte a la profondeur du referentiel, utilise a la soumission et a la validation.
  */
 class LocalisationService
 {
@@ -51,9 +51,11 @@ class LocalisationService
     }
 
     /**
-     * Exige une localisation exploitable : pays, departement et commune
-     * renseignes, adresse presente, et arrondissement choisi des lors que la
-     * commune en possede dans le referentiel.
+     * Exige une localisation exploitable, adaptee a la profondeur du referentiel :
+     * le pays est toujours obligatoire, puis chaque niveau (departement, commune,
+     * arrondissement) l'est tant que le referentiel en propose pour le niveau choisi.
+     * Un pays sans subdivision connue n'exige donc que le pays ; une commune sans
+     * arrondissement connu n'exige pas d'arrondissement. L'adresse est toujours obligatoire.
      */
     public function exigerComplete(DemandeEtablissement $demande): void
     {
@@ -61,15 +63,14 @@ class LocalisationService
 
         if (! $demande->pays_id) {
             $erreurs['localisation.pays_uuid'] = ['Le pays est obligatoire.'];
-        }
-        if (! $demande->departement_id) {
-            $erreurs['localisation.departement_uuid'] = ['Le département / la région est obligatoire.'];
-        }
-        if (! $demande->commune_id) {
-            $erreurs['localisation.commune_uuid'] = ['La commune / la ville est obligatoire.'];
-        } elseif (! $demande->arrondissement_id && Arrondissement::where('commune_id', $demande->commune_id)->exists()) {
+        } elseif (! $demande->departement_id && Departement::where('pays_id', $demande->pays_id)->exists()) {
+            $erreurs['localisation.departement_uuid'] = ['Le département / la région est obligatoire pour ce pays.'];
+        } elseif ($demande->departement_id && ! $demande->commune_id && Commune::where('departement_id', $demande->departement_id)->exists()) {
+            $erreurs['localisation.commune_uuid'] = ['La commune / la ville est obligatoire pour ce département.'];
+        } elseif ($demande->commune_id && ! $demande->arrondissement_id && Arrondissement::where('commune_id', $demande->commune_id)->exists()) {
             $erreurs['localisation.arrondissement_uuid'] = ["L'arrondissement est obligatoire pour cette commune."];
         }
+
         if (blank($demande->adresse_complete)) {
             $erreurs['localisation.adresse_complete'] = ["L'adresse complète est obligatoire."];
         }

@@ -7,6 +7,7 @@ import { unwrap } from '../../lib/commun/http'
 import { authService } from '../../services/identite/auth.service'
 import { getDeviceId } from '../../lib/identite/device'
 import { HOME_PATH } from '../../config/identite/routes'
+import ThemeToggle from '../../components/commun/ThemeToggle'
 import './SecuritePage.css'
 
 const DeviceIcon = ({ type }) =>
@@ -64,6 +65,7 @@ export default function SecuritePage() {
       <header className="sec-header">
         <Link to={HOME_PATH} className="sec-back"><ArrowLeft size={18} /> Retour</Link>
         <h1>Sécurité du compte</h1>
+        <ThemeToggle />
       </header>
 
       <main className="sec-main">
