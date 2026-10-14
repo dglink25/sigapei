@@ -53,6 +53,22 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* ── Badge reCAPTCHA — masqué globalement sauf sur les formulaires publics ── */
+/* Google exige d'afficher soit le badge soit une mention textuelle dans le formulaire.
+   Le badge est masqué sur les pages authentifiées (admin, portail, sécurité).
+   Il reste visible sur /demande et /login via la classe page-public-recaptcha. */
+.grecaptcha-badge {
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+.page-public-recaptcha .grecaptcha-badge {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
 /* ── Formulaires (inputs, selects, textareas) ── */
 [data-theme='dark'] input,
 [data-theme='dark'] select,

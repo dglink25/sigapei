@@ -47,6 +47,12 @@ export default function AuthPage() {
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Afficher le badge reCAPTCHA uniquement sur cette page publique
+  useEffect(() => {
+    document.body.classList.add('page-public-recaptcha')
+    return () => document.body.classList.remove('page-public-recaptcha')
+  }, [])
+
   // L'URL /login#recuperer ouvre directement le parcours de recuperation
   const mode = location.hash === '#recuperer' ? 'recover' : 'login'
   const from = location.state?.from

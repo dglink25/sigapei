@@ -12,7 +12,10 @@ export const DASHBOARD_TEMP_PATH     = '/dashboard'
 /** Roles qui accèdent au portail services (élèves, parents, visiteurs, prestataires) */
 export const PORTAIL_ROLES  = ['etudiant', 'eleve', 'parent', 'visiteur', 'prestataire']
 
-/** Résout le roleCode depuis un objet user (tolerant : role chaîne ou objet) */
+/** Rôles qui n'ont PAS accès à l'admin (tout le monde sauf super_admin) */
+export const NON_ADMIN_ROLES = [...PORTAIL_ROLES, 'administrateur', 'enseignant', 'personnel']
+
+/** Résout le roleCodeOf depuis un objet user (tolerant : role chaîne ou objet) */
 export function roleCodeOf(user) {
   if (!user) return ''
   if (typeof user.role === 'string') return user.role

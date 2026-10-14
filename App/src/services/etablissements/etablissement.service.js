@@ -51,4 +51,7 @@ export const adminService = {
   lister: async () => listFrom(await adminApi.get('/interne/demandes'), 'demandes', 'items'),
   marquerCorrections: (uuid, champsACorriger) => adminApi.post(`/interne/demandes/${uuid}/corrections`, { champsACorriger }),
   valider: (uuid) => adminApi.post(`/interne/demandes/${uuid}/valider`),
+  listerEtablissements: async () => listFrom(await adminApi.get('/interne/etablissements'), 'etablissements', 'items'),
+  suspendreEtablissement: (uuid) => adminApi.post(`/interne/etablissements/${uuid}/suspendre`),
+  reactiverEtablissement: (uuid) => adminApi.post(`/interne/etablissements/${uuid}/reactiver`),
 }

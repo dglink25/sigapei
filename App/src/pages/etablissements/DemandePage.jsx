@@ -33,6 +33,12 @@ const isEmptyDraft = (form, uuid) => !uuid && JSON.stringify(form) === JSON.stri
 export default function DemandePage() {
   const notify = useNotify()
   const [step, setStep] = useState(1)
+
+  // Afficher le badge reCAPTCHA uniquement sur ce formulaire public
+  useEffect(() => {
+    document.body.classList.add('page-public-recaptcha')
+    return () => document.body.classList.remove('page-public-recaptcha')
+  }, [])
   const [form, setForm] = useState(EMPTY_FORM)
   const [docs, setDocs] = useState({})
   const [uuid, setUuid] = useState(null)

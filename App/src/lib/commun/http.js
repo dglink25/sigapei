@@ -31,10 +31,16 @@ const GENERIC = new Set(['Unauthorized', 'Forbidden', 'Not Found', 'Bad Request'
 const copyFor = (s) => COPY[s] ?? (s >= 500 ? COPY[503] : ['Requête refusée', "Le serveur n'a pas pu traiter votre demande."])
 
 const CODE_TITLES = {
-  CAPTCHA_INVALIDE: 'Vérification de sécurité',
+  CAPTCHA_INVALIDE:        'Vérification de sécurité',
   LIEN_CORRECTION_INVALIDE: 'Lien invalide',
-  DONNEES_INVALIDES: 'Données invalides',
-  RESSOURCE_INTROUVABLE: 'Ressource introuvable',
+  DONNEES_INVALIDES:       'Données invalides',
+  RESSOURCE_INTROUVABLE:   'Ressource introuvable',
+  SECRET_INTERNE_INVALIDE: 'Erreur de configuration',
+}
+
+const CODE_MESSAGES = {
+  // Le 401 SECRET_INTERNE vient du proxy Vite mal configuré, pas d'une session expirée
+  SECRET_INTERNE_INVALIDE: 'Le secret interne est manquant ou incorrect. Vérifiez ETAB_INTERNAL_SECRET dans le fichier .env et relancez le serveur de développement.',
 }
 
 function serverMessage(body) {
@@ -59,8 +65,11 @@ export function buildError(status, body) {
   const [title, fallback] = copyFor(status)
   const code = body?.error?.code ?? null
   const srv = status < 500 ? serverMessage(body) : ''
-  const e = new ApiError({ status, title: CODE_TITLES[code] ?? title, message: srv || fallback, details: body })
+  const message = CODE_MESSAGES[code] ?? (srv || fallback)
+  const e = new ApiError({ status, title: CODE_TITLES[code] ?? title, message, details: body })
   e.code = code
+  // SECRET_INTERNE_INVALIDE = problème de config proxy, PAS une expiration de session
+  e.isInternalSecretError = code === 'SECRET_INTERNE_INVALIDE'
   return e
 }
 
@@ -125,9 +134,27 @@ export function createHttp(baseUrl) {
 
     let sessionExpired = false
     if (res.status === 401 && auth && token && retry) {
-      if (await refreshSession()) return request(method, path, { body, auth, retry: false })
-      sessionExpired = true
-      authEvents.emit('expired')
+      // Lire le corps d'abord pour détecter SECRET_INTERNE_INVALIDE avant de tenter un refresh
+      const peekText = await res.text()
+      let peekData = null
+      try { peekData = peekText ? JSON.parse(peekText) : null } catch { peekData = null }
+
+      const isSecretError = peekData?.error?.code === 'SECRET_INTERNE_INVALIDE'
+
+      if (!isSecretError) {
+        // Vrai 401 JWT : tenter un refresh
+        if (await refreshSession()) return request(method, path, { body, auth, retry: false })
+        sessionExpired = true
+        authEvents.emit('expired')
+      }
+
+      // Construire l'erreur depuis le corps déjà lu
+      if (!res.ok) {
+        const err = buildError(res.status, peekData)
+        err.sessionExpired = sessionExpired
+        throw err
+      }
+      return peekData
     }
 
     const text = await res.text()
