@@ -3,14 +3,15 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
+use PhpAmqpLib\Connection\AMQPSSLConnection;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Throwable;
 
-class RabbitMQService{
+class RabbitMQService {
     private ?AMQPStreamConnection $connexion = null;
 
-    private function connexion(): AMQPStreamConnection    {
+    private function connexion(): AMQPStreamConnection|\PhpAmqpLib\Connection\AbstractConnection {
 
         if ($this->connexion === null || ! $this->connexion->isConnected()) {
             $host     = env('RABBITMQ_HOST', '127.0.0.1');
@@ -24,14 +25,14 @@ class RabbitMQService{
             $ssl = ! in_array($host, ['127.0.0.1', 'localhost', 'rabbitmq'], true);
 
             if ($ssl) {
-                $this->connexion = \PhpAmqpLib\Connection\AMQPSSLConnection::create(
+                $this->connexion = new AMQPSSLConnection(
                     $host,
                     $port,
                     $user,
                     $password,
                     $vhost,
-                    ['verify_peer' => false],   // tolérant pour les certs auto-signés
-                    ['connection_timeout' => 5, 'read_write_timeout' => 5],
+                    ['verify_peer' => false, 'verify_peer_name' => false],
+                    ['connection_timeout' => 5, 'read_write_timeout' => 5]
                 );
             } else {
                 $this->connexion = new AMQPStreamConnection(

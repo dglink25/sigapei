@@ -3,23 +3,10 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Migration ADDITIVE : chaque etablissement porte un code public unique de
- * 4 caracteres (format XXXX), distinct du slug (URL) et du matricule
- * (identifiant de connexion du dirigeant).
- *
- * Alphabet : lettres majuscules et chiffres, sans les caracteres ambigus
- * (I, L, O, 0, 1) - 31 symboles, soit 923 521 codes possibles.
- * Les etablissements deja presents recoivent un code automatiquement.
- *
- * Idempotente : rejouable sans erreur, et reprenable apres un echec partiel.
- */
-return new class extends Migration
-{
+return new class extends Migration {
     private const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
-    public function up(): void
-    {
+    public function up(): void   {
         DB::statement('ALTER TABLE etablissements ADD COLUMN IF NOT EXISTS code varchar(4)');
 
         // Remplissage des lignes existantes (generateur volontairement local :

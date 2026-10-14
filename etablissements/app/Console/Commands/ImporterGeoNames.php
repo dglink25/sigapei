@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Support\NormalisationNom;
 use Illuminate\Console\Command;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -21,17 +20,27 @@ use ZipArchive;
  *   ADM2 -> communes     (communes, comtes, districts...)
  *   ADM3 -> arrondissements
  *
- * Les niveaux sont mappes par PROFONDEUR administrative, pas par nom : selon les
- * pays, ADM1 s'appelle region, etat ou departement (libelles dans pays.libelle_niveau_1/2/3).
- * Les niveaux plus profonds (ADM4 et au-dela, ex. les communes francaises) ne sont
- * pas importes. La profondeur disponible depend de GeoNames : la commande affiche
- * pour chaque pays le nombre de lignes par niveau, et `geo:statistiques` permet de
- * verifier ce qui manque. Les trous se comblent avec `geo:arbre` (fichier CSV).
+ * Les niveaux sont mappes par PROFONDEUR administrative, pas par nom. Les niveaux
+ * plus profonds (ADM4 et au-dela, ex. les communes francaises) ne sont pas importes.
+ * La profondeur disponible depend de GeoNames : `geo:statistiques` montre ce qui
+ * manque, `geo:arbre` permet de le combler avec un fichier officiel.
+ *
+ * FUSION avec l'existant : si des subdivisions d'une autre source existent deja pour
+ * le pays (donnees de test, import precedent...), elles sont RECONNUES par leur nom
+ * (sans tenir compte de la casse, des accents, des tirets ni des prefixes
+ * "Departement de", "Commune de"...) et rattachees aux donnees GeoNames : leur
+ * identifiant interne ne change pas, donc les demandes et etablissements qui les
+ * utilisent restent valides. Rien n'est supprime, sauf avec --nettoyer.
+ *
+ * PROMOTION des orphelins : un ADM3 dont l'ADM2 parent n'existe pas dans GeoNames,
+ * mais dont l'ADM1 existe, est importe au niveau 2 sous cet ADM1 plutot qu'abandonne
+ * (desactivable avec --sans-promotion).
  *
  *   php artisan geo:geonames BJ              # le Benin
  *   php artisan geo:geonames BJ FR SN        # plusieurs pays
- *   php artisan geo:geonames                 # tous les pays en base (long : plusieurs centaines de Mo)
- *   php artisan geo:geonames BJ --remplacer  # remplace des subdivisions d'une autre source
+ *   php artisan geo:geonames                 # tous les pays en base
+ *   php artisan geo:geonames --sans-telechargement   # reutilise les fichiers deja telecharges
+ *   php artisan geo:geonames BJ --nettoyer   # supprime ensuite les lignes obsoletes inutilisees
  *
  * Idempotent : chaque ligne est identifiee par (source 'geonames', geonameid).
  */
@@ -45,7 +54,9 @@ class ImporterGeoNames extends Command
         {pays?* : Codes ISO2 (ex. BJ FR). Par defaut tous les pays en base}
         {--dossier= : Dossier de telechargement (par defaut storage/app/geonames)}
         {--sans-telechargement : Utilise uniquement les fichiers deja presents dans le dossier}
-        {--remplacer : Remplace les subdivisions deja presentes d une autre source}
+        {--nettoyer : Supprime ensuite les subdivisions obsoletes (autres sources non rapprochees, ou GeoNames absentes de cet import) si aucune demande ni aucun etablissement ne les utilise}
+        {--remplacer : Alias de --nettoyer}
+        {--sans-promotion : N importe pas au niveau 2 les ADM3 dont l ADM2 parent est absent}
         {--noms-bruts : Conserve les noms tels que fournis, sans retirer les prefixes Departement de, Commune de...}
         {--lot=2000 : Nombre de lignes par requete d insertion}';
 
@@ -86,7 +97,7 @@ class ImporterGeoNames extends Command
                 $resultats[] = $this->traiterPays($iso, (int) $paysIds[$iso], $dossier, $lot);
             } catch (\Throwable $e) {
                 $this->warn("  {$iso} : {$e->getMessage()}");
-                $resultats[] = [$iso, '-', '-', '-', 'ERREUR'];
+                $resultats[] = [$iso, '-', '-', '-', 'ERREUR : '.mb_substr($e->getMessage(), 0, 60)];
             }
         }
 
@@ -98,6 +109,7 @@ class ImporterGeoNames extends Command
 
         $this->newLine();
         $this->table(['Pays', 'Departements', 'Communes', 'Arrondissements', 'Statut'], $resultats);
+        $this->line('* = des subdivisions d\'autres sources sont conservees (utilisees ou non rapprochees) ; --nettoyer supprime celles qui ne sont pas utilisees.');
         $this->line('Donnees : GeoNames (https://www.geonames.org), licence CC BY 4.0.');
         $this->line('Verifiez la couverture avec : php artisan geo:statistiques --incomplets');
 
@@ -107,117 +119,241 @@ class ImporterGeoNames extends Command
     /** @return array{0: string, 1: int|string, 2: int|string, 3: int|string, 4: string} */
     private function traiterPays(string $iso, int $paysId, string $dossier, int $lot): array
     {
-        // Subdivisions deja presentes d'une autre source : on ne melange jamais deux sources.
-        $autres = DB::table('departements')
-            ->where('pays_id', $paysId)
-            ->where(fn ($q) => $q->whereNull('source')->orWhere('source', '!=', self::SOURCE))
-            ->count();
-
-        if ($autres > 0 && ! $this->option('remplacer')) {
-            $this->warn("  {$iso} : {$autres} departement(s) d'une autre source existent deja. Relancez avec --remplacer pour les remplacer.");
-
-            return [$iso, '-', '-', '-', 'IGNORE (autre source)'];
-        }
-
         $fichier = $this->preparerFichier($iso, $dossier);
         if ($fichier === null) {
             return [$iso, '-', '-', '-', 'Pas de donnees GeoNames'];
         }
 
         [$adm1, $adm2, $adm3] = $this->lireNiveaux($fichier);
-
         if (! $adm1) {
             return [$iso, 0, 0, 0, 'Aucun niveau administratif dans GeoNames'];
         }
 
-        $maintenant = now();
-        $nettoyer = ! $this->option('noms-bruts');
-        $orphelins = 0;
+        $nettoyerNoms = ! $this->option('noms-bruts');
+        $promotion = ! $this->option('sans-promotion');
+        $nettoyerAutres = (bool) ($this->option('nettoyer') || $this->option('remplacer'));
+        $bilan = ['adoptes' => 0, 'promus' => 0, 'orphelins' => 0, 'supprimes' => 0];
+        $debut = now()->toDateTimeString(); // les lignes touchees par cet import ont updated_at >= $debut
 
-        $resume = DB::transaction(function () use ($iso, $paysId, $autres, $adm1, $adm2, $adm3, $lot, $maintenant, $nettoyer, &$orphelins) {
-            if ($autres > 0) {
-                // Les cles etrangeres des etablissements/demandes protegent : la suppression
-                // echoue (et tout est annule) si une subdivision est deja utilisee.
-                try {
-                    DB::table('departements')
-                        ->where('pays_id', $paysId)
-                        ->where(fn ($q) => $q->whereNull('source')->orWhere('source', '!=', self::SOURCE))
-                        ->delete();
-                } catch (QueryException) {
-                    throw new RuntimeException('des demandes ou etablissements utilisent deja ces subdivisions : remplacement impossible.');
-                }
-            }
-
+        [$n1, $n2, $n3] = DB::transaction(function () use ($paysId, $adm1, $adm2, $adm3, $lot, $nettoyerNoms, $promotion, $nettoyerAutres, $debut, &$bilan) {
             // --- Niveau 1 : departements ---
-            $lignes = [];
+            $noeuds1 = [];
             foreach ($adm1 as $a) {
-                $lignes[$a['id']] = $this->ligne(['pays_id' => $paysId], $a['id'], $a['nom'], $maintenant, $nettoyer);
+                $noeuds1[$a['id']] = ['parent' => $paysId, 'nom' => $a['nom']];
             }
-            $this->enregistrer('departements', $lignes, ['pays_id', 'nom', 'updated_at'], $lot);
-            $idsDepartements = DB::table('departements')->where('pays_id', $paysId)->where('source', self::SOURCE)->pluck('id', 'code_externe')->all();
+            $ids1 = $this->synchroniser('departements', 'pays_id', $noeuds1, [$paysId], $lot, $nettoyerNoms, $bilan);
 
-            // --- Niveau 2 : communes ---
-            $lignes = [];
+            // --- Niveau 2 : communes (ADM2 rattaches a leur ADM1, plus les ADM3 promus) ---
+            $noeuds2 = [];
             foreach ($adm2 as $a) {
-                $parent = $adm1[$a['a1']]['id'] ?? null;
-                $departementId = $parent !== null ? ($idsDepartements[$parent] ?? null) : null;
-                if (! $departementId) {
-                    $orphelins++;
+                $parent = isset($adm1[$a['a1']]) ? ($ids1[$adm1[$a['a1']]['id']] ?? null) : null;
+                if ($parent === null) {
+                    $bilan['orphelins']++;
 
                     continue;
                 }
-                $lignes[$a['id']] = $this->ligne(['departement_id' => $departementId], $a['id'], $a['nom'], $maintenant, $nettoyer);
+                $noeuds2[$a['id']] = ['parent' => $parent, 'nom' => $a['nom']];
             }
-            $this->enregistrer('communes', $lignes, ['departement_id', 'nom', 'updated_at'], $lot);
-            $idsCommunes = DB::table('communes')
-                ->whereIn('departement_id', array_values($idsDepartements))
-                ->where('source', self::SOURCE)
-                ->pluck('id', 'code_externe')
-                ->all();
+
+            $candidats3 = [];
+            foreach ($adm3 as $cle => $a) {
+                if (isset($adm2[$a['a1'].'|'.$a['a2']])) {
+                    $candidats3[$cle] = $a;
+
+                    continue;
+                }
+                $parent1 = isset($adm1[$a['a1']]) ? ($ids1[$adm1[$a['a1']]['id']] ?? null) : null;
+                if ($promotion && $parent1 !== null) {
+                    $noeuds2[$a['id']] = ['parent' => $parent1, 'nom' => $a['nom']];
+                    $bilan['promus']++;
+                } else {
+                    $bilan['orphelins']++;
+                }
+            }
+            $ids2 = $this->synchroniser('communes', 'departement_id', $noeuds2, array_values($ids1), $lot, $nettoyerNoms, $bilan);
 
             // --- Niveau 3 : arrondissements ---
-            $lignes = [];
-            foreach ($adm3 as $a) {
-                $parent = $adm2[$a['a1'].'|'.$a['a2']]['id'] ?? null;
-                $communeId = $parent !== null ? ($idsCommunes[$parent] ?? null) : null;
-                if (! $communeId) {
-                    $orphelins++;
+            $noeuds3 = [];
+            foreach ($candidats3 as $a) {
+                $parent = $ids2[$adm2[$a['a1'].'|'.$a['a2']]['id']] ?? null;
+                if ($parent === null) {
+                    $bilan['orphelins']++;
 
                     continue;
                 }
-                $lignes[$a['id']] = $this->ligne(['commune_id' => $communeId], $a['id'], $a['nom'], $maintenant, $nettoyer);
+                $noeuds3[$a['id']] = ['parent' => $parent, 'nom' => $a['nom']];
             }
-            $this->enregistrer('arrondissements', $lignes, ['commune_id', 'nom', 'updated_at'], $lot);
+            $this->synchroniser('arrondissements', 'commune_id', $noeuds3, array_values($ids2), $lot, $nettoyerNoms, $bilan);
 
-            return [count($adm1), count($adm2), count($adm3)];
+            if ($nettoyerAutres) {
+                $bilan['supprimes'] = $this->supprimerObsoletes($paysId, $debut);
+            }
+
+            return [count($noeuds1), count($noeuds2), count($noeuds3)];
         });
 
-        $this->line(sprintf('  %s : %d departements, %d communes, %d arrondissements%s',
-            $iso, $resume[0], $resume[1], $resume[2],
-            $orphelins ? " ({$orphelins} sans parent ignores)" : ''));
+        $restants = $this->compterAutresSources($paysId);
 
-        return [$iso, $resume[0], $resume[1], $resume[2], 'OK'];
+        $details = array_filter([
+            $bilan['adoptes'] ? "{$bilan['adoptes']} rattaches a l'existant" : null,
+            $bilan['promus'] ? "{$bilan['promus']} promus au niveau 2" : null,
+            $bilan['orphelins'] ? "{$bilan['orphelins']} sans parent ignores" : null,
+            $bilan['supprimes'] ? "{$bilan['supprimes']} supprimes" : null,
+            $restants ? "{$restants} d'autres sources conserves" : null,
+        ]);
+
+        $this->line(sprintf('  %s : %d departements, %d communes, %d arrondissements%s', $iso, $n1, $n2, $n3, $details ? ' ('.implode(', ', $details).')' : ''));
+
+        return [$iso, $n1, $n2, $n3, 'OK'.($restants ? ' *' : '')];
     }
 
-    /** Construit une ligne prete pour l'upsert. */
-    private function ligne(array $parent, string $geonameId, string $nom, $maintenant, bool $nettoyer): array
+    /**
+     * Synchronise un niveau : rattache d'abord les lignes existantes d'une autre
+     * source qui portent le meme nom sous le meme parent, puis insere ou met a jour
+     * le reste. Retourne la correspondance geonameid -> identifiant interne.
+     *
+     * @param  array<string|int, array{parent: int, nom: string}>  $noeuds
+     * @return array<string|int, int>
+     */
+    private function synchroniser(string $table, string $colonneParent, array $noeuds, array $parentIds, int $lot, bool $nettoyerNoms, array &$bilan): array
     {
-        $nom = $nettoyer ? NormalisationNom::nettoyer($nom) : trim($nom);
-
-        return $parent + [
-            'nom' => mb_substr($nom, 0, 128),
-            'source' => self::SOURCE,
-            'code_externe' => $geonameId,
-            'created_at' => $maintenant,
-            'updated_at' => $maintenant,
-        ];
-    }
-
-    private function enregistrer(string $table, array $lignes, array $colonnesMaj, int $lot): void
-    {
-        foreach (array_chunk(array_values($lignes), $lot) as $paquet) {
-            DB::table($table)->upsert($paquet, ['source', 'code_externe'], $colonnesMaj);
+        if (! $noeuds) {
+            return [];
         }
+
+        $maintenant = now();
+
+        // 1) Lignes existantes d'une autre source, indexees par parent puis nom normalise.
+        $adoptables = [];
+        foreach (array_chunk($parentIds, 5000) as $paquet) {
+            $existants = DB::table($table)
+                ->whereIn($colonneParent, $paquet)
+                ->where(fn ($q) => $q->whereNull('source')->orWhere('source', '!=', self::SOURCE))
+                ->get(['id', $colonneParent, 'nom']);
+
+            foreach ($existants as $existant) {
+                $adoptables[$existant->{$colonneParent}][NormalisationNom::cle($existant->nom)] ??= (int) $existant->id;
+            }
+        }
+
+        $candidats = []; // geonameid => identifiant de la ligne existante a rattacher
+        if ($adoptables) {
+            foreach ($noeuds as $geoId => $noeud) {
+                $cle = NormalisationNom::cle($noeud['nom']);
+                if (isset($adoptables[$noeud['parent']][$cle])) {
+                    $candidats[$geoId] = $adoptables[$noeud['parent']][$cle];
+                    unset($adoptables[$noeud['parent']][$cle]); // une ligne n'est rattachee qu'une fois
+                }
+            }
+        }
+
+        // Ne rattache pas un geonameid deja present comme ligne GeoNames (contrainte d'unicite).
+        if ($candidats) {
+            foreach (array_chunk(array_keys($candidats), 2000) as $paquet) {
+                $dejaPresents = DB::table($table)
+                    ->where('source', self::SOURCE)
+                    ->whereIn('code_externe', array_map('strval', $paquet))
+                    ->pluck('code_externe');
+                foreach ($dejaPresents as $code) {
+                    unset($candidats[$code]);
+                }
+            }
+        }
+
+        foreach ($candidats as $geoId => $idExistant) {
+            DB::table($table)->where('id', $idExistant)->update([
+                'source' => self::SOURCE,
+                'code_externe' => (string) $geoId,
+                'updated_at' => $maintenant,
+            ]);
+            $bilan['adoptes']++;
+        }
+
+        // 2) Insertion / mise a jour du reste.
+        $lignes = [];
+        foreach ($noeuds as $geoId => $noeud) {
+            if (isset($candidats[$geoId])) {
+                continue; // garde le nom deja en base
+            }
+            $nom = $nettoyerNoms ? NormalisationNom::nettoyer($noeud['nom']) : trim($noeud['nom']);
+            $lignes[] = [
+                $colonneParent => $noeud['parent'],
+                'nom' => mb_substr($nom, 0, 128),
+                'source' => self::SOURCE,
+                'code_externe' => (string) $geoId,
+                'created_at' => $maintenant,
+                'updated_at' => $maintenant,
+            ];
+        }
+        foreach (array_chunk($lignes, $lot) as $paquet) {
+            DB::table($table)->upsert($paquet, ['source', 'code_externe'], [$colonneParent, 'nom', 'updated_at']);
+        }
+
+        // 3) Correspondance geonameid -> identifiant interne (lignes rattachees comprises).
+        $ids = [];
+        foreach (array_chunk(array_keys($noeuds), 5000) as $paquet) {
+            $ids += DB::table($table)
+                ->where('source', self::SOURCE)
+                ->whereIn('code_externe', array_map('strval', $paquet))
+                ->pluck('id', 'code_externe')
+                ->all();
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Supprime les subdivisions OBSOLETES du pays : celles d'autres sources non
+     * rapprochees, et celles de GeoNames que cet import n'a pas touchees (updated_at
+     * anterieur au debut de l'import : elles ne figurent plus dans les donnees, ou ne
+     * sont plus importees avec les options choisies). Une ligne n'est supprimee que si
+     * plus rien ne l'utilise : ni demande, ni etablissement, ni sous-niveau.
+     */
+    private function supprimerObsoletes(int $paysId, string $debut): int
+    {
+        $total = 0;
+
+        $total += DB::delete(<<<'SQL'
+DELETE FROM arrondissements a USING communes c, departements d
+WHERE a.commune_id = c.id AND c.departement_id = d.id AND d.pays_id = ?
+  AND (a.source IS NULL OR a.source <> 'geonames' OR a.updated_at < ?)
+  AND NOT EXISTS (SELECT 1 FROM etablissements e WHERE e.arrondissement_id = a.id)
+  AND NOT EXISTS (SELECT 1 FROM demandes_etablissement x WHERE x.arrondissement_id = a.id)
+SQL, [$paysId, $debut]);
+
+        $total += DB::delete(<<<'SQL'
+DELETE FROM communes c USING departements d
+WHERE c.departement_id = d.id AND d.pays_id = ?
+  AND (c.source IS NULL OR c.source <> 'geonames' OR c.updated_at < ?)
+  AND NOT EXISTS (SELECT 1 FROM arrondissements a WHERE a.commune_id = c.id)
+  AND NOT EXISTS (SELECT 1 FROM etablissements e WHERE e.commune_id = c.id)
+  AND NOT EXISTS (SELECT 1 FROM demandes_etablissement x WHERE x.commune_id = c.id)
+SQL, [$paysId, $debut]);
+
+        $total += DB::delete(<<<'SQL'
+DELETE FROM departements d
+WHERE d.pays_id = ?
+  AND (d.source IS NULL OR d.source <> 'geonames' OR d.updated_at < ?)
+  AND NOT EXISTS (SELECT 1 FROM communes c WHERE c.departement_id = d.id)
+  AND NOT EXISTS (SELECT 1 FROM etablissements e WHERE e.departement_id = d.id)
+  AND NOT EXISTS (SELECT 1 FROM demandes_etablissement x WHERE x.departement_id = d.id)
+SQL, [$paysId, $debut]);
+
+        return $total;
+    }
+
+    /** Nombre de subdivisions du pays qui ne viennent pas de GeoNames. */
+    private function compterAutresSources(int $paysId): int
+    {
+        $ligne = DB::selectOne(<<<'SQL'
+SELECT
+  (SELECT count(*) FROM departements d WHERE d.pays_id = ? AND (d.source IS NULL OR d.source <> 'geonames'))
++ (SELECT count(*) FROM communes c JOIN departements d ON d.id = c.departement_id WHERE d.pays_id = ? AND (c.source IS NULL OR c.source <> 'geonames'))
++ (SELECT count(*) FROM arrondissements a JOIN communes c ON c.id = a.commune_id JOIN departements d ON d.id = c.departement_id WHERE d.pays_id = ? AND (a.source IS NULL OR a.source <> 'geonames'))
+  AS n
+SQL, [$paysId, $paysId, $paysId]);
+
+        return (int) $ligne->n;
     }
 
     /**

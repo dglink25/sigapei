@@ -3,22 +3,9 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Migration ADDITIVE : la localisation d'un etablissement (et de sa demande)
- * est desormais stockee a chaque niveau - pays, departement, commune,
- * arrondissement - et non plus uniquement via l'arrondissement.
- *
- * Necessaire pour le monde entier : la plupart des jeux de donnees
- * internationaux n'ont pas de niveau "arrondissement". L'arrondissement
- * devient donc facultatif sur "etablissements" (il etait NOT NULL).
- *
- * Les lignes deja presentes sont completees automatiquement a partir de leur
- * arrondissement. Idempotente (IF NOT EXISTS) : rejouable sans erreur.
- */
-return new class extends Migration
-{
-    public function up(): void
-    {
+
+return new class extends Migration {
+    public function up(): void   {
         foreach (['etablissements', 'demandes_etablissement'] as $table) {
             DB::statement("ALTER TABLE {$table} ADD COLUMN IF NOT EXISTS pays_id bigint REFERENCES pays(id)");
             DB::statement("ALTER TABLE {$table} ADD COLUMN IF NOT EXISTS departement_id bigint REFERENCES departements(id)");

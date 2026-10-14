@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
  *   php artisan geo:statistiques                 # tous les pays
  *   php artisan geo:statistiques --pays=BJ,FR    # quelques pays
  *   php artisan geo:statistiques --incomplets    # uniquement les pays sans subdivision
+ *   php artisan geo:statistiques --sans-communes          # pays ayant des departements mais aucune commune
  *   php artisan geo:statistiques --sans-arrondissements   # pays ayant des communes mais aucun arrondissement
  */
 class StatistiquesGeo extends Command
@@ -19,6 +20,7 @@ class StatistiquesGeo extends Command
     protected $signature = 'geo:statistiques
         {--pays= : Codes ISO2 separes par des virgules}
         {--incomplets : Affiche seulement les pays sans aucun departement}
+        {--sans-communes : Affiche seulement les pays qui ont des departements mais aucune commune}
         {--sans-arrondissements : Affiche seulement les pays qui ont des communes mais aucun arrondissement}';
 
     protected $description = 'Affiche le nombre de departements, communes et arrondissements par pays.';
@@ -41,6 +43,9 @@ SQL);
                 return false;
             }
             if ($this->option('incomplets') && $l->departements > 0) {
+                return false;
+            }
+            if ($this->option('sans-communes') && ($l->departements == 0 || $l->communes > 0)) {
                 return false;
             }
             if ($this->option('sans-arrondissements') && ($l->communes == 0 || $l->arrondissements > 0)) {

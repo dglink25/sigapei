@@ -31,6 +31,14 @@ export const geoService = {
   arrondissements: (uuid) => loadGeo(`a:${uuid}`, `/geo/communes/${uuid}/arrondissements`, 'arrondissements'),
 }
 
+export const accueilService = {
+  /** GET /v1/etablissements/{slug}/accueil — public, sans auth */
+  lire: async (slug) => {
+    const r = await api.get(`/etablissements/${slug}/accueil`, PUBLIC)
+    return r?.accueil ?? r
+  },
+}
+
 export const demandeService = {
   /** Cree (sans uuid) ou fusionne (avec uuid) le brouillon -> { success, demandeUuid, statut } */
   enregistrerBrouillon: (payload) => api.post('/demandes', payload, PUBLIC),

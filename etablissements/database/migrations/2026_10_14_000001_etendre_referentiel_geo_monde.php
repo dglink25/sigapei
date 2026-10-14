@@ -3,25 +3,10 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-/**
- * Migration ADDITIVE (ne modifie aucune migration deja executee) :
- * prepare le referentiel geographique a couvrir le monde entier.
- *
- *  - pays : code ISO3, continent, libelles des 3 niveaux de subdivision
- *    (pour que le formulaire affiche "Departement", "Etat", "Province"... selon le pays) ;
- *  - departements / communes / arrondissements : "source" + "code_externe"
- *    (identifiant dans le jeu de donnees d'origine), ce qui rend les imports
- *    massifs idempotents (relancables sans doublon) ;
- *  - index sur les cles etrangeres, absents jusqu'ici : indispensables des que
- *    le referentiel compte des dizaines de milliers de communes.
- *
- * Chaque instruction est idempotente (IF NOT EXISTS) : la migration peut etre
- * rejouee, ou reprise apres un echec partiel, sans erreur.
- */
-return new class extends Migration
-{
-    public function up(): void
-    {
+
+return new class extends Migration{
+
+    public function up(): void  {
         // --- pays ---
         DB::statement('ALTER TABLE pays ADD COLUMN IF NOT EXISTS code_iso3 char(3)');
         DB::statement('ALTER TABLE pays ADD COLUMN IF NOT EXISTS continent varchar(32)');

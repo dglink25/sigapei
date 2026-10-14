@@ -22,8 +22,7 @@ use Illuminate\Validation\ValidationException;
  * validation definitive (creation atomique de l'etablissement), suspension
  * et reactivation (section 10).
  */
-class ValidationService
-{
+class ValidationService{
     public function __construct(
         private SlugService $slugService,
         private MatriculeService $matriculeService,
@@ -35,10 +34,10 @@ class ValidationService
         private OnboardingService $onboarding,
     ) {}
 
-    public function listerDemandesAInstruire()
-    {
-        return DemandeEtablissement::where('statut', 'soumise')
-            ->orderBy('date_soumission')
+    public function listerDemandesAInstruire()    {
+        // Retourne toutes les demandes (tous statuts) pour le back-office
+        return DemandeEtablissement::orderBy('date_soumission', 'desc')
+            ->orderBy('created_at', 'desc')
             ->get();
     }
 
@@ -47,8 +46,7 @@ class ValidationService
      * dossier en statut "correction_demandee" et genere un premier lien
      * de correction a usage unique.
      */
-    public function demanderCorrection(string $demandeUuid, array $champsACorriger): DemandeEtablissement
-    {
+    public function demanderCorrection(string $demandeUuid, array $champsACorriger): DemandeEtablissement    {
         $demande = DemandeEtablissement::where('uuid', $demandeUuid)->firstOrFail();
 
         if ($demande->statut !== 'soumise') {
@@ -186,14 +184,15 @@ class ValidationService
         // api-identite (voir section 7.4 point 4). Reste de la
         // responsabilite d'Identite de creer utilisateur+role=administrateur.
         $this->rabbitmq->publier('etablissement.valide', [
-            'tenantUuid' => $etablissement->uuid,
-            'tenantId' => $etablissement->id,
+            'tenantUuid'       => $etablissement->uuid,
+            'tenantId'         => $etablissement->id,
             'nomEtablissement' => $etablissement->nom,
-            'code' => $etablissement->code,
-            'slug' => $etablissement->slug,
-            'matricule' => $etablissement->matricule,
-            'dirigeantNom' => $demande->dirigeant_nom,
-            'dirigeantEmail' => $demande->dirigeant_email,
+            'code'             => $etablissement->code,
+            'slug'             => $etablissement->slug,
+            'matricule'        => $etablissement->matricule,
+            'urlAccueil'       => env('FRONT_URL_BASE', 'http://localhost:5173') . '/etablissements/' . $etablissement->slug,
+            'dirigeantNom'     => $demande->dirigeant_nom,
+            'dirigeantEmail'   => $demande->dirigeant_email,
             'dirigeantTelephone' => $demande->dirigeant_telephone,
         ]);
 

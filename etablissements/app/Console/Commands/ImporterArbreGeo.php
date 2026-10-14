@@ -32,13 +32,24 @@ use RuntimeException;
  *
  *   php artisan geo:arbre chemin/arrondissements-benin.csv
  *   php artisan geo:arbre chemin/fichier.csv --source=insae
+ *
+ * Fichier a un autre format (export d'un tableau officiel, par exemple) : indiquez le
+ * pays et le nom des colonnes, sans retoucher le fichier :
+ *   php artisan geo:arbre adm3.csv --iso=BJ --col-departement=admin1Name_fr \
+ *       --col-commune=admin2Name_fr --col-arrondissement=admin3Name_fr
+ * (la comparaison des noms de colonnes ignore la casse)
  */
 class ImporterArbreGeo extends Command
 {
     protected $signature = 'geo:arbre
         {fichier : Fichier CSV (colonnes pays, departement, commune, arrondissement)}
         {--source=manuel : Nom de la source, stocke sur les lignes creees}
-        {--separateur=, : Separateur de colonnes (virgule par defaut, utilisez ; si besoin)}';
+        {--separateur=, : Separateur de colonnes (virgule par defaut, utilisez ; si besoin)}
+        {--iso= : Code ISO2 du pays quand le fichier n a pas de colonne pays (ex. BJ)}
+        {--col-pays=pays : Nom de la colonne du pays}
+        {--col-departement=departement : Nom de la colonne du departement}
+        {--col-commune=commune : Nom de la colonne de la commune}
+        {--col-arrondissement=arrondissement : Nom de la colonne de l arrondissement}';
 
     protected $description = 'Importe une arborescence pays / departement / commune / arrondissement depuis un CSV.';
 
@@ -69,7 +80,13 @@ class ImporterArbreGeo extends Command
         $entetes[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $entetes[0]);
         $entetes = array_map(fn ($e) => strtolower(trim((string) $e)), $entetes);
 
-        $manquantes = array_diff(['pays', 'departement'], $entetes);
+        $isoFixe = strtoupper(trim((string) $this->option('iso')));
+        $colPays = strtolower(trim((string) $this->option('col-pays')));
+        $colDepartement = strtolower(trim((string) $this->option('col-departement')));
+        $colCommune = strtolower(trim((string) $this->option('col-commune')));
+        $colArrondissement = strtolower(trim((string) $this->option('col-arrondissement')));
+
+        $manquantes = array_diff(array_filter([$isoFixe === '' ? $colPays : null, $colDepartement]), $entetes);
         if ($manquantes) {
             $this->error('Colonne(s) manquante(s) : '.implode(', ', $manquantes).'. Colonnes trouvees : '.implode(', ', $entetes).'. Essayez --separateur=";".');
             fclose($poignee);
@@ -83,7 +100,7 @@ class ImporterArbreGeo extends Command
         $numero = 1;
 
         try {
-            DB::transaction(function () use ($poignee, $entetes, $separateur, $paysIds, $source, &$crees, &$existants, &$ignorees, &$numero) {
+            DB::transaction(function () use ($poignee, $entetes, $separateur, $paysIds, $source, $isoFixe, $colPays, $colDepartement, $colCommune, $colArrondissement, &$crees, &$existants, &$ignorees, &$numero) {
                 while (($ligne = fgetcsv($poignee, 0, $separateur, '"', '\\')) !== false) {
                     $numero++;
                     if ($ligne === [null] || count($ligne) !== count($entetes)) {
@@ -91,7 +108,13 @@ class ImporterArbreGeo extends Command
 
                         continue;
                     }
-                    $l = array_combine($entetes, array_map(fn ($v) => trim((string) $v), $ligne));
+                    $brut = array_combine($entetes, array_map(fn ($v) => trim((string) $v), $ligne));
+                    $l = [
+                        'pays' => $isoFixe !== '' ? $isoFixe : ($brut[$colPays] ?? ''),
+                        'departement' => $brut[$colDepartement] ?? '',
+                        'commune' => $brut[$colCommune] ?? '',
+                        'arrondissement' => $brut[$colArrondissement] ?? '',
+                    ];
 
                     $iso = strtoupper($l['pays']);
                     if (! isset($paysIds[$iso])) {

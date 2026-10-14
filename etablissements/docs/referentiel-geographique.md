@@ -42,26 +42,58 @@ php artisan geo:geonames BJ FR SN CI     # ou une sélection
 
 Compter plusieurs centaines de Mo à télécharger et du temps pour tous les pays : la commande traite les pays un par un, continue si l'un échoue, et affiche un tableau récapitulatif. Elle est **idempotente** (clé `source` + `geonameid`) : on peut la relancer, y compris sur les seuls pays en échec.
 
+Les fichiers téléchargés restent dans `storage/app/geonames` : pour relancer l'import **sans retélécharger**, ajouter `--sans-telechargement`.
+
 Options utiles :
 
 | Option | Effet |
 |---|---|
 | `--sans-telechargement` | utilise les fichiers déjà présents dans `storage/app/geonames` |
 | `--dossier=chemin` | autre dossier de téléchargement |
-| `--remplacer` | remplace les subdivisions déjà présentes d'une **autre** source (voir ci-dessous) |
+| `--nettoyer` (alias `--remplacer`) | supprime ensuite les lignes d'autres sources non utilisées (voir ci-dessous) |
+| `--sans-promotion` | n'importe pas au niveau 2 les ADM3 sans ADM2 parent |
 | `--noms-bruts` | garde les noms tels que fournis (sinon « Département de l'Atlantique » devient « Atlantique ») |
 
 Sans l'extension PHP `zip`, la commande utilise la commande système `unzip` ; si aucune n'est disponible, installer `php-zip` (ou `unzip`).
 
-### Pays déjà chargé depuis une autre source
+### Données déjà présentes (test, import précédent) : fusion, pas de suppression
 
-On ne mélange jamais deux sources pour un même pays. Si un pays contient déjà des subdivisions d'une autre source (par exemple les 12 départements et 77 communes du Bénin chargés auparavant par `BeninGeoSeeder`), la commande l'ignore et l'indique. Pour les remplacer :
+Si des subdivisions d'une autre source existent déjà pour un pays (données de test, `BeninGeoSeeder`, import précédent), la commande les **reconnaît par leur nom** (insensible à la casse, aux accents, aux tirets et aux préfixes « Département de », « Commune de »...) et les **rattache** aux données GeoNames. Leur identifiant interne ne change pas : les demandes et établissements qui les utilisent restent valides. Rien n'est supprimé.
+
+Le récapitulatif indique pour chaque pays combien de lignes ont été rattachées, et marque d'une `*` les pays qui conservent des lignes d'autres sources (utilisées, ou dont le nom n'a pas été reconnu : par exemple une ligne de test).
+
+Pour supprimer ensuite celles qui ne servent plus à rien :
 
 ```bash
-php artisan geo:geonames BJ --remplacer
+php artisan geo:geonames BJ --nettoyer
 ```
 
-Les clés étrangères protègent : si une demande ou un établissement utilise déjà une de ces subdivisions, **rien n'est supprimé** et le pays est signalé en erreur. `php artisan geo:vider BJ` supprime à la main les subdivisions d'un pays (mêmes protections).
+`--nettoyer` supprime les subdivisions **obsolètes** du pays : celles d'autres sources non rapprochées, et celles de GeoNames que l'import courant n'a pas touchées (par exemple des lignes « promues » que vous ne voulez plus avec `--sans-promotion`). Il ne supprime **jamais** une subdivision utilisée par une demande ou un établissement, ni un niveau qui a encore des sous-niveaux. `php artisan geo:vider BJ` supprime à la main toutes les subdivisions d'un pays (mêmes protections : rien n'est supprimé si l'une est utilisée).
+
+Pour voir ce qui reste d'autres sources après un import :
+
+```sql
+SELECT 'departement' AS niveau, nom, source FROM departements d JOIN pays p ON p.id = d.pays_id WHERE p.code_iso = 'BJ' AND (d.source IS NULL OR d.source <> 'geonames')
+UNION ALL
+SELECT 'commune', c.nom, c.source FROM communes c JOIN departements d ON d.id = c.departement_id JOIN pays p ON p.id = d.pays_id WHERE p.code_iso = 'BJ' AND (c.source IS NULL OR c.source <> 'geonames');
+```
+
+### Recette pour un pays dont la structure officielle est connue (exemple : le Bénin)
+
+```bash
+# 1. GeoNames, sans la promotion (qui rangerait des arrondissements au niveau commune) ; nettoyage des doublons
+php artisan geo:geonames BJ --sans-telechargement --sans-promotion --nettoyer
+php artisan geo:statistiques --pays=BJ
+
+# 2. Combler les arrondissements manquants avec le fichier officiel (12 départements, 77 communes, 546 arrondissements)
+php artisan geo:arbre arrondissements-benin.csv --iso=BJ --col-departement=... --col-commune=... --col-arrondissement=...
+```
+
+Les orthographes viennent de GeoNames : si elles diffèrent de l'usage officiel (par exemple « Atakora » au lieu de « Atacora »), corriger avec un `UPDATE` ciblé sur la table concernée.
+
+### Lignes sans parent : promotion au niveau 2
+
+Dans certains pays, GeoNames publie des ADM3 dont l'ADM2 parent n'existe pas (Bosnie, RD Congo, Éthiopie...). Plutôt que de les perdre, ils sont importés **au niveau 2 sous leur ADM1**. Le niveau 2 d'un tel pays mélange alors les deux profondeurs. `--sans-promotion` désactive ce comportement. Les lignes sans aucun parent exploitable restent ignorées et sont comptées dans le récapitulatif.
 
 ## Vérifier la complétude
 
@@ -69,6 +101,7 @@ Les clés étrangères protègent : si une demande ou un établissement utilise 
 php artisan geo:statistiques                      # tous les pays
 php artisan geo:statistiques --pays=BJ            # un pays
 php artisan geo:statistiques --incomplets         # pays sans aucun département
+php artisan geo:statistiques --sans-communes      # pays avec départements mais sans commune
 php artisan geo:statistiques --sans-arrondissements   # pays avec communes mais sans arrondissement
 ```
 
@@ -91,10 +124,25 @@ php artisan geo:arbre chemin/fichier.csv --source=insae
 ```
 
 - `pays` est le code ISO2 ; `commune` et `arrondissement` sont facultatifs.
+- **Autre format de fichier** (export d'un tableau officiel) : indiquez le pays et le nom des colonnes au lieu de retoucher le fichier :
+  `php artisan geo:arbre adm3.csv --iso=BJ --col-departement=admin1Name_fr --col-commune=admin2Name_fr --col-arrondissement=admin3Name_fr`
+  (casse des noms de colonnes ignorée). Un fichier Excel doit d'abord être enregistré en CSV.
 - Chaque nœud est **reconnu par son nom** (insensible à la casse, aux accents, aux tirets et aux préfixes « Département de », « Commune de »...) : s'il existe déjà, il est réutilisé ; sinon il est créé. Le fichier complète donc l'existant **sans doublon**, et peut être relancé sans risque.
 - Tout est enregistré dans **une seule transaction** : si une ligne est invalide (pays inconnu...), rien n'est enregistré.
 - Nœuds créés : source `manuel` (ou celle donnée par `--source`).
 - Attention à l'orthographe : deux écritures très différentes d'une même commune sont considérées comme deux communes distinctes.
+
+## Pourquoi il manque des arrondissements, et que faire
+
+Le 3e niveau est rare dans les données mondiales : beaucoup de pays n'ont tout simplement pas de 3e niveau administratif, ou GeoNames ne le publie pas. Les niveaux 1 et 2 sont en revanche bien couverts. Pour un pays où le 3e niveau existe réellement mais manque (le Bénin, par exemple), la seule voie fiable est un **fichier officiel** passé à `geo:arbre`.
+
+Pistes de sources à examiner (à vérifier : formats et licences évoluent, je ne peux pas les contrôler depuis l'environnement où ce code a été écrit) :
+
+- les jeux de données de limites administratives de l'**OCHA / Humanitarian Data Exchange** (data.humdata.org, « COD-AB »), qui publient souvent les niveaux 1 à 3 avec les noms des parents, pour beaucoup de pays ;
+- l'**institut national de la statistique** ou le ministère chargé de la décentralisation du pays ;
+- un export **OpenStreetMap** (licence ODbL) pour le pays.
+
+Attention aux licences : certaines bases de limites administratives très répandues (par exemple GADM) sont réservées à un usage non commercial et ne conviennent pas à une plateforme payante sans autorisation.
 
 ## Autre jeu de données : `geo:importer`
 

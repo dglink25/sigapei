@@ -22,7 +22,7 @@ import ComptePage    from './pages/commun/ComptePage'
 import Portail       from './pages/commun/Portail'
 import DashboardTemp from './pages/commun/DashboardTemp'
 
-/* Administration principale */
+import AccueilEtablissement from './pages/etablissements/AccueilEtablissement'
 import AdminLayout        from './pages/AdministrationPrincipale/AdminLayout'
 import Dashboard          from './pages/AdministrationPrincipale/Dashboard'
 import DemandesPage       from './pages/AdministrationPrincipale/DemandesPage'
@@ -42,6 +42,9 @@ export default function App() {
       {/* ── Onboarding public ── */}
       <Route path={PATHS.demande}         element={<DemandePage />} />
       <Route path={PATHS.correctionRoute} element={<CorrectionPage />} />
+
+      {/* ── Page d'accueil publique d'un établissement ── */}
+      <Route path="/etablissements/:slug" element={<AccueilEtablissement />} />
 
       {/* ── Accueil public ── */}
       <Route path={HOME_PATH} element={<Home />} />
