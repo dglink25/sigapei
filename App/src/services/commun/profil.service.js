@@ -2,7 +2,7 @@ import { authApi as api } from '../../lib/commun/http'
 import { getDeviceId, getDeviceInfo } from '../../lib/identite/device'
 
 /**
- * Service Profil — commun à tous les rôles connectés.
+ * Service Profil - commun à tous les rôles connectés.
  * Toutes les routes /v1/moi/* du microservice Identité.
  */
 export const profilService = {

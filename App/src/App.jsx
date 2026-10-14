@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { ENV } from './config/commun/env'
 import {
-  FORBIDDEN_PATH, HOME_PATH, LOGIN_PATH, SECURITY_PATH,
+  FORBIDDEN_PATH, HOME_PATH, LOGIN_PATH, SECURITY_PATH, COMPTE_PATH,
   ADMIN_DASHBOARD_PATH, PORTAIL_PATH, DASHBOARD_TEMP_PATH,
   PORTAIL_ROLES, NON_ADMIN_ROLES
 } from './config/identite/routes'
@@ -15,9 +15,12 @@ import SecuritePage   from './pages/identite/SecuritePage'
 import DemandePage    from './pages/etablissements/DemandePage'
 import CorrectionPage from './pages/etablissements/CorrectionPage'
 import Home           from './pages/commun/Home'
-import Portail        from './pages/commun/Portail'
-import DashboardTemp  from './pages/commun/DashboardTemp'
 import { ForbiddenPage, NotFoundPage } from './pages/commun/ErrorPages'
+
+/* Pages communes */
+import ComptePage    from './pages/commun/ComptePage'
+import Portail       from './pages/commun/Portail'
+import DashboardTemp from './pages/commun/DashboardTemp'
 
 /* Administration principale */
 import AdminLayout        from './pages/AdministrationPrincipale/AdminLayout'
@@ -36,35 +39,36 @@ export default function App() {
         <Route path={LOGIN_PATH} element={<AuthPage />} />
       </Route>
 
-      {/* ── Onboarding public (sans auth) ── */}
+      {/* ── Onboarding public ── */}
       <Route path={PATHS.demande}         element={<DemandePage />} />
       <Route path={PATHS.correctionRoute} element={<CorrectionPage />} />
 
       {/* ── Accueil public ── */}
       <Route path={HOME_PATH} element={<Home />} />
 
-      {/* ── Sécurité : tous les rôles connectés ── */}
+      {/* ── Sécurité rétrocompat (sans layout) ── */}
       <Route element={<RequireAuth />}>
         <Route path={SECURITY_PATH} element={<SecuritePage />} />
       </Route>
 
-      {/* ── Portail : réservé aux rôles portail (élèves, parents, visiteurs…) ── */}
+      {/* ── Portail : rôles portail uniquement ── */}
       <Route element={<RequireAuth roles={PORTAIL_ROLES} />}>
         <Route path={PORTAIL_PATH} element={<Portail />} />
       </Route>
 
-      {/* ── Dashboard temporaire : rôles non-admin hors portail ── */}
+      {/* ── Dashboard temporaire ── */}
       <Route element={<RequireAuth roles={NON_ADMIN_ROLES} />}>
         <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
       </Route>
 
-      {/* ── Administration principale : super_admin uniquement ── */}
+      {/* ── Administration : super_admin - /compte dans le layout admin ── */}
       <Route element={<RequireAuth roles={['super_admin']} />}>
         <Route element={<AdminLayout />}>
-          <Route path={ADMIN_DASHBOARD_PATH}      element={<Dashboard />} />
-          <Route path={ADMIN_PATHS.demandes}       element={<DemandesPage />} />
-          <Route path={ADMIN_PATHS.detailRoute}    element={<DemandeDetailPage />} />
-          <Route path={ADMIN_PATHS.etablissements} element={<EtablissementsPage />} />
+          <Route path={ADMIN_DASHBOARD_PATH}       element={<Dashboard />} />
+          <Route path={COMPTE_PATH}                 element={<ComptePage />} />
+          <Route path={ADMIN_PATHS.demandes}        element={<DemandesPage />} />
+          <Route path={ADMIN_PATHS.detailRoute}     element={<DemandeDetailPage />} />
+          <Route path={ADMIN_PATHS.etablissements}  element={<EtablissementsPage />} />
         </Route>
       </Route>
 

@@ -9,7 +9,7 @@ import { useNotify } from '../../context/commun/NotifyContext'
 import { withAuth } from '../../components/identite/RequireAuth'
 import ThemeToggle from '../../components/commun/ThemeToggle'
 import { ENV } from '../../config/commun/env'
-import { ADMIN_DASHBOARD_PATH, SECURITY_PATH } from '../../config/identite/routes'
+import { ADMIN_DASHBOARD_PATH, COMPTE_PATH } from '../../config/identite/routes'
 import { ADMIN_PATHS } from '../../config/etablissements/config'
 import './AdminLayout.css'
 
@@ -17,8 +17,8 @@ const NAV = [
   {
     groupe: 'VUE D\'ENSEMBLE',
     items: [
-      { id: 'dashboard',      label: 'Tableau de bord',     icon: LayoutDashboard, path: ADMIN_DASHBOARD_PATH },
-      { id: 'compte',         label: 'Mon compte',           icon: Users,           path: SECURITY_PATH },
+      { id: 'dashboard',      label: 'Tableau de bord',      icon: LayoutDashboard, path: ADMIN_DASHBOARD_PATH },
+      { id: 'compte',         label: 'Mon profil',           icon: Users,           path: COMPTE_PATH },
     ],
   },
   {
@@ -39,7 +39,7 @@ const NAV = [
   {
     groupe: 'ADMINISTRATION',
     items: [
-      { id: 'parametres',     label: 'Paramètres',           icon: Settings,        path: SECURITY_PATH },
+      { id: 'parametres',     label: 'Sécurité & Compte',    icon: Settings,        path: COMPTE_PATH },
     ],
   },
 ]
@@ -158,7 +158,7 @@ function AdminLayoutInner({ pageTitle }) {
   )
 }
 
-/** HOC — protège le layout et toutes ses routes enfants (rôle super_admin requis). */
+/** HOC - protège le layout et toutes ses routes enfants (rôle super_admin requis). */
 const AdminLayoutProtected = withAuth(AdminLayoutInner, { roles: ['super_admin'] })
 
 /** Wrapper avec prop pageTitle injectée depuis les routes */

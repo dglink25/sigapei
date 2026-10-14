@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    Pages Compte (Profil / Sécurité / Sessions)
-   Communes à tous les rôles — SIGAPEI
+   Communes à tous les rôles - SIGAPEI
    Charte : #006B3C · #E9AA20 · #FFF6DD · #000000
 ═══════════════════════════════════════════════════════ */
 
@@ -227,3 +227,28 @@
 [data-theme='dark'] .cp-device-ico { background: rgba(74,222,128,0.08); color: #4ade80; }
 [data-theme='dark'] .cp-device-badge { background: rgba(74,222,128,0.10); color: #4ade80; border-color: rgba(74,222,128,0.2); }
 [data-theme='dark'] .cp-card-title { color: var(--sg-text); }
+
+/* ── Mode intégré dans un layout parent ── */
+.cp-page { min-height: unset; background: transparent; }
+.cp-body--embedded { max-width: 720px; padding: 20px 0 48px; }
+.cp-nav {
+  margin-bottom: 20px;
+  background: var(--sg-surface, #fff);
+  border: 1px solid var(--sg-border, #dde4df);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex; gap: 0;
+}
+.cp-nav-tab {
+  border-bottom: none;
+  border-right: 1px solid var(--sg-border, #dde4df);
+  flex: 1;
+  padding: 11px 14px;
+  justify-content: center;
+}
+.cp-nav-tab:last-child { border-right: none; }
+.cp-nav-tab.is-active {
+  background: rgba(0,107,60,0.06);
+  color: #006B3C;
+  border-bottom: none;
+}

@@ -21,7 +21,7 @@ const TABS = [
 
 function StatutBadge({ statut }) {
   const tone = statut === 'actif' ? 'success' : statut === 'suspendu' ? 'danger' : 'neutral'
-  const label = statut === 'actif' ? 'Actif' : statut === 'suspendu' ? 'Suspendu' : statut ?? '—'
+  const label = statut === 'actif' ? 'Actif' : statut === 'suspendu' ? 'Suspendu' : statut ?? '-'
   return <span className={`ap-badge ap-badge--${tone}`}>{label}</span>
 }
 

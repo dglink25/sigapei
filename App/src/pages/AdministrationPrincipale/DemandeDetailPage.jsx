@@ -102,7 +102,8 @@ export default function DemandeDetailPage() {
   const load = useCallback(async () => {
     setState({ loading: true, demande: null })
     try {
-      const d = (await adminService.lister()).map(normaliserDemande).find(x => x.uuid === uuid) ?? null
+      const raw = await adminService.afficher(uuid)
+      const d   = raw ? normaliserDemande(raw) : null
       setState({ loading: false, demande: d })
     } catch (err) {
       notify.fromError(err)

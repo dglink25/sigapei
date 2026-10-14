@@ -49,6 +49,10 @@ export const correctionService = {
 /** Back-office Super Administrateur : routes /interne/* (X-Internal-Secret ajoute par le proxy / la Gateway). */
 export const adminService = {
   lister: async () => listFrom(await adminApi.get('/interne/demandes'), 'demandes', 'items'),
+  afficher: async (uuid) => {
+    const r = await adminApi.get(`/interne/demandes/${uuid}`)
+    return r?.demande ?? r
+  },
   marquerCorrections: (uuid, champsACorriger) => adminApi.post(`/interne/demandes/${uuid}/corrections`, { champsACorriger }),
   valider: (uuid) => adminApi.post(`/interne/demandes/${uuid}/valider`),
   listerEtablissements: async () => listFrom(await adminApi.get('/interne/etablissements'), 'etablissements', 'items'),

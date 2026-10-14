@@ -20,6 +20,40 @@ class InterneController extends Controller
         return response()->json(['success' => true, 'demandes' => $this->validationService->listerDemandesAInstruire()]);
     }
 
+    public function afficherDemande(string $uuid): JsonResponse
+    {
+        $demande = \App\Domain\Onboarding\DemandeEtablissement::where('uuid', $uuid)
+            ->with('documents')
+            ->firstOrFail();
+
+        // Génère des URLs pré-signées S3 (ou URLs directes selon le driver)
+        $documents = $demande->documents->map(function ($doc) {
+            $url = null;
+            try {
+                $disk = \Illuminate\Support\Facades\Storage::disk(config('filesystems.default', 's3'));
+                $url = method_exists($disk, 'temporaryUrl')
+                    ? $disk->temporaryUrl($doc->chemin_stockage, now()->addMinutes(60))
+                    : $disk->url($doc->chemin_stockage);
+            } catch (\Throwable) {
+                // URL indisponible (driver local ou stockage non configuré)
+            }
+
+            return [
+                'uuid'     => $doc->uuid,
+                'type'     => $doc->type,
+                'nom'      => basename($doc->chemin_stockage),
+                'mime'     => $doc->mime_type,
+                'taille'   => $doc->taille_octets,
+                'url'      => $url,
+            ];
+        });
+
+        return response()->json([
+            'success'  => true,
+            'demande'  => array_merge($demande->toArray(), ['documents' => $documents]),
+        ]);
+    }
+
     public function marquerCorrections(Request $request, string $uuid): JsonResponse
     {
         // Chaque section a corriger doit etre accompagnee d'un motif (section 7.2).
