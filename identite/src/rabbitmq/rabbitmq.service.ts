@@ -12,6 +12,15 @@ export type EvenementIdentite =
   | 'role.cree'
   | 'role.modifie'
   | 'role.supprime'
+  | 'service.cree'
+  | 'service.modifie'
+  | 'service.supprime'
+  | 'etablissement_service.assigne'
+  | 'etablissement_service.bloque'
+  | 'etablissement_service.reactive'
+  | 'etablissement_service.retire'
+  | 'acces.accorde'
+  | 'acces.revoque'
   | 'appareil.revoque'
   | 'identifiant.recupere';
 
