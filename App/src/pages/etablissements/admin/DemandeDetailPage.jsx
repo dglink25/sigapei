@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, BadgeCheck, CircleCheck, ClipboardCheck, FileText, MapPin, MessageSquareWarning, Paperclip, TriangleAlert } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import ConfirmDialog from '../../../components/commun/ConfirmDialog'
+import Loader from '../../../components/commun/Loader'
 import { ADMIN_PATHS, DOC_TYPES, SECTIONS, SECTIONS_CORRIGEABLES, TYPES } from '../../../config/etablissements/config'
 import { EMPTY_FORM, localisationTexte, normaliserDemande, typesTexte } from '../../../lib/etablissements/form'
 import { formatSize } from '../../../lib/etablissements/upload'
@@ -134,7 +135,7 @@ export default function DemandeDetailPage() {
     }
   }
 
-  if (state.loading) return <div className="ad"><p className="ad-empty">Chargement du dossier…</p></div>
+  if (state.loading) return <div className="ad"><Loader mode="inline" label="Chargement du dossier…" /></div>
 
   if (!d) {
     return (

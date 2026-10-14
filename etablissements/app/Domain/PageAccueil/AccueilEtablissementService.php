@@ -23,6 +23,7 @@ class AccueilEtablissementService
 
             if ($etablissement->statut !== 'actif') {
                 return [
+                    'code' => $etablissement->code,
                     'slug' => $etablissement->slug,
                     'statut' => $etablissement->statut,
                     'degrade' => true,
@@ -31,6 +32,7 @@ class AccueilEtablissementService
             }
 
             return [
+                'code' => $etablissement->code,
                 'slug' => $etablissement->slug,
                 'nom' => $etablissement->nom,
                 'types' => $etablissement->types,

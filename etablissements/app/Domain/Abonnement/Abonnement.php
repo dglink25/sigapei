@@ -3,10 +3,13 @@
 namespace App\Domain\Abonnement;
 
 use App\Domain\Etablissement\Etablissement;
+use App\Support\GenereUuid;
 use Illuminate\Database\Eloquent\Model;
 
 class Abonnement extends Model
 {
+    use GenereUuid;
+
     protected $table = 'abonnements';
 
     protected $fillable = ['etablissement_id', 'plan_id', 'date_debut', 'date_fin', 'statut'];
