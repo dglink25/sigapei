@@ -57,7 +57,7 @@ export default function Dashboard() {
     ]
   }, [items])
 
-  const fmt = (v) => (v === null ? '—' : String(v))
+  const fmt = (v) => (v === null ? '-' : String(v))
 
   return (
     <div className="ap db">

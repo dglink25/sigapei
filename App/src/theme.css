@@ -53,7 +53,7 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* ── Badge reCAPTCHA — masqué globalement sauf sur les formulaires publics ── */
+/* ── Badge reCAPTCHA - masqué globalement sauf sur les formulaires publics ── */
 /* Google exige d'afficher soit le badge soit une mention textuelle dans le formulaire.
    Le badge est masqué sur les pages authentifiées (admin, portail, sécurité).
    Il reste visible sur /demande et /login via la classe page-public-recaptcha. */
