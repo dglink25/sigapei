@@ -10,7 +10,14 @@ from rest_framework.response import Response
 
 from apps.core.choices import Restitution, StatutTentative
 from apps.core.mixins import TenantViewSetMixin
-from apps.core.permissions import EnseignantAffectePermission
+from apps.core.permissions import (
+    ApprenantProprietairePermission,
+    EnseignantAffectePermission,
+    EstApprenant,
+    EstEnseignantOuAdmin,
+    LectureTousEcritureEnseignant,
+    restreindre_aux_apprenants,
+)
 from apps.core.services import ServiceExterneNonConfigure
 from apps.quiz.models import Quiz, ReponsesApprenant, TentativesQuiz
 from apps.quiz.serializers import (
@@ -39,7 +46,15 @@ class QuizViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Quiz.objects.all()
     lookup_field = 'uuid'
-    permission_classes = [EnseignantAffectePermission]
+    permission_classes = [LectureTousEcritureEnseignant,
+                          EnseignantAffectePermission]
+
+    def get_permissions(self):
+        """Le démarrage d'une tentative est réservé à l'apprenant (un
+        parent ne passe pas de quiz à la place de son enfant)."""
+        if self.action == 'tentatives':
+            return [EstApprenant()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -97,6 +112,9 @@ class QuizViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         les questions à répondre (sans les réponses correctes).
         """
         quiz = self.get_object()
+        # L'apprenant ne tente un quiz qu'en son propre nom (X-Apprenant-ID).
+        if request.role == 'apprenant' and request.apprenant_id:
+            request.data['apprenant_id'] = str(request.apprenant_id)
         apprenant_id = request.data.get('apprenant_id')
         if not apprenant_id:
             raise ValidationError({'apprenant_id': 'Requis.'})
@@ -131,9 +149,13 @@ class QuizViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
 
 class TentativesViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
-    """Tentatives de quiz : restitution, soumission, validation, report."""
+    """Tentatives de quiz : restitution, soumission, validation, report.
+
+    Apprenant/parent : uniquement les tentatives de l'apprenant concerné.
+    """
     queryset = TentativesQuiz.objects.select_related('quiz')
     lookup_field = 'uuid'
+    permission_classes = [ApprenantProprietairePermission]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -142,9 +164,20 @@ class TentativesViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        queryset = restreindre_aux_apprenants(queryset, self.request)
         if apprenant_id := self.request.query_params.get('apprenant_id'):
             queryset = queryset.filter(apprenant_id=apprenant_id)
         return queryset
+
+    def get_permissions(self):
+        """La soumission des réponses est faite par l'apprenant sur SA
+        tentative ; validation et report de note sont réservés aux
+        enseignants et administrateurs."""
+        if self.action == 'soumettre':
+            return [EstApprenant(), ApprenantProprietairePermission()]
+        if self.action in ('valider', 'reporter'):
+            return [EstEnseignantOuAdmin()]
+        return super().get_permissions()
 
     def retrieve(self, request, *args, **kwargs):
         """GET /v1/tentatives/{uuid}/ : restitution selon le paramètre du
@@ -270,11 +303,28 @@ class TentativesViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
 
 
 class ReponsesViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
-    """Lecture des réponses + validation de la note par l'enseignant."""
+    """Lecture des réponses + validation de la note par l'enseignant.
+
+    Apprenant/parent : uniquement les réponses de l'apprenant concerné.
+    """
     queryset = ReponsesApprenant.objects.select_related('question',
                                                         'tentative')
     serializer_class = ReponseSerializer
     lookup_field = 'uuid'
+    permission_classes = [ApprenantProprietairePermission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return restreindre_aux_apprenants(
+            queryset, self.request, champ='tentative__apprenant_id',
+        )
+
+    def get_permissions(self):
+        """L'ajustement de la note finale est réservé aux enseignants et
+        administrateurs."""
+        if self.action == 'note':
+            return [EstEnseignantOuAdmin()]
+        return super().get_permissions()
 
     @action(detail=True, methods=['patch'], url_path='note')
     def note(self, request, uuid=None):

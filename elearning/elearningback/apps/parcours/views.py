@@ -7,7 +7,10 @@ from rest_framework.response import Response
 
 from apps.core.choices import StatutContenu
 from apps.core.mixins import TenantViewSetMixin
-from apps.core.permissions import EnseignantAffectePermission
+from apps.core.permissions import (
+    EnseignantAffectePermission,
+    LectureTousEcritureEnseignant,
+)
 from apps.parcours.models import Parcours
 from apps.parcours.serializers import (
     EtapeSerializer,
@@ -28,7 +31,8 @@ class ParcoursViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Parcours.objects.all()
     lookup_field = 'uuid'
-    permission_classes = [EnseignantAffectePermission]
+    permission_classes = [LectureTousEcritureEnseignant,
+                          EnseignantAffectePermission]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':

@@ -7,7 +7,14 @@ from rest_framework.response import Response
 
 from apps.core.choices import PolitiqueRetard
 from apps.core.mixins import TenantViewSetMixin
-from apps.core.permissions import EnseignantAffectePermission
+from apps.core.permissions import (
+    ApprenantProprietairePermission,
+    EnseignantAffectePermission,
+    EstApprenantOuParent,
+    EstEnseignantOuAdmin,
+    LectureTousEcritureEnseignant,
+    restreindre_aux_apprenants,
+)
 from apps.core.services import ServiceExterneNonConfigure
 from apps.devoirs.models import Devoirs, Soumissions
 from apps.devoirs.serializers import (
@@ -29,7 +36,25 @@ class DevoirsViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     queryset = Devoirs.objects.all()
     serializer_class = DevoirSerializer
     lookup_field = 'uuid'
-    permission_classes = [EnseignantAffectePermission]
+    permission_classes = [LectureTousEcritureEnseignant,
+                          EnseignantAffectePermission]
+
+    def get_permissions(self):
+        """Le dépôt d'une copie est réservé à l'apprenant/parent ; les
+        statistiques de correction, aux enseignants et administrateurs."""
+        if self.action == 'soumissions' and self.request.method == 'POST':
+            return [EstApprenantOuParent()]
+        if self.action == 'statistiques':
+            return [EstEnseignantOuAdmin()]
+        return super().get_permissions()
+
+    def destroy(self, request, *args, **kwargs):
+        """Règle 3 : aucun devoir n'est supprimé physiquement."""
+        return Response(
+            {'detail': 'Suppression physique interdite : passer le statut '
+                       "à 'brouillon' ou 'archive'."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -48,6 +73,8 @@ class DevoirsViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
         if request.method == 'GET':
             soumissions = devoir.soumissions.select_related('devoir')
+            # Apprenant/parent : limité à ses propres dépôts (X-Apprenant-ID).
+            soumissions = restreindre_aux_apprenants(soumissions, request)
             apprenant_id = request.query_params.get('apprenant_id')
             if apprenant_id:
                 soumissions = soumissions.filter(apprenant_id=apprenant_id)
@@ -112,6 +139,11 @@ class DevoirsViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
                                 'retard de ce devoir interdit tout dépôt.'}
             )
 
+        # Un apprenant/parent identifié ne dépose qu'en son nom propre.
+        if (request.role in ('apprenant', 'parent')
+                and request.apprenant_id):
+            request.data['apprenant_id'] = str(request.apprenant_id)
+
         serializer = SoumissionSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         soumission = serializer.save(devoir=devoir, en_retard=en_retard)
@@ -122,16 +154,27 @@ class DevoirsViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
 
 class SoumissionsViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
-    """Lecture des soumissions + annotations enseignant + report de note."""
+    """Lecture des soumissions + annotations enseignant + report de note.
+
+    Apprenant/parent : uniquement ses propres soumissions."""
     queryset = Soumissions.objects.select_related('devoir')
     serializer_class = SoumissionSerializer
     lookup_field = 'uuid'
+    permission_classes = [ApprenantProprietairePermission]
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        queryset = restreindre_aux_apprenants(queryset, self.request)
         if apprenant_id := self.request.query_params.get('apprenant_id'):
             queryset = queryset.filter(apprenant_id=apprenant_id)
         return queryset
+
+    def get_permissions(self):
+        """La notation et le report de note sont réservés aux enseignants
+        et administrateurs."""
+        if self.action in ('note', 'reporter'):
+            return [EstEnseignantOuAdmin()]
+        return super().get_permissions()
 
     @action(detail=True, methods=['patch'], url_path='note')
     def note(self, request, uuid=None):

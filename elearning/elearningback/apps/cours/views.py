@@ -7,7 +7,10 @@ from rest_framework.response import Response
 
 from apps.core.choices import StatutContenu
 from apps.core.mixins import TenantViewSetMixin
-from apps.core.permissions import EnseignantAffectePermission
+from apps.core.permissions import (
+    EnseignantAffectePermission,
+    LectureTousEcritureEnseignant,
+)
 from apps.cours.models import Cours, Lecons
 from apps.cours.serializers import CoursSerializer, LeconSerializer
 
@@ -23,7 +26,8 @@ class CoursViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     queryset = Cours.objects.all()
     serializer_class = CoursSerializer
     lookup_field = 'uuid'
-    permission_classes = [EnseignantAffectePermission]
+    permission_classes = [LectureTousEcritureEnseignant,
+                          EnseignantAffectePermission]
 
     def get_queryset(self):
         queryset = super().get_queryset()

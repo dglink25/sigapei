@@ -56,7 +56,7 @@ npx eslint src/App.jsx     # un seul fichier
 
 ### Isolation multi-tenant (socle `apps/core`)
 
-- `TenantMiddleware` (`apps/core/middleware.py`) exige l'en-tête `X-Tenant-ID` (UUID valide) sur toute route `/v1/` et l'expose en `request.tenant_id`. Prévu pour être alimenté plus tard par un claim JWT fourni par la gateway.
+- `TenantMiddleware` (`apps/core/middleware.py`) exige sur toute route `/v1/` l'en-tête `X-Tenant-ID` (UUID valide, exposé en `request.tenant_id`) **et** l'en-tête `X-Role` (`enseignant`, `apprenant`, `parent` ou `administrateur`, exposé en `request.role`) ; l'en-tête facultatif `X-Apprenant-ID` (UUID, `request.apprenant_id`) restreint les rôles apprenant/parent à leurs propres soumissions, tentatives et réponses. Ces en-têtes sont des stand-ins des claims JWT qui seront fournis plus tard par la gateway.
 - Tout modèle métier hérite de `BaseModel` (`apps/core/models.py`) : clé primaire `id` interne **jamais exposée** (tous les viewsets utilisent `lookup_field = 'uuid'`), `uuid` public unique, `tenant_id` indexé, `created_at`.
 - `TenantSerializerMixin` (refuse un `tenant_id` fourni par le client, injecte celui de la requête à la création) doit être sur tout sérialiseur d'un modèle `BaseModel` ; `TenantViewSetMixin` (filtre chaque queryset par `tenant_id`) doit être sur tout viewset.
 
@@ -85,6 +85,7 @@ Chaque application suit le même découpage : `models.py` → `serializers.py` �
 
 - **Aucune suppression physique** : `DELETE` est refusé (405) ; l'archivage passe par l'action `POST /v1/<resource>/{uuid}/archiver/` (statut `brouillon`/`publie`/`archive`).
 - **Règle 5** : un enseignant ne crée/modifie que pour ses couples matière/classe affectés — appliquée par `EnseignantAffectePermission` sur `create`/`update` quand le triplet (enseignant_id, matiere_id, classe_id) est complet.
+- **Rôles (bilan RBAC)** : lecture des contenus pour tous ; écriture pédagogique (y compris actions `archiver`, `leçons`, `questions`, `étapes`), notation, validation de tentative et report de note → enseignant/administrateur ; dépôt de copie → apprenant/parent ; tentatives de quiz → apprenant seul ; `PUT /v1/parametres/` → administrateur ; statistiques du tenant → enseignant/administrateur. Appliqué par `apps/core/permissions.py` à partir de `request.role`.
 - Quiz : questions QCM/vrai-faux notées en tout-ou-rien dès la soumission (`note_finale`) ; questions ouvertes en correction IA asynchrone (stub à intégrer, Celery prévu) ; note totale recalculée par `recalculer_note_totale`.
 - Devoirs : `politique_retard` = `blocage` (tout dépôt après `date_limite` refusé) ou `penalite` (dépôt accepté, marqué `en_retard`).
 
@@ -104,7 +105,7 @@ Les applications sont écrites mais **pas encore branchées** dans `elearningbac
 Conséquence : `runserver` démarre mais ne sert aucune route `/v1/`. Le câblage attendu consiste à enregistrer les apps et à inclure chaque routeur d'app sous le préfixe `v1/` (les chemins `/v1/...` sont documentés dans les docstrings des vues). Tester ensuite avec l'en-tête requis, ex. :
 
 ```bash
-curl -H "X-Tenant-ID: <uuid>" http://localhost:8000/v1/cours/
+curl -H "X-Tenant-ID: <uuid>" -H "X-Role: enseignant" http://localhost:8000/v1/cours/
 ```
 Les commandes a grande sortie comme build ou migrate ou autre(npm.cmd --prefix E:\Projets\chabelPortfolio\frontend run lint) de ce genre ne doivent pas etre lancé. Evoie les et je les lancerer.
 les temps de raisonnement ne doivent pas depasser 1min
