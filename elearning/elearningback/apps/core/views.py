@@ -6,7 +6,7 @@ from apps.core.serializers import ParametresModuleSerializer
 
 
 class ParametresView(RetrieveUpdateAPIView):
-    """/v1/parametres/ — GET/PUT du singleton de paramètres du tenant.
+    """/v1/parametres/ - GET/PUT du singleton de paramètres du tenant.
 
     La première requête crée le jeu de paramètres avec les valeurs par
     défaut du module (get_or_create), les PUT suivants le mettent à jour.

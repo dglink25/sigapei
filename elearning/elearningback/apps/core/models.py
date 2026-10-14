@@ -30,7 +30,7 @@ class BaseModel(models.Model):
 
 
 class ParametresModule(BaseModel):
-    """Paramètres du module E-learning — un seul jeu par tenant (singleton)."""
+    """Paramètres du module E-learning - un seul jeu par tenant (singleton)."""
     tentatives_multiples_defaut = models.BooleanField(
         'Tentatives multiples par défaut', default=True,
     )

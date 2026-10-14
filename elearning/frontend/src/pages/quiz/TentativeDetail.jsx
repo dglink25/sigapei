@@ -81,7 +81,7 @@ function LigneReponse({ reponse, question, peutNoter }) {
       ) : (
         <p>
           <strong>Réponse donnée :</strong>{' '}
-          {libellesChoisis.length > 0 ? libellesChoisis.join(', ') : '—'}
+          {libellesChoisis.length > 0 ? libellesChoisis.join(', ') : '-'}
         </p>
       )}
 
@@ -97,7 +97,7 @@ function LigneReponse({ reponse, question, peutNoter }) {
           ? 'en attente'
           : `${formaterNombre(reponse.note_finale)} / ${formaterNombre(reponse.bareme)}`}
         {reponse.note_ia !== null && (
-          <> — proposition IA : {formaterNombre(reponse.note_ia)}</>
+          <> - proposition IA : {formaterNombre(reponse.note_ia)}</>
         )}
       </p>
 
@@ -177,7 +177,7 @@ export function TentativeDetail() {
       <div className="titre-page">
         <div>
           <h1>
-            Tentative n° {donnees.numero} — {donnees.quiz_titre}
+            Tentative n° {donnees.numero} - {donnees.quiz_titre}
           </h1>
           <div className="actions-ligne">
             <span className="badge badge-texte">Tentative</span>
@@ -188,7 +188,7 @@ export function TentativeDetail() {
             <span className="badge badge-texte">
               Commencée le {formaterDateHeure(donnees.date_debut)}
               {donnees.date_soumission
-                ? ` — soumise le ${formaterDateHeure(donnees.date_soumission)}`
+                ? ` - soumise le ${formaterDateHeure(donnees.date_soumission)}`
                 : ''}
             </span>
           </div>

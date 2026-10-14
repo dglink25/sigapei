@@ -9,7 +9,7 @@ from apps.medias.serializers import MediaRefSerializer
 
 class RessourcesBibliothequeSerializer(TenantSerializerMixin,
                                         serializers.ModelSerializer):
-    """Ressource — le média est référencé par son `uuid`."""
+    """Ressource - le média est référencé par son `uuid`."""
     media = serializers.SlugRelatedField(
         slug_field='uuid', queryset=Medias.objects.all(),
     )

@@ -7,47 +7,46 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Throwable;
 
-/**
- * Bus d'evenements inter-microservices (RabbitMQ), cote PHP/Laravel.
- *
- * Publie des messages au format exact attendu par le transport RMQ de
- * NestJS (@nestjs/microservices) : { "pattern": "<nom.evenement>", "data": {...} }.
- * Cela permet a api-identite (et a terme aux autres microservices Nest)
- * de consommer directement ces evenements via un handler @EventPattern,
- * sans middleware de traduction ni file d'attente intermediaire.
- *
- * Usage :
- *   app(RabbitMQService::class)->publier('etablissement.valide', [...]);
- */
-class RabbitMQService
-{
+class RabbitMQService{
     private ?AMQPStreamConnection $connexion = null;
 
-    private function connexion(): AMQPStreamConnection
-    {
+    private function connexion(): AMQPStreamConnection    {
+
         if ($this->connexion === null || ! $this->connexion->isConnected()) {
-            $this->connexion = new AMQPStreamConnection(
-                env('RABBITMQ_HOST', '127.0.0.1'),
-                (int) env('RABBITMQ_PORT', 5672),
-                env('RABBITMQ_USER', 'guest'),
-                env('RABBITMQ_PASSWORD', 'guest'),
-                env('RABBITMQ_VHOST', '/'),
-                connection_timeout: 5,
-                read_write_timeout: 5,
-            );
+            $host     = env('RABBITMQ_HOST', '127.0.0.1');
+            $port     = (int) env('RABBITMQ_PORT', 5672);
+            $user     = env('RABBITMQ_USER', 'guest');
+            $password = env('RABBITMQ_PASSWORD', 'guest');
+            $vhost    = env('RABBITMQ_VHOST', '/');
+
+            // CloudAMQP et autres brokers cloud utilisent AMQPS (SSL sur port 5671 ou 5672).
+            // On détecte automatiquement si le host est un domaine externe (pas localhost/127.0.0.1).
+            $ssl = ! in_array($host, ['127.0.0.1', 'localhost', 'rabbitmq'], true);
+
+            if ($ssl) {
+                $this->connexion = \PhpAmqpLib\Connection\AMQPSSLConnection::create(
+                    $host,
+                    $port,
+                    $user,
+                    $password,
+                    $vhost,
+                    ['verify_peer' => false],   // tolérant pour les certs auto-signés
+                    ['connection_timeout' => 5, 'read_write_timeout' => 5],
+                );
+            } else {
+                $this->connexion = new AMQPStreamConnection(
+                    $host, $port, $user, $password, $vhost,
+                    connection_timeout: 5,
+                    read_write_timeout: 5,
+                );
+            }
         }
 
         return $this->connexion;
     }
 
-    /**
-     * Publie un evenement fire-and-forget vers la queue consommee par
-     * api-identite (RABBITMQ_QUEUE_IDENTITE, "identite.rpc" par defaut).
-     * D'autres microservices (Communication, Scolarite...) pourront a terme
-     * consommer la meme queue ou une queue dediee selon leur besoin.
-     */
-    public function publier(string $pattern, array $donnees, ?string $queue = null): bool
-    {
+    public function publier(string $pattern, array $donnees, ?string $queue = null): bool {
+        
         $queue ??= env('RABBITMQ_QUEUE_IDENTITE', 'identite.rpc');
 
         try {
@@ -71,8 +70,7 @@ class RabbitMQService
         }
     }
 
-    public function __destruct()
-    {
+    public function __destruct()    {
         try {
             $this->connexion?->close();
         } catch (Throwable) {

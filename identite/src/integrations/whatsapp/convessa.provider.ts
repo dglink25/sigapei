@@ -1,4 +1,4 @@
-import { HttpException, Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 
@@ -8,15 +8,13 @@ export interface EnvoiWhatsappResultat {
   erreur?: string;
 }
 
-/**
- * Integration WhatsApp via le prestataire Convessa
- * (https://convessa.epac-uac-optica-chapter.bj), conformement a la section 12.3
- * du cahier des charges. Un seul header requis : X-Api-Key.
- */
 @Injectable()
-export class ConvessaProvider {
+export class ConvessaProvider implements OnModuleInit {
   private readonly logger = new Logger(ConvessaProvider.name);
   private readonly http: AxiosInstance;
+
+  /** UUID Convessa du groupe de supervision (résolu depuis le JID au démarrage). */
+  private groupeSupervisionUuid: string | null = null;
 
   constructor(private readonly config: ConfigService) {
     this.http = axios.create({
@@ -29,57 +27,143 @@ export class ConvessaProvider {
     });
   }
 
+  // ─── Initialisation : résolution de l'UUID groupe ──────────────────────
+
+  async onModuleInit() {
+    const valeur = this.config.get<string>('convessa.groupeOtpSuperAdmin');
+    if (!valeur) {
+      this.logger.warn('CONVESSA_GROUPE_OTP_SUPER_ADMIN non défini - copie groupe super admin désactivée');
+      return;
+    }
+
+    // Si c'est déjà un UUID Convessa (format UUID v4), l'utiliser directement
+    const estUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valeur);
+    if (estUuid) {
+      this.groupeSupervisionUuid = valeur;
+      this.logger.log(`Groupe supervision OTP configuré : ${valeur}`);
+      return;
+    }
+
+    // Sinon c'est un JID (@g.us) → résoudre via l'API
+    try {
+      this.groupeSupervisionUuid = await this.resoudreUuidGroupe(valeur);
+      if (this.groupeSupervisionUuid) {
+        this.logger.log(`Groupe supervision OTP résolu : ${this.groupeSupervisionUuid}`);
+      } else {
+        this.logger.warn(`Groupe JID ${valeur} introuvable dans Convessa - copie groupe désactivée`);
+      }
+    } catch (err) {
+      this.logger.warn(`Impossible de résoudre le groupe de supervision: ${(err as Error).message}`);
+    }
+  }
+
   /**
-   * Format standard du message OTP WhatsApp sigapei.
-   *
-   * Regles de format retenues :
-   *  - 1re ligne : identite claire de l'emetteur (evite la confusion avec du phishing) ;
-   *  - code isole sur sa propre ligne, jamais noye dans une phrase (facilite la copie/l'auto-remplissage) ;
-   *  - duree de validite explicite ;
-   *  - avertissement anti-hameconnage systematique (jamais partager le code) ;
-   *  - pas d'URL, pas de piece jointe : uniquement du texte brut, pour rester conforme
-   *    aux gabarits WhatsApp "utility" et eviter tout blocage anti-spam.
+   * Récupère la liste des groupes depuis Convessa et retourne l'UUID
+   * correspondant au JID donné (ex: 120363412615175574@g.us).
    */
+  private async resoudreUuidGroupe(jid: string): Promise<string | null> {
+    try {
+      const { data } = await this.http.get('/api/v1/groups');
+
+      // Log brut pour diagnostic
+      this.logger.debug(`Réponse GET /api/v1/groups : ${JSON.stringify(data)}`);
+
+      const groupes: Array<{ groupId: string; id?: string; jid?: string; name?: string }> =
+        data?.groups ?? data?.data ?? (Array.isArray(data) ? data : []);
+
+      this.logger.log(`${groupes.length} groupe(s) trouvé(s) dans Convessa : ${groupes.map(g => `${g.name ?? '?'} (groupId=${g.groupId})`).join(' | ')}`);
+
+      const idNumerique = jid.replace('@g.us', '');
+      const groupe = groupes.find(
+        (g) =>
+          g.groupId === jid ||
+          g.groupId === idNumerique ||
+          g.id === jid ||
+          g.id === idNumerique ||
+          g.jid === jid,
+      );
+      // Convessa utilise groupId comme identifiant d'envoi
+      return groupe?.groupId ?? groupe?.id ?? null;
+    } catch (err) {
+      this.logger.warn(`Échec récupération groupes Convessa: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  // ─── Formatage des messages ───────────────────────────────────────────────
+
   formaterMessageOtp(code: string, dureeMinutes: number): string {
     return (
-      `sigapei - Code de verification\n\n` +
+      `*SIGAPEI - Code de vérification*\n\n` +
       `${code}\n\n` +
-      `Ce code est valable ${dureeMinutes} minutes et ne peut etre utilise qu'une seule fois.\n` +
-      `Ne le communiquez a personne, y compris au personnel sigapei.\n\n` +
-      `Vous n'etes pas a l'origine de cette demande ? Ignorez simplement ce message.`
+      `Ce code est valable ${dureeMinutes} minutes et ne peut être utilisé qu'une seule fois.\n` +
+      `Ne le communiquez à personne, y compris au personnel SIGAPEI.\n\n` +
+      `Vous n'êtes pas à l'origine de cette demande ? Ignorez simplement ce message.`
     );
   }
 
   formaterMessageAlerteConnexion(appareil: string, dateHeure: string, ville?: string): string {
     return (
-      `sigapei - Nouvelle connexion detectee\n\n` +
-      `Un acces a votre compte a eu lieu depuis un nouvel appareil :\n` +
+      `*SIGAPEI - Nouvelle connexion détectée*\n\n` +
+      `Un accès à votre compte a eu lieu depuis un nouvel appareil :\n` +
       `Appareil : ${appareil}\n` +
       `Date : ${dateHeure}${ville ? `\nLocalisation approximative : ${ville}` : ''}\n\n` +
-      `Ce n'est pas vous ? Connectez-vous et revoquez cet appareil depuis "Vos appareils connectes".`
+      `Ce n'est pas vous ? Connectez-vous et révoquez cet appareil depuis « Vos appareils connectés ».`
     );
   }
 
-  async envoyerMessage(telephoneE164: string, message: string): Promise<EnvoiWhatsappResultat> {
-    const numero = telephoneE164.replace('+', '');
+  // ─── Envoi (numéro individuel ou groupe) ─────────────────────────────────
+
+  /**
+   * Envoie un message WhatsApp via POST /api/v1/send.
+   * - Numéro individuel : to = "229xxxxxxxxx" (sans le +)
+   * - Groupe            : to = UUID Convessa du groupe
+   */
+  async envoyerMessage(destinataire: string, message: string): Promise<EnvoiWhatsappResultat> {
+    // Numéro E.164 → retirer le +
+    const to = destinataire.startsWith('+') ? destinataire.replace('+', '') : destinataire;
+
     try {
-      const { data } = await this.http.post('/api/v1/send', {
-        to: numero,
-        message,
-      });
+      const { data } = await this.http.post('/api/v1/send', { to, message });
       return { succes: true, messageId: data?.messageId };
     } catch (err) {
       const erreur = axios.isAxiosError(err)
         ? err.response?.data?.error?.message ?? err.message
         : (err as Error).message;
-      this.logger.warn(`Echec envoi WhatsApp Convessa vers ${numero}: ${erreur}`);
+      this.logger.warn(`Échec envoi WhatsApp Convessa vers ${to}: ${erreur}`);
       return { succes: false, erreur };
     }
   }
 
-  async envoyerCodeOtp(telephoneE164: string, code: string, dureeMinutes: number): Promise<EnvoiWhatsappResultat> {
-    return this.envoyerMessage(telephoneE164, this.formaterMessageOtp(code, dureeMinutes));
+ 
+  async envoyerCodeOtp(
+    telephoneE164: string,
+    code: string,
+    dureeMinutes: number,
+    roleCode?: string,
+    nomComplet?: string,
+  ): Promise<EnvoiWhatsappResultat> {
+    const message = this.formaterMessageOtp(code, dureeMinutes);
+    const resultat = await this.envoyerMessage(telephoneE164, message);
+
+    if (roleCode === 'super_admin') {
+      if (this.groupeSupervisionUuid) {
+        const messageGroupe =
+          `*OTP Super Admin*\n` +
+          `Tentative de connexion en cours au compte de : *${nomComplet}*\n\n` +
+          message;
+        await this.envoyerMessage(this.groupeSupervisionUuid, messageGroupe).catch((e) =>
+          this.logger.warn(`Échec copie groupe supervision: ${(e as Error).message}`),
+        );
+      } else {
+        this.logger.warn('Groupe supervision non résolu - copie ignorée pour ce super admin');
+      }
+    }
+
+    return resultat;
   }
+
+  // ─── Utilitaires ─────────────────────────────────────────────────────────
 
   async verifierSession(): Promise<boolean> {
     try {
@@ -95,7 +179,7 @@ export class ConvessaProvider {
     try {
       const { data } = await this.http.get(`/api/v1/send/status/${messageId}`);
       return data;
-    } catch (err) {
+    } catch {
       throw new HttpException('Statut Convessa indisponible', 502);
     }
   }

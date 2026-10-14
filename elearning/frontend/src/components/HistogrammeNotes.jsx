@@ -1,6 +1,6 @@
 /**
  * Histogramme CSS pur de la distribution des notes par tranches.
- * `tranches` : [{ libelle, nombre, principale? }] — `principale` met
+ * `tranches` : [{ libelle, nombre, principale? }] - `principale` met
  * la colonne en or (ex. tranche sous la moyenne).
  */
 export function HistogrammeNotes({ tranches }) {

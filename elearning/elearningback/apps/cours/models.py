@@ -12,7 +12,7 @@ from apps.medias.models import Medias
 
 
 class Cours(BaseModel):
-    """Cours — suppression logique uniquement (statut `archive`)."""
+    """Cours - suppression logique uniquement (statut `archive`)."""
     STATUTS = StatutContenu.choices
 
     matiere_id = models.UUIDField('Matière (externe)', db_index=True)
@@ -73,7 +73,7 @@ class CoursClasses(BaseModel):
 
 
 class Lecons(BaseModel):
-    """Leçon d'un cours — texte, document ou vidéo."""
+    """Leçon d'un cours - texte, document ou vidéo."""
     cours = models.ForeignKey(
         Cours, on_delete=models.CASCADE, related_name='lecons',
     )

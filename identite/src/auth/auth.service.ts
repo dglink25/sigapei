@@ -84,7 +84,7 @@ export class AuthService {
       return { code: 'OTP_ENVOYE', canal: 'email' };
     }
     const { e164 } = normaliserTelephoneE164(identifiant);
-    const resultat = await this.otpService.envoyerParTelephone(utilisateur.id, e164);
+    const resultat = await this.otpService.envoyerParTelephone(utilisateur.id, e164, utilisateur.role?.code, utilisateur.nomComplet);
     return { code: 'OTP_ENVOYE', canal: 'sms+whatsapp', ...resultat };
   }
 

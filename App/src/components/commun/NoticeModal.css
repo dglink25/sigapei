@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   NoticeModal — SIGAPEI
+   NoticeModal - SIGAPEI
    Style : épuré institutionnel, fond blanc,
    grand cercle fil de fer + symbole centré
    Aucun liseré, aucun fond coloré sur l'icône
@@ -19,7 +19,7 @@
   animation: n-fade 0.18s ease both;
 }
 
-/* ── Carte — fond blanc pur, ombre douce, aucun liseré ── */
+/* ── Carte - fond blanc pur, ombre douce, aucun liseré ── */
 .notice {
   position: relative;
   width: min(420px, 100%);
@@ -49,7 +49,7 @@
 }
 .notice-close:hover { background: #f0f0f0; color: #333; }
 
-/* ── Wrapper icône — aucun fond, aucune bordure ── */
+/* ── Wrapper icône - aucun fond, aucune bordure ── */
 .notice-icon {
   display: grid;
   place-items: center;
@@ -60,7 +60,7 @@
 }
 
 /* ══════════════════════════════════════════════
-   SVG — cercle fil de fer animé + symbole
+   SVG - cercle fil de fer animé + symbole
    r = 38 → C = 2π × 38 ≈ 238.76
 ══════════════════════════════════════════════ */
 .nsvg {

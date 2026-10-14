@@ -125,7 +125,7 @@ function FormulaireDepotRessource() {
 
       <div className="grille-2-colonnes">
         <div className="champ">
-          <label htmlFor="ressource-matiere">Matière — UUID (evaluations.matieres) *</label>
+          <label htmlFor="ressource-matiere">Matière - UUID (evaluations.matieres) *</label>
           <input
             id="ressource-matiere"
             type="text"
@@ -135,7 +135,7 @@ function FormulaireDepotRessource() {
           />
         </div>
         <div className="champ">
-          <label htmlFor="ressource-classe">Classe — UUID (scolarite.classes) *</label>
+          <label htmlFor="ressource-classe">Classe - UUID (scolarite.classes) *</label>
           <input
             id="ressource-classe"
             type="text"
@@ -148,7 +148,7 @@ function FormulaireDepotRessource() {
 
       <div className="grille-2-colonnes">
         <div className="champ">
-          <label htmlFor="ressource-enseignant">Enseignant — UUID (rh.personnel)</label>
+          <label htmlFor="ressource-enseignant">Enseignant - UUID (rh.personnel)</label>
           <input
             id="ressource-enseignant"
             type="text"

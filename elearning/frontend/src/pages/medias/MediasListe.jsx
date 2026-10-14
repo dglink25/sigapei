@@ -20,7 +20,7 @@ function LigneMedia({ media }) {
       <td>
         <BadgeStatut valeur={media.type} />
       </td>
-      <td>{media.nom_fichier || '—'}</td>
+      <td>{media.nom_fichier || '-'}</td>
       <td title={media.uuid}>{uuidCourt(media.uuid)}</td>
       <td>{formaterDateHeure(media.created_at)}</td>
       <td>

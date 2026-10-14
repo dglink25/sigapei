@@ -97,7 +97,7 @@ REST_FRAMEWORK = {
 }
 
 
-# CORS — django-cors-headers
+# CORS - django-cors-headers
 # https://github.com/adamchainz/django-cors-headers
 # Origines autorisées à appeler l'API depuis un navigateur (le dev Vite et
 # un build servi localement). En production, restreindre aux domaines de

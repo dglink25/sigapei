@@ -47,6 +47,7 @@ export default () => ({
   convessa: {
     apiUrl: process.env.CONVESSA_API_URL,
     apiKey: process.env.CONVESSA_API_KEY,
+    groupeOtpSuperAdmin: process.env.CONVESSA_GROUPE_OTP_SUPER_ADMIN,
   },
 
   smsGateway: {

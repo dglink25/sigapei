@@ -11,7 +11,7 @@ import {
  * Lecteur unique du module :
  * - URL YouTube → iframe d'embed (youtube-nocookie) ;
  * - URL Cloudinary ou manifeste .m3u8 → hls.js (streaming adaptatif,
- *   qualité ajustée au débit — cahier des charges « connexion faible ») ;
+ *   qualité ajustée au débit - cahier des charges « connexion faible ») ;
  * - repli natif sur Safari, puis sur la source brute si HLS échoue.
  */
 export function LecteurVideo({ url, titre = 'Lecture vidéo' }) {
