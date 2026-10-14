@@ -2,29 +2,46 @@ import { ENV } from '../config/env'
 import { ApiError } from './http'
 
 let loader = null
+
 function load(key) {
   if (loader) return loader
   loader = new Promise((resolve, reject) => {
-    if (window.grecaptcha) return resolve()
+    if (window.grecaptcha?.enterprise) return resolve()
+
     const s = document.createElement('script')
-    s.src = `https://www.google.com/recaptcha/api.js?render=${key}`
+    s.src = `https://www.google.com/recaptcha/enterprise.js?render=${key}`
     s.async = true
+    s.defer = true
     s.onload = resolve
-    s.onerror = () => { loader = null; reject(new Error('captcha')) }
+    s.onerror = () => {
+      loader = null
+      reject(new Error('captcha-load'))
+    }
     document.head.appendChild(s)
   })
   return loader
 }
 
-/** Renvoie un jeton reCAPTCHA v3 (chaine vide si aucune cle n'est configuree : mode developpement). */
+/**
+ * Renvoie un jeton reCAPTCHA Enterprise.
+ * Retourne '' si aucune clé n'est configurée (mode développement).
+ */
 export async function getCaptchaToken(action) {
   const key = ENV.recaptchaKey
   if (!key) return ''
+
   try {
     await load(key)
-    return await new Promise((resolve, reject) =>
-      window.grecaptcha.ready(() => window.grecaptcha.execute(key, { action }).then(resolve, reject)),
-    )
+    return await new Promise((resolve, reject) => {
+      window.grecaptcha.enterprise.ready(async () => {
+        try {
+          const token = await window.grecaptcha.enterprise.execute(key, { action })
+          resolve(token)
+        } catch (err) {
+          reject(err)
+        }
+      })
+    })
   } catch {
     throw new ApiError({
       kind: 'captcha',

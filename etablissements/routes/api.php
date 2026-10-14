@@ -9,7 +9,15 @@ use App\Http\Controllers\InterneController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
+/*
+ * Le prefixe "api" de Laravel est desactive dans bootstrap/app.php
+ * (apiPrefix: ''), pour que les routes soient bien exposees sous /v1/...
+ * conformement a api-etablissements.sigapei.com/v1/... (section 14 du
+ * cahier des charges).
+ */
 
+// Tout parametre {uuid} doit etre un uuid valide : sinon la route repond 404
+// au lieu de laisser PostgreSQL lever une erreur de syntaxe (500).
 Route::pattern('uuid', '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
 
 // --- Documentation interactive (hors prefixe /v1, comme sur api-identite) ---
@@ -17,6 +25,11 @@ Route::get('/docs', [DocsController::class, 'interfaceSwagger']);
 Route::get('/docs-json', [DocsController::class, 'specification']);
 
 Route::prefix('v1')->group(function () {
+
+    // --- Informations publiques d'un etablissement par son code XXXX (sans authentification) ---
+    // Declaree avant les routes {slug} ; le motif refuse tout ce qui n'a pas 4 caracteres alphanumeriques.
+    Route::get('/etablissements/code/{code}', [EtablissementController::class, 'parCode'])
+        ->where('code', '[A-Za-z0-9]{4}');
 
     // --- Page d'accueil publique (section 3) ---
     Route::get('/accueil', [AccueilController::class, 'plateforme']);

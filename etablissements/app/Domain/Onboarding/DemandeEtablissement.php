@@ -4,15 +4,20 @@ namespace App\Domain\Onboarding;
 
 use App\Domain\Etablissement\Etablissement;
 use App\Domain\Geo\Arrondissement;
+use App\Support\GenereUuid;
 use Illuminate\Database\Eloquent\Model;
 
 class DemandeEtablissement extends Model
 {
+    use GenereUuid;
+
     protected $table = 'demandes_etablissement';
 
     protected $fillable = [
-        'uuid',
         'donnees_formulaire',
+        'pays_id',
+        'departement_id',
+        'commune_id',
         'arrondissement_id',
         'adresse_complete',
         'latitude',
@@ -30,7 +35,9 @@ class DemandeEtablissement extends Model
         'etablissement_id',
     ];
 
-    protected $hidden = ['id', 'arrondissement_id', 'etablissement_id', 'lien_correction_token'];
+    // Regle transversale : aucun identifiant interne n'est expose par l'API,
+    // et l'empreinte du jeton de correction ne sort jamais du microservice.
+    protected $hidden = ['id', 'pays_id', 'departement_id', 'commune_id', 'arrondissement_id', 'etablissement_id', 'lien_correction_token'];
 
     protected $casts = [
         'donnees_formulaire' => 'array',

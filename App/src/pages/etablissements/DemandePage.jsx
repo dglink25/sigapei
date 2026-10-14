@@ -14,6 +14,7 @@ import { captureGeolocation } from '../../lib/etablissements/geoloc'
 import { demandeService } from '../../services/etablissements/etablissement.service'
 import { Stepper } from '../../components/etablissements/ui'
 import { StepConfirmation, StepDirigeant, StepDocuments, StepEtablissement, StepLocalisation } from '../../components/etablissements/FormSteps'
+import Loader from '../../components/commun/Loader'
 import './etablissements.css'
 
 const TITLES = {
@@ -244,7 +245,7 @@ export default function DemandePage() {
             )}
 
             <button type="button" className="dm-btn dm-btn--gold" onClick={next} disabled={busy}>
-              {busy ? 'Veuillez patienter…' : step === 5
+              {busy ? <><Loader mode="button" /> Veuillez patienter…</> : step === 5
                 ? <>Soumettre ma demande <Send size={17} /></>
                 : <>Suivant <ArrowRight size={17} /></>}
             </button>
@@ -265,6 +266,9 @@ export default function DemandePage() {
         onConfirm={reset}
         onCancel={() => setAskReset(false)}
       />
+
+      {/* Overlay de chargement lors de la soumission finale */}
+      {busy && step === 5 && <Loader label="Envoi de votre demande…" />}
     </main>
   )
 }

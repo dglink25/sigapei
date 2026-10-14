@@ -9,7 +9,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            PaysAfriqueSeeder::class,
+            PaysMondeSeeder::class,
+            BeninGeoSeeder::class,
         ]);
     }
 }

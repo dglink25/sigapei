@@ -40,6 +40,7 @@ class InterneController extends Controller
         return response()->json([
             'success' => true,
             'etablissementUuid' => $etablissement->uuid,
+            'code' => $etablissement->code,
             'slug' => $etablissement->slug,
             'matricule' => $etablissement->matricule,
         ]);

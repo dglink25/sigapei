@@ -6,6 +6,7 @@ import { ADMIN_PATHS, STATUTS } from '../../../config/etablissements/config'
 import { normaliserDemande } from '../../../lib/etablissements/form'
 import { adminService } from '../../../services/etablissements/etablissement.service'
 import { StatusBadge } from '../../../components/etablissements/ui'
+import Loader from '../../../components/commun/Loader'
 import './admin.css'
 
 export const depuis = (iso) => {
@@ -77,7 +78,7 @@ export default function DemandesPage() {
 
         <div className="ad-card ad-card--flush">
           {items === null ? (
-            <p className="ad-empty">Chargement…</p>
+            <Loader mode="inline" label="Chargement des demandes…" />
           ) : rows.length === 0 ? (
             <div className="ad-empty"><Inbox size={34} /><p>Aucune demande dans cette catégorie.</p></div>
           ) : (

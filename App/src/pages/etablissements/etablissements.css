@@ -261,6 +261,7 @@ select.dm-input option { color: var(--sg-text); background: #fff; }
 /* Géolocalisation */
 .dm-geo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
 .dm-geo-item { min-width: 0; }
+.dm-geo-loader { min-height: 48px; display: flex; align-items: center; }
 
 /* ===== Documents ===== */
 .dm-drop {
