@@ -147,7 +147,7 @@ export function QuizFormulaire() {
           <div>
             <h1>{edition ? 'Modifier le quiz' : 'Nouveau quiz'}</h1>
             <span className="badge badge-brouillon">
-              Étape 1 sur 2 — Paramètres
+              Étape 1 sur 2 - Paramètres
             </span>
           </div>
           <div className="actions-ligne">
@@ -171,7 +171,7 @@ export function QuizFormulaire() {
               ) : (
                 <>
                   <Icone nom="arrow_forward" />
-                  Suivant — questions
+                  Suivant - questions
                 </>
               )}
             </button>
@@ -197,7 +197,7 @@ export function QuizFormulaire() {
               type="text"
               value={titre}
               onChange={(e) => setTitre(e.target.value)}
-              placeholder="Ex. QCM — Chapitre 3 : les fractions"
+              placeholder="Ex. QCM - Chapitre 3 : les fractions"
               required
             />
           </div>
@@ -205,7 +205,7 @@ export function QuizFormulaire() {
           <div className="grille-2-colonnes">
             <div className="champ">
               <label htmlFor="quiz-matiere">
-                Discipline — UUID (evaluations.matieres) *
+                Discipline - UUID (evaluations.matieres) *
               </label>
               <input
                 id="quiz-matiere"
@@ -218,7 +218,7 @@ export function QuizFormulaire() {
             </div>
             <div className="champ">
               <label htmlFor="quiz-classe">
-                Classe — UUID (scolarite.classes) *
+                Classe - UUID (scolarite.classes) *
               </label>
               <input
                 id="quiz-classe"
@@ -378,7 +378,7 @@ export function QuizFormulaire() {
         <div className="carte carte-creme section">
           <div className="element-tete">
             <Icone nom="quiz" />
-            <strong>Étape 2 — structure des questions</strong>
+            <strong>Étape 2 - structure des questions</strong>
           </div>
           <p className="texte-efface" style={{ margin: '0.4rem 0 0' }}>
             Après enregistrement, vous arriverez sur la page du quiz pour

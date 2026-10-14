@@ -65,7 +65,7 @@ class CoursViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
         Deux usages :
         - Ajout d'une leçon : corps = champs de la leçon (titre, type_contenu,
-          contenu_texte, media, ordre facultatif — auto si absent).
+          contenu_texte, media, ordre facultatif - auto si absent).
         - Réordonnancement : corps = {"reordonner": [{"uuid": ..., "ordre": 2}, ...]}
         """
         cours = self.get_object()

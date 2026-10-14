@@ -16,7 +16,7 @@ from apps.core.models import BaseModel
 
 
 class Quiz(BaseModel):
-    """Quiz — suppression logique comme les cours (statut `archive`)."""
+    """Quiz - suppression logique comme les cours (statut `archive`)."""
     STATUTS = StatutContenu.choices
 
     matiere_id = models.UUIDField('Matière (externe)', db_index=True)
@@ -120,7 +120,7 @@ class OptionsQuestion(BaseModel):
 
 
 class TentativesQuiz(BaseModel):
-    """Tentative d'un apprenant — numérotée, au plus `tentatives_max`."""
+    """Tentative d'un apprenant - numérotée, au plus `tentatives_max`."""
     quiz = models.ForeignKey(
         Quiz, on_delete=models.CASCADE, related_name='tentatives',
     )
@@ -156,7 +156,7 @@ class TentativesQuiz(BaseModel):
         ]
 
     def __str__(self):
-        return f'Tentative {self.numero} — quiz {self.quiz_id}'
+        return f'Tentative {self.numero} - quiz {self.quiz_id}'
 
 
 class ReponsesApprenant(BaseModel):

@@ -69,4 +69,23 @@ export class SmtpAppPasswordProvider implements OnModuleInit {
       return false;
     }
   }
+
+  /** Envoi générique pour les notifications d'onboarding (demande soumise, correction…). */
+  async envoyerNotificationOnboarding(
+    destinataire: string,
+    { sujet, html }: { sujet: string; html: string },
+  ): Promise<boolean> {
+    try {
+      await this.transporteur.sendMail({
+        from: this.config.get<string>('smtp.from'),
+        to: destinataire,
+        subject: sujet,
+        html,
+      });
+      return true;
+    } catch (err) {
+      this.logger.error(`Echec envoi e-mail notification vers ${destinataire}: ${(err as Error).message}`);
+      return false;
+    }
+  }
 }

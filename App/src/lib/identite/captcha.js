@@ -10,7 +10,7 @@ function load(key) {
     if (window.grecaptcha?.enterprise) return resolve()
 
     const s = document.createElement('script')
-    // reCAPTCHA Enterprise — script différent du v3 classique
+    // reCAPTCHA Enterprise - script différent du v3 classique
     s.src = `https://www.google.com/recaptcha/enterprise.js?render=${key}`
     s.async = true
     s.defer = true

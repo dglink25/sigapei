@@ -9,7 +9,7 @@ from apps.quiz.models import Quiz
 
 class EtapeSerializer(TenantSerializerMixin,
                       serializers.ModelSerializer):
-    """Étape — le contenu (cours ou quiz) est référencé par son `uuid`."""
+    """Étape - le contenu (cours ou quiz) est référencé par son `uuid`."""
     # Facultatif : si le client n'en fournit pas, la vue attribue
     # automatiquement le dernier ordre du parcours + 1 (voir views.py).
     ordre = serializers.IntegerField(required=False)
@@ -111,7 +111,7 @@ class ParcoursSerializer(TenantSerializerMixin,
 
 
 class ParcoursDetailSerializer(ParcoursSerializer):
-    """Parcours — version détail avec les étapes ordonnées imbriquées."""
+    """Parcours - version détail avec les étapes ordonnées imbriquées."""
     etapes = EtapeSerializer(many=True, read_only=True)
 
     class Meta(ParcoursSerializer.Meta):

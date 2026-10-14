@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import './NoticeModal.css'
 
 /* ─────────────────────────────────────────────────────────────
-   Icônes SVG animées — grand cercle fil de fer + symbole centré
+   Icônes SVG animées - grand cercle fil de fer + symbole centré
    r = 38 → circonférence = 2π×38 ≈ 238.76
 ───────────────────────────────────────────────────────────── */
 

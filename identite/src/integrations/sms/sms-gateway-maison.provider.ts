@@ -47,6 +47,11 @@ export class SmsGatewayMaisonProvider {
   }
 
   async envoyerCodeOtp(telephoneE164: string, code: string, dureeMinutes: number): Promise<EnvoiSmsResultat> {
+    // URL non configurée → échec silencieux (WhatsApp prend le relais)
+    if (!this.config.get<string>('smsGateway.url')) {
+      return { succes: false, erreur: 'SMS_GATEWAY_URL non configuré' };
+    }
+
     const emetteur = this.prochainEmetteur();
     try {
       await this.http.post('/messages', {

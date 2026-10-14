@@ -1,7 +1,7 @@
 import './Loader.css'
 
 /**
- * Loader universel SIGAPEI — charte graphique vert/or/crème.
+ * Loader universel SIGAPEI - charte graphique vert/or/crème.
  *
  * Modes :
  *   - "overlay"  : plein écran (session, soumission finale, page entière)

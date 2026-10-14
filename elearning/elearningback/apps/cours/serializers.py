@@ -9,7 +9,7 @@ from apps.medias.serializers import MediaRefSerializer
 
 class LeconSerializer(TenantSerializerMixin,
                       serializers.ModelSerializer):
-    """Leçon — le média est référencé par son `uuid`."""
+    """Leçon - le média est référencé par son `uuid`."""
     # Facultatif : si le client n'en fournit pas, la vue attribue
     # automatiquement le dernier ordre du cours + 1 (voir views.py).
     ordre = serializers.IntegerField(required=False)

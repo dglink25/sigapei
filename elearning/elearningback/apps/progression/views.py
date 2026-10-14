@@ -22,7 +22,7 @@ class ProgressionsViewSet(TenantViewSetMixin,
                "soumis_par": "<uuid> facultatif"}.
     - GET /v1/progressions/ : filtres `?apprenant_id=` et `?parcours=`.
     - Aucune modification ni suppression : le DELETE/PATCH/PUT ne sont
-      pas exposés — l'historique de progression est conservé.
+      pas exposés - l'historique de progression est conservé.
     - Le résumé par parcours (% d'avancement) est exposé par
       GET /v1/parcours/{uuid}/progression/?apprenant_id=.
     """

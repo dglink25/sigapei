@@ -106,7 +106,7 @@ class QuestionCreationSerializer(TenantSerializerMixin,
 
 class QuizSerializer(TenantSerializerMixin,
                      serializers.ModelSerializer):
-    """Quiz — version liste (sans questions imbriquées)."""
+    """Quiz - version liste (sans questions imbriquées)."""
     nb_questions = serializers.SerializerMethodField()
 
     class Meta:
@@ -123,7 +123,7 @@ class QuizSerializer(TenantSerializerMixin,
 
 
 class QuizDetailSerializer(QuizSerializer):
-    """Quiz — version détail avec questions et options imbriquées."""
+    """Quiz - version détail avec questions et options imbriquées."""
     questions = QuestionRestitutionSerializer(many=True, read_only=True)
 
     class Meta(QuizSerializer.Meta):
@@ -147,7 +147,7 @@ class ReponseSerializer(serializers.ModelSerializer):
 
 
 class TentativeSerializer(serializers.ModelSerializer):
-    """Tentative — version sans les réponses (restitution différée)."""
+    """Tentative - version sans les réponses (restitution différée)."""
     quiz_uuid = serializers.UUIDField(source='quiz.uuid', read_only=True)
     quiz_titre = serializers.CharField(source='quiz.titre', read_only=True)
 
@@ -159,7 +159,7 @@ class TentativeSerializer(serializers.ModelSerializer):
 
 
 class TentativeDetailSerializer(TentativeSerializer):
-    """Tentative — version détaillée avec réponses (restitution immédiate
+    """Tentative - version détaillée avec réponses (restitution immédiate
     ou après validation)."""
     reponses = ReponseSerializer(many=True, read_only=True)
 

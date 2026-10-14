@@ -148,7 +148,7 @@ class TentativesViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         """GET /v1/tentatives/{uuid}/ : restitution selon le paramètre du
-        quiz — différée jusqu'à validation enseignant si configuré ainsi."""
+        quiz - différée jusqu'à validation enseignant si configuré ainsi."""
         tentative = self.get_object()
         restitution_immediate = (
             tentative.quiz.restitution == Restitution.IMMEDIATE

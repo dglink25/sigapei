@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   Loader universel — SIGAPEI
+   Loader universel - SIGAPEI
    Charte : Vert #006B3C · Or #E9AA20 · Crème #FFF6DD
 ═══════════════════════════════════════════════════════ */
 
@@ -96,7 +96,7 @@
 .ld-orbit--md .ld-orbit__logo { width: 38px; height: 38px; }
 .ld-orbit--lg .ld-orbit__logo { width: 52px; height: 52px; }
 
-/* Point orbital — tourne autour du centre */
+/* Point orbital - tourne autour du centre */
 .ld-orbit__dot {
   position: absolute;
   border-radius: 50%;

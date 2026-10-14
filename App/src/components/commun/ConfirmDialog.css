@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════
-   ConfirmDialog — SIGAPEI — style institutionnel épuré
+   ConfirmDialog - SIGAPEI - style institutionnel épuré
    Fond blanc, aucun liseré, icône SVG cercle fil de fer
 ═══════════════════════════════════════════════════ */
 
@@ -30,7 +30,7 @@
 .cd--warning { --accent: #c97e00; }
 .cd--primary { --accent: #006b3c; }
 
-/* Icône SVG — cercle fil de fer, aucun fond */
+/* Icône SVG - cercle fil de fer, aucun fond */
 .cd-icon {
   display: grid; place-items: center;
   width: fit-content;

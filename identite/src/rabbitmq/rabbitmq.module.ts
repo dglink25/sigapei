@@ -19,6 +19,7 @@ import { RABBITMQ_CLIENT } from './rabbitmq.constants';
             queue: config.get<string>('rabbitmq.queueIdentite'),
             queueOptions: { durable: true },
             persistent: true,
+            noAck: true,        // fire-and-forget : pas de ACK attendu pour les émissions
           },
         });
       },
