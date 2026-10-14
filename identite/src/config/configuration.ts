@@ -66,7 +66,10 @@ export default () => ({
 
   captcha: {
     provider: process.env.CAPTCHA_PROVIDER ?? 'recaptcha',
-    secretKey: process.env.CAPTCHA_SECRET_KEY,
+    // reCAPTCHA Enterprise
+    apiKey:    process.env.RECAPTCHA_API_KEY,    // Clé API Google Cloud (côté serveur)
+    siteKey:   process.env.RECAPTCHA_SITE_KEY,   // Clé de site publique
+    projectId: process.env.RECAPTCHA_PROJECT_ID, // ID projet Google Cloud
     minScore: parseFloat(process.env.CAPTCHA_MIN_SCORE ?? '0.5'),
   },
 

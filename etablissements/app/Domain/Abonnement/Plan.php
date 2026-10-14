@@ -2,10 +2,13 @@
 
 namespace App\Domain\Abonnement;
 
+use App\Support\GenereUuid;
 use Illuminate\Database\Eloquent\Model;
 
 class Plan extends Model
 {
+    use GenereUuid;
+
     protected $table = 'plans';
 
     protected $fillable = ['nom', 'prix', 'periodicite', 'actif', 'jours_essai'];

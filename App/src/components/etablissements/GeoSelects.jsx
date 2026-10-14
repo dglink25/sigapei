@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { LEVEL_LABELS } from '../../config/etablissements/config'
 import { geoService } from '../../services/etablissements/etablissement.service'
+import Loader from '../commun/Loader'
 
 const flag = (iso) =>
   iso && iso.length === 2 ? String.fromCodePoint(...[...iso.toUpperCase()].map((c) => 127397 + c.charCodeAt(0))) : ''
@@ -45,7 +46,6 @@ export default function GeoSelects({ value, libre, onChange, disabled }) {
 
   const lists = { pays, departement: deps, commune: coms, arrondissement: arrs }
 
-  // Remonte au formulaire le nombre d'options reellement disponibles par niveau (sert a la validation)
   const counts = useMemo(
     () => ({
       departement: value.pays && !deps.loading ? deps.items.length : 0,
@@ -83,12 +83,15 @@ export default function GeoSelects({ value, libre, onChange, disabled }) {
         const id = `geo-${lvl}`
         const ready = Boolean(parentOf[lvl])
         const noData = lvl !== 'pays' && ready && !loading && items.length === 0
+
         return (
           <div key={lvl} className="dm-geo-item">
             <label htmlFor={id} className="dm-label">
               {LEVEL_LABELS[lvl]}{lvl === 'pays' && <span className="dm-req" aria-hidden="true"> *</span>}
             </label>
+
             {noData ? (
+              /* Saisie libre si le niveau n'est pas référencé */
               <input
                 id={id}
                 className="dm-input"
@@ -98,6 +101,11 @@ export default function GeoSelects({ value, libre, onChange, disabled }) {
                 onChange={(e) => onChange({ localisation_libre: { ...libre, [lvl]: e.target.value } })}
                 disabled={disabled}
               />
+            ) : loading && ready ? (
+              /* Loader animé pendant le chargement de la liste */
+              <div className="dm-geo-loader" aria-label="Chargement en cours">
+                <Loader mode="inline" size="sm" label="Chargement…" />
+              </div>
             ) : (
               <select
                 id={id}
@@ -107,7 +115,7 @@ export default function GeoSelects({ value, libre, onChange, disabled }) {
                 disabled={disabled || !ready || loading}
               >
                 <option value="">
-                  {loading ? 'Chargement…' : ready ? `Sélectionnez…` : 'Sélectionnez d’abord le niveau précédent'}
+                  {ready ? 'Sélectionnez…' : 'Sélectionnez d\'abord le niveau précédent'}
                 </option>
                 {items.map((i) => (
                   <option key={i.uuid} value={i.uuid}>

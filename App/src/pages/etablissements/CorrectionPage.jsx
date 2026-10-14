@@ -7,6 +7,7 @@ import { SECTIONS, SECTION_OF } from '../../config/etablissements/config'
 import { EMPTY_FORM, champOf, correctionPayload, normaliserDemande, validateChamps } from '../../lib/etablissements/form'
 import { correctionService } from '../../services/etablissements/etablissement.service'
 import { StepDirigeant, StepDocuments, StepEtablissement, StepLocalisation } from '../../components/etablissements/FormSteps'
+import Loader from '../../components/commun/Loader'
 import './etablissements.css'
 
 const COMPONENTS = { etablissement: StepEtablissement, localisation: StepLocalisation, dirigeant: StepDirigeant, documents: StepDocuments }
@@ -100,7 +101,7 @@ export default function CorrectionPage() {
     }
   }
 
-  if (state.phase === 'loading') return <Shell center><p className="dm-sub">Chargement de votre dossier…</p></Shell>
+  if (state.phase === 'loading') return <Loader label="Chargement de votre dossier…" />
 
   if (state.phase === 'invalid') {
     return (
@@ -185,9 +186,11 @@ export default function CorrectionPage() {
 
         <footer className="dm-actions dm-actions--end">
           <button type="button" className="dm-btn" onClick={submit} disabled={busy}>
-            {busy ? 'Envoi…' : <>Envoyer mes corrections <Send size={18} /></>}
+            {busy ? <><Loader mode="button" /> Envoi en cours…</> : <>Envoyer mes corrections <Send size={18} /></>}
           </button>
         </footer>
+
+        {busy && <Loader label="Envoi de vos corrections…" />}
       </section>
     </main>
   )

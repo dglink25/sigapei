@@ -2,13 +2,16 @@
 
 namespace App\Domain\Geo;
 
+use App\Support\GenereUuid;
 use Illuminate\Database\Eloquent\Model;
 
 class Departement extends Model
 {
+    use GenereUuid;
+
     protected $table = 'departements';
 
-    protected $fillable = ['pays_id', 'nom'];
+    protected $fillable = ['pays_id', 'nom', 'source', 'code_externe'];
 
     public function pays()
     {
