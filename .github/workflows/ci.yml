@@ -9,6 +9,9 @@ on:
 jobs:
   tests:
     name: Pint + PHPUnit
+    # Les PR feature/** -> develop sont déjà testées par le push :
+    # on évite le doublon (et la course avec la fusion automatique).
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feature/')
     runs-on: ubuntu-latest
     defaults:
       run:
