@@ -72,7 +72,7 @@ function LeconAffichee({ lecon, numero, monter, descendre }) {
           )}
           {lecon.media_detail.type === 'document' && (
             <p>
-              {lecon.media_detail.nom_fichier || 'Document'} —{' '}
+              {lecon.media_detail.nom_fichier || 'Document'} -{' '}
               {lecon.media_detail.url_cloudinary ? (
                 <a
                   href={lecon.media_detail.url_cloudinary}
@@ -240,7 +240,7 @@ export function CoursDetail() {
               Matière {uuidCourt(donnees.matiere_id)}
             </span>
             <span className="badge badge-texte">
-              {lecons.length} leçon(s) — {donnees.classes_liees?.length ?? 0}{' '}
+              {lecons.length} leçon(s) - {donnees.classes_liees?.length ?? 0}{' '}
               classe(s)
             </span>
           </div>

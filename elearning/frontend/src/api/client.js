@@ -40,7 +40,7 @@ export function messageErreur(erreur) {
       const texte = Array.isArray(valeur) ? valeur.join(' ') : String(valeur)
       return `${champ} : ${texte}`
     })
-    return details.length > 0 ? details.join(' — ') : 'Requête invalide.'
+    return details.length > 0 ? details.join(' - ') : 'Requête invalide.'
   }
   if (data && typeof data === 'object' && data.detail) {
     return String(data.detail)

@@ -21,7 +21,7 @@ export function Pagination({ page, total, taillePage = TAILLE_PAGE, onPageChange
         ← Précédent
       </button>
       <span>
-        Page {page} / {nbPages} — {total} résultat(s)
+        Page {page} / {nbPages} - {total} résultat(s)
       </span>
       <button
         type="button"

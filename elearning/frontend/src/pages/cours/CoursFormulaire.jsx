@@ -169,7 +169,7 @@ export function CoursFormulaire() {
               type="text"
               value={titre}
               onChange={(e) => setTitre(e.target.value)}
-              placeholder="Ex. Mathématiques — Chapitre 3 : les fractions"
+              placeholder="Ex. Mathématiques - Chapitre 3 : les fractions"
               required
             />
           </div>
@@ -177,7 +177,7 @@ export function CoursFormulaire() {
           <div className="grille-2-colonnes">
             <div className="champ">
               <label htmlFor="cours-matiere">
-                Discipline — UUID (evaluations.matieres) *
+                Discipline - UUID (evaluations.matieres) *
               </label>
               <input
                 id="cours-matiere"
@@ -190,7 +190,7 @@ export function CoursFormulaire() {
             </div>
             <div className="champ">
               <label htmlFor="cours-enseignant">
-                Enseignant auteur — UUID (rh.personnel)
+                Enseignant auteur - UUID (rh.personnel)
               </label>
               <input
                 id="cours-enseignant"
@@ -253,7 +253,7 @@ export function CoursFormulaire() {
 
           <div className="champ">
             <label htmlFor="cours-nouvelle-classe">
-              Ajouter une classe — UUID (scolarite.classes)
+              Ajouter une classe - UUID (scolarite.classes)
             </label>
             <div className="selection-media-ligne">
               <input

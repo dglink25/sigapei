@@ -19,7 +19,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # API du module E-learning — toutes les routes exigent l'en-tête
+    # API du module E-learning - toutes les routes exigent l'en-tête
     # X-Tenant-ID (TenantMiddleware).
     path('v1/', include([
         path('', include('apps.core.urls')),

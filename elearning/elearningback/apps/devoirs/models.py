@@ -43,7 +43,7 @@ class Devoirs(BaseModel):
 
 
 class Soumissions(BaseModel):
-    """Dépôt d'un apprenant pour un devoir — unique par (devoir, apprenant)."""
+    """Dépôt d'un apprenant pour un devoir - unique par (devoir, apprenant)."""
     devoir = models.ForeignKey(
         Devoirs, on_delete=models.CASCADE, related_name='soumissions',
     )

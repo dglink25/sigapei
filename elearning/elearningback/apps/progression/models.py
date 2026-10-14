@@ -14,7 +14,7 @@ class ProgressionEtapes(BaseModel):
     """Progression d'un apprenant sur une étape de parcours.
 
     `soumis_par` conserve le compte réellement utilisé pour l'action
-    (apprenant ou parent — programme béninois, section 2.6 du cahier des
+    (apprenant ou parent - programme béninois, section 2.6 du cahier des
     charges), tandis que la donnée reste attribuée à `apprenant_id`.
     """
     etape = models.ForeignKey(

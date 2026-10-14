@@ -15,7 +15,7 @@ from apps.core.models import BaseModel
 
 
 class Parcours(BaseModel):
-    """Parcours — suppression logique uniquement (statut `archive`)."""
+    """Parcours - suppression logique uniquement (statut `archive`)."""
     STATUTS = StatutContenu.choices
 
     titre = models.CharField('Titre', max_length=255)
@@ -69,7 +69,7 @@ class ParcoursClasses(BaseModel):
 
 
 class EtapesParcours(BaseModel):
-    """Étape ordonnée d'un parcours — exactement un contenu (cours ou quiz).
+    """Étape ordonnée d'un parcours - exactement un contenu (cours ou quiz).
 
     Le titre est facultatif : à la restitution, le titre du contenu
     référencé est utilisé par défaut.

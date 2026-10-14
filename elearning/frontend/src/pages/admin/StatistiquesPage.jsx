@@ -34,7 +34,7 @@ export function StatistiquesPage() {
         </div>
       </div>
       <p className="texte-efface">
-        Indicateurs calculés en direct par /v1/statistiques/ — aucune donnée
+        Indicateurs calculés en direct par /v1/statistiques/ - aucune donnée
         n'est dupliquée depuis les autres microservices.
       </p>
 
@@ -107,10 +107,10 @@ export function StatistiquesPage() {
                     <td title={matiere.matiere_id}>
                       {uuidCourt(matiere.matiere_id)}
                     </td>
-                    <td>{matiere.nb_cours ?? '—'}</td>
-                    <td>{matiere.nb_devoirs ?? '—'}</td>
+                    <td>{matiere.nb_cours ?? '-'}</td>
+                    <td>{matiere.nb_devoirs ?? '-'}</td>
                     <td>{formaterNombre(matiere.moyenne_devoirs)}</td>
-                    <td>{matiere.nb_tentatives_quiz ?? '—'}</td>
+                    <td>{matiere.nb_tentatives_quiz ?? '-'}</td>
                     <td>{formaterNombre(matiere.moyenne_quiz)}</td>
                   </tr>
                 ))}

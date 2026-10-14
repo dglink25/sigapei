@@ -14,6 +14,7 @@ import { authService } from '../../services/identite/auth.service'
 import { getCaptchaToken } from '../../lib/identite/captcha'
 import { getGoogleIdToken } from '../../lib/identite/firebase'
 import { HOME_PATH, LOGIN_PATH } from '../../config/identite/routes'
+import Loader from '../../components/commun/Loader'
 import './AuthPage.css'
 
 const METHODS = [
@@ -285,7 +286,7 @@ export default function AuthPage() {
             )}
 
             <button className="auth-btn" type="submit" disabled={loading}>
-              {loading ? 'Veuillez patienter…' : 'Se connecter'}
+              {loading ? <><Loader mode="button" /> Veuillez patienter…</> : 'Se connecter'}
             </button>
 
             <div className="auth-sep"><span>ou</span></div>
@@ -304,7 +305,7 @@ export default function AuthPage() {
               value={nom} onChange={(e) => setNom(e.target.value)} />
 
             <button className="auth-btn" type="submit" disabled={loading}>
-              {loading ? 'Recherche…' : 'Rechercher mon compte'}
+              {loading ? <><Loader mode="button" /> Recherche…</> : 'Rechercher mon compte'}
             </button>
           </form>
         )}
@@ -315,7 +316,7 @@ export default function AuthPage() {
             <p className="auth-text">Un compte correspond à votre recherche :</p>
             <p className="auth-masked">{account?.masque || 'Compte trouvé'}</p>
             <button className="auth-btn" onClick={sendRecoveryOtp} disabled={loading}>
-              {loading ? 'Envoi…' : 'Recevoir un code'}
+              {loading ? <><Loader mode="button" /> Envoi…</> : 'Recevoir un code'}
             </button>
           </div>
         )}
@@ -330,7 +331,7 @@ export default function AuthPage() {
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} />
 
             <button className="auth-btn" type="submit" disabled={loading}>
-              {loading ? 'Vérification…' : 'Valider'}
+              {loading ? <><Loader mode="button" /> Vérification…</> : 'Valider'}
             </button>
             <button type="button" className="auth-link center" onClick={resend} disabled={cooldown > 0 || loading}>
               {cooldown > 0 ? `Renvoyer le code (${cooldown} s)` : 'Renvoyer le code'}
