@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, Length } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID, Length } from 'class-validator';
 import { FamilleAuth } from '../role.entity';
 
 export class CreerRoleDto {
@@ -25,6 +25,6 @@ export class CreerRoleDto {
 
   @ApiProperty({ required: false, description: 'Laisser vide pour un role global (reserve super administrateur).' })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   tenantId?: string;
 }
