@@ -311,7 +311,25 @@ export default function DemandeDetailPage() {
                 )}
               </>
             ) : d.statut === 'correction_demandee' ? (
-              <p>En attente de correction. Relance automatique chaque jour à 18h59.</p>
+              <>
+                <p>En attente de correction. Relance automatique chaque jour à 18h59.</p>
+                <button
+                  type="button"
+                  className="ap-btn ap-btn--ghost"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true)
+                    try {
+                      await adminService.renvoyerLienCorrection(uuid)
+                      notify.success('Lien renvoyé', 'Un nouveau lien de correction a été envoyé par WhatsApp et par e-mail.')
+                    } catch (err) {
+                      notify.fromError(err)
+                    } finally { setBusy(false) }
+                  }}
+                >
+                  Renvoyer le lien maintenant
+                </button>
+              </>
             ) : (
               <p>Ce dossier n'est plus en instruction.</p>
             )}

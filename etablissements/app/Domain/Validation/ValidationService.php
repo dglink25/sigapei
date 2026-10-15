@@ -41,6 +41,24 @@ class ValidationService{
             ->get();
     }
 
+    /** Renvoie un nouveau lien de correction (régénère le token et publie la notification). */
+    public function renvoyerLienCorrection(string $demandeUuid): string
+    {
+        $demande = DemandeEtablissement::where('uuid', $demandeUuid)->firstOrFail();
+
+        $tokenClair = $this->tokenService->genererPour($demande);
+
+        $this->rabbitmq->publier('demande.correction_relance', [
+            'demandeUuid'    => $demande->uuid,
+            'champsACorriger' => $demande->champs_a_corriger,
+            'lienCorrection' => $this->tokenService->urlCorrection($tokenClair),
+            'dirigeantEmail' => $demande->dirigeant_email,
+            'dirigeantTelephone' => $demande->dirigeant_telephone,
+        ]);
+
+        return $this->tokenService->urlCorrection($tokenClair);
+    }
+
     /**
      * Marque des champs comme "a corriger" (section 7.2) : renvoie le
      * dossier en statut "correction_demandee" et genere un premier lien

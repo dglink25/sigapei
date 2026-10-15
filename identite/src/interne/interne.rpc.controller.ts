@@ -251,7 +251,7 @@ export class InterneRpcController {
       .join('\n');
 
     const msgWa =
-      `*sigapei - Corrections requises*\n\n` +
+      `*SIGAPEI - Corrections requises*\n\n` +
       `Votre dossier *${ref}* nécessite des corrections :\n\n` +
       `${lignesSections}\n\n` +
       `Accédez à votre lien sécurisé (valable 72 h) :\n${d.lienCorrection}\n\n` +

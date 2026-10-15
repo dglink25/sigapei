@@ -81,6 +81,26 @@ class InterneController extends Controller
         ]);
     }
 
+    public function renvoyerLienCorrection(string $uuid): JsonResponse
+    {
+        $demande = \App\Domain\Onboarding\DemandeEtablissement::where('uuid', $uuid)->firstOrFail();
+
+        if ($demande->statut !== 'correction_demandee') {
+            return response()->json([
+                'success' => false,
+                'error' => ['code' => 'STATUT_INVALIDE', 'message' => 'Ce dossier n\'est pas en attente de correction.'],
+            ], 409);
+        }
+
+        // Regénérer un nouveau token et renvoyer les notifications
+        $tokenClair = $this->validationService->renvoyerLienCorrection($uuid);
+
+        return response()->json([
+            'success' => true,
+            'lienCorrection' => $tokenClair,
+        ]);
+    }
+
     public function supprimerBrouillon(string $uuid): JsonResponse
     {
         $demande = \App\Domain\Onboarding\DemandeEtablissement::where('uuid', $uuid)->first();

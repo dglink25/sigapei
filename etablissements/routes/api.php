@@ -61,6 +61,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/demandes', [InterneController::class, 'listerDemandes']);
         Route::get('/demandes/{uuid}', [InterneController::class, 'afficherDemande']);
         Route::post('/demandes/{uuid}/corrections', [InterneController::class, 'marquerCorrections']);
+        Route::post('/demandes/{uuid}/renvoyer-lien', [InterneController::class, 'renvoyerLienCorrection']);
         Route::post('/demandes/{uuid}/valider', [InterneController::class, 'valider']);
         Route::delete('/demandes/{uuid}', [InterneController::class, 'supprimerBrouillon']);
         Route::post('/demandes/supprimer', [InterneController::class, 'supprimerBrouillons']);
