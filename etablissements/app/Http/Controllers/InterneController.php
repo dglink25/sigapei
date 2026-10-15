@@ -22,20 +22,25 @@ class InterneController extends Controller
             ->with('documents')
             ->firstOrFail();
 
-        $s3Configure = !empty(env('AWS_ACCESS_KEY_ID')) && !empty(env('AWS_SECRET_ACCESS_KEY')) && !empty(env('AWS_BUCKET'));
-
-        $documents = $demande->documents->map(function ($doc) use ($s3Configure) {
+        $documents = $demande->documents->map(function ($doc) {
             $url = null;
+            $disk = config('filesystems.default', 'local');
 
-            if ($s3Configure) {
-                try {
-                    $disk = \Illuminate\Support\Facades\Storage::disk('s3');
-                    $url  = method_exists($disk, 'temporaryUrl')
-                        ? $disk->temporaryUrl($doc->chemin_stockage, now()->addMinutes(60))
-                        : $disk->url($doc->chemin_stockage);
-                } catch (\Throwable) {
-                    $url = null;
+            try {
+                $storage = \Illuminate\Support\Facades\Storage::disk($disk);
+
+                if ($disk === 's3' && !empty(env('AWS_ACCESS_KEY_ID'))) {
+                    // Production S3 : URL pré-signée 60 min
+                    $url = method_exists($storage, 'temporaryUrl')
+                        ? $storage->temporaryUrl($doc->chemin_stockage, now()->addMinutes(60))
+                        : $storage->url($doc->chemin_stockage);
+                } else {
+                    // Dev local : URL de téléchargement via endpoint public
+                    $url = env('APP_URL', 'http://localhost:4002')
+                        . '/v1/documents/' . $doc->uuid;
                 }
+            } catch (\Throwable) {
+                $url = null;
             }
 
             return [
@@ -45,7 +50,6 @@ class InterneController extends Controller
                 'mime'   => $doc->mime_type,
                 'taille' => $doc->taille_octets,
                 'url'    => $url,
-                'chemin' => $doc->chemin_stockage, // utile pour debug en dev
             ];
         });
 
@@ -99,6 +103,25 @@ class InterneController extends Controller
             'success' => true,
             'lienCorrection' => $tokenClair,
         ]);
+    }
+
+    /** Téléchargement sécurisé d'un document (dev local uniquement). */
+    public function telechargerDocument(string $uuid)
+    {
+        $doc = \App\Domain\Onboarding\DocumentEtablissement::where('uuid', $uuid)->firstOrFail();
+
+        $disk = config('filesystems.default', 'local');
+        $storage = \Illuminate\Support\Facades\Storage::disk($disk);
+
+        if (! $storage->exists($doc->chemin_stockage)) {
+            abort(404, 'Fichier introuvable.');
+        }
+
+        return response()->streamDownload(
+            fn () => print($storage->get($doc->chemin_stockage)),
+            basename($doc->chemin_stockage),
+            ['Content-Type' => $doc->mime_type ?? 'application/octet-stream']
+        );
     }
 
     public function supprimerBrouillon(string $uuid): JsonResponse

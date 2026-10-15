@@ -46,5 +46,5 @@ google-credentials*.json
 
 pdf_*.txt
 
-
+/etablissements/storage/app/private
 /etablissements/storage/app/geonames/

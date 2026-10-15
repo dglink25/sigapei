@@ -56,6 +56,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/etablissements/{slug}/plans-disponibles', [EtablissementController::class, 'plansDisponibles']);
     Route::post('/etablissements/{slug}/abonnement', [EtablissementController::class, 'souscrireAbonnement']);
 
+    // --- Téléchargement de documents (UUID imprévisible = sécurité suffisante en dev) ---
+    Route::get('/documents/{uuid}', [InterneController::class, 'telechargerDocument']);
+
     // --- Endpoints internes (Gateway / Super Administrateur) ---
     Route::middleware('secret.interne')->prefix('interne')->group(function () {
         Route::get('/demandes', [InterneController::class, 'listerDemandes']);
