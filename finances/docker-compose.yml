@@ -1,0 +1,36 @@
+# ============================================================
+# api-finances — orchestration locale
+# PostgreSQL (Neon), Redis et RabbitMQ partagés : réseau externe `sigapei`.
+# Pré-requis : docker network create sigapei
+# ============================================================
+services:
+  api-finances:
+    build: { context: ., dockerfile: Dockerfile }
+    container_name: api-finances
+    restart: unless-stopped
+    # Port INTERNE uniquement : aucun "ports:", accessible via la Gateway sur le réseau sigapei.
+    expose: ["4008"]
+    env_file: [.env]
+    environment: [REDIS_HOST=redis, RABBITMQ_HOST=rabbitmq]
+    networks: [sigapei]
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:4008/sante') ? 0 : 1);"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  api-finances-scheduler:
+    build: { context: ., dockerfile: Dockerfile }
+    container_name: api-finances-scheduler
+    restart: unless-stopped
+    env_file: [.env]
+    environment: [REDIS_HOST=redis, RABBITMQ_HOST=rabbitmq]
+    command: ["php", "artisan", "schedule:work"]
+    healthcheck:
+      disable: true
+    networks: [sigapei]
+    depends_on: [api-finances]
+
+networks:
+  sigapei:
+    external: true
