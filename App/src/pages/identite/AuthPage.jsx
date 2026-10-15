@@ -15,6 +15,7 @@ import { getCaptchaToken } from '../../lib/identite/captcha'
 import { getGoogleIdToken } from '../../lib/identite/firebase'
 import { HOME_PATH, LOGIN_PATH, redirectionPostLogin } from '../../config/identite/routes'
 import Loader from '../../components/commun/Loader'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './AuthPage.css'
 
 const METHODS = [
@@ -46,8 +47,7 @@ export default function AuthPage() {
   const notify = useNotify()
   const navigate = useNavigate()
   const location = useLocation()
-
-  // Afficher le badge reCAPTCHA uniquement sur cette page publique
+  usePageTitle('Connexion')
   useEffect(() => {
     document.body.classList.add('page-public-recaptcha')
     return () => document.body.classList.remove('page-public-recaptcha')
@@ -312,7 +312,7 @@ export default function AuthPage() {
         {mode === 'recover' && step === 'identifier' && (
           <form onSubmit={submitSearch} noValidate>
             <label className="auth-label" htmlFor="nom">Nom complet ou identifiant de récupération</label>
-            <input id="nom" className="field" type="text" autoComplete="name" placeholder="Ex. : Jean Dupont"
+            <input id="nom" className="field" type="text" autoComplete="name" placeholder="Ex. : Vore nom complet"
               value={nom} onChange={(e) => setNom(e.target.value)} />
 
             <button className="auth-btn" type="submit" disabled={loading}>

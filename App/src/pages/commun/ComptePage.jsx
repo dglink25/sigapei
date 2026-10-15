@@ -8,6 +8,7 @@ import { getDeviceId }     from '../../lib/identite/device'
 import { profilService }   from '../../services/commun/profil.service'
 import { roleCodeOf }      from '../../config/identite/routes'
 import Loader              from '../../components/commun/Loader'
+import usePageTitle        from '../../hooks/commun/usePageTitle'
 import './compte.css'
 
 const ONGLETS = [
@@ -186,6 +187,7 @@ function OngletSessions() {
 export default function ComptePage() {
   const { user } = useAuth()
   const [onglet, setOnglet] = useState('profil')
+  usePageTitle('Mon profil')
 
   return (
     <div className="ap cp-page">

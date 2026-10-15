@@ -1,0 +1,121 @@
+/* ═══════════════════════════════════════════════════════
+   Pages Services - SIGAPEI Administration
+   Charte STRICTE : #006B3C · #E9AA20 · #FFF6DD · #000000
+   Hérite des variables de .ap (admin.css). Aucun dégradé.
+═══════════════════════════════════════════════════════ */
+
+.sv-rise { animation: ap-rise 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 40ms); }
+
+/* ── En-tête de page détaillée ── */
+.sv-head { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.sv-head .ap-page-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ── Indicateurs ── */
+.sv-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+.sv-stat { position: relative; padding: 14px 18px; overflow: hidden; }
+.sv-stat::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--ap-green); }
+.sv-stat--gold::before { background: var(--ap-gold); }
+.sv-stat--danger::before { background: #c0392b; }
+.sv-stat-lbl { margin: 0 0 4px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ap-muted); }
+.sv-stat-val { margin: 0; font-size: 1.35rem; font-weight: 700; line-height: 1.2; color: var(--ap-text); }
+.sv-stat-val small { font-size: 0.82rem; font-weight: 500; color: var(--ap-muted); }
+
+/* ── Tableaux ── */
+.sv-table .sv-actions { text-align: right; white-space: nowrap; }
+.sv-table .sv-actions .ap-btn + .ap-btn { margin-left: 6px; }
+.sv-svc { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.sv-name { display: flex; flex-direction: column; min-width: 0; }
+.sv-name strong { font-weight: 700; }
+.sv-name small { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-row { animation: ap-rise 0.3s ease both; animation-delay: calc(var(--i, 0) * 30ms); }
+.sv-row:focus-visible { outline: 2px solid var(--ap-gold); outline-offset: -2px; }
+.sv-static tbody tr { cursor: default; }
+.sv-table .sv-check { width: 42px; padding-right: 0; }
+.sv-motif-line { display: block; margin-top: 2px; font-size: 0.78rem; color: #c0392b; }
+.ap-btn--icon-danger:hover:not(:disabled) { border-color: #c0392b; color: #c0392b; filter: none; }
+
+/* ── Barre d'actions groupées ── */
+.sv-bulk {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 12px; padding: 10px 14px; border-radius: 10px;
+  background: #006B3C; color: #FFF6DD; animation: ap-rise 0.24s ease both;
+}
+.sv-bulk strong { margin-right: auto; font-size: 0.9rem; }
+.sv-bulk .ap-btn { border-color: rgba(255,246,221,0.5); background: transparent; color: #FFF6DD; }
+.sv-bulk .ap-btn:hover:not(:disabled) { border-color: #E9AA20; color: #E9AA20; filter: none; }
+.sv-bulk .ap-btn--gold { border-color: #E9AA20; background: #E9AA20; color: #004d2b; }
+.sv-bulk .ap-btn--gold:hover:not(:disabled) { color: #004d2b; filter: brightness(1.08); }
+
+/* ── Cartes de services d'un établissement ── */
+.sv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+.sv-card {
+  display: flex; flex-direction: column; gap: 12px; padding: 18px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  animation: ap-rise 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; animation-delay: calc(var(--i, 0) * 45ms);
+}
+.sv-card:hover { transform: translateY(-2px); border-color: var(--ap-green); box-shadow: 0 6px 18px rgba(0,107,60,0.10); }
+.sv-card.is-off .ap-tile { background: var(--ap-bg); color: var(--ap-muted); }
+.sv-card-top { display: flex; align-items: flex-start; gap: 12px; }
+.sv-card-title { flex: 1; min-width: 0; }
+.sv-card-title strong { display: block; font-size: 0.98rem; }
+.sv-card-desc {
+  margin: 0; min-height: 2.9em; font-size: 0.84rem; line-height: 1.45; color: var(--ap-muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.sv-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid var(--ap-border); }
+.sv-card-state { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 700; }
+.sv-meta { margin: 0; font-size: 0.78rem; color: var(--ap-muted); }
+.sv-note {
+  display: flex; align-items: flex-start; gap: 6px; margin: 0; padding: 8px 10px; border-radius: 8px;
+  background: rgba(192,57,43,0.07); font-size: 0.8rem; line-height: 1.4; color: #c0392b;
+}
+.sv-note svg { flex: none; margin-top: 2px; }
+
+/* ── Journal ── */
+.sv-events { margin: 0; padding: 0; list-style: none; }
+.sv-event { display: flex; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--sg-border, #dde4df); animation: ap-rise 0.28s ease both; animation-delay: calc(var(--i, 0) * 25ms); }
+.sv-event:last-child { border-bottom: 0; }
+.sv-event strong { display: block; font-size: 0.9rem; color: var(--sg-text, #1a2a1e); }
+.sv-event small { display: block; margin-top: 2px; font-size: 0.78rem; color: var(--sg-text-secondary, #5a6b5f); }
+.sv-event-ico { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; }
+.sv-event-ico--success { background: rgba(0,107,60,0.09); color: #006B3C; }
+.sv-event-ico--danger  { background: rgba(192,57,43,0.08); color: #c0392b; }
+.sv-event-ico--info    { background: rgba(21,101,168,0.09); color: #1565a8; }
+
+/* ── Services d'un établissement (colonne Services de la liste) ── */
+.sv-resume { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+/* ── Champ de motif (dans les dialogues de confirmation) ── */
+.sv-motif-field { margin: 14px 0 0; }
+
+/* ── Tableau -> cartes sur petit écran ── */
+@media (max-width: 720px) {
+  .sv-table thead { display: none; }
+  .sv-table, .sv-table tbody { display: block; }
+  .sv-table tr { display: grid; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--ap-border); }
+  .sv-table tbody tr:last-child { border-bottom: 0; }
+  .sv-table td { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0; border: 0; text-align: right; }
+  .sv-table td::before { content: attr(data-label); flex: none; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ap-muted); text-align: left; }
+  .sv-table td[data-label="Service"]::before,
+  .sv-table td[data-label="Établissement"]::before,
+  .sv-table td.sv-actions::before,
+  .sv-table td.sv-check::before { display: none; }
+  .sv-table td[data-label="Service"], .sv-table td[data-label="Établissement"] { text-align: left; }
+  .sv-table td.sv-actions { justify-content: flex-end; }
+  .sv-table td.sv-check { width: auto; justify-content: flex-start; }
+  .sv-name small { max-width: 100%; white-space: normal; }
+  .sv-stats { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) and (min-width: 721px) { .sv-stats { grid-template-columns: repeat(3, 1fr); } }
+
+/* ── Thème sombre ── */
+[data-theme='dark'] .sv-card:hover { border-color: #4ade80; box-shadow: 0 6px 18px rgba(74,222,128,0.10); }
+[data-theme='dark'] .sv-event-ico--success { background: rgba(74,222,128,0.10); color: #4ade80; }
+[data-theme='dark'] .sv-note, [data-theme='dark'] .sv-motif-line { color: #f87171; }
+[data-theme='dark'] .sv-note { background: rgba(248,113,113,0.08); }
+[data-theme='dark'] .ap-btn--icon-danger:hover:not(:disabled) { border-color: #f87171; color: #f87171; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-rise, .sv-row, .sv-card, .sv-bulk, .sv-event { animation: none !important; transition: none !important; }
+  .sv-card:hover { transform: none; }
+}

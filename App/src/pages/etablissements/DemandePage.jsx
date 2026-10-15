@@ -15,6 +15,7 @@ import { demandeService } from '../../services/etablissements/etablissement.serv
 import { Stepper } from '../../components/etablissements/ui'
 import { StepConfirmation, StepDirigeant, StepDocuments, StepEtablissement, StepLocalisation } from '../../components/etablissements/FormSteps'
 import Loader from '../../components/commun/Loader'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './etablissements.css'
 
 const TITLES = {
@@ -32,7 +33,7 @@ const isEmptyDraft = (form, uuid) => !uuid && JSON.stringify(form) === JSON.stri
 
 export default function DemandePage() {
   const notify = useNotify()
-  const [step, setStep] = useState(1)
+  usePageTitle("Inscrire mon établissement")
 
   // Afficher le badge reCAPTCHA uniquement sur ce formulaire public
   useEffect(() => {

@@ -286,7 +286,7 @@ MD;
                                     'adresse_complete' => 'Rue 123, près du marché de Ganhi',
                                 ],
                                 'dirigeant' => [
-                                    'nom_complet' => 'Jean Dupont',
+                                    'nom_complet' => 'Vore nom complet',
                                     'titre' => 'Fondateur',
                                     'email' => 'jean@kisito.bj',
                                     'telephone' => '+22997111111',

@@ -3,12 +3,14 @@ import { Construction, LogOut, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../../context/identite/AuthContext'
 import { ENV } from '../../config/commun/env'
 import { HOME_PATH, roleCodeOf } from '../../config/identite/routes'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './DashboardTemp.css'
 
 export default function DashboardTemp() {
   const { user, logout } = useAuth()
   const roleCode = roleCodeOf(user)
   const nom = user?.nomComplet ?? user?.nom_complet ?? ''
+  usePageTitle('Tableau de bord')
 
   return (
     <div className="dt-page">

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, Users, FileText,
-  BarChart3, Settings, LogOut, Bell, Menu, X
+  BarChart3, Settings, LogOut, Bell, Menu, X, Layers
 } from 'lucide-react'
 import { useAuth } from '../../context/identite/AuthContext'
 import { useNotify } from '../../context/commun/NotifyContext'
@@ -11,6 +11,8 @@ import ThemeToggle from '../../components/commun/ThemeToggle'
 import { ENV } from '../../config/commun/env'
 import { ADMIN_DASHBOARD_PATH, COMPTE_PATH } from '../../config/identite/routes'
 import { ADMIN_PATHS } from '../../config/etablissements/config'
+import { SERVICE_PATHS } from '../../config/services/config'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './AdminLayout.css'
 
 const NAV = [
@@ -33,6 +35,7 @@ const NAV = [
     items: [
       { id: 'demandes',       label: 'Demandes',             icon: FileText,        path: ADMIN_PATHS.demandes },
       { id: 'etablissements', label: 'Établissements',       icon: Building2,       path: '/admin/etablissements' },
+      { id: 'services',       label: 'Services',             icon: Layers,          path: SERVICE_PATHS.liste },
       { id: 'utilisateurs',   label: 'Utilisateurs',         icon: Users,           path: '/admin/utilisateurs' },
     ],
   },
@@ -44,6 +47,17 @@ const NAV = [
   },
 ]
 
+/** Titre de la barre supérieure déduit de l'URL (l'entrée de menu la plus précise l'emporte). */
+function titreDepuisRoute(pathname, defaut) {
+  if (/^\/admin\/etablissements\/[^/]+\/services/.test(pathname)) return "Services d'un établissement"
+  let meilleur = null
+  NAV.forEach((g) => g.items.forEach((i) => {
+    const correspond = pathname === i.path || pathname.startsWith(i.path + '/')
+    if (correspond && (!meilleur || i.path.length > meilleur.path.length)) meilleur = i
+  }))
+  return meilleur?.label ?? defaut
+}
+
 function AdminLayoutInner({ pageTitle }) {
   const { user, logout } = useAuth()
   const notify = useNotify()
@@ -52,6 +66,10 @@ function AdminLayoutInner({ pageTitle }) {
 
   const nom      = user?.nomComplet ?? user?.nom_complet ?? 'Super Admin'
   const initiales = nom.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
+
+  // Titre dynamique : nom de la page active dans le nav, sinon pageTitle
+  const titreActif = NAV.flatMap(g => g.items).find(i => location.pathname === i.path || location.pathname.startsWith(i.path + '/'))?.label ?? pageTitle
+  usePageTitle(titreActif)
 
   const actif = (path) => location.pathname === path || location.pathname.startsWith(path + '/')
 
@@ -132,7 +150,7 @@ function AdminLayoutInner({ pageTitle }) {
           >
             <Menu size={22} />
           </button>
-          <h1 className="al-topbar-title">{pageTitle}</h1>
+          <h1 className="al-topbar-title">{titreDepuisRoute(location.pathname, pageTitle)}</h1>
           <div className="al-topbar-actions">
             <button className="al-icon-btn" aria-label="Notifications">
               <Bell size={19} />

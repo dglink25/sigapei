@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Building2, Users, FileText, BarChart3, Settings,
+  Building2, Users, FileText, BarChart3, Settings, Layers,
   ChevronRight, TrendingUp, CheckCircle2, Clock, AlertTriangle
 } from 'lucide-react'
 import { useAuth }          from '../../context/identite/AuthContext'
 import { useNotify }        from '../../context/commun/NotifyContext'
 import { SECURITY_PATH }    from '../../config/identite/routes'
 import { ADMIN_PATHS }      from '../../config/etablissements/config'
+import { SERVICE_PATHS }    from '../../config/services/config'
 import { adminService }     from '../../services/etablissements/etablissement.service'
 import { normaliserDemande } from '../../lib/etablissements/form'
 import './admin.css'
@@ -16,6 +17,7 @@ import './Dashboard.css'
 const ESPACES = [
   { label: 'Demandes',       icon: FileText,   path: ADMIN_PATHS.demandes,         desc: 'Instruire les dossiers' },
   { label: 'Établissements', icon: Building2,  path: ADMIN_PATHS.etablissements,   desc: 'Gérer le réseau' },
+  { label: 'Services',       icon: Layers,     path: SERVICE_PATHS.liste,          desc: 'Catalogue & accès' },
   { label: 'Indicateurs',    icon: BarChart3,  path: '/admin/indicateurs',          desc: 'Tableaux de bord' },
   { label: 'Utilisateurs',   icon: Users,      path: '/admin/utilisateurs',         desc: 'Comptes & rôles' },
   { label: 'Rapports',       icon: TrendingUp, path: '/admin/rapports',             desc: 'Statistiques' },

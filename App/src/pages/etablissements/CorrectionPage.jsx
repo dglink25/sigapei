@@ -9,6 +9,7 @@ import { correctionService } from '../../services/etablissements/etablissement.s
 import { StepDirigeant, StepDocuments, StepEtablissement, StepLocalisation } from '../../components/etablissements/FormSteps'
 import ThemeToggle from '../../components/commun/ThemeToggle'
 import Loader from '../../components/commun/Loader'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './etablissements.css'
 
 const COMPONENTS = {
@@ -44,6 +45,7 @@ export default function CorrectionPage() {
   const [replaced, setReplaced] = useState(false)
   const [errors,   setErrors]  = useState({})
   const [busy,     setBusy]    = useState(false)
+  usePageTitle('Corriger ma demande')
 
   const load = useCallback(async () => {
     setState({ phase: 'loading' })
@@ -156,7 +158,7 @@ export default function CorrectionPage() {
     )
   }
 
-  /* ── Formulaire principal — même layout que DemandePage ── */
+  /* ── Formulaire principal - même layout que DemandePage ── */
   const shared = { form, set, errors, locked, flags: {}, docs, onDoc, demandeUuid: demande.uuid }
   const flagged = Object.entries(flags)
 

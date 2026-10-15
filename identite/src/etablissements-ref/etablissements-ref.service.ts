@@ -41,6 +41,14 @@ export class EtablissementsRefService {
     );
   }
 
+  async trouverParUuids(uuids: string[]): Promise<EtablissementRef[]> {
+    if (uuids.length === 0) return [];
+    return this.dataSource.query(
+      `SELECT id::text AS id, uuid::text AS uuid, nom, statut FROM "etablissements"."etablissements" WHERE uuid = ANY($1::uuid[])`,
+      [uuids],
+    );
+  }
+
   async trouverParUuidOuEchouer(uuid: string): Promise<EtablissementRef> {
     const etab = await this.trouverParUuid(uuid);
     if (!etab) {

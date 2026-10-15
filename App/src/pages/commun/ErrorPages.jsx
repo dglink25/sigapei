@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/identite/AuthContext'
 import { ENV } from '../../config/commun/env'
 import { redirectionPostLogin, roleCodeOf } from '../../config/identite/routes'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './ErrorPages.css'
 
 /* Volontairement sans dependance au routeur : utilisable meme dans l'ErrorBoundary. */
@@ -29,14 +30,27 @@ export function ErrorPage({ code, title, message, actions = [] }) {
   )
 }
 
-export const NotFoundPage = () => (
-  <ErrorPage
-    code="404"
-    title="Page introuvable"
-    message="La page que vous recherchez n'existe pas ou a été déplacée."
-    actions={[{ label: "Retour à l'accueil", href: '/', primary: true }]}
-  />
-)
+export function NotFoundPage() {
+  const navigate = useNavigate()
+  usePageTitle('Page introuvable')
+
+  function retour() {
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/', { replace: true })
+    }
+  }
+
+  return (
+    <ErrorPage
+      code="404"
+      title="Page introuvable"
+      message="La page que vous recherchez n'existe pas ou a été déplacée."
+      actions={[{ label: 'Retour', onClick: retour, primary: true }]}
+    />
+  )
+}
 
 /**
  * Page 403 - avec redirection automatique vers l'espace du rôle après 5 s.
@@ -46,6 +60,7 @@ export function ForbiddenPage() {
   const navigate = useNavigate()
   const [compte, setCompte] = useState(5)
   const destination = redirectionPostLogin(roleCodeOf(user))
+  usePageTitle('Accès refusé')
 
   useEffect(() => {
     if (compte <= 0) { navigate(destination, { replace: true }); return undefined }

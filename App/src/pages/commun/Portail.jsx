@@ -8,6 +8,7 @@ import { useAuth } from '../../context/identite/AuthContext'
 import { ENV } from '../../config/commun/env'
 import { SECURITY_PATH, roleCodeOf } from '../../config/identite/routes'
 import ThemeToggle from '../../components/commun/ThemeToggle'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './Portail.css'
 
 const MODULES = [
@@ -86,6 +87,7 @@ const MODULES = [
 export default function Portail() {
   const { user, logout } = useAuth()
   const nom = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
+  usePageTitle('Portail')
   const roleCode = roleCodeOf(user)
   const initiales = nom.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
 
