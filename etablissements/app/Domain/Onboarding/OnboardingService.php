@@ -97,7 +97,12 @@ class OnboardingService
             abort(409, "Cette demande n'accepte plus de nouveau document.");
         }
 
-        $chemin = $fichier->store("demandes/{$demande->uuid}/{$type}", 's3');
+        $disk   = config('filesystems.default', 'local');
+        $chemin = $fichier->store("demandes/{$demande->uuid}/{$type}", $disk);
+
+        if (! $chemin) {
+            abort(500, 'Impossible de stocker le document. Vérifiez la configuration du stockage.');
+        }
 
         return $demande->documents()->create([
             'type' => $type,
