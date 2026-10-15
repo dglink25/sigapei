@@ -1,5 +1,5 @@
 E-ACADÉMIQUE
-CAHIER DES CHARGES — MICROSERVICE E-LEARNING
+CAHIER DES CHARGES - MICROSERVICE E-LEARNING
 Sous-ensemble du cahier des charges plateforme « E-Académique »
 Contient : périmètre fonctionnel, diagrammes de cas d'utilisation, diagrammes de séquence, modèles
 entité-association, règles de gestion et contraintes techniques.
@@ -7,7 +7,7 @@ Version : 1.0
 Statut : Document de cadrage technique
 Périmètre : Microservice E-learning (api-elearning.e-academique.com)
 Stack retenue : Django / Django REST Framework (backend) + React (frontend partagé)
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 1 / 21
 1. Contexte et rattachement au projet E-Académique
 E-Académique est une plateforme SaaS multi-tenant de gestion scolaire, conçue autour d'une base de données
@@ -54,7 +54,7 @@ Objectifs spécifiques :
 classes ;
 • Permettre à un enseignant de créer un devoir avec date limite et pièces jointes ;
 • Permettre à un apprenant de consulter les cours de ses matières et de soumettre un devoir en ligne ;
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 2 / 21
 • Permettre la création de quiz corrigés automatiquement, y compris les réponses ouvertes courtes via une
 correction assistée par IA ;
@@ -67,20 +67,20 @@ Inclus dans le périmètre (V1) :
 • Publication de cours par matière et par classe : texte riche, documents (PDF, images), vidéos hébergées et
 streamées via Cloudinary (pas d'hébergement vidéo interne, pas de HLS auto-hébergé) ;
 • Devoirs : création, dépôt de fichiers par l'apprenant, date limite, note ;
-• Quiz : QCM, vrai/faux et questions ouvertes courtes ; correction automatique — barème classique pour les
+• Quiz : QCM, vrai/faux et questions ouvertes courtes ; correction automatique - barème classique pour les
 QCM, moteur de correction assisté par IA pour les questions ouvertes (comparaison sémantique à une
 réponse de référence fournie par l'enseignant) ;
 • Report optionnel d'une note de devoir ou de quiz vers evaluations.notes, initié par l'enseignant ;
 • Bibliothèque numérique de ressources, organisée par matière et par classe ;
 • Statistiques de base : taux de complétion, moyenne par quiz/devoir, activité par classe.
 Explicitement hors périmètre (V1) :
-• Visioconférence et classes virtuelles en direct — à réévaluer en V2+ ;
-• Hébergement vidéo auto-géré (HLS interne, serveur de streaming propre) — le choix retenu est un service
+• Visioconférence et classes virtuelles en direct - à réévaluer en V2+ ;
+• Hébergement vidéo auto-géré (HLS interne, serveur de streaming propre) - le choix retenu est un service
 externe (Cloudinary) ;
 • Détection de plagiat sur les devoirs soumis ;
 • Correction manuelle assistée (annotation de copie, correction collaborative) ;
 • Gamification avancée (badges, classements ludiques) ;
-• Génération automatique de contenu de cours par IA — seule la correction de quiz utilise l'IA.
+• Génération automatique de contenu de cours par IA - seule la correction de quiz utilise l'IA.
 2.4. Fonctionnalités par domaine
 Cours. Création, modification et archivage d'un cours rattaché à une matière, à une ou plusieurs classes et à
 l'enseignant auteur. Un cours se compose de blocs ordonnés en leçons : texte riche, pièce jointe (PDF, image)
@@ -100,7 +100,7 @@ complémentaires), classées par matière, classe, cycle et mots-clés, avec rec
 fichier, enseignant auteur, date).
 Report vers Évaluations. Action explicite de l'enseignant (« Reporter cette note vers le bulletin »), écriture
 directe dans evaluations.notes, traçabilité de l'origine de la note (devoir ou quiz e-learning) conservée pour audit.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 3 / 21
 Notifications et tableaux de bord. Notification à la publication d'un cours ou d'un devoir et à la correction d'un
 quiz. Tableau de bord enseignant : devoirs à corriger, quiz en attente de validation IA, taux de rendu par classe.
@@ -146,20 +146,20 @@ Supervise l'usage consolidé du module sur l'ensemble des établissements, sans 
 au contenu pédagogique. Son rôle (activation des modules) relève du microservice
 Établissements.
 Ces cinq profils ne ferment pas la liste des acteurs possibles. Conformément au système de rôles dynamiques
-porté par le microservice Identité, l'administrateur d'un établissement peut créer des rôles personnalisés — par
-exemple Chef de département ou Responsable pédagogique — et leur accorder, module par module, un accès à
+porté par le microservice Identité, l'administrateur d'un établissement peut créer des rôles personnalisés - par
+exemple Chef de département ou Responsable pédagogique - et leur accorder, module par module, un accès à
 tout ou partie des fonctions du module E-learning : par exemple la consultation des statistiques d'usage sans
 droit de modification des contenus. Ce sont les permissions accordées, et non le nom du rôle, qui déterminent les
 actions réellement accessibles.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 4 / 21
 4. Diagrammes de cas d'utilisation
 Les cas d'utilisation sont présentés en deux ensembles, afin de distinguer les fonctions de contenu (cours,
 bibliothèque, administration du module) de celles d'évaluation (devoirs, quiz, report de notes). Les dépendances
-vers un service externe — par exemple le report d'une note vers le microservice Évaluations — sont
+vers un service externe - par exemple le report d'une note vers le microservice Évaluations - sont
 matérialisées par une flèche pointillée « uses » vers une boîte externe.
 4.1. Contenus pédagogiques : cours, bibliothèque et administration
-Figure 1 — Diagramme de cas d'utilisation : contenus pédagogiques
+Figure 1 - Diagramme de cas d'utilisation : contenus pédagogiques
 Cas d'utilisation Acteur(s) principal(aux) Description sommaire
 Créer / modifier / archiver un
 cours
@@ -177,7 +177,7 @@ Déposer une ressource en
 bibliothèque
 Enseignant Publier une fiche, une annale ou un support indépendant d'un
 cours, classé par matière, classe, cycle et mots-clés.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 5 / 21
 Cas d'utilisation Acteur(s) principal(aux) Description sommaire
 Rechercher / consulter la
@@ -204,15 +204,15 @@ Scénario nominal 1. L'enseignant ouvre « Mes cours » puis « Nouveau cours »
 4. Il choisit le statut : brouillon, publication immédiate ou programmée.
 5. Le système vérifie les affectations et enregistre le cours et ses leçons.
 6. À la publication, les apprenants des classes concernées sont notifiés.
-Scénarios alternatifs A1 — Classe non affectée : à l'étape 5, la création est refusée pour cette classe.
-A2 — Échec de l'envoi vidéo : le bloc est signalé en erreur et le cours reste en brouillon.
-A3 — Publication programmée : le cours reste invisible des apprenants jusqu'à date_publication.
+Scénarios alternatifs A1 - Classe non affectée : à l'étape 5, la création est refusée pour cette classe.
+A2 - Échec de l'envoi vidéo : le bloc est signalé en erreur et le cours reste en brouillon.
+A3 - Publication programmée : le cours reste invisible des apprenants jusqu'à date_publication.
 Postconditions Le cours existe avec le statut choisi ; les médias sont référencés (jamais dupliqués) ; la publication
 est journalisée dans audit_log.
 4.2. Évaluation : devoirs, quiz et report de notes
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 6 / 21
-Figure 2 — Diagramme de cas d'utilisation : devoirs, quiz et report de notes
+Figure 2 - Diagramme de cas d'utilisation : devoirs, quiz et report de notes
 Cas d'utilisation Acteur(s)
 principal(aux)
 Description sommaire
@@ -236,7 +236,7 @@ microservice Évaluations.
 Consulter ses résultats et
 corrections
 Apprenant, Parent Voir scores, corrections et notes, selon le paramètre de restitution.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 7 / 21
 Cas d'utilisation Acteur(s)
 principal(aux)
@@ -260,9 +260,9 @@ Scénario nominal 1. L'apprenant ouvre « Mes quiz » et choisit un quiz disponi
 propose une note (note_ia).
 6. Le score est restitué immédiatement ou de façon différée, selon le paramètre du quiz.
 7. L'enseignant est notifié qu'un quiz est en attente de validation.
-Scénarios alternatifs A1 — Tentatives épuisées : l'accès au quiz est refusé.
-A2 — Temps écoulé : les réponses saisies sont soumises automatiquement.
-A3 — Service IA indisponible : les QCM sont notés, les questions ouvertes restent « en attente de
+Scénarios alternatifs A1 - Tentatives épuisées : l'accès au quiz est refusé.
+A2 - Temps écoulé : les réponses saisies sont soumises automatiquement.
+A3 - Service IA indisponible : les QCM sont notés, les questions ouvertes restent « en attente de
 correction » et sont retentées de façon asynchrone ; l'enseignant peut aussi les noter
 manuellement.
 Postconditions La tentative est enregistrée. Les questions ouvertes portent une note_ia en attente de validation ; la
@@ -280,47 +280,47 @@ Scénario nominal 1. L'enseignant ouvre la soumission ou la tentative validée.
 e-learning).
 5. La soumission passe à « reportée » et l'action est journalisée dans audit_log.
 6. L'apprenant et le parent rattaché sont notifiés.
-Scénarios alternatifs A1 — Note déjà reportée : le système met à jour la ligne existante (correction journalisée) au lieu
+Scénarios alternatifs A1 - Note déjà reportée : le système met à jour la ligne existante (correction journalisée) au lieu
 d'en créer une seconde.
-A2 — Note non validée : le report est bloqué tant que l'enseignant n'a pas validé la note proposée
+A2 - Note non validée : le report est bloqué tant que l'enseignant n'a pas validé la note proposée
 par l'IA.
-A3 — Module Évaluations inactif : le report est refusé avec un message explicite.
+A3 - Module Évaluations inactif : le report est refusé avec un message explicite.
 Postconditions La note figure dans evaluations.notes, avec sa traçabilité d'origine ; la soumission référence cette
 ligne.
 5. Diagrammes de séquence
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 8 / 21
 Deux scénarios illustrent l'interaction du microservice E-learning avec les autres composants. Les lignes de vie
-sont colorées par type — violet pour le microservice E-learning, gris pour les services et microservices tiers,
+sont colorées par type - violet pour le microservice E-learning, gris pour les services et microservices tiers,
 jaune pour les acteurs humains. Les lectures et écritures inter-modules se font par requête directe sur la base
 unique, sans copie intermédiaire ni file de réplication ; seuls les événements de notification et la correction IA
 volumineuse passent par un traitement asynchrone.
 5.1. Passage d'un quiz et correction assistée par IA
-Figure 3 — Diagramme de séquence : passage d'un quiz et correction assistée par IA
+Figure 3 - Diagramme de séquence : passage d'un quiz et correction assistée par IA
 L'apprenant soumet ses réponses ; la passerelle vérifie le JWT et le statut du tenant avant de transmettre au
 microservice E-learning. Celui-ci contrôle la classe, la disponibilité du quiz et le nombre de tentatives restantes,
-corrige immédiatement les QCM et vrai/faux, puis transmet chaque réponse ouverte au service de correction —
-sans aucune donnée d'identité de l'apprenant — avec la réponse de référence et le barème. La note proposée
-E-Académique — Microservice E-learning
+corrige immédiatement les QCM et vrai/faux, puis transmet chaque réponse ouverte au service de correction -
+sans aucune donnée d'identité de l'apprenant - avec la réponse de référence et le barème. La note proposée
+E-Académique - Microservice E-learning
 Page 9 / 21
 est enregistrée dans note_ia. Le score est restitué selon le paramètre du quiz, et l'enseignant, notifié via le
 microservice Communication, ajuste et valide la note finale avant qu'elle ne devienne officielle.
 5.2. Correction d'un devoir et report vers le bulletin
-Figure 4 — Diagramme de séquence : correction d'un devoir et report vers le bulletin
+Figure 4 - Diagramme de séquence : correction d'un devoir et report vers le bulletin
 L'enseignant note la soumission ; le système vérifie son affectation à la classe et à la matière par jointure sur
 rh.affectations. Lorsqu'il demande le report, le microservice E-learning écrit la note directement dans
 evaluations.notes (même base, pas de synchronisation différée), en conservant l'origine « devoir e-learning ». Il
 marque alors la soumission comme reportée, journalise l'action et déclenche l'événement qui notifie l'apprenant
 et le parent rattaché. Dès cet instant, les autres modules voient la note par simple jointure.
-6. Modèle de données — diagrammes entité-association
+6. Modèle de données - diagrammes entité-association
 Le modèle de données du schéma elearning est présenté par domaine. Chaque table possède, en plus de sa
 clé primaire interne id, une colonne tenant_id et une colonne uuid, seule exposée dans les API et les URLs,
 conformément à la règle transversale de la plateforme. Django accède à ce schéma par un routeur de base de
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 10 / 21
 données dédié.
 6.1. Cours et bibliothèque
-Figure 5 — Diagramme entité-association : cours et bibliothèque
+Figure 5 - Diagramme entité-association : cours et bibliothèque
 Table Rôle
 cours Cours publié par un enseignant, avec matière, statut (brouillon, publié, archivé) et date de
 publication.
@@ -332,9 +332,9 @@ ressources_bibliotheque Ressource indépendante d'un cours précis, classée par
 parametres_module Paramètres du module propres à un établissement (tentatives multiples par défaut,
 restitution par défaut, visibilité pour les parents).
 6.2. Devoirs et soumissions
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 11 / 21
-Figure 6 — Diagramme entité-association : devoirs et soumissions
+Figure 6 - Diagramme entité-association : devoirs et soumissions
 Table Rôle
 devoirs Devoir créé par l'enseignant, éventuellement rattaché à un cours, avec date limite, note
 maximale et politique de retard.
@@ -342,9 +342,9 @@ soumissions Rendu d'un apprenant : date de dépôt, indicateur de retard, note, 
 la ligne evaluations.notes une fois la note reportée.
 soumission_fichiers Fichiers déposés pour une soumission (un ou plusieurs), référencés dans medias.
 6.3. Quiz, tentatives et corrections
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 12 / 21
-Figure 7 — Diagramme entité-association : quiz, tentatives et corrections
+Figure 7 - Diagramme entité-association : quiz, tentatives et corrections
 Table Rôle
 quiz Quiz créé par l'enseignant : nombre de tentatives, chronométrage, mode de restitution.
 questions Question d'un quiz (QCM, vrai/faux ou ouverte), avec réponse de référence et barème pour
@@ -356,7 +356,7 @@ reponses_apprenant Réponse à une question et résultat de correction : note pr
 officielle (note_finale) et indicateur de validation par l'enseignant.
 Aucune donnée d'identité ou de scolarité n'est dupliquée : les tables ci-dessus référencent par clé étrangère
 identite.utilisateurs, scolarite.apprenants, scolarite.classes, evaluations.matieres et rh.personnel, déjà présentes
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 13 / 21
 dans la base unique. Le report de note écrit directement dans evaluations.notes, sans table intermédiaire.
 Conformément à la règle transverse de la plateforme, un cours retiré passe au statut « archivé » plutôt que d'être
@@ -368,7 +368,7 @@ PostgreSQL unique de la plateforme, à trois exceptions contrôlées : la lectur
 evaluations par jointure SQL directe, et l'écriture dans evaluations.notes pour le report d'une note. Jamais d'appel
 HTTP inter-services ni de réplication de données pour ces besoins. Le service reste stateless : la vérité de
 session et de statut du tenant est vérifiée par la passerelle API en amont.
-Figure 8 — Architecture interne du microservice E-learning
+Figure 8 - Architecture interne du microservice E-learning
 7.1. Composants internes
 Le microservice suit une organisation en couches : des ViewSets DRF qui exposent les endpoints (section 8),
 des services métier (CoursService, DevoirService, QuizService, BibliothequeService, ReportNoteService,
@@ -377,7 +377,7 @@ inter-schémas et l'écriture dans evaluations.notes sont concentrées dans un m
 limiter la surface de couplage avec les autres schémas. Il est recommandé que le rôle de base de données utilisé
 par Django ne dispose que des droits strictement nécessaires : écriture sur le schéma elearning, lecture des
 colonnes utiles des schémas voisins, insertion et mise à jour sur evaluations.notes uniquement.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 14 / 21
 7.2. Stockage et médias
 PostgreSQL, schéma elearning de la base unique, est la source de vérité durable du module. Les vidéos sont
@@ -401,7 +401,7 @@ n'est pas mis en cache. Le module étant entièrement derrière authentification
 référencement naturel (SEO).
 8. Endpoints de l'API
 Tous les endpoints sont exposés sous le préfixe https://api-elearning.e-academique.com/v1 et ne renvoient, dans
-leurs réponses, que les colonnes uuid — jamais les identifiants internes id — conformément à la règle
+leurs réponses, que les colonnes uuid - jamais les identifiants internes id - conformément à la règle
 transversale de la plateforme.
 8.1. Cours et médias
 Méthode Endpoint Description
@@ -420,7 +420,7 @@ POST /devoirs Crée un devoir.
 GET /devoirs Liste les devoirs (à rendre / rendus pour l'apprenant, à corriger
 pour l'enseignant).
 GET /devoirs/{uuid} Consulte l'énoncé et les pièces jointes.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 15 / 21
 Méthode Endpoint Description
 POST /devoirs/{uuid}/soumissions Dépose une soumission (un ou plusieurs fichiers) ; calcule le
@@ -460,7 +460,7 @@ directe sur rh.affectations à chaque écriture, jamais sur une copie.
 Module actif. Aucune requête n'est traitée si le module E-learning n'est pas actif pour l'établissement : cette
 vérification est effectuée par la passerelle API à chaque appel, en croisant le tenant_id de l'utilisateur avec la
 table etablissement_modules, et non une seule fois à la connexion.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 16 / 21
 Archivage. Un cours retiré passe au statut « archivé » plutôt que d'être supprimé. Un cours en brouillon ou dont
 la date de publication n'est pas atteinte reste invisible des apprenants.
@@ -496,9 +496,9 @@ autre établissement.
 Les documents et médias ne sont accessibles que par URL signée et temporaire (Cloudinary et S3/MinIO),
 jamais par accès direct et permanent. Les types et tailles de fichiers déposés (devoirs, ressources) sont validés
 côté serveur, pas seulement côté interface.
-Les actions sensibles — publication ou archivage d'un cours, report d'une note vers le bulletin, modification d'une
-note par l'enseignant après correction IA — sont journalisées dans audit_log, consultable filtré par tenant.
-Les données d'un apprenant mineur — l'immense majorité des profils — restent soumises à un accès restreint
+Les actions sensibles - publication ou archivage d'un cours, report d'une note vers le bulletin, modification d'une
+note par l'enseignant après correction IA - sont journalisées dans audit_log, consultable filtré par tenant.
+Les données d'un apprenant mineur - l'immense majorité des profils - restent soumises à un accès restreint
 (need-to-know) : les soumissions et résultats ne sont accessibles qu'à l'enseignant affecté, au parent rattaché et
 à l'apprenant lui-même. Les échanges avec le service de correction IA ne transmettent aucune donnée d'identité
 de l'apprenant, uniquement l'énoncé, la réponse de référence, le barème et la réponse à évaluer.
@@ -506,10 +506,10 @@ de l'apprenant, uniquement l'énoncé, la réponse de référence, le barème et
 Le microservice E-learning n'est jamais appelé directement par le frontend : toute requête transite par la
 passerelle API, qui vérifie la validité du JWT émis par le microservice Identité et le statut du tenant associé. Il
 consomme, par jointure directe, les informations des autres modules, et écrit dans un seul schéma extérieur
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 17 / 21
 (evaluations.notes).
-Figure 9 — Relations entre le microservice E-learning et le reste de la plateforme
+Figure 9 - Relations entre le microservice E-learning et le reste de la plateforme
 Identité (SSO) fournit le JWT (sub, tenant_id, role) consommé pour authentifier chaque appel ; Établissements
 permet de vérifier le statut du module E-learning ; Scolarité fournit les classes, les apprenants, le programme
 pédagogique et les liens parent-apprenant ; Évaluations fournit les matières et reçoit les notes reportées ;
@@ -519,7 +519,7 @@ Ressources Humaines fournit les affectations enseignant / classe / matière ; Co
 Ce microservice hérite des exigences non fonctionnelles générales du cahier des charges plateforme ; les seuils
 ci-dessous en précisent l'application à son périmètre propre.
 Exigence Cible / seuil indicatif
-Temps de réponse — listes de cours,
+Temps de réponse - listes de cours,
 devoirs, quiz
 Inférieur à 500 ms en conditions normales.
 Correction des QCM et vrai/faux Immédiate à la soumission (de l'ordre de la seconde).
@@ -529,7 +529,7 @@ Streaming vidéo Qualité adaptative gérée par Cloudinary selon le débit ; ut
 faible ou intermittente.
 Consultation hors connexion Métadonnées (liste des cours, devoirs à rendre) via le cache de la PWA ; vidéos non
 mises en cache.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 18 / 21
 Exigence Cible / seuil indicatif
 Disponibilité Au moins 99,5 % en heures ouvrées, conformément au seuil du cahier des charges
@@ -585,7 +585,7 @@ français, cohérentes avec le reste de la plateforme (cours, lecons, soumission
 d'environnement en MAJUSCULES_AVEC_UNDERSCORE, préfixées par domaine. Branches Git : main
 (production, protégée), develop (intégration) et feature/* (ex. feature/correction-ia).
 13.3. Tests et validation
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 19 / 21
 • Tests unitaires (pytest-django) sur les règles métier critiques : calcul de retard sur un devoir, barème QCM,
 cloisonnement tenant_id, vérification d'affectation enseignant/classe ;
@@ -600,7 +600,7 @@ mise en production.
 Intégration et déploiement continus via GitHub Actions : tests automatiques à chaque pull request, build et
 déploiement automatique après fusion sur main. Les variables d'environnement et secrets (clé API Cloudinary,
 identifiants de base de données, clé JWT) sont gérés exclusivement via GitHub Environments / Actions Secrets
-— jamais commités, jamais transmis par un canal non chiffré. Les migrations Django du schéma elearning sont
+- jamais commités, jamais transmis par un canal non chiffré. Les migrations Django du schéma elearning sont
 appliquées par un pipeline dédié, sans jamais toucher aux autres schémas de la base unique. Le déploiement se
 fait sans interruption pour les autres microservices, grâce à l'indépendance de déploiement propre à
 l'architecture.
@@ -630,7 +630,7 @@ validation ;
 • Un apprenant en retard sur un devoir est correctement signalé comme tel ;
 • Aucun enseignant ni apprenant ne peut accéder à un contenu d'un autre établissement (tenant_id) ni d'une
 classe qui ne lui est pas rattachée ;
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 20 / 21
 • Les actions sensibles (publication, archivage, report de note) apparaissent dans le journal d'audit de
 l'établissement.
@@ -649,8 +649,8 @@ de vues) ; coût d'appel au service de correction IA (facturé à l'usage s'il e
 15. Conclusion
 Le microservice E-learning prolonge le parcours de l'apprenant au sein d'E-Académique : de la mise à disposition
 des cours au report d'une note dans le carnet officiel, en passant par les devoirs et les quiz corrigés avec l'aide
-de l'IA. Sa conception respecte scrupuleusement les principes de la plateforme mère — base de données
-unique, cloisonnement par tenant_id, absence de duplication, uuid seuls exposés — tout en assumant deux
+de l'IA. Sa conception respecte scrupuleusement les principes de la plateforme mère - base de données
+unique, cloisonnement par tenant_id, absence de duplication, uuid seuls exposés - tout en assumant deux
 choix propres au lot : Django comme exception technologique, et Cloudinary pour la vidéo.
 Ce cahier des charges couvre l'ensemble du périmètre nécessaire au développement : règles fonctionnelles,
 modèles de données, architecture technique, endpoints API, sécurité et relations avec les autres microservices. Il
@@ -662,5 +662,5 @@ d'une ligne par classe pour les devoirs et quiz multi-classes ;
 en dérogation au principe « parent en lecture seule » ;
 • le mécanisme de traitement asynchrone de la correction IA (worker de tâches et broker) et le choix entre
 moteur interne ou API externe.
-E-Académique — Microservice E-learning
+E-Académique - Microservice E-learning
 Page 21 / 21

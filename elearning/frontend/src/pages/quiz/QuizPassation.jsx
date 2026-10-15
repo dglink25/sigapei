@@ -225,12 +225,12 @@ export function QuizPassation() {
             <span className="badge badge-texte">Passation</span>
             <BadgeStatut valeur={donnees.restitution} />
             <span className="badge badge-texte">
-              {donnees.nb_questions} question(s) —{' '}
+              {donnees.nb_questions} question(s) -{' '}
               {donnees.tentatives_max === null
                 ? 'tentatives illimitées'
                 : `${donnees.tentatives_max} tentative(s) max`}
               {donnees.chrono_secondes
-                ? ` — chrono ${Math.round(donnees.chrono_secondes / 60)} min`
+                ? ` - chrono ${Math.round(donnees.chrono_secondes / 60)} min`
                 : ''}
             </span>
           </div>
@@ -257,7 +257,7 @@ export function QuizPassation() {
                   : 'alerte-info'
               }`}
             >
-              Temps restant : {formaterChrono(secondes ?? 0)} — à zéro, la
+              Temps restant : {formaterChrono(secondes ?? 0)} - à zéro, la
               soumission est automatique.
             </p>
           )}
@@ -302,7 +302,7 @@ export function QuizPassation() {
           <h2>Démarrer une tentative</h2>
           <div className="champ">
             <label htmlFor="passation-apprenant">
-              Apprenant — UUID (scolarite.apprenants) *
+              Apprenant - UUID (scolarite.apprenants) *
             </label>
             <input
               id="passation-apprenant"

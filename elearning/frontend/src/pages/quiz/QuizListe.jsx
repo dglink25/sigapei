@@ -136,7 +136,7 @@ export function QuizListe() {
                         ? 'Tentatives illimitées'
                         : `${element.tentatives_max} tentative(s) max`}
                       {element.chrono_secondes
-                        ? ` — chrono ${Math.round(element.chrono_secondes / 60)} min`
+                        ? ` - chrono ${Math.round(element.chrono_secondes / 60)} min`
                         : ''}
                     </span>
                   </div>

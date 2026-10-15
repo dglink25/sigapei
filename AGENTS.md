@@ -24,8 +24,8 @@ Ce dépôt n'utilise PAS le modèle « une branche par fonctionnalité » :
 docker compose up --build
 ```
 
-- Backend : http://localhost:8000 — `migrate` + `runserver` lancés automatiquement, hot-reload (code monté en bind mount).
-- Frontend : http://localhost:5173 — `npm install` + `vite dev` automatiques, hot-reload (`node_modules` dans un volume dédié).
+- Backend : http://localhost:8000 - `migrate` + `runserver` lancés automatiquement, hot-reload (code monté en bind mount).
+- Frontend : http://localhost:5173 - `npm install` + `vite dev` automatiques, hot-reload (`node_modules` dans un volume dédié).
 - SQLite persisté côté hôte : `elearning/elearningback/db.sqlite3`.
 
 ### Backend (`elearning/elearningback`)
@@ -52,7 +52,7 @@ npx eslint src/App.jsx     # un seul fichier
 
 ## Architecture
 
-`elearning` est le module E-learning de la plateforme E-Académique : un backend Django 6.1 + Django REST Framework (`elearningback/`) et un frontend React 19 + Vite (`frontend/`, encore au stade du scaffold Vite — pas de routeur, client API ni gestion d'état). Le backend est conçu comme un microservice : il ne duplique aucune donnée des autres services.
+`elearning` est le module E-learning de la plateforme E-Académique : un backend Django 6.1 + Django REST Framework (`elearningback/`) et un frontend React 19 + Vite (`frontend/`, encore au stade du scaffold Vite - pas de routeur, client API ni gestion d'état). Le backend est conçu comme un microservice : il ne duplique aucune donnée des autres services.
 
 ### Isolation multi-tenant (socle `apps/core`)
 
@@ -64,28 +64,29 @@ npx eslint src/App.jsx     # un seul fichier
 
 `matiere_id`, `classe_id`, `enseignant_id`, `apprenant_id`… sont des **UUID externes** (schémas `evaluations.matieres`, `scolarite.classes`/`apprenants`, `rh.personnel`) : jamais de FK locale ni de table copiée. Les intégrations passent par des services :
 
-- `DroitsService` (`apps/core/services.py`) : vérifie `rh.affectations` — permissif et journalisé tant que `DROITS_STRICTS` est absent/`False`.
+- `DroitsService` (`apps/core/services.py`) : vérifie `rh.affectations` - permissif et journalisé tant que `DROITS_STRICTS` est absent/`False`.
 - `EvaluationsClient` (`apps/core/services.py`) : report des notes vers `evaluations.notes` via `EVALUATIONS_API_URL` ; seul l'UUID `evaluation_note_id` renvoyé est conservé.
-- `apps/medias/services.py` : le fichier **ne transite jamais par le backend** — signature d'upload direct Cloudinary calculée localement (sha1, sans SDK) ou URL pré-signée S3/MinIO via boto3 (import paresseux).
+- `apps/medias/services.py` : le fichier **ne transite jamais par le backend** - signature d'upload direct Cloudinary calculée localement (sha1, sans SDK) ou URL pré-signée S3/MinIO via boto3 (import paresseux).
 - Config lue via `getattr(settings, ...)` ; service absent ⇒ exception `ServiceExterneNonConfigure` ⇒ HTTP 503.
 
 ### Applications (`apps/`)
 
 Chaque application suit le même découpage : `models.py` → `serializers.py` → `views.py` (ViewSet DRF) → `urls.py` (DefaultRouter) ; `admin.py` peuplé avec `uuid`/`tenant_id` en readonly.
 
-- `core` — socle commun : BaseModel, mixins, middleware, permissions, énumérations (`choices.py`), services passerelles. `ParametresModule` : singleton de paramétrage par tenant.
-- `cours` — cours, leçons imbriquées, affectations cours-classes.
-- `devoirs` — devoirs, soumissions avec politique de retard, report de notes.
-- `quiz` — quiz, questions, options, tentatives numérotées, réponses, correction/notation.
-- `medias` — références de médias hébergés à l'extérieur.
-- `bibliotheque` — ressources pédagogiques partagées.
-- `reports` — vues agrégées **en lecture seule** transverses aux apps (activité d'un apprenant, statistiques du tenant) ; pas de modèles, seulement `views.py` + `services.py`.
+- `core` - socle commun : BaseModel, mixins, middleware, permissions, énumérations (`choices.py`), services passerelles. `ParametresModule` : singleton de paramétrage par tenant.
+- `cours` - cours, leçons imbriquées, affectations cours-classes.
+- `devoirs` - devoirs, soumissions avec politique de retard, report de notes.
+- `quiz` - quiz, questions, options, tentatives numérotées, réponses, correction/notation.
+- `medias` - références de médias hébergés à l'extérieur.
+- `bibliotheque` - ressources pédagogiques partagées.
+- `reports` - vues agrégées **en lecture seule** transverses aux apps (activité d'un apprenant, statistiques du tenant) ; pas de modèles, seulement `views.py` + `services.py`.
 
 ### Règles métier transverses (à respecter dans tout nouveau code)
 
 - **Aucune suppression physique** : `DELETE` est refusé (405) ; l'archivage passe par l'action `POST /v1/<resource>/{uuid}/archiver/` (statut `brouillon`/`publie`/`archive`).
 - **Règle 5** : un enseignant ne crée/modifie que pour ses couples matière/classe affectés — appliquée par `EnseignantAffectePermission` sur `create`/`update` quand le triplet (enseignant_id, matiere_id, classe_id) est complet.
 - **Rôles (bilan RBAC)** : lecture des contenus pour tous ; écriture pédagogique (y compris actions `archiver`, `leçons`, `questions`, `étapes`), notation, validation de tentative et report de note → enseignant/administrateur ; dépôt de copie → apprenant/parent ; tentatives de quiz → apprenant seul ; `PUT /v1/parametres/` → administrateur ; statistiques du tenant → enseignant/administrateur. Appliqué par `apps/core/permissions.py` à partir de `request.role`.
+
 - Quiz : questions QCM/vrai-faux notées en tout-ou-rien dès la soumission (`note_finale`) ; questions ouvertes en correction IA asynchrone (stub à intégrer, Celery prévu) ; note totale recalculée par `recalculer_note_totale`.
 - Devoirs : `politique_retard` = `blocage` (tout dépôt après `date_limite` refusé) ou `penalite` (dépôt accepté, marqué `en_retard`).
 

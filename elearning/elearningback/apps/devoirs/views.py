@@ -90,7 +90,7 @@ class DevoirsViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
         Compteurs de copies, notes agrégées (moyenne, minimum, médiane,
         maximum) et distribution par tranches sur l'échelle /20 (barème
-        par défaut) — calculés en direct sur les soumissions du devoir,
+        par défaut) - calculés en direct sur les soumissions du devoir,
         sans dupliquer de données externes.
         """
         devoir = self.get_object()

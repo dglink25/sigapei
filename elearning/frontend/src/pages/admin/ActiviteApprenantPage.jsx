@@ -32,7 +32,7 @@ export function ActiviteApprenantPage() {
       <div className="titre-page">
         <div>
           <h1>Activité d'un apprenant</h1>
-          <span className="badge badge-texte">Vue transverse — lecture seule</span>
+          <span className="badge badge-texte">Vue transverse - lecture seule</span>
         </div>
       </div>
       <p className="texte-efface">
@@ -43,7 +43,7 @@ export function ActiviteApprenantPage() {
       <form className="barre-filtres" onSubmit={consulter}>
         <div className="champ">
           <label htmlFor="activite-apprenant">
-            Apprenant — UUID (scolarite.apprenants) *
+            Apprenant - UUID (scolarite.apprenants) *
           </label>
           <input
             id="activite-apprenant"
@@ -100,7 +100,7 @@ export function ActiviteApprenantPage() {
                           {soumission.note_reportee ? (
                             <span className="badge badge-valide">Reportée</span>
                           ) : (
-                            '—'
+                            '-'
                           )}
                         </td>
                       </tr>

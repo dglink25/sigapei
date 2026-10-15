@@ -81,7 +81,7 @@ class ParcoursViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
 
         Deux usages :
         - Ajout d'une étape : corps = champs de l'étape (titre facultatif,
-          `cours` OU `quiz`, ordre facultatif — auto si absent).
+          `cours` OU `quiz`, ordre facultatif - auto si absent).
         - Réordonnancement : corps = {"reordonner": [{"uuid": ..., "ordre": 2}, ...]}
         """
         parcours = self.get_object()

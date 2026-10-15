@@ -1,0 +1,218 @@
+/* ═══════════════════════════════════════════
+   NoticeModal - SIGAPEI
+   Style : épuré institutionnel, fond blanc,
+   grand cercle fil de fer + symbole centré
+   Aucun liseré, aucun fond coloré sur l'icône
+═══════════════════════════════════════════ */
+
+/* ── Overlay ── */
+.notice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: n-fade 0.18s ease both;
+}
+
+/* ── Carte - fond blanc pur, ombre douce, aucun liseré ── */
+.notice {
+  position: relative;
+  width: min(420px, 100%);
+  padding: 48px 36px 40px;
+  overflow: hidden;
+  text-align: center;
+  color: #1a1a1a;
+  font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
+  background: #ffffff;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0, 0, 0, 0.08);
+  animation: n-up 0.28s cubic-bezier(0.22, 1.3, 0.36, 1) both;
+}
+
+/* ── Bouton fermer ── */
+.notice-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border: 0; border-radius: 50%;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.notice-close:hover { background: #f0f0f0; color: #333; }
+
+/* ── Wrapper icône - aucun fond, aucune bordure ── */
+.notice-icon {
+  display: grid;
+  place-items: center;
+  margin: 0 auto 28px;
+  width: fit-content;
+  background: none;
+  border: none;
+}
+
+/* ══════════════════════════════════════════════
+   SVG - cercle fil de fer animé + symbole
+   r = 38 → C = 2π × 38 ≈ 238.76
+══════════════════════════════════════════════ */
+.nsvg {
+  width: 96px;
+  height: 96px;
+  display: block;
+}
+
+/* Couleurs par variante */
+.notice--success .nsvg-circle { stroke: #006b3c; }
+.notice--success .nsvg-mark   { stroke: #006b3c; }
+.notice--success .nsvg-dot    { fill: #006b3c; }
+
+.notice--error .nsvg-circle   { stroke: #e05252; }
+.notice--error .nsvg-mark     { stroke: #e05252; }
+
+.notice--warning .nsvg-circle { stroke: #c97e00; }
+.notice--warning .nsvg-mark   { stroke: #c97e00; }
+.notice--warning .nsvg-dot    { fill: #c97e00; }
+
+.notice--info .nsvg-circle    { stroke: #1565a8; }
+.notice--info .nsvg-mark      { stroke: #1565a8; }
+.notice--info .nsvg-dot       { fill: #1565a8; }
+
+/* ── Cercle tracé depuis le haut ── */
+.nsvg-circle {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 238.76;
+  stroke-dashoffset: 238.76;
+  transform-origin: 48px 48px;
+  transform: rotate(-90deg);
+  animation: n-ring 0.55s ease-out 0.05s forwards;
+}
+
+/* ── Coche ── */
+.nsvg-mark--check {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-dasharray: 46;
+  stroke-dashoffset: 46;
+  animation: n-draw 0.30s ease-out 0.58s forwards;
+}
+
+/* ── Croix branche 1 ── */
+.nsvg-mark--x1 {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-dasharray: 45;
+  stroke-dashoffset: 45;
+  animation: n-draw 0.24s ease-out 0.58s forwards;
+}
+
+/* ── Croix branche 2 ── */
+.nsvg-mark--x2 {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-dasharray: 45;
+  stroke-dashoffset: 45;
+  animation: n-draw 0.24s ease-out 0.76s forwards;
+}
+
+/* ── Tige verticale ── */
+.nsvg-mark--stem {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-dasharray: 25;
+  stroke-dashoffset: 25;
+  animation: n-draw 0.22s ease-out 0.58s forwards;
+}
+
+/* ── Points ── */
+.nsvg-dot {
+  stroke: none;
+  opacity: 0;
+}
+.nsvg-dot--warning {
+  transform-origin: 48px 64px;
+  animation: n-dot 0.18s ease-out 0.78s forwards;
+}
+.nsvg-dot--info {
+  transform-origin: 48px 32px;
+  animation: n-dot 0.18s ease-out 0.58s forwards;
+}
+
+/* ── Keyframes ── */
+@keyframes n-ring { to { stroke-dashoffset: 0; } }
+@keyframes n-draw { to { stroke-dashoffset: 0; } }
+@keyframes n-dot  {
+  from { opacity: 0; transform: scale(0); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes n-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes n-up {
+  from { opacity: 0; transform: translateY(24px) scale(0.95); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Textes ── */
+.notice-title {
+  margin: 0 0 10px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #111;
+}
+.notice-msg {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #555;
+}
+
+/* ── Barre de progression (bas de carte, discrète) ── */
+.notice-progress {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: transparent;
+  border-radius: 0 0 16px 16px;
+  overflow: hidden;
+}
+.notice--success .notice-progress span { background: #006b3c; }
+.notice--error   .notice-progress span { background: #e05252; }
+.notice--warning .notice-progress span { background: #c97e00; }
+.notice--info    .notice-progress span { background: #1565a8; }
+
+.notice-progress span {
+  display: block;
+  height: 100%;
+  transform-origin: left;
+  animation-name: n-bar;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes n-bar {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+/* ── Accessibilité ── */
+@media (prefers-reduced-motion: reduce) {
+  .notice, .notice-overlay { animation: none; }
+  .nsvg-circle,
+  .nsvg-mark--check,
+  .nsvg-mark--x1,
+  .nsvg-mark--x2,
+  .nsvg-mark--stem { stroke-dashoffset: 0; animation: none; }
+  .nsvg-dot--warning,
+  .nsvg-dot--info   { opacity: 1; transform: none; animation: none; }
+}

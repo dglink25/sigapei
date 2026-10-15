@@ -11,7 +11,7 @@ class ProgressionEtapeSerializer(TenantSerializerMixin,
 
     En écriture (POST /v1/progressions/) : `etape` est l'UUID de l'étape
     et `apprenant_id` est requis ; `soumis_par` est facultatif (parent
-    agissant au nom de l'enfant — programme béninois).
+    agissant au nom de l'enfant - programme béninois).
     """
     etape = serializers.UUIDField(write_only=True)
     etape_detail = serializers.SerializerMethodField()

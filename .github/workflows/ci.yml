@@ -9,6 +9,8 @@ on:
 jobs:
   tests:
     name: Pint + PHPUnit
+    # Les PR feature/** -> develop sont déjà testées par le push : pas de doublon.
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'feature/')
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,3 +39,61 @@ jobs:
 
       - name: Run tests
         run: php artisan test
+
+  auto-pr:
+    name: PR vers develop (si tests verts)
+    needs: tests
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    # Un seul run à la fois par branche : évite les courses entre deux pushes rapprochés
+    concurrency:
+      group: auto-pr-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      BRANCH: ${{ github.ref_name }}
+    steps:
+      - name: Créer la PR et la fusionner
+        run: |
+          set -euo pipefail
+
+          # Rien à fusionner si la branche n'a aucun commit d'avance sur develop
+          AHEAD=$(gh api "repos/$REPO/compare/develop...$BRANCH" --jq '.ahead_by')
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "Aucun commit d'avance sur develop : rien à fusionner."
+            exit 0
+          fi
+
+          PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --base develop \
+                 --state open --json number --jq '.[0].number // empty')
+
+          if [ -z "$PR" ]; then
+            gh pr create --repo "$REPO" --base develop --head "$BRANCH" \
+              --title "Fusion de $BRANCH vers develop" \
+              --body "PR créée automatiquement (tests verts)."
+            PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --base develop \
+                   --state open --json number --jq '.[0].number')
+          fi
+          echo "PR #$PR"
+
+          # GitHub calcule la "mergeabilité" avec un léger délai
+          for i in 1 2 3 4 5 6; do
+            STATE=$(gh pr view "$PR" --repo "$REPO" --json mergeable --jq '.mergeable')
+            [ "$STATE" != "UNKNOWN" ] && break
+            sleep 5
+          done
+
+          if [ "$STATE" = "CONFLICTING" ]; then
+            echo "::error::Conflit entre $BRANCH et develop. Résous-le puis repousse."
+            exit 1
+          fi
+
+          if ! gh pr merge "$PR" --repo "$REPO" --merge; then
+            echo "::error::Fusion refusée. Détail de la PR :"
+            gh pr view "$PR" --repo "$REPO" --json mergeable,mergeStateStatus,reviewDecision
+            exit 1
+          fi

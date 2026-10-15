@@ -93,7 +93,7 @@ export function FormulaireMedia({ onCree, dossier = 'elearning' }) {
       ) : (
         // Pas de <form> imbriqué : ce composant s'affiche déjà à
         // l'intérieur des formulaires (leçon, soumission, ressource) et un
-        // form dans un form est de l'HTML invalide — le clic soumettait
+        // form dans un form est de l'HTML invalide - le clic soumettait
         // le formulaire parent au lieu d'enregistrer le média.
         <div className="formulaire">
           <div className="champ">
@@ -149,7 +149,7 @@ export function FormulaireMedia({ onCree, dossier = 'elearning' }) {
         <p className="erreur-champ" role="alert">
           {erreur}
           {erreur.includes('Cloudinary non configuré') && (
-            <> — utilisez le mode « URL externe » en attendant.</>
+            <> - utilisez le mode « URL externe » en attendant.</>
           )}
         </p>
       )}

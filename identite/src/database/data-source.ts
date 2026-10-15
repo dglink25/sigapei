@@ -11,11 +11,14 @@ import { QuestionSecurite } from '../utilisateurs/question-securite.entity';
 import { Appareil } from '../appareils/appareil.entity';
 import { EmpreinteBiometrique } from '../biometrie/empreinte-biometrique.entity';
 import { TentativeConnexion } from '../audit/tentative-connexion.entity';
+import { Service } from '../services/service.entity';
+import { EtablissementService } from '../services-etablissements/etablissement-service.entity';
+import { UtilisateurServiceEtablissement } from '../acces-services/utilisateur-service-etablissement.entity';
 
 // Desactive l'algorithme "Happy Eyeballs" (actif par defaut depuis Node 18/20) :
 // celui-ci alterne les tentatives IPv6/IPv4 avec un timeout tres court par
 // adresse (~250ms), ce qui echoue systematiquement sur un reseau a latence
-// elevee ou avec des adresses IPv6 injoignables — alors qu'une connexion
+// elevee ou avec des adresses IPv6 injoignables - alors qu'une connexion
 // classique (comme celle de `psql`/`nc`) sur une seule adresse IPv4, avec le
 // timeout TCP normal du systeme, aboutit sans probleme. On revient donc a ce
 // comportement "classique" : une seule adresse (IPv4 en priorite), timeout OS.
@@ -36,7 +39,7 @@ export default new DataSource({
   synchronize: false,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   extra: { connectionTimeoutMillis: 20000 },
-  entities: [Role, Utilisateur, IdentifiantRecuperation, QuestionSecurite, Appareil, EmpreinteBiometrique, TentativeConnexion],
+  entities: [Role, Utilisateur, IdentifiantRecuperation, QuestionSecurite, Appareil, EmpreinteBiometrique, TentativeConnexion, Service, EtablissementService, UtilisateurServiceEtablissement],
   migrations: [__dirname + '/migrations/*.ts'],
   migrationsTableName: 'migrations_typeorm',
 });

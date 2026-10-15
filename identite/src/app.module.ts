@@ -7,6 +7,9 @@ import configuration from './config/configuration';
 import { RedisModule } from './redis/redis.module';
 import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { RolesModule } from './roles/roles.module';
+import { ServicesModule } from './services/services.module';
+import { ServicesEtablissementsModule } from './services-etablissements/services-etablissements.module';
+import { AccesServicesModule } from './acces-services/acces-services.module';
 import { UtilisateursModule } from './utilisateurs/utilisateurs.module';
 import { OtpModule } from './otp/otp.module';
 import { JetonsModule } from './jetons/jetons.module';
@@ -30,6 +33,9 @@ import { QuestionSecurite } from './utilisateurs/question-securite.entity';
 import { Appareil } from './appareils/appareil.entity';
 import { EmpreinteBiometrique } from './biometrie/empreinte-biometrique.entity';
 import { TentativeConnexion } from './audit/tentative-connexion.entity';
+import { Service } from './services/service.entity';
+import { EtablissementService } from './services-etablissements/etablissement-service.entity';
+import { UtilisateurServiceEtablissement } from './acces-services/utilisateur-service-etablissement.entity';
 
 @Module({
   imports: [
@@ -47,7 +53,7 @@ import { TentativeConnexion } from './audit/tentative-connexion.entity';
         schema: config.get('db.schema'),
         synchronize: config.get('db.synchronize'),
         ssl: config.get('db.ssl') ? { rejectUnauthorized: false } : false,
-        entities: [Role, Utilisateur, IdentifiantRecuperation, QuestionSecurite, Appareil, EmpreinteBiometrique, TentativeConnexion],
+        entities: [Role, Utilisateur, IdentifiantRecuperation, QuestionSecurite, Appareil, EmpreinteBiometrique, TentativeConnexion, Service, EtablissementService, UtilisateurServiceEtablissement],
         migrations: ['dist/database/migrations/*.js'],
         migrationsRun: false,
         namingStrategy: undefined,
@@ -58,6 +64,9 @@ import { TentativeConnexion } from './audit/tentative-connexion.entity';
     RabbitmqModule,
     IntegrationsModule,
     RolesModule,
+    ServicesModule,
+    ServicesEtablissementsModule,
+    AccesServicesModule,
     UtilisateursModule,
     OtpModule,
     JetonsModule,

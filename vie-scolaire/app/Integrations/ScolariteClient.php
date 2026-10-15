@@ -2,50 +2,63 @@
 
 namespace App\Integrations;
 
-use Illuminate\Support\Facades\DB;
-
 /**
- * Jointure directe vers le schema scolarite (section 7.2 du CDC).
+ * Lecture des donnees Scolarite (apprenants, classes, emplois du temps).
  *
- * Le microservice Vie scolaire ne detient ni apprenants, ni classes, ni
- * emplois du temps : chaque lecture se fait par jointure au moment de la
- * requete, sans aucune duplication de donnee. Aucune contrainte FK
- * inter-schema n'est posee en base (section 39 plateforme) ; les noms de
- * tables externes ci-dessous correspondent au contrat du microservice
- * Scolarite et sont parametrables via DB_SCHEMA_SCOLARITE.
+ * Regle n°1 : le microservice Vie scolaire ne detient ni apprenants, ni
+ * classes, ni emplois du temps, et ne fait plus de jointure SQL vers le
+ * schema `scolarite`. Chaque lecture passe par l'API interne du
+ * microservice Scolarite (`/interne/...` + `X-Internal-Secret`).
+ *
+ * Aucune donnee n'est dupliquee cote Vie scolaire : seules les cles
+ * externes (apprenant_id, cours_id) sont conservees, et les uuid sont
+ * resolus a la volee au moment de la serialisation.
+ *
+ * Les chemins ci-dessous constituent le contrat consomme. Ils doivent
+ * etre alignes sur ceux exposes par le microservice Scolarite ; toute
+ * evolution se fait des deux cotes dans la meme pull request.
  */
 class ScolariteClient
 {
-    private string $schema;
-
-    public function __construct()
-    {
-        $this->schema = (string) config('vie-scolaire.schemas_externes.scolarite', 'scolarite');
-    }
+    public function __construct(
+        private readonly InterneClient $interne,
+    ) {}
 
     public function coursParUuid(int $tenantId, string $uuid): ?object
     {
-        return $this->first('emplois_du_temps', $tenantId, $uuid);
+        return $this->interne->get('scolarite', '/interne/emplois-du-temps', [
+            'tenant_id' => $tenantId,
+            'uuid' => $uuid,
+        ]);
     }
 
     public function coursParId(int $tenantId, int $id): ?object
     {
-        return $this->first('emplois_du_temps', $tenantId, $id);
+        return $this->interne->get('scolarite', '/interne/emplois-du-temps', [
+            'tenant_id' => $tenantId,
+            'id' => $id,
+        ]);
     }
 
     public function apprenantParUuid(int $tenantId, string $uuid): ?object
     {
-        return $this->first('apprenants', $tenantId, $uuid);
+        return $this->interne->get('scolarite', '/interne/apprenants', [
+            'tenant_id' => $tenantId,
+            'uuid' => $uuid,
+        ]);
     }
 
     public function apprenantParId(int $tenantId, int $id): ?object
     {
-        return $this->first('apprenants', $tenantId, $id);
+        return $this->interne->get('scolarite', '/interne/apprenants', [
+            'tenant_id' => $tenantId,
+            'id' => $id,
+        ]);
     }
 
     /**
      * @param  array<int>  $ids
-     * @return array<int, object>
+     * @return array<int, object> indexe par identifiant
      */
     public function apprenantsParIds(int $tenantId, array $ids): array
     {
@@ -53,25 +66,42 @@ class ScolariteClient
             return [];
         }
 
-        return DB::table($this->schema.'.apprenants')
-            ->where('tenant_id', $tenantId)
-            ->whereIn('id', $ids)
-            ->get()
-            ->keyBy('id')
-            ->all();
+        $apprenants = $this->interne->get('scolarite', '/interne/apprenants', [
+            'tenant_id' => $tenantId,
+            'ids' => implode(',', $ids),
+        ]) ?? [];
+
+        $parId = [];
+        foreach ($apprenants['apprenants'] ?? $apprenants as $apprenant) {
+            $parId[(int) $apprenant->id] = $apprenant;
+        }
+
+        return $parId;
     }
 
     /**
-     * Carte id => uuid des apprenants du schema scolarite.
+     * Carte id => uuid des apprenants demandes.
      *
      * @param  array<int>  $ids
      * @return array<int, string>
      */
     public function uuidsPourApprenants(int $tenantId, array $ids): array
     {
-        return collect($this->apprenantsParIds($tenantId, $ids))
-            ->map(fn ($apprenant) => $apprenant->uuid)
-            ->all();
+        if ($ids === []) {
+            return [];
+        }
+
+        $apprenants = $this->interne->get('scolarite', '/interne/apprenants', [
+            'tenant_id' => $tenantId,
+            'ids' => implode(',', $ids),
+        ]) ?? [];
+
+        $uuids = [];
+        foreach ($apprenants['apprenants'] ?? $apprenants as $apprenant) {
+            $uuids[(int) $apprenant->id] = (string) $apprenant->uuid;
+        }
+
+        return $uuids;
     }
 
     /**
@@ -81,28 +111,19 @@ class ScolariteClient
      */
     public function apprenantIdsParClasseUuid(int $tenantId, string $classeUuid): array
     {
-        $classe = $this->first('classes', $tenantId, $classeUuid);
-        if (! $classe) {
-            return [];
-        }
+        $reponse = $this->interne->get('scolarite', '/interne/classes/apprenants', [
+            'tenant_id' => $tenantId,
+            'classe_uuid' => $classeUuid,
+        ]);
 
-        return DB::table($this->schema.'.apprenants')
-            ->where('tenant_id', $tenantId)
-            ->where('classe_id', $classe->id)
-            ->pluck('id')
-            ->all();
+        return array_map('intval', $reponse['apprenant_ids'] ?? []);
     }
 
     public function classeParUuid(int $tenantId, string $uuid): ?object
     {
-        return $this->first('classes', $tenantId, $uuid);
-    }
-
-    private function first(string $table, int $tenantId, string|int $key): ?object
-    {
-        return DB::table($this->schema.'.'.$table)
-            ->where('tenant_id', $tenantId)
-            ->where(is_string($key) ? 'uuid' : 'id', $key)
-            ->first();
+        return $this->interne->get('scolarite', '/interne/classes', [
+            'tenant_id' => $tenantId,
+            'uuid' => $uuid,
+        ]);
     }
 }

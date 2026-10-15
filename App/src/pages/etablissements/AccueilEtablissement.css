@@ -1,0 +1,169 @@
+/* ═══════════════════════════════════════════════════════
+   Page d'accueil établissement - SIGAPEI
+   Charte : #006B3C · #E9AA20 · #FFF6DD · #000000
+═══════════════════════════════════════════════════════ */
+
+.ae-page {
+  min-height: 100dvh;
+  display: flex; flex-direction: column;
+  background: #f4f6f5;
+  font-family: 'Century Gothic','Questrial','Poppins',system-ui,sans-serif;
+  font-size: 16px;
+  color: #1a2a1e;
+}
+.ae-page *, .ae-page *::before, .ae-page *::after { box-sizing: border-box; }
+
+/* ── Header ── */
+.ae-header {
+  background: #006B3C;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.ae-header-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.ae-header-brand { display: flex; align-items: center; gap: 14px; }
+
+.ae-logo { height: 44px; width: 44px; object-fit: contain; border-radius: 8px; background: #fff; padding: 3px; }
+.ae-logo-placeholder {
+  height: 44px; width: 44px; border-radius: 8px;
+  background: rgba(255,246,221,0.15);
+  display: grid; place-items: center; color: #FFF6DD; flex: none;
+}
+.ae-nom { margin: 0; font-size: 1.05rem; font-weight: 700; color: #FFF6DD; line-height: 1.2; }
+.ae-types { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.ae-type-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 9px; border-radius: 999px;
+  background: rgba(233,170,32,0.2); color: #E9AA20;
+  border: 1px solid rgba(233,170,32,0.35);
+  font-size: 0.72rem; font-weight: 700;
+}
+
+/* ── Boutons ── */
+.ae-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 10px 22px; border-radius: 8px;
+  font: inherit; font-size: 0.9rem; font-weight: 700;
+  text-decoration: none; cursor: pointer; border: 0;
+  transition: filter 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.ae-btn           { background: #006B3C; color: #FFF6DD; }
+.ae-btn:hover     { filter: brightness(1.1); }
+.ae-btn--login    { background: rgba(255,246,221,0.15); color: #FFF6DD; border: 1.5px solid rgba(255,246,221,0.35); }
+.ae-btn--login:hover { background: rgba(255,246,221,0.25); filter: none; }
+.ae-btn--ghost    { background: transparent; color: #1a2a1e; border: 1.5px solid #dde4df; }
+.ae-btn--ghost:hover { border-color: #006B3C; color: #006B3C; filter: none; }
+.ae-btn--gold     { background: #E9AA20; color: #004d2b; }
+
+/* ── Héro ── */
+.ae-hero { background: #006B3C; color: #FFF6DD; padding: 72px 24px 80px; text-align: center; }
+.ae-hero-inner { max-width: 700px; margin: 0 auto; }
+.ae-hero-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 5px 16px; border-radius: 999px;
+  background: rgba(255,246,221,0.12);
+  border: 1px solid rgba(255,246,221,0.25);
+  font-size: 0.82rem; margin-bottom: 20px;
+}
+.ae-code { font-weight: 700; letter-spacing: 0.1em; color: #E9AA20; }
+.ae-statut { color: rgba(255,246,221,0.75); }
+.ae-hero-titre { margin: 0 0 12px; font-size: 2.2rem; font-weight: 400; line-height: 1.2; }
+.ae-hero-titre strong { font-weight: 700; }
+.ae-hero-sub { margin: 0 0 32px; font-size: 0.95rem; color: rgba(255,246,221,0.78); line-height: 1.6; max-width: 520px; margin-inline: auto; }
+.ae-hero-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+/* ── Sections ── */
+.ae-section { padding: 56px 24px; }
+.ae-section-inner { max-width: 1100px; margin: 0 auto; }
+.ae-section-title {
+  margin: 0 0 24px;
+  font-size: 1.1rem; font-weight: 700; color: #1a2a1e;
+  text-align: center;
+}
+
+/* ── Cartes info ── */
+.ae-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.ae-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 20px; border-radius: 12px;
+  background: #fff; border: 1px solid #dde4df;
+  text-decoration: none; color: #1a2a1e;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+.ae-card--link:hover {
+  border-color: #006B3C;
+  box-shadow: 0 4px 16px rgba(0,107,60,0.08);
+  transform: translateY(-2px);
+}
+.ae-card-icon {
+  flex: none; width: 42px; height: 42px; border-radius: 10px;
+  display: grid; place-items: center;
+  background: rgba(0,107,60,0.08); color: #006B3C;
+}
+.ae-card-label { margin: 0; font-size: 0.78rem; color: #5a6b5f; }
+.ae-card-val   { margin: 3px 0 0; font-size: 0.92rem; font-weight: 600; }
+
+/* ── CTA connexion ── */
+.ae-cta {
+  background: #fff;
+  border-top: 1px solid #dde4df;
+  border-bottom: 1px solid #dde4df;
+  padding: 56px 24px; text-align: center;
+}
+.ae-cta-inner { max-width: 520px; margin: 0 auto; }
+.ae-cta-icon { color: #006B3C; margin-bottom: 14px; }
+.ae-cta h3   { margin: 0 0 8px; font-size: 1.3rem; font-weight: 700; color: #1a2a1e; }
+.ae-cta p    { margin: 0 0 24px; color: #5a6b5f; line-height: 1.6; font-size: 0.92rem; }
+
+/* ── Footer ── */
+.ae-footer {
+  margin-top: auto; padding: 20px 24px;
+  text-align: center; font-size: 0.82rem; color: #5a6b5f;
+  background: #fff; border-top: 1px solid #dde4df;
+}
+.ae-footer a { color: #006B3C; font-weight: 600; text-decoration: none; }
+
+/* ── Erreur ── */
+.ae-error {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  background: #f4f6f5; padding: 24px;
+}
+.ae-error-card {
+  width: min(460px,100%); text-align: center;
+  background: #fff; border-radius: 16px; padding: 44px 32px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.ae-error-logo { height: 52px; object-fit: contain; }
+.ae-error-icon { color: #006B3C; }
+.ae-error-icon--warn { color: #c97e00; }
+.ae-error-card h1 { margin: 0; font-size: 1.3rem; font-weight: 700; color: #1a2a1e; }
+.ae-error-card p  { margin: 0; color: #5a6b5f; }
+
+/* ── Thème sombre ── */
+[data-theme='dark'] .ae-page    { background: var(--sg-page-bg); color: var(--sg-text); }
+[data-theme='dark'] .ae-card    { background: var(--sg-surface); border-color: var(--sg-border); color: var(--sg-text); }
+[data-theme='dark'] .ae-section { background: var(--sg-page-bg); }
+[data-theme='dark'] .ae-cta     { background: var(--sg-surface); border-color: var(--sg-border); }
+[data-theme='dark'] .ae-footer  { background: var(--sg-surface); border-color: var(--sg-border); }
+[data-theme='dark'] .ae-btn--ghost { border-color: var(--sg-border); color: var(--sg-text); }
+[data-theme='dark'] .ae-section-title { color: var(--sg-text); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .ae-header-inner { padding: 10px 14px; }
+  .ae-nom          { font-size: 0.9rem; }
+  .ae-hero         { padding: 48px 16px 56px; }
+  .ae-hero-titre   { font-size: 1.6rem; }
+  .ae-section      { padding: 36px 16px; }
+  .ae-cta          { padding: 40px 16px; }
+}

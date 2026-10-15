@@ -129,7 +129,7 @@ export function DevoirFormulaire() {
 
         <div className="grille-2-colonnes">
           <div className="champ">
-            <label htmlFor="devoir-matiere">Matière — UUID (evaluations.matieres) *</label>
+            <label htmlFor="devoir-matiere">Matière - UUID (evaluations.matieres) *</label>
             <input
               id="devoir-matiere"
               type="text"
@@ -139,7 +139,7 @@ export function DevoirFormulaire() {
             />
           </div>
           <div className="champ">
-            <label htmlFor="devoir-classe">Classe — UUID (scolarite.classes) *</label>
+            <label htmlFor="devoir-classe">Classe - UUID (scolarite.classes) *</label>
             <input
               id="devoir-classe"
               type="text"
@@ -158,7 +158,7 @@ export function DevoirFormulaire() {
               value={coursUuid}
               onChange={(e) => setCoursUuid(e.target.value)}
             >
-              <option value="">— Aucun —</option>
+              <option value="">- Aucun -</option>
               {(cours.data?.results ?? []).map((element) => (
                 <option key={element.uuid} value={element.uuid}>
                   {element.titre}
@@ -198,10 +198,10 @@ export function DevoirFormulaire() {
               onChange={(e) => setPolitiqueRetard(e.target.value)}
             >
               <option value="penalite">
-                Pénalité — dépôt tardif accepté, marqué « En retard »
+                Pénalité - dépôt tardif accepté, marqué « En retard »
               </option>
               <option value="blocage">
-                Blocage — dépôt refusé après la date limite
+                Blocage - dépôt refusé après la date limite
               </option>
             </select>
           </div>

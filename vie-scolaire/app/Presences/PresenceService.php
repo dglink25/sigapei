@@ -30,7 +30,7 @@ class PresenceService
     ) {}
 
     /**
-     * POST /presences — enregistre les presences/absences d'un cours pour
+     * POST /presences - enregistre les presences/absences d'un cours pour
      * l'ensemble d'une classe.
      *
      * @param  array{cours_uuid: string, date: string, apprenants: array<int, array{uuid: string, statut: string}>}  $payload
@@ -95,7 +95,7 @@ class PresenceService
     }
 
     /**
-     * GET /presences — liste filtrable par classe, apprenant, cours, statut
+     * GET /presences - liste filtrable par classe, apprenant, cours, statut
      * ou periode. Chaque element n'expose que des uuid.
      *
      * @param  array<string, mixed>  $filters
@@ -154,7 +154,7 @@ class PresenceService
     }
 
     /**
-     * PUT /presences/{uuid} — correction d'une presence deja enregistree.
+     * PUT /presences/{uuid} - correction d'une presence deja enregistree.
      *
      * Regle (section 9) : l'enseignant ne peut corriger que le jour meme ;
      * au-dela, seuls le censeur ou l'administrateur corrigent. Toute
@@ -199,7 +199,7 @@ class PresenceService
     }
 
     /**
-     * GET /apprenants/{uuid}/absences/synthese — total d'absences sur la
+     * GET /apprenants/{uuid}/absences/synthese - total d'absences sur la
      * periode glissante configuree.
      *
      * @return array<string, mixed>

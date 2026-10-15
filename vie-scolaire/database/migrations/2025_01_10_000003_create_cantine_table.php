@@ -5,14 +5,14 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Table vie_scolaire.cantine — V2+, HORS LOT (section 2.4 / 7.1 / 9 du CDC).
+ * Table vie_scolaire.cantine - V2+, HORS LOT (section 2.4 / 7.1 / 9 du CDC).
  *
  * Posee des ce lot pour eviter une migration disruptive lors de
  * l'activation de la V2, mais non accessible par endpoint dans ce lot.
  *
  * Choix de modelisation de ce document : table separee de "transport"
  * plutot qu'une table combinee (point ouvert, a confirmer avec l'equipe
- * — voir conclusion du CDC microservice).
+ * - voir conclusion du CDC microservice).
  */
 return new class extends Migration
 {

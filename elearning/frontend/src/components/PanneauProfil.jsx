@@ -42,7 +42,7 @@ function LigneCopier({ libelle, valeur }) {
       <span className="texte-efface" style={{ minWidth: '5.5rem' }}>
         {libelle}
       </span>
-      <code className="police-mono">{valeur || '—'}</code>
+      <code className="police-mono">{valeur || '-'}</code>
       <button
         type="button"
         className="bouton bouton-secondaire bouton-compact"
@@ -304,7 +304,7 @@ export function PanneauProfil() {
           <span className="badge badge-synchro">
             <Icone nom="dns" />
             {statutBackend}
-            {latence !== null ? ` — ${latence} ms` : ''}
+            {latence !== null ? ` - ${latence} ms` : ''}
           </span>
         </div>
 

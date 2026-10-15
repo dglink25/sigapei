@@ -128,7 +128,7 @@ export function Layout() {
       </aside>
 
       <div className="contenu-principal">
-        {/* Barre supérieure (PC) — la recherche globale est masquée :
+        {/* Barre supérieure (PC) - la recherche globale est masquée :
             aucune API transverse ne l'alimente (décision validée). */}
         <header className="topbar">
           <span

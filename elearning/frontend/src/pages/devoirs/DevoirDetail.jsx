@@ -103,7 +103,7 @@ function FormulaireDepot({ devoir }) {
       <div className="grille-2-colonnes">
         <div className="champ">
           <label htmlFor="depot-apprenant">
-            Apprenant — UUID (scolarite.apprenants) *
+            Apprenant - UUID (scolarite.apprenants) *
           </label>
           <input
             id="depot-apprenant"
@@ -115,7 +115,7 @@ function FormulaireDepot({ devoir }) {
         </div>
         <div className="champ">
           <label htmlFor="depot-soumis-par">
-            Déposé par — UUID (apprenant ou parent)
+            Déposé par - UUID (apprenant ou parent)
           </label>
           <input
             id="depot-soumis-par"
@@ -221,7 +221,7 @@ function LigneSoumission({ soumission, noteMax }) {
       <td>{formaterDateHeure(soumission.date_depot)}</td>
       <td>
         {(soumission.fichiers_detail ?? []).length === 0
-          ? '—'
+          ? '-'
           : (soumission.fichiers_detail ?? []).map((fichier) => (
               <span key={fichier.uuid} style={{ display: 'block' }}>
                 {fichier.media?.url_cloudinary ? (
@@ -240,7 +240,7 @@ function LigneSoumission({ soumission, noteMax }) {
       </td>
       <td>
         {soumission.note === null
-          ? '—'
+          ? '-'
           : `${formaterNombre(soumission.note)} / ${formaterNombre(noteMax)}`}
         {soumission.note_reportee && (
           <span className="badge badge-valide">Reportée</span>
@@ -464,13 +464,13 @@ function SectionEnseignant({ devoir, stats }) {
             </div>
             <div className="carte">
               <span className="stat-valeur">
-                {stats ? formaterNombre(stats.note_minimale) : '—'}
+                {stats ? formaterNombre(stats.note_minimale) : '-'}
               </span>
               <span className="stat-libelle">Note minimale</span>
             </div>
             <div className="carte">
               <span className="stat-valeur">
-                {stats ? formaterNombre(stats.note_mediane) : '—'}
+                {stats ? formaterNombre(stats.note_mediane) : '-'}
               </span>
               <span className="stat-libelle">Médiane</span>
             </div>
@@ -496,7 +496,7 @@ function SectionEnseignant({ devoir, stats }) {
           </p>
           <p className="texte-efface">
             {stats
-              ? `${stats.copies_notees} copie(s) notée(s) — ${stats.notes_reportees} note(s) déjà transmise(s) à evaluations.notes.`
+              ? `${stats.copies_notees} copie(s) notée(s) - ${stats.notes_reportees} note(s) déjà transmise(s) à evaluations.notes.`
               : 'Transmission copie par copie depuis le registre.'}
           </p>
           <button
@@ -646,8 +646,8 @@ export function DevoirDetail() {
       </div>
 
       <p className="texte-efface">
-        Barème /{formaterNombre(donnees.note_max)} — clôture le{' '}
-        {formaterDateHeure(donnees.date_limite)} —{' '}
+        Barème /{formaterNombre(donnees.note_max)} - clôture le{' '}
+        {formaterDateHeure(donnees.date_limite)} -{' '}
         {donnees.politique_retard === 'blocage'
           ? 'aucun dépôt accepté après cette date.'
           : 'les dépôts tardifs sont acceptés et marqués « En retard ».'}
@@ -681,7 +681,7 @@ export function DevoirDetail() {
             icone="insights"
             valeur={
               statistiques.moyenne === null
-                ? '—'
+                ? '-'
                 : formaterNombre(statistiques.moyenne)
             }
             libelle={`Moyenne (min ${formaterNombre(

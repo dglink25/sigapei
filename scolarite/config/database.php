@@ -7,18 +7,39 @@ return [
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', 'postgres'),
+            'host' => env('DB_HOST', ''),
             'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'sigapei'),
-            'username' => env('DB_USERNAME', 'sigapei'),
-            'password' => env('DB_PASSWORD', 'change-me'),
+            'database' => env('DB_DATABASE', 'neondb'),
+            'username' => env('DB_USERNAME', ''),
+            'password' => env('DB_PASSWORD', ''),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => env('DB_SCHEMA', 'scolarite') . ',public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Schema dedie Neon pour le microservice Scolarite dans la base unique
+            'search_path' => env('DB_SCHEMA', 'scolarite'),
+            'sslmode' => env('DB_SSLMODE', 'require'),
+            // Contournement SNI pour libpq ancienne (XAMPP / Docker sans SNI)
+            // NeonServiceProvider injecte cet endpoint dans le DSN PDO via NeonPostgresConnector
+            'neon_endpoint' => env('DB_ENDPOINT', ''),
+            'application_name' => env('APP_NAME', 'api-scolarite'),
         ],
     ],
 
-    'migrations' => 'migrations',
+    // Table de suivi des migrations dediee pour eviter tout conflit sur la base unique partagee
+    'migrations' => env('DB_SCHEMA', 'scolarite') . '_migrations',
+
+    'redis' => [
+        'client' => env('REDIS_CLIENT', 'phpredis'),
+        'options' => [
+            'cluster' => env('REDIS_CLUSTER', 'redis'),
+            'prefix' => 'scolarite:',
+        ],
+        'default' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_DB', '3'),
+        ],
+    ],
 ];

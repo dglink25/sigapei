@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
  */
 class FakeRhClient extends RhClient
 {
+    public function __construct() {}
+
     public function personnelIdPourUserUuid(int $tenantId, ?string $userUuid): ?int
     {
         if (! $userUuid) {

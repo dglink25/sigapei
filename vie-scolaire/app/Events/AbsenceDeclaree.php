@@ -9,7 +9,7 @@ use Illuminate\Foundation\Events\Dispatchable;
  * Evenement emis a l'enregistrement d'une absence (section 5 du CDC).
  *
  * Consomme par le microservice Communication, qui notifie immediatement
- * le parent rattache — la notification fait partie du meme flux que
+ * le parent rattache - la notification fait partie du meme flux que
  * l'enregistrement, pas d'une etape distincte (section 9).
  */
 class AbsenceDeclaree

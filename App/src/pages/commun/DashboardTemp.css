@@ -1,0 +1,97 @@
+/* ── DashboardTemp - SIGAPEI ── */
+.dt-page {
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  padding: 24px;
+  background: #f4f6f5;
+  font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
+}
+.dt-page *, .dt-page *::before, .dt-page *::after { box-sizing: border-box; }
+
+.dt-card {
+  width: min(480px, 100%);
+  padding: 44px 36px 36px;
+  background: #fff;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.dt-logo { height: 52px; object-fit: contain; margin-bottom: 4px; }
+
+.dt-icon {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: rgba(233,170,32,0.10);
+  border: 2px solid rgba(233,170,32,0.30);
+  color: #c97e00;
+}
+
+.dt-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1a2a1e;
+}
+
+.dt-role {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #5a6b5f;
+  padding: 4px 14px;
+  background: #f4f6f5;
+  border-radius: 999px;
+}
+.dt-role strong { color: #006B3C; }
+
+.dt-msg {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #3c4f44;
+  line-height: 1.6;
+}
+
+.dt-sub {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #5a6b5f;
+  line-height: 1.55;
+}
+
+.dt-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.dt-btn {
+  flex: 1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 46px;
+  border: 1.5px solid #006B3C;
+  border-radius: 10px;
+  background: #006B3C;
+  color: #FFF6DD;
+  font: inherit; font-size: 0.9rem; font-weight: 700;
+  text-decoration: none; cursor: pointer;
+  transition: filter 0.15s;
+}
+.dt-btn:hover:not(:disabled) { filter: brightness(1.1); }
+
+.dt-btn--ghost {
+  background: transparent;
+  color: #1a2a1e;
+  border-color: #dde4df;
+}
+.dt-btn--ghost:hover { border-color: #006B3C; color: #006B3C; background: rgba(0,107,60,0.04); }
+
+@media (max-width: 480px) {
+  .dt-card { padding: 32px 20px 28px; }
+  .dt-actions { flex-direction: column; }
+}

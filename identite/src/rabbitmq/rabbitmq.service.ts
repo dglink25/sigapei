@@ -12,6 +12,15 @@ export type EvenementIdentite =
   | 'role.cree'
   | 'role.modifie'
   | 'role.supprime'
+  | 'service.cree'
+  | 'service.modifie'
+  | 'service.supprime'
+  | 'etablissement_service.assigne'
+  | 'etablissement_service.bloque'
+  | 'etablissement_service.reactive'
+  | 'etablissement_service.retire'
+  | 'acces.accorde'
+  | 'acces.revoque'
   | 'appareil.revoque'
   | 'identifiant.recupere';
 
@@ -34,14 +43,14 @@ export class RabbitmqService implements OnModuleDestroy {
     await this.client.close();
   }
 
-  /** Publication fire-and-forget d'un evenement metier (pattern = routing key). */
+  /** Publication fire-and-forget d'un événement métier.
+   *  Ces événements sont destinés à api-communication (futur microservice).
+   *  Tant qu'il n'est pas déployé, on log en debug et on ignore.
+   */
   publier(evenement: EvenementIdentite, payload: Record<string, unknown>): void {
-    this.client.emit(evenement, {
-      evenement,
-      emisLe: new Date().toISOString(),
-      service: 'api-identite',
-      ...payload,
-    });
+    // TODO : activer quand api-communication sera déployé
+    // Pour l'instant on évite le bruit "no matching event handler" dans les logs.
+    this.logger.debug(`[evt] ${evenement} - ${JSON.stringify(payload).slice(0, 80)}…`);
   }
 
   /** Appel RPC synchrone (avec timeout) vers un autre microservice via RabbitMQ. */

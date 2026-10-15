@@ -1,6 +1,6 @@
 """Services de l'application Progression : calcul d'avancement.
 
-Le pourcentage est calculé à la lecture — aucune dénormalisation — pour
+Le pourcentage est calculé à la lecture - aucune dénormalisation - pour
 rester toujours cohérent avec les étapes réellement terminées.
 """
 from decimal import ROUND_HALF_UP, Decimal

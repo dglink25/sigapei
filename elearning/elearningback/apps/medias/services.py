@@ -2,7 +2,7 @@
 jamais par le backend E-learning).
 
 - Cloudinary : signature d'upload direct calculée en local (sha1 des
-  paramètres triés + secret d'API) — aucun SDK requis.
+  paramètres triés + secret d'API) - aucun SDK requis.
 - S3/MinIO : URL temporaire pré-signée via boto3 (import paresseux afin de
   ne pas pénaliser l'environnements sans S3).
 """

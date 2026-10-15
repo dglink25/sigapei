@@ -43,6 +43,6 @@ class RessourcesViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
         if mot := params.get('mot_cle'):
             # Contient-elle ce mot-clé ? Filtre portable : le JSON est
             # comparé tel quel (SQLite le stocke en texte, PostgreSQL en
-            # jsonb — le lookup `contains` fonctionne sur les deux).
+            # jsonb - le lookup `contains` fonctionne sur les deux).
             queryset = queryset.filter(mots_cles__contains=[mot])
         return queryset

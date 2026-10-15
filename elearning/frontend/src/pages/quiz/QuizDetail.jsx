@@ -305,16 +305,16 @@ export function QuizDetail() {
             <BadgeStatut valeur={donnees.statut} />
             <BadgeStatut valeur={donnees.restitution} />
             <span className="badge badge-texte">
-              Matière {uuidCourt(donnees.matiere_id)} — Classe{' '}
+              Matière {uuidCourt(donnees.matiere_id)} - Classe{' '}
               {uuidCourt(donnees.classe_id)}
             </span>
             <span className="badge badge-texte">
-              {questions.length} question(s) —{' '}
+              {questions.length} question(s) -{' '}
               {donnees.tentatives_max === null
                 ? 'tentatives illimitées'
                 : `${donnees.tentatives_max} tentative(s) max`}
               {donnees.chrono_secondes
-                ? ` — chrono ${Math.round(donnees.chrono_secondes / 60)} min`
+                ? ` - chrono ${Math.round(donnees.chrono_secondes / 60)} min`
                 : ''}
             </span>
           </div>

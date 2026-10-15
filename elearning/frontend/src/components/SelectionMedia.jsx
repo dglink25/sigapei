@@ -43,10 +43,10 @@ export function SelectionMedia({
             onChange={(evenement) => onChange(evenement.target.value || null)}
             aria-label="Média"
           >
-            <option value="">— Aucun —</option>
+            <option value="">- Aucun -</option>
             {(medias.data?.results ?? []).map((media) => (
               <option key={media.uuid} value={media.uuid}>
-                {media.type} — {media.nom_fichier || uuidCourt(media.uuid)}
+                {media.type} - {media.nom_fichier || uuidCourt(media.uuid)}
               </option>
             ))}
           </select>
