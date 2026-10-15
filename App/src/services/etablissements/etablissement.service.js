@@ -58,6 +58,7 @@ export const adminService = {
   lister: async () => listFrom(await adminApi.get('/interne/demandes'), 'demandes', 'items'),
   afficher: async (uuid) => { const r = await adminApi.get(`/interne/demandes/${uuid}`); return r?.demande ?? r },
   marquerCorrections: (uuid, champsACorriger) => adminApi.post(`/interne/demandes/${uuid}/corrections`, { champsACorriger }),
+  renvoyerLienCorrection: (uuid) => adminApi.post(`/interne/demandes/${uuid}/renvoyer-lien`),
   valider: (uuid) => adminApi.post(`/interne/demandes/${uuid}/valider`),
   supprimerBrouillon: (uuid) => adminApi.delete(`/interne/demandes/${uuid}`),
   supprimerBrouillons: (uuids) => adminApi.post('/interne/demandes/supprimer', { uuids }),

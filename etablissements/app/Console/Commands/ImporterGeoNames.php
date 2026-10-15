@@ -32,14 +32,17 @@ use ZipArchive;
  * identifiant interne ne change pas, donc les demandes et etablissements qui les
  * utilisent restent valides. Rien n'est supprime, sauf avec --nettoyer.
  *
- * PROMOTION des orphelins : un ADM3 dont l'ADM2 parent n'existe pas dans GeoNames,
- * mais dont l'ADM1 existe, est importe au niveau 2 sous cet ADM1 plutot qu'abandonne
- * (desactivable avec --sans-promotion).
+ * ORPHELINS : un ADM3 dont l'ADM2 parent est introuvable (souvent parce que son code
+ * admin2 n'est pas renseigne dans GeoNames) est IGNORE et compte dans le recapitulatif.
+ * Avec --avec-promotion, il est importe au niveau 2 sous son ADM1 ; deconseille, car cela
+ * melange deux profondeurs dans le meme niveau (ex. l'Indonesie : des milliers de
+ * kecamatan ranges parmi les kabupaten).
  *
  *   php artisan geo:geonames BJ              # le Benin
  *   php artisan geo:geonames BJ FR SN        # plusieurs pays
  *   php artisan geo:geonames                 # tous les pays en base
  *   php artisan geo:geonames --sans-telechargement   # reutilise les fichiers deja telecharges
+ *   php artisan geo:geonames --manquants     # seulement les pays qui n'ont encore aucun departement
  *   php artisan geo:geonames BJ --nettoyer   # supprime ensuite les lignes obsoletes inutilisees
  *
  * Idempotent : chaque ligne est identifiee par (source 'geonames', geonameid).
@@ -56,7 +59,9 @@ class ImporterGeoNames extends Command
         {--sans-telechargement : Utilise uniquement les fichiers deja presents dans le dossier}
         {--nettoyer : Supprime ensuite les subdivisions obsoletes (autres sources non rapprochees, ou GeoNames absentes de cet import) si aucune demande ni aucun etablissement ne les utilise}
         {--remplacer : Alias de --nettoyer}
-        {--sans-promotion : N importe pas au niveau 2 les ADM3 dont l ADM2 parent est absent}
+        {--avec-promotion : Importe au niveau 2 les ADM3 dont l ADM2 parent est absent (deconseille : melange les niveaux)}
+        {--sans-promotion : Sans effet (comportement par defaut), conserve pour compatibilite}
+        {--manquants : Ne traite que les pays qui n ont encore aucun departement}
         {--noms-bruts : Conserve les noms tels que fournis, sans retirer les prefixes Departement de, Commune de...}
         {--lot=2000 : Nombre de lignes par requete d insertion}';
 
@@ -85,6 +90,18 @@ class ImporterGeoNames extends Command
             $this->error('Codes pays inconnus : '.implode(', ', $inconnus));
 
             return self::FAILURE;
+        }
+
+        if ($this->option('manquants')) {
+            $avecDepartements = DB::table('departements')->distinct()->pluck('pays_id')->flip()->all();
+            $codes = array_values(array_filter($codes, fn ($iso) => ! isset($avecDepartements[$paysIds[$iso]])));
+
+            if (! $codes) {
+                $this->info('Tous les pays ont deja au moins un departement.');
+
+                return self::SUCCESS;
+            }
+            $this->line(count($codes).' pays sans departement : '.implode(' ', $codes));
         }
 
         $lot = max(100, min((int) $this->option('lot'), 5000));
@@ -130,7 +147,7 @@ class ImporterGeoNames extends Command
         }
 
         $nettoyerNoms = ! $this->option('noms-bruts');
-        $promotion = ! $this->option('sans-promotion');
+        $promotion = (bool) $this->option('avec-promotion');
         $nettoyerAutres = (bool) ($this->option('nettoyer') || $this->option('remplacer'));
         $bilan = ['adoptes' => 0, 'promus' => 0, 'orphelins' => 0, 'supprimes' => 0];
         $debut = now()->toDateTimeString(); // les lignes touchees par cet import ont updated_at >= $debut

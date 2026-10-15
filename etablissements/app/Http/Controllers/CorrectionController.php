@@ -40,7 +40,9 @@ class CorrectionController extends Controller
 
     public function soumettre(Request $request, string $token): JsonResponse
     {
-        $donnees = $request->validate(['donnees' => ['required', 'array']]);
+        // 'donnees' peut être vide si seule la section documents est à corriger
+        // (les documents sont uploadés séparément via POST /demandes/{uuid}/documents)
+        $donnees = $request->validate(['donnees' => ['present', 'array']]);
 
         $demande = $this->validationService->soumettreCorrection($token, $donnees['donnees']);
 

@@ -38,6 +38,7 @@ php artisan geo:statistiques --pays=BJ   # vérifier le résultat
 ```bash
 php artisan geo:geonames                 # tous les pays en base
 php artisan geo:geonames BJ FR SN CI     # ou une sélection
+php artisan geo:geonames --manquants     # reprendre seulement les pays encore sans département (après une interruption)
 ```
 
 Compter plusieurs centaines de Mo à télécharger et du temps pour tous les pays : la commande traite les pays un par un, continue si l'un échoue, et affiche un tableau récapitulatif. Elle est **idempotente** (clé `source` + `geonameid`) : on peut la relancer, y compris sur les seuls pays en échec.
@@ -51,7 +52,8 @@ Options utiles :
 | `--sans-telechargement` | utilise les fichiers déjà présents dans `storage/app/geonames` |
 | `--dossier=chemin` | autre dossier de téléchargement |
 | `--nettoyer` (alias `--remplacer`) | supprime ensuite les lignes d'autres sources non utilisées (voir ci-dessous) |
-| `--sans-promotion` | n'importe pas au niveau 2 les ADM3 sans ADM2 parent |
+| `--manquants` | ne traite que les pays qui n'ont encore aucun département |
+| `--avec-promotion` | importe au niveau 2 les ADM3 sans ADM2 parent (déconseillé) |
 | `--noms-bruts` | garde les noms tels que fournis (sinon « Département de l'Atlantique » devient « Atlantique ») |
 
 Sans l'extension PHP `zip`, la commande utilise la commande système `unzip` ; si aucune n'est disponible, installer `php-zip` (ou `unzip`).
@@ -81,8 +83,8 @@ SELECT 'commune', c.nom, c.source FROM communes c JOIN departements d ON d.id = 
 ### Recette pour un pays dont la structure officielle est connue (exemple : le Bénin)
 
 ```bash
-# 1. GeoNames, sans la promotion (qui rangerait des arrondissements au niveau commune) ; nettoyage des doublons
-php artisan geo:geonames BJ --sans-telechargement --sans-promotion --nettoyer
+# 1. GeoNames, puis suppression des doublons (lignes d'autres sources que plus rien n'utilise)
+php artisan geo:geonames BJ --sans-telechargement --nettoyer
 php artisan geo:statistiques --pays=BJ
 
 # 2. Combler les arrondissements manquants avec le fichier officiel (12 départements, 77 communes, 546 arrondissements)
@@ -91,9 +93,11 @@ php artisan geo:arbre arrondissements-benin.csv --iso=BJ --col-departement=... -
 
 Les orthographes viennent de GeoNames : si elles diffèrent de l'usage officiel (par exemple « Atakora » au lieu de « Atacora »), corriger avec un `UPDATE` ciblé sur la table concernée.
 
-### Lignes sans parent : promotion au niveau 2
+### Lignes sans parent (orphelins)
 
-Dans certains pays, GeoNames publie des ADM3 dont l'ADM2 parent n'existe pas (Bosnie, RD Congo, Éthiopie...). Plutôt que de les perdre, ils sont importés **au niveau 2 sous leur ADM1**. Le niveau 2 d'un tel pays mélange alors les deux profondeurs. `--sans-promotion` désactive ce comportement. Les lignes sans aucun parent exploitable restent ignorées et sont comptées dans le récapitulatif.
+Dans certains pays, GeoNames publie des ADM3 dont l'ADM2 parent est introuvable, le plus souvent parce que leur code admin2 n'est pas renseigné (Indonésie, Libéria, Nigeria, Maroc, RD Congo, Éthiopie...). Ces lignes sont **ignorées** et comptées dans le récapitulatif (« N sans parent ignorés »), faute de pouvoir les rattacher sans deviner.
+
+`--avec-promotion` les importe au niveau 2 sous leur ADM1 : **déconseillé**, car le niveau 2 mélange alors deux profondeurs (des milliers de sous-districts rangés parmi les districts). Pour ces pays, une source officielle passée à `geo:arbre` est préférable.
 
 ## Vérifier la complétude
 
