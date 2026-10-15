@@ -1,18 +1,20 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Cree le schema PostgreSQL "demandes" s'il n'existe pas encore.
- * Doit etre executee EN PREMIER (CDC Regle n°1 — un schema par microservice).
- *
- * IMPORTANT : avant la toute premiere migration, le schema n'existe pas.
- * TypeORM ne le cree pas automatiquement. Voir README.md section 2.
+ * Verifie le prerequis : le schema "demandes" doit exister avant la premiere migration
+ * (README, section 2). Aucun CREATE SCHEMA ici : sur la base partagee, le role applicatif
+ * n'a pas forcement le droit CREATE sur la base, et l'instruction echoue meme si le schema
+ * existe deja (le controle de droit passe avant le IF NOT EXISTS).
  */
 export class CreeSchemaDemandes1000000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS demandes`);
+    const lignes = await queryRunner.query(`SELECT 1 FROM pg_namespace WHERE nspname = 'demandes'`);
+    if (lignes.length === 0) {
+      throw new Error('Le schema "demandes" n\'existe pas : creez-le une fois avant de migrer (README).');
+    }
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    // Ne pas supprimer en production.
+  public async down(): Promise<void> {
+    // Rien : le schema n'est jamais supprime par une migration.
   }
 }

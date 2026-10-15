@@ -13,14 +13,20 @@ Compositions en ligne surveillées : phase 2, bloquée par le contrat d'interfac
 
 ## 1. Démarrage
 
-```bash
-cp .env.example .env            # DB_*, INTERNAL_API_SECRET : valeurs du chef de projet
-# Une seule fois sur Neon, avant la première migration :
-#   CREATE SCHEMA IF NOT EXISTS evaluations;
-docker compose up -d --build
-docker compose exec api-evaluations php artisan migrate --force
-docker compose exec api-evaluations php artisan db:seed --force     # barèmes plateforme (idempotent)
-```
+1. `cp .env.example .env` puis renseigner `DB_*` et `INTERNAL_API_SECRET` (valeurs du chef de projet) et `php artisan key:generate`.
+2. **Migrations : utiliser l'hôte Neon DIRECT** (sans `-pooler` dans `DB_HOST`). Le pooler (PgBouncer, mode transaction) ne conserve pas le `search_path` ni les transactions longues des migrations : c'est la recommandation de Neon.
+3. Créer le schéma **une seule fois** (une migration ne peut pas le faire : la table `migrations` y est créée avant toute migration) :
+   ```bash
+   php artisan tinker --execute="DB::statement('CREATE SCHEMA IF NOT EXISTS evaluations')"
+   ```
+4. Vérifier, migrer, vérifier :
+   ```bash
+   php artisan evaluations:diagnostic-base   # lecture seule : schémas, tables, droits
+   php artisan migrate --force
+   php artisan db:seed --force               # barèmes plateforme (idempotent)
+   php artisan evaluations:diagnostic-base
+   ```
+5. Docker : `docker compose up -d --build` (API, worker, planificateur).
 
 Tests (PostgreSQL requis : contraintes et triggers sont testés pour de vrai) :
 

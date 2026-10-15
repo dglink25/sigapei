@@ -4,14 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Schéma `evaluations` (README plateforme, règle n°1) + fonction de verrouillage
- * partagée par les tables immuables (audit, instantanés de bulletins).
+ * Fonction de verrouillage partagée par les tables immuables (audit, instantanés de bulletins).
+ *
+ * Le schéma `evaluations` est un PRÉREQUIS créé une seule fois avant la première migration
+ * (README, §1) : il ne peut pas être créé ici, car la table `migrations` de Laravel y est
+ * créée avant toute migration. Pas de CREATE SCHEMA ici : sur une base partagée, le rôle
+ * applicatif n'a pas forcément le droit CREATE sur la base, et l'instruction échoue même
+ * quand le schéma existe déjà (le contrôle de droit passe avant le IF NOT EXISTS).
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement('CREATE SCHEMA IF NOT EXISTS evaluations');
+        $existe = DB::selectOne("SELECT 1 AS ok FROM pg_namespace WHERE nspname = 'evaluations'");
+        if ($existe === null) {
+            throw new RuntimeException('Le schéma "evaluations" n\'existe pas : créez-le une fois avant de migrer (README, §1).');
+        }
 
         // Toute tentative d'UPDATE/DELETE sur une table journal est refusée par la base
         // elle-même, quel que soit le code applicatif (défense en profondeur).
