@@ -7,6 +7,7 @@ import {
   PORTAIL_ROLES, NON_ADMIN_ROLES
 } from './config/identite/routes'
 import { ADMIN_PATHS, PATHS } from './config/etablissements/config'
+import { SERVICE_PATHS } from './config/services/config'
 import { PublicOnly, RequireAuth } from './components/identite'
 
 /* Pages publiques */
@@ -28,6 +29,9 @@ import Dashboard          from './pages/AdministrationPrincipale/Dashboard'
 import DemandesPage       from './pages/AdministrationPrincipale/DemandesPage'
 import DemandeDetailPage  from './pages/AdministrationPrincipale/DemandeDetailPage'
 import EtablissementsPage from './pages/AdministrationPrincipale/EtablissementsPage'
+import ServicesPage from './pages/AdministrationPrincipale/ServicesPage'
+import ServiceDetailPage from './pages/AdministrationPrincipale/ServiceDetailPage'
+import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
 
 export default function App() {
   useEffect(() => { document.title = ENV.appName }, [])
@@ -72,6 +76,9 @@ export default function App() {
           <Route path={ADMIN_PATHS.demandes}        element={<DemandesPage />} />
           <Route path={ADMIN_PATHS.detailRoute}     element={<DemandeDetailPage />} />
           <Route path={ADMIN_PATHS.etablissements}  element={<EtablissementsPage />} />
+          <Route path={SERVICE_PATHS.etablissementRoute} element={<EtablissementServicesPage />} />
+          <Route path={SERVICE_PATHS.liste}         element={<ServicesPage />} />
+          <Route path={SERVICE_PATHS.detailRoute}   element={<ServiceDetailPage />} />
         </Route>
       </Route>
 

@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { RefreshCw, Search, Power, RotateCcw } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { RefreshCw, Search, Power, RotateCcw, Layers } from 'lucide-react'
 import { useNotify }    from '../../context/commun/NotifyContext'
 import ConfirmDialog    from '../../components/commun/ConfirmDialog'
 import Loader           from '../../components/commun/Loader'
 import { adminService } from '../../services/etablissements/etablissement.service'
+import { servicesAcces } from '../../services/identite/servicesAcces.service'
+import { SERVICE_PATHS } from '../../config/services/config'
 import './admin.css'
+import './services.css'
 
 /* ─── Service établissements (suspension / réactivation) ─── */
 const etabService = {
@@ -33,12 +37,17 @@ export default function EtablissementsPage() {
   const [loading, setLoading] = useState(false)
   const [action,  setAction]  = useState(null) // { type: 'suspendre'|'reactiver', item }
   const [busy,    setBusy]    = useState(false)
+  const [resume,  setResume]  = useState({}) // { [etablissementUuid]: { actifs, bloques } }
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const data = await etabService.lister()
       setItems(Array.isArray(data) ? data : data?.etablissements ?? data?.items ?? [])
+      // Résumé des services (Identité) : non bloquant, la page reste utilisable s'il échoue.
+      servicesAcces.resume()
+        .then((r) => setResume(Object.fromEntries((r?.resume ?? []).map((x) => [x.etablissementUuid, x]))))
+        .catch(() => {})
     } catch (err) {
       notify.fromError(err)
       setItems(p => p ?? [])
@@ -152,6 +161,7 @@ export default function EtablissementsPage() {
                   <th>Slug</th>
                   <th>Types</th>
                   <th>Validé le</th>
+                  <th>Services</th>
                   <th>Statut</th>
                   <th></th>
                 </tr>
@@ -164,8 +174,22 @@ export default function EtablissementsPage() {
                     <td><span className="ap-code">{e.slug ?? '-'}</span></td>
                     <td>{Array.isArray(e.types) ? e.types.join(', ') : (e.types ?? '-')}</td>
                     <td>{dateFr(e.date_validation ?? e.dateValidation ?? e.created_at)}</td>
+                    <td>
+                      {resume[e.uuid]
+                        ? (
+                          <span className="sv-resume">
+                            <span className="ap-badge ap-badge--success">{resume[e.uuid].actifs} actif{resume[e.uuid].actifs > 1 ? 's' : ''}</span>
+                            {resume[e.uuid].bloques > 0 && <span className="ap-badge ap-badge--danger">{resume[e.uuid].bloques} bloqué{resume[e.uuid].bloques > 1 ? 's' : ''}</span>}
+                          </span>
+                        )
+                        : <span className="ap-badge ap-badge--neutral">Aucun</span>}
+                    </td>
                     <td><StatutBadge statut={e.statut} /></td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <Link className="ap-btn ap-btn--ghost ap-btn--sm" to={SERVICE_PATHS.etablissement(e.uuid)} style={{ marginRight: 8 }}>
+                        <Layers size={13} aria-hidden="true" />
+                        Services
+                      </Link>
                       {e.statut === 'actif' ? (
                         <button
                           type="button"

@@ -25,7 +25,12 @@ export class ServicesService {
     if (dto.status) qb.andWhere('s.status = :status', { status: dto.status });
     if (dto.q) qb.andWhere('(s.nom ILIKE :q OR s.code ILIKE :q)', { q: `%${echapperLike(dto.q)}%` });
     const [lignes, total] = await qb.orderBy('s.nom', 'ASC').skip(offset).take(limite).getManyAndCount();
-    return { services: lignes.map(versServicePublic), pagination: metaPagination(page, limite, total) };
+    const [nb, compteurs] = await Promise.all([this.compterEtablissements(lignes.map((l) => l.id)), this.compteurs()]);
+    return {
+      services: lignes.map((l) => ({ ...versServicePublic(l), nbEtablissements: nb.get(l.id) ?? 0 })),
+      pagination: metaPagination(page, limite, total),
+      compteurs,
+    };
   }
 
   async trouverOuEchouer(uuid: string): Promise<Service> {
@@ -35,7 +40,9 @@ export class ServicesService {
   }
 
   async obtenir(uuid: string) {
-    return { service: versServicePublic(await this.trouverOuEchouer(uuid)) };
+    const service = await this.trouverOuEchouer(uuid);
+    const nb = await this.compterEtablissements([service.id]);
+    return { service: { ...versServicePublic(service), nbEtablissements: nb.get(service.id) ?? 0 } };
   }
 
   async creer(dto: CreerServiceDto) {
@@ -81,6 +88,27 @@ export class ServicesService {
     await this.cache.invaliderGlobal();
     this.rabbitmq.publier('service.supprime', { serviceUuid: uuid });
     return { code: 'SERVICE_SUPPRIME' };
+  }
+
+  /** Nombre d'etablissements auxquels chaque service est assigne. */
+  private async compterEtablissements(ids: string[]): Promise<Map<string, number>> {
+    if (ids.length === 0) return new Map();
+    const lignes: Array<{ id: string; n: number }> = await this.repo.manager.query(
+      `SELECT service_id::text AS id, COUNT(*)::int AS n FROM "identite"."etablissement_services"
+        WHERE service_id = ANY($1::bigint[]) GROUP BY service_id`,
+      [ids],
+    );
+    return new Map(lignes.map((l) => [l.id, l.n]));
+  }
+
+  /** Compteurs globaux du catalogue (onglets de l'interface), independants des filtres. */
+  private async compteurs(): Promise<{ tous: number; active: number; inactive: number }> {
+    const lignes: Array<{ status: string; n: number }> = await this.repo.manager.query(
+      `SELECT status::text AS status, COUNT(*)::int AS n FROM "identite"."services" GROUP BY status`,
+    );
+    const active = lignes.find((l) => l.status === 'active')?.n ?? 0;
+    const inactive = lignes.find((l) => l.status === 'inactive')?.n ?? 0;
+    return { tous: active + inactive, active, inactive };
   }
 
   private conflitCode(): ConflictException {

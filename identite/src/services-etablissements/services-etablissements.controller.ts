@@ -5,6 +5,9 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { ServicesEtablissementsService } from './services-etablissements.service';
 import { AssignerServicesDto } from './dto/assigner-services.dto';
+import { AssignerEtablissementsDto } from './dto/assigner-etablissements.dto';
+import { ChangerStatutLotDto } from './dto/changer-statut-lot.dto';
+import { ListerJournalDto } from './dto/lister-journal.dto';
 import { BloquerAssignationDto, ModifierAssignationDto } from './dto/modifier-assignation.dto';
 
 /** Assignation des services aux etablissements : reservee au super administrateur. */
@@ -19,6 +22,34 @@ export class ServicesEtablissementsController {
   @ApiOperation({ summary: 'Assigne un ou plusieurs services (1 a 50) a un etablissement.' })
   assigner(@Body() dto: AssignerServicesDto, @CurrentUser('utilisateurId') utilisateurId: string) {
     return this.service.assigner(dto, { utilisateurId });
+  }
+
+  @Post('services/:serviceUuid/etablissements')
+  @ApiOperation({ summary: 'Assigne un service a 1 a 200 etablissements (operation atomique).' })
+  assignerEtablissements(
+    @Param('serviceUuid', ParseUUIDPipe) serviceUuid: string,
+    @Body() dto: AssignerEtablissementsDto,
+    @CurrentUser('utilisateurId') utilisateurId: string,
+  ) {
+    return this.service.assignerEtablissements(serviceUuid, dto, { utilisateurId });
+  }
+
+  @Post('lot/statut')
+  @ApiOperation({ summary: 'Bloque ou reactive 1 a 200 assignations en une seule transaction.' })
+  changerStatutLot(@Body() dto: ChangerStatutLotDto, @CurrentUser('utilisateurId') utilisateurId: string) {
+    return this.service.changerStatutLot(dto, { utilisateurId });
+  }
+
+  @Get('resume')
+  @ApiOperation({ summary: 'Services actifs / bloques par etablissement (tableaux de bord).' })
+  resume() {
+    return this.service.resume();
+  }
+
+  @Get('journal')
+  @ApiOperation({ summary: "Journal des assignations et des changements de droits (pagine ; filtres etablissementUuid, serviceUuid)." })
+  journal(@Query() dto: ListerJournalDto) {
+    return this.service.journal(dto);
   }
 
   @Get('etablissements/:etablissementUuid')

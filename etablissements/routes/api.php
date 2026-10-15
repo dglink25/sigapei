@@ -63,6 +63,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware('secret.interne')->prefix('interne')->group(function () {
         Route::get('/demandes', [InterneController::class, 'listerDemandes']);
         Route::get('/demandes/{uuid}', [InterneController::class, 'afficherDemande']);
+        Route::get('/etablissements', [InterneController::class, 'listerEtablissements']);
         Route::post('/demandes/{uuid}/corrections', [InterneController::class, 'marquerCorrections']);
         Route::post('/demandes/{uuid}/renvoyer-lien', [InterneController::class, 'renvoyerLienCorrection']);
         Route::post('/demandes/{uuid}/valider', [InterneController::class, 'valider']);
