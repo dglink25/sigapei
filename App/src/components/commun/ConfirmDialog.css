@@ -1,13 +1,112 @@
-.cd-overlay { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 16px; background: rgba(2, 20, 12, 0.55); backdrop-filter: blur(6px); }
-.cd { --accent: #006b3c; --soft: rgba(0, 107, 60, 0.12); width: min(440px, 100%); padding: 30px 26px 24px; text-align: center; color: #14281e; background: #fff6dd; border-radius: 24px; border-top: 6px solid var(--accent); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.45); font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif; }
-.cd--danger { --accent: #b3261e; --soft: rgba(179, 38, 30, 0.12); }
-.cd--warning { --accent: #e9aa20; --soft: rgba(233, 170, 32, 0.22); }
-.cd-icon { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; color: var(--accent); background: var(--soft); }
-.cd--warning .cd-icon { color: #9a6a00; }
-.cd-title { margin: 0 0 8px; font-size: 1.2rem; }
-.cd-msg { margin: 0 0 14px; line-height: 1.55; color: #3c4f44; }
-.cd-actions { display: flex; gap: 10px; margin-top: 18px; }
-.cd-btn { flex: 1; height: 46px; border: 1.5px solid rgba(0, 0, 0, 0.18); border-radius: 12px; background: transparent; color: #14281e; font: inherit; font-weight: 600; cursor: pointer; }
-.cd-btn--main { border-color: var(--accent); background: var(--accent); color: #fff6dd; }
-.cd--warning .cd-btn--main { color: #14281e; }
+/* ═══════════════════════════════════════════════════
+   ConfirmDialog - SIGAPEI - style institutionnel épuré
+   Fond blanc, aucun liseré, icône SVG cercle fil de fer
+═══════════════════════════════════════════════════ */
+
+.cd-overlay {
+  position: fixed; inset: 0; z-index: 9000;
+  display: grid; place-items: center; padding: 16px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: cd-fade 0.18s ease both;
+}
+
+.cd {
+  --accent: #006b3c;
+  width: min(440px, 100%);
+  padding: 40px 28px 28px;
+  text-align: center;
+  color: #1a1a1a;
+  background: #ffffff;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+  font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
+  animation: cd-up 0.28s cubic-bezier(0.22, 1.3, 0.36, 1) both;
+}
+
+.cd--danger  { --accent: #c0392b; }
+.cd--warning { --accent: #c97e00; }
+.cd--primary { --accent: #006b3c; }
+
+/* Icône SVG - cercle fil de fer, aucun fond */
+.cd-icon {
+  display: grid; place-items: center;
+  width: fit-content;
+  margin: 0 auto 20px;
+  background: none;
+  border: none;
+}
+
+/* SVG */
+.cd-icon svg {
+  width: 80px; height: 80px;
+  display: block;
+}
+.cd-icon .cd-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 238.76;
+  stroke-dashoffset: 238.76;
+  transform-origin: 48px 48px;
+  transform: rotate(-90deg);
+  animation: cd-ring 0.52s ease-out 0.05s forwards;
+}
+.cd-icon .cd-sym {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: cd-draw 0.28s ease-out 0.55s forwards;
+}
+.cd-icon .cd-sym2 {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 14;
+  stroke-dashoffset: 14;
+  animation: cd-draw 0.2s ease-out 0.55s forwards;
+}
+.cd-icon .cd-dot {
+  fill: var(--accent);
+  stroke: none;
+  opacity: 0;
+  transform-origin: 48px 64px;
+  animation: cd-dot 0.16s ease-out 0.73s forwards;
+}
+
+@keyframes cd-ring { to { stroke-dashoffset: 0; } }
+@keyframes cd-draw { to { stroke-dashoffset: 0; } }
+@keyframes cd-dot  { from { opacity:0; transform:scale(0); } to { opacity:1; transform:scale(1); } }
+@keyframes cd-fade { from { opacity:0; } to { opacity:1; } }
+@keyframes cd-up   {
+  from { opacity:0; transform: translateY(20px) scale(0.95); }
+  to   { opacity:1; transform: none; }
+}
+
+.cd-title { margin: 0 0 8px; font-size: 1.25rem; font-weight: 700; color: #111; }
+.cd-msg   { margin: 0 0 18px; line-height: 1.6; color: #555; font-size: 1rem; }
+
+.cd-actions { display: flex; gap: 12px; margin-top: 20px; }
+.cd-btn {
+  flex: 1; height: 48px;
+  border: 1.5px solid #d0d0d0; border-radius: 10px;
+  background: transparent; color: #1a1a1a;
+  font: inherit; font-size: 1rem; font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cd-btn:hover:not(:disabled) { border-color: #aaa; background: #f5f5f5; }
+.cd-btn--main {
+  border-color: var(--accent); background: var(--accent); color: #fff;
+}
+.cd-btn--main:hover:not(:disabled) { filter: brightness(1.1); }
+.cd--warning .cd-btn--main { color: #fff; }
 .cd-btn:disabled { opacity: 0.6; cursor: wait; }

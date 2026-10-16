@@ -13,7 +13,9 @@ import { useAuth } from '../../context/identite/AuthContext'
 import { authService } from '../../services/identite/auth.service'
 import { getCaptchaToken } from '../../lib/identite/captcha'
 import { getGoogleIdToken } from '../../lib/identite/firebase'
-import { HOME_PATH, LOGIN_PATH } from '../../config/identite/routes'
+import { HOME_PATH, LOGIN_PATH, redirectionPostLogin } from '../../config/identite/routes'
+import Loader from '../../components/commun/Loader'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './AuthPage.css'
 
 const METHODS = [
@@ -45,6 +47,11 @@ export default function AuthPage() {
   const notify = useNotify()
   const navigate = useNavigate()
   const location = useLocation()
+  usePageTitle('Connexion')
+  useEffect(() => {
+    document.body.classList.add('page-public-recaptcha')
+    return () => document.body.classList.remove('page-public-recaptcha')
+  }, [])
 
   // L'URL /login#recuperer ouvre directement le parcours de recuperation
   const mode = location.hash === '#recuperer' ? 'recover' : 'login'
@@ -114,7 +121,12 @@ export default function AuthPage() {
     const u = await login(session)
     const nomComplet = u?.nomComplet ?? u?.nom_complet ?? ''
     notify.success('Connexion réussie', nomComplet ? `Bienvenue, ${nomComplet}.` : `Bienvenue sur ${ENV.appName}.`)
-    navigate(redirectTo, { replace: true })
+    // role est une chaîne directe dans la réponse API : { role: "super_admin" }
+    const roleCode = u?.role?.code ?? u?.roleCode ?? (typeof u?.role === 'string' ? u.role : null) ?? ''
+    const dest = from
+      ? from.pathname + (from.search ?? '') + (from.hash ?? '')
+      : redirectionPostLogin(roleCode)
+    navigate(dest, { replace: true })
   }
 
   function validateLogin() {
@@ -285,7 +297,7 @@ export default function AuthPage() {
             )}
 
             <button className="auth-btn" type="submit" disabled={loading}>
-              {loading ? 'Veuillez patienter…' : 'Se connecter'}
+              {loading ? <><Loader mode="button" /> Veuillez patienter…</> : 'Se connecter'}
             </button>
 
             <div className="auth-sep"><span>ou</span></div>
@@ -300,11 +312,11 @@ export default function AuthPage() {
         {mode === 'recover' && step === 'identifier' && (
           <form onSubmit={submitSearch} noValidate>
             <label className="auth-label" htmlFor="nom">Nom complet ou identifiant de récupération</label>
-            <input id="nom" className="field" type="text" autoComplete="name" placeholder="Ex. : Jean Dupont"
+            <input id="nom" className="field" type="text" autoComplete="name" placeholder="Ex. : Vore nom complet"
               value={nom} onChange={(e) => setNom(e.target.value)} />
 
             <button className="auth-btn" type="submit" disabled={loading}>
-              {loading ? 'Recherche…' : 'Rechercher mon compte'}
+              {loading ? <><Loader mode="button" /> Recherche…</> : 'Rechercher mon compte'}
             </button>
           </form>
         )}
@@ -315,7 +327,7 @@ export default function AuthPage() {
             <p className="auth-text">Un compte correspond à votre recherche :</p>
             <p className="auth-masked">{account?.masque || 'Compte trouvé'}</p>
             <button className="auth-btn" onClick={sendRecoveryOtp} disabled={loading}>
-              {loading ? 'Envoi…' : 'Recevoir un code'}
+              {loading ? <><Loader mode="button" /> Envoi…</> : 'Recevoir un code'}
             </button>
           </div>
         )}
@@ -330,7 +342,7 @@ export default function AuthPage() {
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} />
 
             <button className="auth-btn" type="submit" disabled={loading}>
-              {loading ? 'Vérification…' : 'Valider'}
+              {loading ? <><Loader mode="button" /> Vérification…</> : 'Valider'}
             </button>
             <button type="button" className="auth-link center" onClick={resend} disabled={cooldown > 0 || loading}>
               {cooldown > 0 ? `Renvoyer le code (${cooldown} s)` : 'Renvoyer le code'}

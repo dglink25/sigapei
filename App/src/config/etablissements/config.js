@@ -16,6 +16,7 @@ export const ADMIN_PATHS = {
   demandes: '/admin/demandes',
   detail: (uuid) => `/admin/demandes/${uuid}`,
   detailRoute: '/admin/demandes/:uuid',
+  etablissements: '/admin/etablissements',
 }
 
 export const ADMIN_ROLES = ['super_admin']

@@ -26,7 +26,7 @@ class OpenApiSpec
             ],
             'tags' => [
                 ['name' => 'Accueil', 'description' => "Pages d'accueil publiques (plateforme et établissement), servies depuis le cache Redis."],
-                ['name' => 'Géographie', 'description' => 'Référentiel géographique panafricain (54 pays), pour les listes déroulantes en cascade de l\'étape 2.'],
+                ['name' => 'Géographie', 'description' => 'Référentiel géographique mondial (tous les pays), pour les listes déroulantes en cascade de l\'étape 2.'],
                 ['name' => 'Onboarding', 'description' => "Demande d'inscription d'un établissement en 5 étapes, sans authentification."],
                 ['name' => 'Corrections', 'description' => 'Correction d\'un dossier via un lien signé à usage unique, sans authentification.'],
                 ['name' => 'Établissements', 'description' => 'Cycles autorisés, plans disponibles et abonnement d\'un établissement actif.'],
@@ -41,12 +41,13 @@ class OpenApiSpec
     private static function descriptionGenerale(): string
     {
         return <<<'MD'
-Documentation du microservice **Établissements** de la plateforme SIGAPEI : onboarding multi-étapes d'un établissement, référentiel géographique panafricain, workflow de validation par le Super Administrateur, génération du slug et du matricule, page d'accueil dynamique, plans et abonnements.
+Documentation du microservice **Établissements** de la plateforme SIGAPEI : onboarding multi-étapes d'un établissement, référentiel géographique mondial, workflow de validation par le Super Administrateur, génération du slug, du matricule et du code public (XXXX), page d'accueil dynamique, plans et abonnements.
 
 ### Conventions
 
 - Toutes les routes métier sont sous `/v1`. Aucun identifiant interne n'est exposé : uniquement des `uuid` (et le `slug` pour un établissement).
-- Les routes **publiques** (accueil, géographie, onboarding, corrections) n'exigent aucune authentification.
+- Les routes **publiques** (accueil, géographie, informations d'un établissement par son code, onboarding, corrections) n'exigent aucune authentification.
+- Chaque établissement a un **code public unique de 4 caractères** (`XXXX`, lettres majuscules et chiffres sans I, L, O, 0, 1), distinct du `slug` (URL) et du `matricule` (identifiant de connexion du dirigeant, jamais exposé publiquement).
 - Les routes **`/interne/*`** exigent le header `X-Internal-Secret` (bouton **Authorize**). Elles ne sont jamais appelées par un client final.
 - Réponse en succès : `{ "success": true, ... }`.
 - Réponse en erreur : `{ "success": false, "error": { "code", "message", "details" }, "path", "timestamp" }`. Les erreurs levées directement par un contrôleur peuvent omettre `path` et `timestamp`.
@@ -129,6 +130,27 @@ MD;
         ];
     }
 
+    /** Parametres de recherche communs aux listes de departements, communes et arrondissements. */
+    private static function paramsRecherche(): array
+    {
+        return [
+            [
+                'name' => 'q',
+                'in' => 'query',
+                'required' => false,
+                'description' => "Recherche par nom (contient, sans tenir compte de la casse). Indispensable pour les niveaux très peuplés : une recherche n'est jamais mise en cache et est bornée par `limite`.",
+                'schema' => ['type' => 'string', 'maxLength' => 100],
+            ],
+            [
+                'name' => 'limite',
+                'in' => 'query',
+                'required' => false,
+                'description' => 'Nombre maximal de résultats **quand `q` est fourni** (50 par défaut, 200 au maximum). Sans `q`, la liste complète est retournée.',
+                'schema' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 200, 'default' => 50],
+            ],
+        ];
+    }
+
     // ------------------------------------------------------------------
     // Routes
     // ------------------------------------------------------------------
@@ -170,8 +192,15 @@ MD;
             '/geo/pays' => [
                 'get' => [
                     'tags' => ['Géographie'],
-                    'summary' => 'Liste des pays africains couverts',
-                    'description' => 'Les 54 pays du continent, triés par nom. Cache Redis longue durée (24 h par défaut).',
+                    'summary' => 'Liste des pays',
+                    'description' => "Tous les pays et territoires habités du monde, triés par nom. Chaque pays indique le libellé de ses trois niveaux de subdivision (`libelle_niveau_1/2/3`, ex. « Département », « Commune », « Arrondissement » pour le Bénin) : à afficher comme étiquette des listes en cascade. Cache Redis longue durée (24 h par défaut).",
+                    'parameters' => [[
+                        'name' => 'continent',
+                        'in' => 'query',
+                        'required' => false,
+                        'description' => 'Filtre par continent.',
+                        'schema' => ['type' => 'string', 'enum' => ['afrique', 'amerique_nord', 'amerique_sud', 'asie', 'europe', 'oceanie']],
+                    ]],
                     'responses' => [
                         '200' => self::succes('Liste des pays', [
                             'pays' => ['type' => 'array', 'items' => self::ref('Pays')],
@@ -183,7 +212,7 @@ MD;
                 'get' => [
                     'tags' => ['Géographie'],
                     'summary' => 'Départements / régions d\'un pays',
-                    'parameters' => [self::paramUuid('uuid', 'Identifiant du pays.')],
+                    'parameters' => array_merge([self::paramUuid('uuid', 'Identifiant du pays.')], self::paramsRecherche()),
                     'responses' => [
                         '200' => self::succes('Départements du pays', [
                             'departements' => ['type' => 'array', 'items' => self::ref('ElementGeo')],
@@ -196,7 +225,7 @@ MD;
                 'get' => [
                     'tags' => ['Géographie'],
                     'summary' => "Communes d'un département",
-                    'parameters' => [self::paramUuid('uuid', 'Identifiant du département.')],
+                    'parameters' => array_merge([self::paramUuid('uuid', 'Identifiant du département.')], self::paramsRecherche()),
                     'responses' => [
                         '200' => self::succes('Communes du département', [
                             'communes' => ['type' => 'array', 'items' => self::ref('ElementGeo')],
@@ -209,7 +238,7 @@ MD;
                 'get' => [
                     'tags' => ['Géographie'],
                     'summary' => "Arrondissements d'une commune",
-                    'parameters' => [self::paramUuid('uuid', 'Identifiant de la commune.')],
+                    'parameters' => array_merge([self::paramUuid('uuid', 'Identifiant de la commune.')], self::paramsRecherche()),
                     'responses' => [
                         '200' => self::succes('Arrondissements de la commune', [
                             'arrondissements' => ['type' => 'array', 'items' => self::ref('ElementGeo')],
@@ -224,7 +253,7 @@ MD;
                 'post' => [
                     'tags' => ['Onboarding'],
                     'summary' => 'Crée ou met à jour un brouillon de demande',
-                    'description' => "Appelé à chaque étape du formulaire (sauvegarde automatique). Sans `uuid`, une nouvelle demande est créée ; avec `uuid`, le brouillon existant est retrouvé et **fusionné** (fusion récursive) avec les données envoyées : on peut donc n'envoyer que l'étape en cours. Conserver l'`uuid` côté navigateur permet de reprendre la demande après une fermeture accidentelle.\n\nSeul `localisation.arrondissement_uuid` est résolu vers une clé étrangère ; les autres uuid de la cascade sont conservés tels quels dans le brouillon.",
+                    'description' => "Appelé à chaque étape du formulaire (sauvegarde automatique). Sans `uuid`, une nouvelle demande est créée ; avec `uuid`, le brouillon existant est retrouvé et **fusionné** (fusion récursive) avec les données envoyées : on peut donc n'envoyer que l'étape en cours. Conserver l'`uuid` côté navigateur permet de reprendre la demande après une fermeture accidentelle.\n\nChaque uuid de `localisation` (pays, département, commune, arrondissement) est vérifié : il doit exister et être cohérent avec le niveau inférieur choisi (une commune doit appartenir au département envoyé), sinon `422`. Les niveaux supérieurs sont déduits du niveau le plus fin envoyé. Pour effacer un niveau, envoyer `null`. Seul un brouillon est modifiable : une demande déjà soumise répond `409`.",
                     'requestBody' => [
                         'required' => true,
                         'content' => self::json([
@@ -250,11 +279,14 @@ MD;
                                     'telephone_2' => '+22996000000',
                                 ],
                                 'localisation' => [
+                                    'pays_uuid' => '6a1d0c52-9f3b-4c1e-8a77-2b5e4d9c0a31',
+                                    'departement_uuid' => '3e8b7a14-52c0-4d6f-b1a9-7c2d0e5f8a64',
+                                    'commune_uuid' => '9c4f2e68-1a7d-4b30-8e52-6d0a3b7c1f95',
                                     'arrondissement_uuid' => '0b6f1c3e-5a2d-4b7e-9c1f-3d8a2e4f6a10',
                                     'adresse_complete' => 'Rue 123, près du marché de Ganhi',
                                 ],
                                 'dirigeant' => [
-                                    'nom_complet' => 'Jean Dupont',
+                                    'nom_complet' => 'Vore nom complet',
                                     'titre' => 'Fondateur',
                                     'email' => 'jean@kisito.bj',
                                     'telephone' => '+22997111111',
@@ -267,6 +299,7 @@ MD;
                             'demandeUuid' => ['type' => 'string', 'format' => 'uuid'],
                             'statut' => ['type' => 'string', 'example' => 'brouillon'],
                         ]),
+                        '409' => self::reponseRef('ConflitStatut'),
                         '422' => self::reponseRef('DonneesInvalides'),
                     ],
                 ],
@@ -301,6 +334,7 @@ MD;
                             'documentUuid' => ['type' => 'string', 'format' => 'uuid'],
                         ]),
                         '404' => self::reponseRef('RessourceIntrouvable'),
+                        '409' => self::reponseRef('ConflitStatut'),
                         '422' => self::reponseRef('DonneesInvalides'),
                     ],
                 ],
@@ -309,7 +343,7 @@ MD;
                 'post' => [
                     'tags' => ['Onboarding'],
                     'summary' => 'Soumet la demande finalisée (étape 5)',
-                    'description' => "Passe la demande au statut `soumise`, horodate la soumission et publie l'événement `demande.soumise` (notifications WhatsApp + e-mail à l'établissement, au dirigeant et au Super Administrateur, envoyées par le microservice Communication).\n\nLe jeton CAPTCHA est vérifié côté serveur avant tout traitement.",
+                    'description' => "La localisation doit être complète : le pays est obligatoire, puis chaque niveau (département, commune, arrondissement) l'est tant que le référentiel en propose pour le niveau choisi ; l'adresse est obligatoire. Sinon `422` avec le détail par champ. Seul un brouillon peut être soumis (`409` sinon). Passe la demande au statut `soumise`, horodate la soumission et publie l'événement `demande.soumise` (notifications WhatsApp + e-mail à l'établissement, au dirigeant et au Super Administrateur, envoyées par le microservice Communication).\n\nLe jeton CAPTCHA est vérifié côté serveur avant tout traitement.",
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
                     'requestBody' => [
                         'required' => true,
@@ -331,6 +365,7 @@ MD;
                         ]),
                         '401' => self::reponseRef('CaptchaInvalide'),
                         '404' => self::reponseRef('RessourceIntrouvable'),
+                        '409' => self::reponseRef('ConflitStatut'),
                         '422' => self::reponseRef('DonneesInvalides'),
                     ],
                 ],
@@ -411,6 +446,32 @@ MD;
             ],
 
             // ---------------- Établissements ----------------
+            '/etablissements/code/{code}' => [
+                'get' => [
+                    'tags' => ['Établissements'],
+                    'summary' => "Informations publiques d'un établissement par son code",
+                    'description' => "Retrouve un établissement à partir de son **code public à 4 caractères** (`XXXX`), sans authentification. La casse n'a pas d'importance (`ab3k` = `AB3K`).\n\nNe contient que des informations déjà publiques : jamais le matricule, ni les coordonnées GPS, ni les identifiants internes. Un établissement suspendu ou archivé retourne un contenu dégradé (`degrade: true`). Mis en cache Redis, invalidé à chaque changement de statut.\n\nUn code qui n'a pas exactement 4 caractères alphanumériques répond directement `404`.",
+                    'parameters' => [[
+                        'name' => 'code',
+                        'in' => 'path',
+                        'required' => true,
+                        'description' => "Code de l'établissement (4 lettres majuscules ou chiffres).",
+                        'schema' => ['type' => 'string', 'pattern' => '^[A-Za-z0-9]{4}$', 'example' => 'K7QP'],
+                    ]],
+                    'responses' => [
+                        '200' => self::succes("Informations de l'établissement (normales ou dégradées)", [
+                            'etablissement' => self::ref('EtablissementPublic'),
+                        ]),
+                        '404' => [
+                            'description' => 'Aucun établissement ne correspond à ce code.',
+                            'content' => self::json(self::ref('Erreur'), [
+                                'success' => false,
+                                'error' => ['code' => 'ETABLISSEMENT_INTROUVABLE', 'message' => 'Aucun établissement ne correspond à ce code.'],
+                            ]),
+                        ],
+                    ],
+                ],
+            ],
             '/etablissements/{slug}/cycles-autorises' => [
                 'get' => [
                     'tags' => ['Établissements'],
@@ -510,6 +571,7 @@ MD;
                         ]),
                         '401' => self::reponseRef('SecretInvalide'),
                         '404' => self::reponseRef('RessourceIntrouvable'),
+                        '409' => self::reponseRef('ConflitStatut'),
                         '422' => self::reponseRef('DonneesInvalides'),
                     ],
                 ],
@@ -518,17 +580,20 @@ MD;
                 'post' => [
                     'tags' => ['Interne'],
                     'summary' => 'Valide définitivement la demande',
-                    'description' => "En **une seule transaction** : crée l'établissement (statut `actif`) avec son slug et son matricule, enregistre ses cycles autorisés et passe la demande à `validee`. Publie ensuite `etablissement.valide`, que le microservice Identité consomme pour créer le compte administrateur du dirigeant.\n\nSlug : minuscules, sans accents, suffixe numérique en cas de collision (`jean-marie-2`). Matricule : mot significatif le plus court du nom + code à 4 chiffres (ex. `kisito8945`).",
+                    'description' => "La localisation doit être complète (même règle qu'à la soumission), sinon `422` : demander alors une correction. En **une seule transaction** : crée l'établissement (statut `actif`) avec son code public, son slug et son matricule, enregistre ses cycles autorisés et passe la demande à `validee`. Publie ensuite `etablissement.valide`, que le microservice Identité consomme pour créer le compte administrateur du dirigeant.\n\nSlug : minuscules, sans accents, suffixe numérique en cas de collision (`jean-marie-2`). Matricule : mot significatif le plus court du nom + code à 4 chiffres (ex. `kisito8945`).",
                     'security' => $secret,
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
                     'responses' => [
                         '200' => self::succes('Établissement créé', [
                             'etablissementUuid' => ['type' => 'string', 'format' => 'uuid'],
+                            'code' => ['type' => 'string', 'example' => 'K7QP', 'description' => "Code public unique de l'établissement (XXXX)."],
                             'slug' => ['type' => 'string', 'example' => 'complexe-scolaire-kisito'],
                             'matricule' => ['type' => 'string', 'example' => 'kisito8945'],
                         ]),
                         '401' => self::reponseRef('SecretInvalide'),
                         '404' => self::reponseRef('RessourceIntrouvable'),
+                        '409' => self::reponseRef('ConflitStatut'),
+                        '422' => self::reponseRef('DonneesInvalides'),
                     ],
                 ],
             ],
@@ -576,6 +641,7 @@ MD;
                     'responses' => [
                         '200' => self::succes('Établissement résolu', [
                             'tenantUuid' => ['type' => 'string', 'format' => 'uuid'],
+                            'code' => ['type' => 'string', 'example' => 'K7QP'],
                             'slug' => ['type' => 'string', 'example' => 'jean-marie'],
                             'statut' => ['type' => 'string', 'enum' => ['actif', 'suspendu', 'archive']],
                         ]),
@@ -651,6 +717,15 @@ MD;
                         'error' => ['code' => 'SECRET_INTERNE_INVALIDE', 'message' => 'Acces reserve aux services internes de la plateforme.'],
                     ]),
                 ],
+                'ConflitStatut' => [
+                    'description' => "Action impossible dans l'état actuel de la demande (ex. demande déjà soumise ou déjà validée).",
+                    'content' => self::json(self::ref('Erreur'), [
+                        'success' => false,
+                        'error' => ['code' => 'CONFLIT', 'message' => 'Cette demande a déjà été soumise.', 'details' => null],
+                        'path' => '/v1/demandes/0b6f1c3e-5a2d-4b7e-9c1f-3d8a2e4f6a10/soumettre',
+                        'timestamp' => '2026-10-13T06:18:00+01:00',
+                    ]),
+                ],
                 'CaptchaInvalide' => [
                     'description' => 'Vérification anti-robot échouée.',
                     'content' => self::json(self::ref('Erreur'), [
@@ -680,9 +755,14 @@ MD;
                     'type' => 'object',
                     'properties' => [
                         'uuid' => ['type' => 'string', 'format' => 'uuid'],
-                        'code_iso' => ['type' => 'string', 'example' => 'BJ'],
-                        'nom' => ['type' => 'string', 'example' => 'Benin'],
+                        'code_iso' => ['type' => 'string', 'example' => 'BJ', 'description' => 'Code ISO 3166-1 alpha-2.'],
+                        'code_iso3' => ['type' => 'string', 'example' => 'BEN', 'description' => 'Code ISO 3166-1 alpha-3.'],
+                        'nom' => ['type' => 'string', 'example' => 'Bénin'],
                         'indicatif_tel' => ['type' => 'string', 'example' => '229'],
+                        'continent' => ['type' => 'string', 'enum' => ['afrique', 'amerique_nord', 'amerique_sud', 'asie', 'europe', 'oceanie']],
+                        'libelle_niveau_1' => ['type' => 'string', 'example' => 'Département', 'description' => 'Étiquette de la 1re liste (départements, régions, États, provinces...).'],
+                        'libelle_niveau_2' => ['type' => 'string', 'example' => 'Commune', 'description' => 'Étiquette de la 2e liste (communes, villes...).'],
+                        'libelle_niveau_3' => ['type' => 'string', 'example' => 'Arrondissement', 'description' => 'Étiquette de la 3e liste (arrondissements, quartiers...).'],
                     ],
                 ],
                 'ElementGeo' => [
@@ -716,12 +796,12 @@ MD;
                         ],
                         'localisation' => [
                             'type' => 'object',
-                            'description' => 'Étape 2 - Localisation (valeurs issues des listes en cascade `/geo/...`).',
+                            'description' => 'Étape 2 - Localisation (valeurs issues des listes en cascade `/geo/...`). Le pays est obligatoire ; chaque niveau suivant l\'est tant que le référentiel en propose pour le niveau choisi (un pays ou une commune sans subdivision connue n\'en exige pas).',
                             'properties' => [
                                 'pays_uuid' => ['type' => 'string', 'format' => 'uuid'],
                                 'departement_uuid' => ['type' => 'string', 'format' => 'uuid'],
                                 'commune_uuid' => ['type' => 'string', 'format' => 'uuid'],
-                                'arrondissement_uuid' => ['type' => 'string', 'format' => 'uuid', 'description' => "Seul uuid résolu vers une clé étrangère : c'est lui qui rattache la demande au référentiel."],
+                                'arrondissement_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true, 'description' => "Facultatif : tous les pays n'ont pas ce niveau dans le référentiel."],
                                 'adresse_complete' => ['type' => 'string', 'description' => 'Rue, numéro ou repère.'],
                             ],
                         ],
@@ -795,6 +875,46 @@ MD;
                         'inclus' => ['type' => 'boolean'],
                     ],
                 ],
+                'EtablissementPublic' => [
+                    'type' => 'object',
+                    'description' => 'Informations publiques (normales, `degrade: false`) ou dégradées (`degrade: true` : seuls `code`, `slug`, `statut`, `degrade` et `message` sont présents).',
+                    'properties' => [
+                        'code' => ['type' => 'string', 'example' => 'K7QP'],
+                        'slug' => ['type' => 'string', 'example' => 'complexe-scolaire-kisito'],
+                        'nom' => ['type' => 'string', 'example' => 'Complexe Scolaire Kisito'],
+                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']]],
+                        'anneeOuverture' => ['type' => 'integer', 'example' => 2015],
+                        'logoDocumentId' => ['type' => 'string', 'nullable' => true],
+                        'adresseComplete' => ['type' => 'string'],
+                        'localisation' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'pays' => [
+                                    'type' => 'object',
+                                    'nullable' => true,
+                                    'properties' => [
+                                        'code' => ['type' => 'string', 'example' => 'BJ'],
+                                        'nom' => ['type' => 'string', 'example' => 'Bénin'],
+                                    ],
+                                ],
+                                'departement' => ['type' => 'string', 'nullable' => true, 'example' => 'Littoral'],
+                                'commune' => ['type' => 'string', 'nullable' => true, 'example' => 'Cotonou'],
+                                'arrondissement' => ['type' => 'string', 'nullable' => true],
+                            ],
+                        ],
+                        'contact' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'email' => ['type' => 'string'],
+                                'telephone1' => ['type' => 'string'],
+                                'telephone2' => ['type' => 'string', 'nullable' => true],
+                            ],
+                        ],
+                        'statut' => ['type' => 'string', 'enum' => ['actif', 'suspendu', 'archive']],
+                        'degrade' => ['type' => 'boolean'],
+                        'message' => ['type' => 'string', 'description' => 'Présent uniquement en contenu dégradé.'],
+                    ],
+                ],
                 'AccueilPlateforme' => [
                     'type' => 'object',
                     'properties' => [
@@ -814,6 +934,7 @@ MD;
                     'type' => 'object',
                     'description' => 'Contenu normal (`degrade: false`) ou dégradé (`degrade: true`, seuls `slug`, `statut`, `degrade` et `message` sont présents).',
                     'properties' => [
+                        'code' => ['type' => 'string', 'example' => 'K7QP', 'description' => "Code public unique de l'établissement (XXXX)."],
                         'slug' => ['type' => 'string', 'example' => 'jean-marie'],
                         'nom' => ['type' => 'string'],
                         'types' => ['type' => 'array', 'items' => ['type' => 'string']],

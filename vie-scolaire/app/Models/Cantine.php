@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Common\TenantModel;
 
 /**
- * Formule de cantine souscrite et statut de paiement — V2+, HORS LOT.
+ * Formule de cantine souscrite et statut de paiement - V2+, HORS LOT.
  *
  * La structure est posee des ce lot pour eviter toute migration disruptive
  * lors de l'activation de la version 2, mais aucun endpoint ne l'expose

@@ -2,13 +2,16 @@
 
 namespace App\Domain\Geo;
 
+use App\Support\GenereUuid;
 use Illuminate\Database\Eloquent\Model;
 
 class Commune extends Model
 {
+    use GenereUuid;
+
     protected $table = 'communes';
 
-    protected $fillable = ['departement_id', 'nom'];
+    protected $fillable = ['departement_id', 'nom', 'source', 'code_externe'];
 
     public function departement()
     {

@@ -2,105 +2,107 @@
 
 namespace App\Domain\Onboarding;
 
+use App\Domain\Geo\LocalisationService;
 use App\Services\RabbitMQService;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use App\Support\FusionFormulaire;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Illuminate\Support\Facades\DB;
-use App\Domain\Onboarding\DemandeEtablissement;
 
-class OnboardingService{
-    public function __construct(private RabbitMQService $rabbitmq) {}
-    
+/**
+ * Orchestre le formulaire d'onboarding en 5 etapes (section 4) : brouillon
+ * auto-sauvegarde, televersement de documents, soumission finale et
+ * declenchement des notifications initiales (section 6).
+ */
+class OnboardingService
+{
+    public function __construct(
+        private RabbitMQService $rabbitmq,
+        private LocalisationService $localisation,
+    ) {}
 
-    public function enregistrerBrouillon(
-        ?string $uuid,
-        array $donnees
-    ): DemandeEtablissement {
-        return DB::transaction(function () use ($uuid, $donnees) {
+    /**
+     * Cree ou met a jour un brouillon de demande. Le porteur de projet n'est
+     * pas authentifie : la demande est retrouvee par son uuid s'il est fourni
+     * (reprise apres fermeture du navigateur), sinon une nouvelle est creee.
+     * Seul un brouillon est modifiable ici : une demande soumise ne se corrige
+     * que via le lien de correction signe.
+     */
+    public function enregistrerBrouillon(?string $uuid, array $donnees): DemandeEtablissement
+    {
+        $demande = $uuid ? DemandeEtablissement::where('uuid', $uuid)->first() : null;
 
-            // Rechercher le brouillon existant si un UUID est fourni.
-            $demande = $uuid
-                ? DemandeEtablissement::where('uuid', $uuid)
-                    ->lockForUpdate()
-                    ->first()
-                : null;
+        if ($demande && $demande->statut !== 'brouillon') {
+            abort(409, 'Cette demande a déjà été soumise : elle ne peut plus être modifiée ici.');
+        }
 
-            // Si un UUID est fourni mais introuvable, ne pas créer
-            // silencieusement un nouveau brouillon.
-            if ($uuid !== null && !$demande) {
-                throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
-                    'Aucun brouillon trouvé pour cet UUID.'
-                );
-            }
+        $demande ??= new DemandeEtablissement();
 
-            // Créer un nouveau brouillon si aucun UUID n'est fourni.
-            if (!$demande) {
-                $demande = new DemandeEtablissement();
-                $demande->uuid = (string) Str::uuid();
-            }
+        $this->appliquerDonnees($demande, $donnees);
 
-            // Fusionner les données du formulaire.
-            $formulaireExistant = $demande->donnees_formulaire ?? [];
+        $demande->statut ??= 'brouillon';
+        $demande->save();
 
-            $demande->donnees_formulaire = array_replace_recursive(
-                $formulaireExistant,
-                $donnees
-            );
-
-            // Localisation.
-            if (isset($donnees['localisation']['arrondissement_uuid'])) {
-                $demande->arrondissement_id =
-                    \App\Domain\Geo\Arrondissement::where(
-                        'uuid',
-                        $donnees['localisation']['arrondissement_uuid']
-                    )->value('id');
-            }
-
-            $demande->adresse_complete ??=
-                $donnees['localisation']['adresse_complete']
-                ?? null;
-
-            $demande->latitude =
-                $donnees['geolocalisation']['latitude']
-                ?? $demande->latitude;
-
-            $demande->longitude =
-                $donnees['geolocalisation']['longitude']
-                ?? $demande->longitude;
-
-            // Dirigeant.
-            if (isset($donnees['dirigeant'])) {
-                $demande->dirigeant_nom =
-                    $donnees['dirigeant']['nom_complet']
-                    ?? $demande->dirigeant_nom;
-
-                $demande->dirigeant_titre =
-                    $donnees['dirigeant']['titre']
-                    ?? $demande->dirigeant_titre;
-
-                $demande->dirigeant_email =
-                    $donnees['dirigeant']['email']
-                    ?? $demande->dirigeant_email;
-
-                $demande->dirigeant_telephone =
-                    $donnees['dirigeant']['telephone']
-                    ?? $demande->dirigeant_telephone;
-            }
-
-            $demande->statut ??= 'brouillon';
-
-            $demande->save();
-
-            return $demande;
-        });
+        return $demande;
     }
 
-    public function televerserDocument(string $demandeUuid, string $type, UploadedFile $fichier): DocumentEtablissement    {
+    /**
+     * Fusionne un lot de donnees dans le formulaire de la demande ET recopie les
+     * champs structurants (localisation a chaque niveau, adresse, coordonnees,
+     * dirigeant) dans leurs colonnes dediees, qui font foi a la validation.
+     * Ne sauvegarde pas : l'appelant enregistre apres ses propres controles.
+     * Utilisee par le brouillon ET par la correction (sinon une correction
+     * resterait dans le JSON sans jamais atteindre l'etablissement cree).
+     */
+    public function appliquerDonnees(DemandeEtablissement $demande, array $donnees): void
+    {
+        $demande->donnees_formulaire = FusionFormulaire::fusionner($demande->donnees_formulaire ?? [], $donnees);
+        $formulaire = $demande->donnees_formulaire;
 
+        // Localisation : chaque niveau est resolu, controle (coherence entre
+        // niveaux) et complete vers le haut. Tolerant tant que la saisie est partielle.
+        if (isset($donnees['localisation'])) {
+            $ids = $this->localisation->resoudre($formulaire['localisation'] ?? []);
+            $demande->pays_id = $ids['pays_id'];
+            $demande->departement_id = $ids['departement_id'];
+            $demande->commune_id = $ids['commune_id'];
+            $demande->arrondissement_id = $ids['arrondissement_id'];
+
+            if (array_key_exists('adresse_complete', $donnees['localisation'])) {
+                $demande->adresse_complete = $donnees['localisation']['adresse_complete'];
+            }
+        }
+
+        if (isset($donnees['geolocalisation'])) {
+            $demande->latitude = $donnees['geolocalisation']['latitude'] ?? $demande->latitude;
+            $demande->longitude = $donnees['geolocalisation']['longitude'] ?? $demande->longitude;
+        }
+
+        if (isset($donnees['dirigeant'])) {
+            $demande->dirigeant_nom = $donnees['dirigeant']['nom_complet'] ?? $demande->dirigeant_nom;
+            $demande->dirigeant_titre = $donnees['dirigeant']['titre'] ?? $demande->dirigeant_titre;
+            $demande->dirigeant_email = $donnees['dirigeant']['email'] ?? $demande->dirigeant_email;
+            $demande->dirigeant_telephone = $donnees['dirigeant']['telephone'] ?? $demande->dirigeant_telephone;
+        }
+    }
+
+    public function televerserDocument(string $demandeUuid, string $type, UploadedFile $fichier): DocumentEtablissement
+    {
         $demande = DemandeEtablissement::where('uuid', $demandeUuid)->firstOrFail();
 
-        $chemin = $fichier->store("demandes/{$demande->uuid}/{$type}", 's3');
+        // Documents acceptes tant que le dossier est en cours ; apres validation,
+        // seul le logo peut encore etre ajoute (section 4.4).
+        $autorise = in_array($demande->statut, ['brouillon', 'correction_demandee'], true)
+            || ($demande->statut === 'validee' && $type === 'logo');
+
+        if (! $autorise) {
+            abort(409, "Cette demande n'accepte plus de nouveau document.");
+        }
+
+        $disk   = config('filesystems.default', 'local');
+        $chemin = $fichier->store("demandes/{$demande->uuid}/{$type}", $disk);
+
+        if (! $chemin) {
+            abort(500, 'Impossible de stocker le document. Vérifiez la configuration du stockage.');
+        }
 
         return $demande->documents()->create([
             'type' => $type,
@@ -113,6 +115,16 @@ class OnboardingService{
     public function soumettre(string $demandeUuid): DemandeEtablissement
     {
         $demande = DemandeEtablissement::where('uuid', $demandeUuid)->firstOrFail();
+
+        // Une demande deja soumise, en correction ou validee ne repasse jamais par ici.
+        if ($demande->statut !== 'brouillon') {
+            abort(409, 'Cette demande a déjà été soumise.');
+        }
+
+        // Localisation exploitable exigee des la soumission (pays, departement,
+        // commune, arrondissement si la commune en possede, adresse).
+        $this->localisation->exigerComplete($demande);
+
         $demande->statut = 'soumise';
         $demande->date_soumission = now();
         $demande->save();

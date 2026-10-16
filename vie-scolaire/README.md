@@ -1,4 +1,4 @@
-# vie-scolaire — Microservice Vie Scolaire — sigapei
+# vie-scolaire - Microservice Vie Scolaire - sigapei
 
 Microservice **Vie scolaire** de la plateforme SIGAPEI : presences et absences,
 synthese d'absences, incidents disciplinaires et sanctions, alertes au seuil
@@ -56,7 +56,7 @@ fonctionnel avec les valeurs par defaut** : ce sont des placeholders
 
 Une seule base pour toute la plateforme, **un schema par microservice**. Les
 identifiants sont ceux de `identite` et `etablissements`, fournis par le chef de
-projet — on ne redemande pas d'autres valeurs et on ne cree pas de base.
+projet - on ne redemande pas d'autres valeurs et on ne cree pas de base.
 
 ```
 DB_CONNECTION=pgsql
@@ -185,7 +185,7 @@ entetes transmis par la passerelle :
 
 | Entete | Signification |
 |---|---|
-| `X-Tenant-Id` | identifiant du tenant (etablissement) — obligatoire |
+| `X-Tenant-Id` | identifiant du tenant (etablissement) - obligatoire |
 | `X-User-Id` | uuid de l'utilisateur connecte (claim `sub`) |
 | `X-User-Role` | role sur ce module (enseignant, censeur, ...) |
 

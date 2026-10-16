@@ -1,0 +1,138 @@
+/* ═══════════════════════════════════════════════════════
+   Dashboard - SIGAPEI Administration Principale
+   Charte STRICTE : #006B3C · #E9AA20 · #FFF6DD · #000000
+   Zéro dégradé. Variables CSS uniquement.
+═══════════════════════════════════════════════════════ */
+
+/* Hérite des variables de .ap (admin.css) */
+
+/* ── Bienvenue ── */
+.db-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 22px 24px;
+  background: var(--ap-green, #006B3C);
+  border-radius: 12px;
+  color: #FFF6DD;
+  margin-bottom: 24px;
+}
+.db-welcome-title { margin: 0; font-size: 1.2rem; font-weight: 700; }
+.db-welcome-sub   { margin: 3px 0 0; font-size: 0.86rem; color: rgba(255,246,221,0.78); }
+
+/* ── Statistiques ── */
+.db-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.db-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--ap-surface, #fff);
+  border: 1px solid var(--ap-border, #dde4df);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.18s ease;
+}
+.db-stat::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.db-stat--success::before { background: var(--ap-green,   #006B3C); }
+.db-stat--warn::before    { background: var(--ap-gold,    #E9AA20); }
+.db-stat--info::before    { background: #1565a8; }
+.db-stat--danger::before  { background: #c0392b; }
+
+.db-stat-icon {
+  flex: none;
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  background: var(--ap-bg, #f4f6f5);
+  color: var(--ap-green, #006B3C);
+}
+.db-stat--warn   .db-stat-icon { color: var(--ap-gold, #E9AA20); }
+.db-stat--info   .db-stat-icon { color: #1565a8; }
+.db-stat--danger .db-stat-icon { color: #c0392b; }
+
+.db-stat-val { margin: 0; font-size: 1.65rem; font-weight: 700; line-height: 1; color: var(--ap-text, #1a2a1e); }
+.db-stat-lbl { margin: 3px 0 0; font-size: 0.78rem; color: var(--ap-muted, #5a6b5f); }
+
+/* ── Titre section ── */
+.db-section-title {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ap-text, #1a2a1e);
+}
+
+/* ── Grille espaces ── */
+.db-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.db-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 20px 18px;
+  text-decoration: none;
+  color: var(--ap-text, #1a2a1e);
+  position: relative;
+  cursor: pointer;
+}
+.db-card-icon {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  background: rgba(0,107,60,0.08);
+  color: var(--ap-green, #006B3C);
+  margin-bottom: 6px;
+}
+.db-card-label { font-size: 0.92rem; font-weight: 700; }
+.db-card-desc  { font-size: 0.78rem; color: var(--ap-muted, #5a6b5f); }
+.db-card-arrow {
+  position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--ap-border, #dde4df);
+  transition: color 0.18s ease;
+}
+.db-card:hover .db-card-arrow { color: var(--ap-green, #006B3C); }
+
+/* ── Bandeau info ── */
+.db-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  background: rgba(233,170,32,0.07);
+  border: 1px solid rgba(233,170,32,0.28);
+  border-radius: 10px;
+  font-size: 0.86rem;
+}
+.db-info > svg  { flex: none; color: #a07010; margin-top: 2px; }
+.db-info strong { display: block; margin-bottom: 3px; color: var(--ap-text, #1a2a1e); }
+.db-info p      { margin: 0; color: var(--ap-muted, #5a6b5f); line-height: 1.55; }
+.db-info a      { color: var(--ap-green, #006B3C); font-weight: 600; }
+
+/* ── Responsive ── */
+@media (max-width: 1000px) { .db-stats { grid-template-columns: repeat(2, 1fr); } .db-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .db-stats { grid-template-columns: 1fr 1fr; } .db-grid  { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 400px)  { .db-stats { grid-template-columns: 1fr; } .db-grid  { grid-template-columns: 1fr; } }
+
+/* ── Thème sombre ── */
+[data-theme='dark'] .db-welcome  { background: var(--ap-green, #006B3C); }
+[data-theme='dark'] .db-card-icon { background: rgba(74,222,128,0.08); color: #4ade80; }
+[data-theme='dark'] .db-card:hover .db-card-arrow { color: #4ade80; }

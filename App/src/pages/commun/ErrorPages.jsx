@@ -1,4 +1,9 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/identite/AuthContext'
 import { ENV } from '../../config/commun/env'
+import { redirectionPostLogin, roleCodeOf } from '../../config/identite/routes'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './ErrorPages.css'
 
 /* Volontairement sans dependance au routeur : utilisable meme dans l'ErrorBoundary. */
@@ -25,20 +30,52 @@ export function ErrorPage({ code, title, message, actions = [] }) {
   )
 }
 
-export const NotFoundPage = () => (
-  <ErrorPage
-    code="404"
-    title="Page introuvable"
-    message="La page que vous recherchez n'existe pas ou a été déplacée."
-    actions={[{ label: "Retour à l'accueil", href: '/', primary: true }]}
-  />
-)
+export function NotFoundPage() {
+  const navigate = useNavigate()
+  usePageTitle('Page introuvable')
 
-export const ForbiddenPage = () => (
-  <ErrorPage
-    code="403"
-    title="Accès refusé"
-    message="Votre rôle ne vous permet pas d'accéder à cette page. Contactez l'administrateur de votre établissement si vous pensez qu'il s'agit d'une erreur."
-    actions={[{ label: "Retour à l'accueil", href: '/', primary: true }]}
-  />
-)
+  function retour() {
+    if (window.history.length > 1) {
+      navigate(-1)
+    } else {
+      navigate('/', { replace: true })
+    }
+  }
+
+  return (
+    <ErrorPage
+      code="404"
+      title="Page introuvable"
+      message="La page que vous recherchez n'existe pas ou a été déplacée."
+      actions={[{ label: 'Retour', onClick: retour, primary: true }]}
+    />
+  )
+}
+
+/**
+ * Page 403 - avec redirection automatique vers l'espace du rôle après 5 s.
+ */
+export function ForbiddenPage() {
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const [compte, setCompte] = useState(5)
+  const destination = redirectionPostLogin(roleCodeOf(user))
+  usePageTitle('Accès refusé')
+
+  useEffect(() => {
+    if (compte <= 0) { navigate(destination, { replace: true }); return undefined }
+    const t = setTimeout(() => setCompte((c) => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [compte, navigate, destination])
+
+  return (
+    <ErrorPage
+      code="403"
+      title="Accès refusé"
+      message={`Votre rôle ne vous permet pas d'accéder à cette page. Redirection automatique dans ${compte} seconde${compte > 1 ? 's' : ''}…`}
+      actions={[
+        { label: 'Retourner maintenant', onClick: () => navigate(destination, { replace: true }), primary: true },
+      ]}
+    />
+  )
+}

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  * (transfert, création de classe, modification de créneau). Jusqu'ici
  * `AuditService::journaliser()` interrogeait `Schema::hasTable('audit_log')` :
  * la table n'ayant jamais été créée, l'audit partait uniquement dans le
- * fichier de log Laravel — perdu à chaque redéploiement.
+ * fichier de log Laravel - perdu à chaque redéploiement.
  *
  * La table est créée dans le schéma `scolarite` (propriétaire exclusif),
  * conformément à la règle n°1 de la plateforme.

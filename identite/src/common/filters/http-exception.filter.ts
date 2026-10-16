@@ -38,8 +38,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         details = anyBody.details ?? anyBody.message;
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
       this.logger.error(exception.message, exception.stack);
+      // En production, aucun detail interne (SQL, noms de tables...) n'est renvoye au client.
+      if (process.env.NODE_ENV !== 'production') message = exception.message;
     }
 
     response.status(status).json({

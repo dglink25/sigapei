@@ -35,7 +35,7 @@ class VerifyRole
 
         if (!app()->bound('current_user')) {
             return ApiResponse::erreur(
-                'Contexte utilisateur manquant — JWT non vérifié en amont.',
+                'Contexte utilisateur manquant - JWT non vérifié en amont.',
                 'NON_AUTHENTIFIE',
                 401
             );
@@ -45,7 +45,7 @@ class VerifyRole
 
         if (empty($user)) {
             return ApiResponse::erreur(
-                'Contexte utilisateur manquant — JWT non vérifié en amont.',
+                'Contexte utilisateur manquant - JWT non vérifié en amont.',
                 'NON_AUTHENTIFIE',
                 401
             );

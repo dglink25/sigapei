@@ -121,14 +121,14 @@ export function Recap({ form, docs }) {
     ['Téléphone(s)', [form.telephone_1, form.telephone_2].filter(Boolean).join(' · ')],
     ['Localisation', localisationTexte(form)],
     ['Adresse', form.adresse_complete],
-    ['Dirigeant', [form.dirigeant_nom, form.dirigeant_titre].filter(Boolean).join(' — ')],
+    ['Dirigeant', [form.dirigeant_nom, form.dirigeant_titre].filter(Boolean).join(' - ')],
     ['Contact dirigeant', [form.dirigeant_email, form.dirigeant_telephone].filter(Boolean).join(' · ')],
     ['Documents', Object.values(docs).filter((d) => d?.status === 'done').map((d) => d.nom).join(', ')],
   ]
   return (
     <dl className="dm-recap">
       {rows.map(([k, v]) => (
-        <div key={k}><dt>{k}</dt><dd>{v || '—'}</dd></div>
+        <div key={k}><dt>{k}</dt><dd>{v || '-'}</dd></div>
       ))}
     </dl>
   )

@@ -84,11 +84,7 @@ export class OtpService {
     this.rabbitmq.publier('otp.envoye', { utilisateurId, canal: 'email', cible: this.masquer(email) });
   }
 
-  /**
-   * Envoie un OTP par telephone en parallele sur SMS (passerelle maison) et
-   * WhatsApp (Convessa) - le premier canal qui aboutit fait foi (section 6.2).
-   */
-  async envoyerParTelephone(utilisateurId: string, telephoneE164: string): Promise<{ smsOk: boolean; whatsappOk: boolean }> {
+  async envoyerParTelephone(utilisateurId: string, telephoneE164: string, roleCode?: string, nomComplet?: string): Promise<{ smsOk: boolean; whatsappOk: boolean }> {
     await this.verifierQuotaRenvoi(telephoneE164);
     const code = genererOtpTelephone();
     await this.enregistrerOtp(telephoneE164, code, 'sms+whatsapp' as any, utilisateurId);
@@ -96,7 +92,7 @@ export class OtpService {
 
     const [sms, whatsapp] = await Promise.allSettled([
       this.smsGateway.envoyerCodeOtp(telephoneE164, code, dureeMinutes),
-      this.convessa.envoyerCodeOtp(telephoneE164, code, dureeMinutes),
+      this.convessa.envoyerCodeOtp(telephoneE164, code, dureeMinutes, roleCode, nomComplet),
     ]);
 
     const smsOk = sms.status === 'fulfilled' && sms.value.succes;

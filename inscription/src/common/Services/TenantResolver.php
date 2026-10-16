@@ -66,7 +66,7 @@ class TenantResolver
 
         // Un entier est déjà l'identifiant interne. En mode compatibilité
         // (convention numérique déjà appliquée par la passerelle), on
-        // l'accepte sans appel réseau — c'est le cas de vie-scolaire.
+        // l'accepte sans appel réseau - c'est le cas de vie-scolaire.
         if (is_numeric($tenantRef)) {
             if (config('app.two_tenant_conventions_enabled', false)) {
                 $this->cache[$cle] = (int) $tenantRef;

@@ -26,6 +26,14 @@ export function Field({ id, label, required, hint, error, flagged, motif, childr
   )
 }
 
+const STEP_SUBS = {
+  1: 'Nom, type, contacts',
+  2: 'Adresse & géolocalisation',
+  3: 'Identité du responsable',
+  4: 'Pièces justificatives',
+  5: 'Relecture & envoi',
+}
+
 export function Stepper({ steps, current, onGo }) {
   return (
     <ol className="dm-stepper" aria-label="Progression">
@@ -36,8 +44,13 @@ export function Stepper({ steps, current, onGo }) {
         return (
           <li key={s.id} className={`dm-step ${done ? 'is-done' : ''} ${active ? 'is-active' : ''}`}>
             <button type="button" disabled={!done} onClick={() => onGo(s.id)} aria-current={active ? 'step' : undefined}>
-              <span className="dm-step-dot">{done ? <Check size={16} /> : <Icon size={16} />}</span>
-              <span className="dm-step-label">{s.label}</span>
+              <span className="dm-step-dot">
+                {done ? <Check size={15} /> : active ? <Icon size={15} /> : <span>{s.id}</span>}
+              </span>
+              <span className="dm-step-info">
+                <span className="dm-step-label">{s.label}</span>
+                <span className="dm-step-sublabel">{STEP_SUBS[s.id]}</span>
+              </span>
             </button>
           </li>
         )
@@ -47,6 +60,6 @@ export function Stepper({ steps, current, onGo }) {
 }
 
 export function StatusBadge({ statut }) {
-  const s = STATUTS[statut] ?? { label: statut || '—', tone: 'neutral' }
+  const s = STATUTS[statut] ?? { label: statut || '-', tone: 'neutral' }
   return <span className={`ad-badge ad-badge--${s.tone}`}>{s.label}</span>
 }

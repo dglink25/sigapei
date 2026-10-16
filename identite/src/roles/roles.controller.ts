@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { RolesService } from './roles.service';
+import { ActeurRole, RolesService } from './roles.service';
 import { CreerRoleDto } from './dto/creer-role.dto';
 import { ModifierRoleDto } from './dto/modifier-role.dto';
 import { Roles } from '../common/decorators/roles.decorator';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @ApiTags('Roles')
 @ApiBearerAuth()
@@ -12,29 +13,30 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Liste les roles disponibles (systeme + personnalises) pour le tenant courant.' })
-  lister(@Query('tenantId') tenantId?: string) {
-    return this.rolesService.lister(tenantId);
+  @ApiOperation({ summary: "Liste les roles disponibles (systeme + personnalises de votre etablissement). Le super_admin peut cibler un etablissement via tenantId." })
+  async lister(@CurrentUser() acteur: ActeurRole, @Query('tenantId', new ParseUUIDPipe({ optional: true })) tenantId?: string) {
+    const tenant = acteur.roleCode === 'super_admin' ? tenantId : (acteur.tenantId ?? undefined);
+    return { roles: await this.rolesService.lister(tenant) };
   }
 
   @Post()
   @Roles('administrateur', 'super_admin')
-  @ApiOperation({ summary: 'Cree un role personnalise, reserve Administrateur/Super Administrateur.' })
-  creer(@Body() dto: CreerRoleDto) {
-    return this.rolesService.creer(dto);
+  @ApiOperation({ summary: "Cree un role personnalise (administrateur : pour son etablissement uniquement)." })
+  creer(@Body() dto: CreerRoleDto, @CurrentUser() acteur: ActeurRole) {
+    return this.rolesService.creer(dto, acteur);
   }
 
   @Put(':uuid')
   @Roles('administrateur', 'super_admin')
-  @ApiOperation({ summary: "Modifie le libelle ou la famille d'authentification d'un role personnalise." })
-  modifier(@Param('uuid') uuid: string, @Body() dto: ModifierRoleDto) {
-    return this.rolesService.modifier(uuid, dto);
+  @ApiOperation({ summary: "Modifie le libelle ou la famille d'authentification d'un role personnalise de votre etablissement." })
+  modifier(@Param('uuid', ParseUUIDPipe) uuid: string, @Body() dto: ModifierRoleDto, @CurrentUser() acteur: ActeurRole) {
+    return this.rolesService.modifier(uuid, dto, acteur);
   }
 
   @Delete(':uuid')
   @Roles('administrateur', 'super_admin')
-  @ApiOperation({ summary: 'Desactive un role personnalise non utilise par un compte actif.' })
-  desactiver(@Param('uuid') uuid: string) {
-    return this.rolesService.desactiver(uuid).then(() => ({ code: 'ROLE_DESACTIVE' }));
+  @ApiOperation({ summary: 'Supprime un role personnalise de votre etablissement non utilise par un compte.' })
+  desactiver(@Param('uuid', ParseUUIDPipe) uuid: string, @CurrentUser() acteur: ActeurRole) {
+    return this.rolesService.desactiver(uuid, acteur).then(() => ({ code: 'ROLE_DESACTIVE' }));
   }
 }

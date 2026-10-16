@@ -1,0 +1,71 @@
+/* ── Bouton icône (topbars) ── */
+.tt-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  flex: none;
+  transition: background 0.15s, color 0.15s;
+}
+.tt-icon:hover { background: var(--sg-theme-hover, rgba(0,0,0,0.06)); }
+
+/* ── Pill (sidebar nav) ── */
+.tt-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.tt-pill-track {
+  flex: none;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(255,246,221,0.2);
+  border: 1px solid rgba(255,246,221,0.3);
+  position: relative;
+  transition: background 0.2s;
+}
+[data-theme='dark'] .tt-pill-track {
+  background: var(--sg-gold, #E9AA20);
+  border-color: var(--sg-gold, #E9AA20);
+}
+
+.tt-pill-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255,246,221,0.9);
+  display: grid;
+  place-items: center;
+  color: var(--sg-green, #006B3C);
+  transition: transform 0.2s ease, background 0.2s;
+}
+[data-theme='dark'] .tt-pill-thumb {
+  transform: translateX(16px);
+  background: var(--sg-green-dark, #004d2b);
+  color: var(--sg-gold, #E9AA20);
+}
+
+.tt-pill-label {
+  color: rgba(255,246,221,0.75);
+  font-size: 0.88rem;
+}
+[data-theme='dark'] .tt-pill-label { color: var(--sg-gold, #E9AA20); font-weight: 600; }

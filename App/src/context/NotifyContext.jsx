@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import NoticeModal from '../components/NoticeModal'
+import NoticeModal from '../components/commun/NoticeModal'
 import { toNotice } from '../lib/errors'
 
 const NotifyContext = createContext(null)

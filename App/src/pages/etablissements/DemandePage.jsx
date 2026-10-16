@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, CircleCheck, RotateCcw, Send } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CircleCheck, House, RotateCcw, Send } from 'lucide-react'
 import { ENV } from '../../config/commun/env'
 import { useNotify } from '../../context/commun/NotifyContext'
 import ConfirmDialog from '../../components/commun/ConfirmDialog'
 import { ApiError } from '../../lib/commun/http'
-import { LOGIN_PATH } from '../../config/identite/routes'
+import { LOGIN_PATH, HOME_PATH } from '../../config/identite/routes'
 import { getCaptchaToken } from '../../lib/identite/captcha'
 import { DOC_TYPES, STEPS, STEP_CHAMPS } from '../../config/etablissements/config'
 import { EMPTY_FORM, champOf, draftPayload, validateChamps } from '../../lib/etablissements/form'
@@ -14,6 +14,8 @@ import { captureGeolocation } from '../../lib/etablissements/geoloc'
 import { demandeService } from '../../services/etablissements/etablissement.service'
 import { Stepper } from '../../components/etablissements/ui'
 import { StepConfirmation, StepDirigeant, StepDocuments, StepEtablissement, StepLocalisation } from '../../components/etablissements/FormSteps'
+import Loader from '../../components/commun/Loader'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './etablissements.css'
 
 const TITLES = {
@@ -31,7 +33,13 @@ const isEmptyDraft = (form, uuid) => !uuid && JSON.stringify(form) === JSON.stri
 
 export default function DemandePage() {
   const notify = useNotify()
-  const [step, setStep] = useState(1)
+  usePageTitle("Inscrire mon établissement")
+
+  // Afficher le badge reCAPTCHA uniquement sur ce formulaire public
+  useEffect(() => {
+    document.body.classList.add('page-public-recaptcha')
+    return () => document.body.classList.remove('page-public-recaptcha')
+  }, [])
   const [form, setForm] = useState(EMPTY_FORM)
   const [docs, setDocs] = useState({})
   const [uuid, setUuid] = useState(null)
@@ -150,19 +158,26 @@ export default function DemandePage() {
     }
   }
 
-  function reset() {
+  async function reset() {
+    // Supprimer le brouillon côté serveur si un UUID existe
+    if (uuid) {
+      try {
+        await demandeService.supprimerBrouillon(uuid)
+      } catch {
+        // Pas bloquant : on efface le local quand même
+      }
+    }
     clearDraft()
     setForm(EMPTY_FORM); setDocs({}); setUuid(null); setStep(1); setErrors({}); setSavedAt(null); setAskReset(false)
     notify.info('Nouvelle demande', 'Le brouillon a été effacé.')
   }
 
-  /* ---------------- Ecran de confirmation ---------------- */
+  /* ---------------- Écran de confirmation finale ---------------- */
   if (done) {
     return (
       <main className="dm-page">
         <section className="dm-card dm-card--center">
-          <img className="dm-logo" src="/sigapei.png" alt={ENV.appName} />
-          <div className="dm-bigicon"><CircleCheck size={44} /></div>
+          <div className="dm-bigicon"><CircleCheck size={40} /></div>
           <h1 className="dm-title">Demande envoyée</h1>
           <p className="dm-sub">Votre demande d'inscription a bien été reçue et sera examinée par notre équipe.</p>
           <p className="dm-ref">Référence du dossier <strong>{done.reference}</strong></p>
@@ -175,51 +190,86 @@ export default function DemandePage() {
 
   const [title, sub] = TITLES[step]
   const stepProps = { form, set, errors, locked: () => false, flags: {}, docs, onDoc, demandeUuid: uuid }
+  const progress = Math.round(((step - 1) / (STEPS.length - 1)) * 100)
 
   return (
     <main className="dm-page">
       <section className="dm-card">
-        <header className="dm-head">
-          <img className="dm-logo" src="/sigapei.png" alt={ENV.appName} />
-          <div>
-            <h1 className="dm-title">Inscrire mon établissement</h1>
-            <p className="dm-sub">Demande d'inscription sur {ENV.appName}</p>
+
+        {/* ── Panneau gauche : stepper vertical ── */}
+        <aside className="dm-sidebar">
+          <div className="dm-sidebar-header">
+            <div className="dm-sidebar-logo-wrap">
+              <img className="dm-sidebar-logo" src="/sigapei.png" alt={ENV.appName} />
+            </div>
+            <div className="dm-sidebar-texts">
+              <p className="dm-sidebar-title">Inscrire mon établissement</p>
+              <p className="dm-sidebar-sub">Demande d'inscription sur {ENV.appName}</p>
+            </div>
           </div>
-          {!isEmptyDraft(form, uuid) && (
-            <button type="button" className="dm-link dm-reset" onClick={() => setAskReset(true)}><RotateCcw size={15} /> Recommencer</button>
-          )}
-        </header>
+          <Stepper steps={STEPS} current={step} onGo={(id) => { setErrors({}); setStep(id) }} />
+          <Link to={HOME_PATH} className="dm-back-home">
+            <House size={14} /> Retour à l'accueil
+          </Link>
+        </aside>
 
-        <Stepper steps={STEPS} current={step} onGo={(id) => { setErrors({}); setStep(id) }} />
+        {/* ── Panneau droit : formulaire ── */}
+        <div className="dm-panel">
+          <header className="dm-head">
+            <div className="dm-head-texts">
+              <h1 className="dm-title">{title}</h1>
+              <p className="dm-sub">{sub}</p>
+            </div>
+            <div className="dm-head-actions">
+              {/* Bouton accueil visible uniquement sur mobile (sidebar masquée) */}
+              <Link to={HOME_PATH} className="dm-btn-icon dm-btn-icon--mobile" aria-label="Retour à l'accueil">
+                <House size={16} />
+              </Link>
+              {!isEmptyDraft(form, uuid) && (
+                <button type="button" className="dm-link dm-reset" onClick={() => setAskReset(true)}>
+                  <RotateCcw size={15} /> Recommencer
+                </button>
+              )}
+            </div>
+          </header>
 
-        <div className="dm-section-head">
-          <h2>{title}</h2>
-          <p>{sub}</p>
-        </div>
+          {/* Barre de progression */}
+          <div className="dm-progress-bar" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+            <span style={{ width: `${progress}%` }} />
+          </div>
 
-        <div className="dm-body">
-          {step === 1 && <StepEtablissement {...stepProps} />}
-          {step === 2 && <StepLocalisation {...stepProps} />}
-          {step === 3 && <StepDirigeant {...stepProps} />}
-          {step === 4 && <StepDocuments {...stepProps} />}
-          {step === 5 && <StepConfirmation {...stepProps} />}
-        </div>
+          <div className="dm-body">
+            {step === 1 && <StepEtablissement {...stepProps} />}
+            {step === 2 && <StepLocalisation {...stepProps} />}
+            {step === 3 && <StepDirigeant {...stepProps} />}
+            {step === 4 && <StepDocuments {...stepProps} />}
+            {step === 5 && <StepConfirmation {...stepProps} />}
+          </div>
 
-        <footer className="dm-actions">
-          {step > 1 ? (
-            <button type="button" className="dm-btn dm-btn--ghost" onClick={() => { setErrors({}); setStep(step - 1) }} disabled={busy}>
-              <ArrowLeft size={18} /> Précédent
+          <footer className="dm-actions">
+            {step > 1 ? (
+              <button type="button" className="dm-btn dm-btn--ghost" onClick={() => { setErrors({}); setStep(step - 1) }} disabled={busy}>
+                <ArrowLeft size={17} /> Précédent
+              </button>
+            ) : <span />}
+
+            {savedAt && (
+              <small className="dm-saved">
+                Brouillon enregistré à {new Date(savedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </small>
+            )}
+
+            <button type="button" className="dm-btn dm-btn--gold" onClick={next} disabled={busy}>
+              {busy ? <><Loader mode="button" /> Veuillez patienter…</> : step === 5
+                ? <>Soumettre ma demande <Send size={17} /></>
+                : <>Suivant <ArrowRight size={17} /></>}
             </button>
-          ) : <span />}
+          </footer>
 
-          {savedAt && <small className="dm-saved">Brouillon enregistré à {new Date(savedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</small>}
-
-          <button type="button" className="dm-btn" onClick={next} disabled={busy}>
-            {busy ? 'Veuillez patienter…' : step === 5 ? <>Soumettre ma demande <Send size={18} /></> : <>Suivant <ArrowRight size={18} /></>}
-          </button>
-        </footer>
-
-        <p className="dm-foot">Vous avez déjà un compte ? <Link to={LOGIN_PATH} className="dm-link">Se connecter</Link></p>
+          <p className="dm-foot">
+            Vous avez déjà un compte ? <Link to={LOGIN_PATH} className="dm-link">Se connecter</Link>
+          </p>
+        </div>
       </section>
 
       <ConfirmDialog
@@ -231,6 +281,9 @@ export default function DemandePage() {
         onConfirm={reset}
         onCancel={() => setAskReset(false)}
       />
+
+      {/* Overlay de chargement lors de la soumission finale */}
+      {busy && step === 5 && <Loader label="Envoi de votre demande…" />}
     </main>
   )
 }

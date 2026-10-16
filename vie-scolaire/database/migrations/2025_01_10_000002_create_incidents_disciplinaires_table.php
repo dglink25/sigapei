@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Table vie_scolaire.incidents_disciplinaires — section 6 et 40 du CDC.
+ * Table vie_scolaire.incidents_disciplinaires - section 6 et 40 du CDC.
  *
  * apprenant_id : reference externe vers scolarite.apprenants.
  * auteur_id    : reference externe vers rh.personnel (enseignant/censeur

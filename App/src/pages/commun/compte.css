@@ -1,0 +1,254 @@
+/* ═══════════════════════════════════════════════════════
+   Pages Compte (Profil / Sécurité / Sessions)
+   Communes à tous les rôles - SIGAPEI
+   Charte : #006B3C · #E9AA20 · #FFF6DD · #000000
+═══════════════════════════════════════════════════════ */
+
+.cp {
+  --cp-green:    #006B3C;
+  --cp-green-dk: #004d2b;
+  --cp-gold:     #E9AA20;
+  --cp-cream:    #FFF6DD;
+  --cp-bg:       var(--sg-page-bg, #f4f6f5);
+  --cp-surface:  var(--sg-surface, #ffffff);
+  --cp-border:   var(--sg-border, #dde4df);
+  --cp-text:     var(--sg-text, #1a2a1e);
+  --cp-muted:    var(--sg-text-secondary, #5a6b5f);
+  --cp-hover:    var(--sg-theme-hover, rgba(0,0,0,0.04));
+  --cp-radius:   12px;
+  --cp-font:     'Century Gothic','Questrial','Poppins',system-ui,sans-serif;
+
+  min-height: 100dvh;
+  background: var(--cp-bg);
+  font-family: var(--cp-font);
+  font-size: 15px;
+  color: var(--cp-text);
+}
+.cp *, .cp *::before, .cp *::after { box-sizing: border-box; }
+
+/* ── Topbar ── */
+.cp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  height: 60px;
+  background: var(--cp-green);
+  color: var(--cp-cream);
+  position: sticky;
+  top: 0; z-index: 50;
+}
+.cp-topbar-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--cp-gold); text-decoration: none;
+  font-size: 0.88rem; font-weight: 700;
+  transition: opacity 0.15s;
+}
+.cp-topbar-back:hover { opacity: 0.85; }
+.cp-topbar-title { flex: 1; margin: 0; font-size: 1rem; font-weight: 700; color: var(--cp-cream); }
+.cp-topbar-actions { display: flex; align-items: center; gap: 6px; }
+.cp-topbar .tt-icon { color: rgba(255,246,221,0.8); --sg-theme-hover: rgba(255,246,221,0.12); }
+.cp-topbar .tt-icon:hover { color: var(--cp-cream); }
+
+/* ── Onglets de navigation ── */
+.cp-nav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--cp-border);
+  background: var(--cp-surface);
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: sticky;
+  top: 60px; z-index: 40;
+}
+.cp-nav::-webkit-scrollbar { display: none; }
+.cp-nav-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 12px 20px;
+  border: 0; border-bottom: 2.5px solid transparent;
+  margin-bottom: -1px;
+  background: none; color: var(--cp-muted);
+  font: inherit; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.cp-nav-tab:hover { color: var(--cp-green); }
+.cp-nav-tab.is-active { color: var(--cp-green); border-bottom-color: var(--cp-green); }
+
+/* ── Corps ── */
+.cp-body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 20px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Carte ── */
+.cp-card {
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: var(--cp-radius);
+  padding: 22px 24px;
+}
+.cp-card-title {
+  margin: 0 0 4px;
+  font-size: 0.98rem; font-weight: 700;
+  color: var(--cp-text);
+  display: flex; align-items: center; gap: 8px;
+}
+.cp-card-sub {
+  margin: 0 0 18px;
+  font-size: 0.84rem; color: var(--cp-muted);
+}
+
+/* ── Profil utilisateur ── */
+.cp-profil-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  background: var(--cp-green);
+  border-radius: var(--cp-radius);
+  color: var(--cp-cream);
+}
+.cp-avatar-lg {
+  flex: none;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--cp-gold);
+  color: var(--cp-green-dk);
+  display: grid; place-items: center;
+  font-size: 1.4rem; font-weight: 700;
+}
+.cp-profil-nom { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.cp-profil-role {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(233,170,32,0.2);
+  border: 1px solid rgba(233,170,32,0.4);
+  color: var(--cp-gold);
+  font-size: 0.78rem; font-weight: 700;
+  text-transform: capitalize;
+}
+
+/* ── Lignes de détail ── */
+.cp-rows { margin: 0; }
+.cp-rows > div {
+  display: grid; grid-template-columns: 160px 1fr;
+  gap: 10px; padding: 9px 0;
+  border-bottom: 1px solid var(--cp-border);
+  font-size: 0.9rem;
+}
+.cp-rows > div:last-child { border-bottom: 0; }
+.cp-rows dt { color: var(--cp-muted); }
+.cp-rows dd { margin: 0; font-weight: 600; word-break: break-all; }
+
+/* ── Appareil ── */
+.cp-device {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--cp-border);
+  border-radius: 10px;
+  background: var(--cp-bg);
+  transition: border-color 0.15s;
+}
+.cp-device.is-current { border-color: var(--cp-green); background: rgba(0,107,60,0.04); }
+.cp-device-ico {
+  flex: none; width: 38px; height: 38px; border-radius: 8px;
+  display: grid; place-items: center;
+  background: rgba(0,107,60,0.08); color: var(--cp-green);
+}
+.cp-device.is-current .cp-device-ico { background: rgba(0,107,60,0.12); }
+.cp-device-info { flex: 1; min-width: 0; }
+.cp-device-name { font-weight: 600; font-size: 0.9rem; color: var(--cp-text); }
+.cp-device-meta { font-size: 0.78rem; color: var(--cp-muted); margin-top: 1px; }
+.cp-device-badge {
+  font-size: 0.72rem; font-weight: 700; padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0,107,60,0.10); color: var(--cp-green);
+  border: 1px solid rgba(0,107,60,0.2);
+}
+
+/* ── Boutons ── */
+.cp-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 40px; padding: 0 18px;
+  border: 1.5px solid var(--cp-green);
+  border-radius: 8px;
+  background: var(--cp-green); color: var(--cp-cream);
+  font: inherit; font-size: 0.88rem; font-weight: 700;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: filter 0.15s;
+}
+.cp-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.cp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cp-btn--ghost {
+  background: transparent; color: var(--cp-text);
+  border-color: var(--cp-border);
+}
+.cp-btn--ghost:hover:not(:disabled) { border-color: var(--cp-green); color: var(--cp-green); filter: none; }
+
+.cp-btn--danger {
+  background: #c0392b; border-color: #c0392b; color: #fff;
+}
+.cp-btn--sm { min-height: 32px; padding: 0 12px; font-size: 0.82rem; }
+.cp-btn--icon { padding: 0; width: 34px; height: 34px; }
+
+/* ── Alerte info ── */
+.cp-alert {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 16px; border-radius: 8px; font-size: 0.85rem;
+  border: 1px solid rgba(233,170,32,0.3);
+  background: rgba(233,170,32,0.07); color: var(--cp-muted);
+}
+.cp-alert svg { flex: none; color: #a07010; margin-top: 1px; }
+.cp-alert p   { margin: 0; line-height: 1.5; }
+
+/* ── Loader inline ── */
+.cp-loading { display: flex; justify-content: center; padding: 32px 0; }
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .cp-topbar { padding: 0 14px; }
+  .cp-body   { padding: 18px 12px 48px; }
+  .cp-nav-tab { padding: 10px 14px; font-size: 0.82rem; }
+  .cp-rows > div { grid-template-columns: 1fr; gap: 2px; }
+  .cp-profil-hero { flex-direction: column; text-align: center; }
+}
+
+/* ── Thème sombre ── */
+[data-theme='dark'] .cp-device { background: var(--sg-surface-2); }
+[data-theme='dark'] .cp-device.is-current { background: rgba(74,222,128,0.06); border-color: #4ade80; }
+[data-theme='dark'] .cp-device-ico { background: rgba(74,222,128,0.08); color: #4ade80; }
+[data-theme='dark'] .cp-device-badge { background: rgba(74,222,128,0.10); color: #4ade80; border-color: rgba(74,222,128,0.2); }
+[data-theme='dark'] .cp-card-title { color: var(--sg-text); }
+
+/* ── Mode intégré dans un layout parent ── */
+.cp-page { min-height: unset; background: transparent; }
+.cp-body--embedded { max-width: 720px; padding: 20px 0 48px; }
+.cp-nav {
+  margin-bottom: 20px;
+  background: var(--sg-surface, #fff);
+  border: 1px solid var(--sg-border, #dde4df);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex; gap: 0;
+}
+.cp-nav-tab {
+  border-bottom: none;
+  border-right: 1px solid var(--sg-border, #dde4df);
+  flex: 1;
+  padding: 11px 14px;
+  justify-content: center;
+}
+.cp-nav-tab:last-child { border-right: none; }
+.cp-nav-tab.is-active {
+  background: rgba(0,107,60,0.06);
+  color: #006B3C;
+  border-bottom: none;
+}
