@@ -74,8 +74,10 @@ Route::prefix('v1')->group(function () {
         Route::put('/contestations/{contestation}/traiter', [ContestationsController::class, 'traiter'])->middleware('role:administrateur,enseignant');
     });
 
-    // Interne : secret partagé uniquement (Demandes administratives), X-Tenant-Id obligatoire.
+    // Interne : secret partagé uniquement (Demandes administratives, E-learning), X-Tenant-Id obligatoire.
     Route::middleware('secret.interne')->prefix('interne')->group(function () {
         Route::get('/eligibilite-document/{apprenant_uuid}', [InterneController::class, 'eligibiliteDocument']);
+        // E-learning : report des notes de devoirs et de quiz (une épreuve par activité).
+        Route::post('/notes-elearning', [InterneController::class, 'reporterNoteElearning']);
     });
 });

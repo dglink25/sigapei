@@ -316,7 +316,7 @@ Si le classement est désactivé, `rang` et `ex_aequo` ne sont pas renvoyés.
 - Sans réponse après `delai_escalade_contestation_jours` (7 par défaut), la contestation est escaladée automatiquement (`escaladee_le` est renseigné et un événement est publié).
 - Clore une contestation ne modifie jamais la note : la correction passe par `PUT /v1/notes/{uuid}/corriger`.
 
-### 3.8 Interne (Demandes administratives)
+### 3.8 Interne (Demandes administratives, E-learning)
 
 #### `GET /v1/interne/eligibilite-document/{apprenant_uuid}` — `X-Internal-Secret` + `X-Tenant-Id`
 ```json
@@ -326,6 +326,38 @@ Si le classement est désactivé, `rang` et `ex_aequo` ne sont pas renvoyés.
 ```
 
 ---
+
+#### `POST /v1/interne/notes-elearning` — `X-Internal-Secret` + `X-Tenant-Id` (E-learning)
+
+Report de la note d'un devoir noté ou d'une tentative de quiz. La note compte **directement** dans la moyenne.
+
+```json
+{
+  "source": "quiz",
+  "source_uuid": "uuid de la tentative ou de la soumission",
+  "activite_uuid": "uuid du quiz ou du devoir",
+  "activite_libelle": "Fractions",
+  "apprenant_uuid": "...",
+  "matiere_uuid": "uuid de la matière d'Évaluations (GET /v1/matieres)",
+  "enseignant_uuid": "enseignant qui a noté",
+  "valeur": "14",
+  "note_sur": "20",
+  "date": "2026-10-15",
+  "commentaire": "facultatif"
+}
+```
+
+Réponse `201` (créée) ou `200` (déjà reportée) : `{"success": true, "data": {"note_uuid", "evaluation_uuid", "periode_uuid", "valeur", "note_sur", "version"}}`.
+
+| Règle | Comportement |
+|---|---|
+| Épreuve | une épreuve `note_elearning` par activité, créée au premier report dans la période **ouverte** qui couvre `date` |
+| Rejeu | même valeur ⇒ rien ne change (aucun doublon, même `note_uuid`) |
+| Nouvelle valeur | mise à jour, `version` + 1, tracée dans `audit_note`, tant que la période est ouverte |
+| Après clôture | `409 PERIODE_CLOTUREE` : seule l'administration corrige (`PUT /v1/notes/{uuid}/corriger`) |
+| Barème | l'épreuve garde le `note_sur` du premier report ; un autre barème est ramené dessus |
+| Contrôles | apprenant actif, matière d'Évaluations, enseignant affecté (403), valeur entre 0 et `note_sur` (422) |
+| Autres 409 | `PERIODE_INTROUVABLE`, `SAISIE_VERROUILLEE`, `ACTIVITE_INCOHERENTE` (activité déjà rattachée à une autre matière/classe), `BAREME_INCOMPATIBLE` (cycle noté par compétences) |
 
 ## 4. Événements RabbitMQ publiés
 

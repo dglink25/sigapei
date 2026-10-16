@@ -2653,6 +2653,224 @@
         ],
         "operationId": "get_interne_eligibilite_document_apprenant_uuid"
       }
+    },
+    "/v1/interne/notes-elearning": {
+      "post": {
+        "tags": [
+          "Interne"
+        ],
+        "summary": "Report d'une note E-learning (devoir noté, tentative de quiz)",
+        "description": "**Appel inter-services uniquement** (microservice E-learning) : `X-Internal-Secret` + `X-Tenant-Id`.\n\n- Une épreuve `note_elearning` par devoir/quiz (`activite_uuid`), créée au premier report dans la période ouverte qui couvre `date` (cycle de l'apprenant).\n- Une note par apprenant et par activité : rejouer le même report ne crée rien (200, même `note_uuid`) ; une valeur différente met la note à jour (nouvelle `version`, tracée dans l'audit) tant que la période est ouverte.\n- L'épreuve garde le barème (`note_sur`) de son premier report ; un report sur un autre barème est ramené dessus.\n- La note compte directement dans la moyenne (poids du type `note_elearning` paramétrable par établissement).",
+        "operationId": "post_interne_notes_elearning",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source",
+                  "source_uuid",
+                  "activite_uuid",
+                  "activite_libelle",
+                  "apprenant_uuid",
+                  "matiere_uuid",
+                  "enseignant_uuid",
+                  "valeur",
+                  "note_sur",
+                  "date"
+                ],
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "devoir",
+                      "quiz"
+                    ]
+                  },
+                  "source_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Soumission ou tentative d'origine (traçabilité)"
+                  },
+                  "activite_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Devoir ou quiz : une épreuve par activité"
+                  },
+                  "activite_libelle": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "example": "Fractions"
+                  },
+                  "apprenant_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "matiere_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "uuid de la matière d'Évaluations (GET /v1/matieres)"
+                  },
+                  "enseignant_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Enseignant qui a noté : doit être affecté à la matière dans la classe"
+                  },
+                  "valeur": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}(\\.\\d{1,2})?$",
+                    "example": "14"
+                  },
+                  "note_sur": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}(\\.\\d{1,2})?$",
+                    "example": "20"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-10-15"
+                  },
+                  "commentaire": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Note créée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "note_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "evaluation_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "periode_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "valeur": {
+                          "type": "string",
+                          "example": "14.00"
+                        },
+                        "note_sur": {
+                          "type": "string",
+                          "example": "20.00"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Note déjà reportée (inchangée ou mise à jour)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "note_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "evaluation_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "periode_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "valeur": {
+                          "type": "string",
+                          "example": "14.00"
+                        },
+                        "note_sur": {
+                          "type": "string",
+                          "example": "20.00"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Secret interne absent ou invalide, ou enseignant non affecté",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERIODE_CLOTUREE, PERIODE_INTROUVABLE, SAISIE_VERROUILLEE, ACTIVITE_INCOHERENTE, BAREME_INCOMPATIBLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        }
+      }
     }
   },
   "components": {
