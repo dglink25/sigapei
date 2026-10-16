@@ -14,7 +14,7 @@ return [
 
         'rabbitmq' => [
             'driver' => 'rabbitmq',
-            'queue' => env('RABBITMQ_QUEUE', 'evaluations.taches'),
+            'queue' => env('RABBITMQ_QUEUE_EVALUATIONS', 'evaluations.taches'),
             'host' => env('RABBITMQ_HOST', 'rabbitmq'),
             'port' => (int) env('RABBITMQ_PORT', 5672),
             'login' => env('RABBITMQ_USER'),
