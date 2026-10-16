@@ -8,7 +8,7 @@ return [
         'api' => ['driver' => 'token', 'provider' => 'users'],
     ],
     'providers' => [
-        'users' => ['driver' => 'array'],
+        'users' => ['driver' => 'database', 'table' => 'utilisateurs'],
     ],
     'passwords' => [],
     'password_timeout' => 10800,

@@ -6,7 +6,6 @@ use App\Common\Responses\ApiResponse;
 use App\Exceptions\MetierException;
 use App\Http\Middleware\ForcerReponseJson;
 use App\Http\Middleware\VerifierSecretInterne;
-use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -14,7 +13,6 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -27,12 +25,6 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         // /health est déclaré dans routes/api.php ; /sante pour l'uniformité plateforme.
         health: '/sante',
-        then: function () {
-            // Limite par utilisateur (ou par IP à défaut) : 120 requêtes/minute.
-            RateLimiter::for('api', fn (Request $r) => Limit::perMinute(120)->by($r->header('X-User-Id') ?: $r->ip()));
-            // Actions sensibles (validation de congés, clôture de contrat) : 10/minute/utilisateur.
-            RateLimiter::for('sensible', fn (Request $r) => Limit::perMinute(10)->by('s:'.($r->header('X-User-Id') ?: $r->ip())));
-        },
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->api(prepend: [ForcerReponseJson::class]);
