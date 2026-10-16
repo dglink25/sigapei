@@ -24,6 +24,11 @@ class Contrat extends Modele
         'est_actif' => 'boolean',
     ];
 
+    /** `personnel_id` et `grade_id` sont des clés internes : jamais exposées. */
+    protected $hidden = ['id', 'tenant_id', 'personnel_id', 'grade_id'];
+
+    protected $appends = ['personnel_uuid', 'grade_uuid'];
+
     public function personnel(): BelongsTo
     {
         return $this->belongsTo(Personnel::class, 'personnel_id');
@@ -32,6 +37,16 @@ class Contrat extends Modele
     public function grade(): BelongsTo
     {
         return $this->belongsTo(Grade::class, 'grade_id');
+    }
+
+    public function getPersonnelUuidAttribute(): ?string
+    {
+        return $this->relationLoaded('personnel') ? $this->personnel?->uuid : null;
+    }
+
+    public function getGradeUuidAttribute(): ?string
+    {
+        return $this->relationLoaded('grade') ? $this->grade?->uuid : null;
     }
 
     public function enCours(): bool

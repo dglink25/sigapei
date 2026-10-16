@@ -230,4 +230,45 @@ class CyclesRessourcesTest extends ApiTestCase
             ->assertOk()
             ->assertJsonPath('data.utilisateur_uuid', $compte);
     }
+
+    public function test_reponses_publiques_n_exposent_aucune_cle_interne(): void
+    {
+        $p = $this->creerPersonnel();
+        $grade = $this->api('POST', '/v1/grades', ['code' => 'G-1', 'libelle' => 'Grade 1'])->assertCreated();
+        $this->assertArrayNotHasKey('id', $grade->json('data'));
+        $this->assertArrayNotHasKey('tenant_id', $grade->json('data'));
+
+        $contrat = $this->api('POST', '/v1/contrats', [
+            'personnel_uuid' => $p,
+            'type_contrat' => 'CDI',
+            'date_debut' => '2026-09-01',
+        ])->assertCreated();
+
+        $this->assertArrayNotHasKey('personnel_id', $contrat->json('data'));
+        $this->assertArrayNotHasKey('grade_id', $contrat->json('data'));
+        $this->assertSame($p, $contrat->json('data.personnel_uuid'));
+
+        $affectation = $this->api('POST', '/v1/affectations', [
+            'personnel_uuid' => $p,
+            'matiere_uuid' => (string) Str::uuid(),
+            'classe_uuid' => (string) Str::uuid(),
+            'annee_scolaire' => '2026-2027',
+        ])->assertCreated();
+
+        $this->assertArrayNotHasKey('personnel_id', $affectation->json('data'));
+        $this->assertSame($p, $affectation->json('data.personnel_uuid'));
+
+        $conge = $this->api('POST', '/v1/conges', [
+            'personnel_uuid' => $p,
+            'type_conge' => 'annuel',
+            'date_debut' => '2027-03-01',
+            'date_fin' => '2027-03-05',
+        ])->assertCreated();
+
+        $this->assertArrayNotHasKey('personnel_id', $conge->json('data'));
+        $this->assertSame($p, $conge->json('data.personnel_uuid'));
+
+        $personnel = $this->api('GET', "/v1/personnel/{$p}")->assertOk();
+        $this->assertArrayNotHasKey('grade_id', $personnel->json('data'));
+    }
 }

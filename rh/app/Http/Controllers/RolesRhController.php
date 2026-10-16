@@ -46,7 +46,7 @@ class RolesRhController extends Controller
 
     public function voir(RoleRh $roleRh): JsonResponse
     {
-        return $this->ok($roleRh->load(['modules', 'personnel']));
+        return $this->ok($roleRh->load(['modules', 'personnel.grade']));
     }
 
     public function creer(Request $request): JsonResponse

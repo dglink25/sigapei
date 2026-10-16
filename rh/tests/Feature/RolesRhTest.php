@@ -147,4 +147,31 @@ class RolesRhTest extends ApiTestCase
 
         $this->api('DELETE', "/v1/roles-rh/{$roleUuid}")->assertStatus(405);
     }
+
+    public function test_reponses_roles_rh_n_exposent_aucune_cle_interne(): void
+    {
+        $personnel = $this->creerPersonnel();
+        $roleUuid = $this->creerRole();
+
+        $this->api('POST', "/v1/personnel/{$personnel}/roles-rh", [
+            'role_rh_uuid' => $roleUuid,
+        ])->assertCreated()->assertJsonMissingPath('data.personnel_id')->assertJsonMissingPath('data.role_rh_id');
+
+        $role = $this->api('GET', "/v1/roles-rh/{$roleUuid}")->assertOk();
+
+        $this->assertArrayNotHasKey('id', $role->json('data'));
+        $this->assertArrayNotHasKey('tenant_id', $role->json('data'));
+
+        foreach ($role->json('data.modules') as $module) {
+            $this->assertArrayNotHasKey('id', $module);
+            $this->assertArrayNotHasKey('role_rh_id', $module);
+        }
+
+        foreach ($role->json('data.personnel') as $membre) {
+            $this->assertArrayNotHasKey('id', $membre);
+            $this->assertArrayNotHasKey('grade_id', $membre);
+            $this->assertArrayNotHasKey('personnel_id', $membre['pivot']);
+            $this->assertArrayNotHasKey('role_rh_id', $membre['pivot']);
+        }
+    }
 }

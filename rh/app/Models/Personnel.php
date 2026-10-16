@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Common\Tenant\AppartientAuTenant;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -26,6 +27,21 @@ class Personnel extends Modele
         'actif' => 'boolean',
     ];
 
+    /** `grade_id` est une clé interne : jamais exposée, remplacée par `grade_uuid`. */
+    protected $hidden = ['id', 'tenant_id', 'grade_id'];
+
+    protected $appends = ['grade_uuid'];
+
+    public function grade(): BelongsTo
+    {
+        return $this->belongsTo(Grade::class, 'grade_id');
+    }
+
+    public function getGradeUuidAttribute(): ?string
+    {
+        return $this->relationLoaded('grade') ? $this->grade?->uuid : null;
+    }
+
     public function contrats(): HasMany
     {
         return $this->hasMany(Contrat::class, 'personnel_id');
@@ -44,6 +60,7 @@ class Personnel extends Modele
     public function rolesRh(): BelongsToMany
     {
         return $this->belongsToMany(RoleRh::class, 'personnel_roles_rh', 'personnel_id', 'role_rh_id')
+            ->using(PersonnelRoleRhPivot::class)
             ->withPivot('date_attribution')
             ->withTimestamps();
     }

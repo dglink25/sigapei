@@ -29,6 +29,7 @@ class RoleRh extends Modele
     public function personnel(): BelongsToMany
     {
         return $this->belongsToMany(Personnel::class, 'personnel_roles_rh', 'role_rh_id', 'personnel_id')
+            ->using(PersonnelRoleRhPivot::class)
             ->withPivot('date_attribution')
             ->withTimestamps();
     }

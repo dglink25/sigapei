@@ -31,7 +31,7 @@ class ContratsController extends Controller
         ]);
 
         $contrats = Contrat::query()
-            ->with(['personnel', 'grade'])
+            ->with(['personnel.grade', 'grade'])
             ->when($request->filled('personnel_uuid'), function ($q) use ($request) {
                 $q->whereHas('personnel', fn ($s) => $s->where('uuid', $request->query('personnel_uuid')));
             })
@@ -81,7 +81,7 @@ class ContratsController extends Controller
             'personnel_uuid' => $personnel->uuid,
         ]);
 
-        return $this->ok($contrat->fresh(['personnel', 'grade']), 'Contrat créé.', 201);
+        return $this->ok($contrat->fresh(['personnel.grade', 'grade']), 'Contrat créé.', 201);
     }
 
     public function modifier(Request $request, Contrat $contrat): JsonResponse
@@ -102,7 +102,7 @@ class ContratsController extends Controller
 
         $contrat->update($d);
 
-        return $this->ok($contrat->fresh(['personnel', 'grade']), 'Contrat mis à jour.');
+        return $this->ok($contrat->fresh(['personnel.grade', 'grade']), 'Contrat mis à jour.');
     }
 
     /**
@@ -129,7 +129,7 @@ class ContratsController extends Controller
             'contrat_uuid' => $contrat->uuid,
         ]);
 
-        return $this->ok($contrat->fresh(['personnel', 'grade']), 'Contrat clôturé.');
+        return $this->ok($contrat->fresh(['personnel.grade', 'grade']), 'Contrat clôturé.');
     }
 
     private function resoudreGrade(string $gradeUuid): int

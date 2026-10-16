@@ -22,7 +22,7 @@ class RoleRhModule extends Model
         'inclus' => 'boolean',
     ];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'role_rh_id'];
 
     public function roleRh(): BelongsTo
     {

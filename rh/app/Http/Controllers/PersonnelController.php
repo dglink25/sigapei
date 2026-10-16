@@ -34,6 +34,7 @@ class PersonnelController extends Controller
         ]);
 
         $personnel = Personnel::query()
+            ->with('grade')
             ->when($request->filled('type_personnel'), fn ($q) => $q->where('type_personnel', $request->query('type_personnel')))
             ->when($request->filled('statut'), fn ($q) => $q->where('statut', $request->query('statut')))
             ->when($request->boolean('actifs'), fn ($q) => $q->where('actif', true))
@@ -53,7 +54,7 @@ class PersonnelController extends Controller
 
     public function voir(Personnel $personnel): JsonResponse
     {
-        return $this->ok($personnel->load(['contrats', 'affectations', 'conges', 'rolesRh']));
+        return $this->ok($personnel->load(['grade', 'contrats', 'affectations', 'conges', 'rolesRh']));
     }
 
     /** GET /v1/personnel/{uuid}/affectations — affectations classes/matières d'un enseignant. */
@@ -65,6 +66,7 @@ class PersonnelController extends Controller
         ]);
 
         $affectations = $personnel->affectations()
+            ->with('personnel.grade')
             ->when($request->filled('annee_scolaire'), fn ($q) => $q->where('annee_scolaire', $request->query('annee_scolaire')))
             ->when($request->filled('statut'), fn ($q) => $q->where('statut', $request->query('statut')))
             ->orderByDesc('created_at')
@@ -111,7 +113,7 @@ class PersonnelController extends Controller
             'type_personnel' => $personnel->type_personnel,
         ]);
 
-        return $this->ok($personnel->fresh(), 'Membre du personnel créé.', 201);
+        return $this->ok($personnel->fresh('grade'), 'Membre du personnel créé.', 201);
     }
 
     public function modifier(Request $request, Personnel $personnel): JsonResponse
@@ -139,7 +141,7 @@ class PersonnelController extends Controller
 
         $personnel->update($d);
 
-        return $this->ok($personnel->fresh(), 'Membre du personnel mis à jour.');
+        return $this->ok($personnel->fresh('grade'), 'Membre du personnel mis à jour.');
     }
 
     /**
@@ -163,7 +165,7 @@ class PersonnelController extends Controller
             'statut' => $personnel->statut,
         ]);
 
-        return $this->ok($personnel->fresh(), 'Statut du membre mis à jour.');
+        return $this->ok($personnel->fresh('grade'), 'Statut du membre mis à jour.');
     }
 
     private function resoudreGrade(string $gradeUuid): int

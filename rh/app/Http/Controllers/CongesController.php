@@ -42,7 +42,7 @@ class CongesController extends Controller
         ]);
 
         $conges = Conge::query()
-            ->with('personnel')
+            ->with('personnel.grade')
             ->when($request->filled('personnel_uuid'), function ($q) use ($request) {
                 $q->whereHas('personnel', fn ($s) => $s->where('uuid', $request->query('personnel_uuid')));
             })
@@ -56,7 +56,7 @@ class CongesController extends Controller
 
     public function voir(Conge $conge): JsonResponse
     {
-        return $this->ok($conge->load('personnel'));
+        return $this->ok($conge->load('personnel.grade'));
     }
 
     public function creer(Request $request): JsonResponse
@@ -102,7 +102,7 @@ class CongesController extends Controller
             'personnel_uuid' => $personnel->uuid,
         ]);
 
-        return $this->ok($conge->fresh('personnel'), 'Demande de congé enregistrée.', 201);
+        return $this->ok($conge->fresh('personnel.grade'), 'Demande de congé enregistrée.', 201);
     }
 
     /**
@@ -137,7 +137,7 @@ class CongesController extends Controller
             ]);
         });
 
-        return $this->ok($conge->fresh('personnel'), 'Demande de congé traitée.');
+        return $this->ok($conge->fresh('personnel.grade'), 'Demande de congé traitée.');
     }
 
     private function joursOuvrables(string $debut, string $fin): int

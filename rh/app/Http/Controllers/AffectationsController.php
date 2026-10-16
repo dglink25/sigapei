@@ -35,7 +35,7 @@ class AffectationsController extends Controller
         ]);
 
         $affectations = Affectation::query()
-            ->with('personnel')
+            ->with('personnel.grade')
             ->when($request->filled('personnel_uuid'), function ($q) use ($request) {
                 $q->whereHas('personnel', fn ($s) => $s->where('uuid', $request->query('personnel_uuid')));
             })
@@ -51,7 +51,7 @@ class AffectationsController extends Controller
 
     public function voir(Affectation $affectation): JsonResponse
     {
-        return $this->ok($affectation->load('personnel'));
+        return $this->ok($affectation->load('personnel.grade'));
     }
 
     public function creer(Request $request): JsonResponse
@@ -97,7 +97,7 @@ class AffectationsController extends Controller
             'classe_uuid' => $affectation->classe_uuid,
         ]);
 
-        return $this->ok($affectation->fresh('personnel'), 'Affectation créée.', 201);
+        return $this->ok($affectation->fresh('personnel.grade'), 'Affectation créée.', 201);
     }
 
     public function modifier(Request $request, Affectation $affectation): JsonResponse
@@ -116,7 +116,7 @@ class AffectationsController extends Controller
 
         $affectation->update($d);
 
-        return $this->ok($affectation->fresh('personnel'), 'Affectation mise à jour.');
+        return $this->ok($affectation->fresh('personnel.grade'), 'Affectation mise à jour.');
     }
 
     /**
@@ -137,6 +137,6 @@ class AffectationsController extends Controller
             'affectation_uuid' => $affectation->uuid,
         ]);
 
-        return $this->ok($affectation->fresh('personnel'), 'Affectation clôturée.');
+        return $this->ok($affectation->fresh('personnel.grade'), 'Affectation clôturée.');
     }
 }

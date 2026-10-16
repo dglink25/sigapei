@@ -21,7 +21,7 @@ class PersonnelRoleRh extends Model
         'date_attribution' => 'date:Y-m-d',
     ];
 
-    protected $hidden = ['id'];
+    protected $hidden = ['id', 'personnel_id', 'role_rh_id'];
 
     public function personnel(): BelongsTo
     {
