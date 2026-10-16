@@ -27,7 +27,7 @@ class Contrat extends Modele
     /** `personnel_id` et `grade_id` sont des clés internes : jamais exposées. */
     protected $hidden = ['id', 'tenant_id', 'personnel_id', 'grade_id'];
 
-    protected $appends = ['personnel_uuid', 'grade_uuid'];
+    protected array $uuidRelations = ['personnel_uuid' => 'personnel', 'grade_uuid' => 'grade'];
 
     public function personnel(): BelongsTo
     {
@@ -37,16 +37,6 @@ class Contrat extends Modele
     public function grade(): BelongsTo
     {
         return $this->belongsTo(Grade::class, 'grade_id');
-    }
-
-    public function getPersonnelUuidAttribute(): ?string
-    {
-        return $this->relationLoaded('personnel') ? $this->personnel?->uuid : null;
-    }
-
-    public function getGradeUuidAttribute(): ?string
-    {
-        return $this->relationLoaded('grade') ? $this->grade?->uuid : null;
     }
 
     public function enCours(): bool

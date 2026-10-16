@@ -26,16 +26,11 @@ class Conge extends Modele
     /** `personnel_id` est une clé interne : jamais exposée, remplacée par `personnel_uuid`. */
     protected $hidden = ['id', 'tenant_id', 'personnel_id'];
 
-    protected $appends = ['personnel_uuid'];
+    protected array $uuidRelations = ['personnel_uuid' => 'personnel'];
 
     public function personnel(): BelongsTo
     {
         return $this->belongsTo(Personnel::class, 'personnel_id');
-    }
-
-    public function getPersonnelUuidAttribute(): ?string
-    {
-        return $this->relationLoaded('personnel') ? $this->personnel?->uuid : null;
     }
 
     public function enAttente(): bool

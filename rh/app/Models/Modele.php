@@ -16,6 +16,15 @@ abstract class Modele extends Model
 
     protected $hidden = ['id', 'tenant_id'];
 
+    /**
+     * UUID publics dérivés d'une relation : `['attribut_uuid' => 'nomRelation']`.
+     * L'attribut n'est exposé que si la relation est chargée (jamais de `null`
+     * trompeur pour une clé interne masquée).
+     *
+     * @var array<string, string>
+     */
+    protected array $uuidRelations = [];
+
     /** uuid généré côté application (connu dès la création, ordonné dans le temps). */
     public function uniqueIds(): array
     {
@@ -25,5 +34,18 @@ abstract class Modele extends Model
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    public function toArray(): array
+    {
+        $donnees = parent::toArray();
+
+        foreach ($this->uuidRelations as $attribut => $relation) {
+            if ($this->relationLoaded($relation)) {
+                $donnees[$attribut] = $this->{$relation}?->uuid;
+            }
+        }
+
+        return $donnees;
     }
 }

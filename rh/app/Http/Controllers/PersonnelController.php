@@ -54,7 +54,7 @@ class PersonnelController extends Controller
 
     public function voir(Personnel $personnel): JsonResponse
     {
-        return $this->ok($personnel->load(['grade', 'contrats', 'affectations', 'conges', 'rolesRh']));
+        return $this->ok($personnel->load(['grade', 'contrats.grade', 'affectations', 'conges', 'rolesRh']));
     }
 
     /** GET /v1/personnel/{uuid}/affectations — affectations classes/matières d'un enseignant. */
