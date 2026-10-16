@@ -80,7 +80,8 @@ class ParcoursSerializer(TenantSerializerMixin,
 
     def get_classes_liees(self, parcours):
         return [
-            liaison.classe_id for liaison in parcours.parcours_classes.all()
+            str(liaison.classe_id)
+            for liaison in parcours.parcours_classes.all()
         ]
 
     def get_nb_etapes(self, parcours):

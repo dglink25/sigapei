@@ -40,7 +40,7 @@ class ParcoursAPITests(TestCase):
         """Sans X-Tenant-ID, TenantMiddleware refuse (400)."""
         reponse = APIClient().get('/v1/parcours/')
         self.assertEqual(reponse.status_code, 400)
-        self.assertIn('X-Tenant-ID', reponse.data['detail'])
+        self.assertIn('X-Tenant-ID', reponse.json()['detail'])
 
     def test_creation_puis_listing(self):
         donnees = {

@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 
+import os
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,6 +28,17 @@ SECRET_KEY = 'django-insecure-+&ya97*890&ojl1&l6v0$ao2uw@-1l0*c1fq9^k9f^18*m58l=
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+
+# --- Passerelles vers les autres microservices (règle 4 : aucune jointure SQL inter-schémas) ---
+# URL de base de l'API interne RH (ex. http://api-rh:4009 dans Docker).
+RH_API_URL = os.getenv('RH_API_URL', '')
+# Secret interne partagé par la plateforme (règle 3), en-tête X-Internal-Secret.
+INTERNAL_API_SECRET = os.getenv('INTERNAL_API_SECRET', '')
+# Règle 5 : contrôle strict des affectations (source de vérité : rh.affectations).
+# Désactivé par défaut tant que l'API RH n'est pas déployée sur l'environnement.
+DROITS_STRICTS = os.getenv('DROITS_STRICTS', 'False').lower() in ('1', 'true', 'yes')
+RH_TIMEOUT = float(os.getenv('RH_TIMEOUT', '5'))
 
 
 # Application definition
