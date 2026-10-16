@@ -16,6 +16,13 @@ storage/*.key
 *.log
 logs/
 
+# Python / Django
+__pycache__/
+*.py[cod]
+/elearning/elearningenv/
+venv/
+.venv/
+
 .cache/
 .nest/
 *.tsbuildinfo

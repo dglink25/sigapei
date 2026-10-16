@@ -1,0 +1,211 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SIGAPEI - API RH",
+    "version": "1.0.0",
+    "description": "Microservice Ressources Humaines : personnel, grades, contrats, affectations (regle 5), conges et roles RH personnalises (moteur de roles configurables)."
+  },
+  "servers": [
+    { "url": "https://api-rh.e-academique.com/v1", "description": "Production (via la Gateway)" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "contexteGateway": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Internal-Secret",
+        "description": "Contexte transmis par la Gateway : X-Internal-Secret + X-Tenant-Id + X-User-Id + X-User-Role."
+      }
+    },
+    "schemas": {
+      "ReponseSucces": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string" },
+          "data": {}
+        }
+      },
+      "ReponseErreur": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string" },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string" },
+              "details": { "type": "object" }
+            }
+          }
+        }
+      },
+      "Personnel": {
+        "type": "object",
+        "properties": {
+          "uuid": { "type": "string", "format": "uuid" },
+          "matricule": { "type": "string" },
+          "nom": { "type": "string" },
+          "prenom": { "type": "string" },
+          "type_personnel": { "type": "string", "enum": ["enseignant", "administratif", "direction", "surveillant", "support"] },
+          "statut": { "type": "string", "enum": ["actif", "suspendu", "inactif", "retraite"] },
+          "utilisateur_uuid": { "type": "string", "format": "uuid", "nullable": true }
+        }
+      },
+      "Affectation": {
+        "type": "object",
+        "properties": {
+          "uuid": { "type": "string", "format": "uuid" },
+          "matiere_uuid": { "type": "string", "format": "uuid", "description": "UUID externe (evaluations.matieres)" },
+          "classe_uuid": { "type": "string", "format": "uuid", "description": "UUID externe (scolarite.classes)" },
+          "annee_scolaire": { "type": "string", "example": "2026-2027" },
+          "statut": { "type": "string", "enum": ["actif", "termine"] }
+        }
+      },
+      "RoleRh": {
+        "type": "object",
+        "properties": {
+          "uuid": { "type": "string", "format": "uuid" },
+          "nom": { "type": "string", "example": "Chef de département" },
+          "description": { "type": "string", "nullable": true },
+          "statut": { "type": "string", "enum": ["actif", "archive"] },
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "fonction": { "type": "string", "enum": ["dossiers", "affectations", "charges_horaires", "conges", "evaluations", "contrats_intervenants"] },
+                "inclus": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "security": [{ "contexteGateway": [] }],
+  "paths": {
+    "/personnel": {
+      "get": {
+        "summary": "Lister le personnel",
+        "tags": ["Personnel"],
+        "parameters": [
+          { "name": "type_personnel", "in": "query", "schema": { "type": "string" } },
+          { "name": "statut", "in": "query", "schema": { "type": "string" } },
+          { "name": "actifs", "in": "query", "schema": { "type": "boolean" } },
+          { "name": "recherche", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "par_page", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Liste paginée", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReponseSucces" } } } }
+        }
+      },
+      "post": {
+        "summary": "Créer un membre du personnel",
+        "tags": ["Personnel"],
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Personnel" } } } },
+        "responses": { "201": { "description": "Créé" } }
+      }
+    },
+    "/personnel/{uuid}": {
+      "get": { "summary": "Consulter un membre", "tags": ["Personnel"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } },
+      "put": { "summary": "Modifier un membre", "tags": ["Personnel"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/personnel/{uuid}/statut": {
+      "post": { "summary": "Changer le statut (départ, suspension, retraite)", "tags": ["Personnel"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/personnel/{uuid}/affectations": {
+      "get": { "summary": "Affectations classes/matières d'un enseignant", "tags": ["Personnel"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "annee_scolaire", "in": "query", "schema": { "type": "string" } }, { "name": "statut", "in": "query", "schema": { "type": "string", "enum": ["actif", "termine"] } }], "responses": { "200": { "description": "Liste paginée" } } }
+    },
+    "/personnel/{uuid}/roles-rh": {
+      "get": { "summary": "Rôles RH attribués à un membre du personnel", "tags": ["Rôles RH"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Attribuer un rôle RH à un membre du personnel", "tags": ["Rôles RH"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "requestBody": { "content": { "application/json": { "schema": { "type": "object", "required": ["role_rh_uuid"], "properties": { "role_rh_uuid": { "type": "string", "format": "uuid" }, "date_attribution": { "type": "string", "format": "date" } } } } } }, "responses": { "201": { "description": "Attribué" }, "409": { "description": "Rôle archivé ou déjà attribué" } } }
+    },
+    "/personnel/{uuid}/roles-rh/{roleUuid}/retirer": {
+      "post": { "summary": "Retirer un rôle RH à un membre du personnel", "tags": ["Rôles RH"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "roleUuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "Retiré" }, "404": { "description": "Rôle non attribué" } } }
+    },
+    "/roles-rh": {
+      "get": { "summary": "Lister les rôles RH personnalisés", "tags": ["Rôles RH"], "parameters": [{ "name": "statut", "in": "query", "schema": { "type": "string", "enum": ["actif", "archive"] } }, { "name": "recherche", "in": "query", "schema": { "type": "string" } }], "responses": { "200": { "description": "Liste paginée" } } },
+      "post": { "summary": "Créer un rôle RH (nom + fonctions accordées)", "tags": ["Rôles RH"], "requestBody": { "content": { "application/json": { "schema": { "type": "object", "required": ["nom"], "properties": { "nom": { "type": "string" }, "description": { "type": "string" }, "fonctions": { "type": "array", "items": { "type": "string" } } } } } } }, "responses": { "201": { "description": "Créé" }, "409": { "description": "Nom déjà utilisé" } } }
+    },
+    "/roles-rh/{uuid}": {
+      "get": { "summary": "Consulter un rôle RH", "tags": ["Rôles RH"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } },
+      "put": { "summary": "Modifier un rôle RH", "tags": ["Rôles RH"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/roles-rh/{uuid}/modules": {
+      "patch": { "summary": "Sélectionner les fonctions du module accordées au rôle", "tags": ["Rôles RH"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "requestBody": { "content": { "application/json": { "schema": { "type": "object", "required": ["fonctions"], "properties": { "fonctions": { "type": "array", "items": { "type": "string", "enum": ["dossiers", "affectations", "charges_horaires", "conges", "evaluations", "contrats_intervenants"] } } } } } } }, "responses": { "200": { "description": "OK" } } }
+    },
+    "/roles-rh/{uuid}/archiver": {
+      "post": { "summary": "Archiver un rôle RH (jamais de suppression)", "tags": ["Rôles RH"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/rh/mes-fonctions": {
+      "get": { "summary": "Fonctions du module RH accordées à l'utilisateur courant", "tags": ["Rôles RH"], "responses": { "200": { "description": "OK" } } }
+    },
+    "/grades": {
+      "get": { "summary": "Lister les grades", "tags": ["Grades"], "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Créer un grade", "tags": ["Grades"], "responses": { "201": { "description": "Créé" } } }
+    },
+    "/grades/{uuid}": {
+      "put": { "summary": "Modifier un grade", "tags": ["Grades"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/contrats": {
+      "get": { "summary": "Lister les contrats", "tags": ["Contrats"], "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Créer un contrat", "tags": ["Contrats"], "responses": { "201": { "description": "Créé" } } }
+    },
+    "/contrats/{uuid}": {
+      "put": { "summary": "Modifier un contrat", "tags": ["Contrats"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/contrats/{uuid}/cloturer": {
+      "post": { "summary": "Clôturer un contrat", "tags": ["Contrats"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/affectations": {
+      "get": { "summary": "Lister les affectations", "tags": ["Affectations"], "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Créer une affectation (règle 5)", "tags": ["Affectations"], "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Affectation" } } } }, "responses": { "201": { "description": "Créée" } } }
+    },
+    "/affectations/{uuid}": {
+      "get": { "summary": "Consulter une affectation", "tags": ["Affectations"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } },
+      "put": { "summary": "Modifier une affectation", "tags": ["Affectations"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/affectations/{uuid}/cloturer": {
+      "post": { "summary": "Clôturer une affectation", "tags": ["Affectations"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/conges": {
+      "get": { "summary": "Lister les congés", "tags": ["Congés"], "responses": { "200": { "description": "OK" } } },
+      "post": { "summary": "Demander un congé", "tags": ["Congés"], "responses": { "201": { "description": "Créé" } } }
+    },
+    "/conges/{uuid}": {
+      "get": { "summary": "Consulter un congé", "tags": ["Congés"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/conges/{uuid}/traiter": {
+      "put": { "summary": "Approuver / refuser / annuler une demande", "tags": ["Congés"], "parameters": [{ "name": "uuid", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/interne/personnel": {
+      "get": {
+        "summary": "Résolution du personnel (interne)",
+        "tags": ["Interne"],
+        "security": [],
+        "parameters": [
+          { "name": "tenant_id", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "uuid", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "id", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/interne/affectations/verifier": {
+      "get": {
+        "summary": "Vérifier une affectation enseignant/matière/classe (interne, règle 5)",
+        "tags": ["Interne"],
+        "security": [],
+        "parameters": [
+          { "name": "tenant_id", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "enseignant_uuid", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "matiere_uuid", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "classe_uuid", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "OK" } }
+      }
+    }
+  }
+}

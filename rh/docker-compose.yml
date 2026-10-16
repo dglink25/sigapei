@@ -1,0 +1,50 @@
+# ============================================================
+# api-rh — orchestration
+# PostgreSQL (Neon), Redis et RabbitMQ partagés : réseau externe `sigapei`.
+# Pré-requis : docker network create sigapei
+# Processus : API HTTP, worker de file, planificateur.
+# ============================================================
+x-rh: &rh
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: sigapei/api-rh:local
+  restart: unless-stopped
+  env_file:
+    - .env
+  environment:
+    - REDIS_HOST=redis
+    - RABBITMQ_HOST=rabbitmq
+  networks:
+    - sigapei
+
+services:
+  api-rh:
+    <<: *rh
+    container_name: api-rh
+    # Port INTERNE uniquement : accessible via la Gateway sur le réseau sigapei.
+    expose:
+      - "4009"
+    # Alias court : "api-rh" (nom de conteneur) et "rh" resoivent tous deux vers l'API HTTP.
+    networks:
+      sigapei:
+        aliases:
+          - rh
+
+  api-rh-worker:
+    <<: *rh
+    container_name: api-rh-worker
+    command: ["php", "artisan", "queue:work", "rabbitmq", "--queue=rh.taches", "--tries=3", "--max-time=3600"]
+    healthcheck:
+      disable: true
+
+  api-rh-scheduler:
+    <<: *rh
+    container_name: api-rh-scheduler
+    command: ["php", "artisan", "schedule:work"]
+    healthcheck:
+      disable: true
+
+networks:
+  sigapei:
+    external: true
