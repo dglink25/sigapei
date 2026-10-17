@@ -12,6 +12,8 @@ storage/*.key
 .env
 .env.*
 !.env.example
+env_secrets/
+
 
 *.log
 logs/
