@@ -7,7 +7,7 @@ règle de compte selon le programme pédagogique (béninois vs français), et re
 d'une année scolaire sur l'autre sans duplication de dossiers.
 
 - **Port** : `4003`
-- **Documentation interactive (JSON)** : `http://localhost:4003/docs`
+- **Documentation interactive (Swagger UI)** : `http://localhost:4003/docs` (JSON brut OpenAPI : `/docs-json`)
 - **Documentation technique détaillée** : [docs/api-documentation.md](docs/api-documentation.md)
 - **Préfixe API** : toutes les routes métier sont sous `/v1/...` (ex: `POST /v1/candidatures`)
 - **Sonde de santé** : `GET /sante`
