@@ -112,6 +112,55 @@ abstract class ApiTestCase extends TestCase
                 ))]);
             }
 
+            if (str_contains($r->url(), '/v1/interne/affectations/verifier')) {
+                if (! $this->contratComplet) {
+                    return Http::response(['succes' => true, 'donnees' => null, 'data' => ['incomplet' => true]], 200);
+                }
+
+                $enseignant = $q['enseignant_uuid'] ?? null;
+                $matiere = $q['matiere_uuid'] ?? null;
+                $classe = $q['classe_uuid'] ?? null;
+                $affecte = false;
+                if ($tenant === self::TENANT) {
+                    foreach ($this->creneaux as $c) {
+                        if ($c['classe_uuid'] === $classe
+                            && $c['enseignant_uuid'] === $enseignant
+                            && $c['matiere_uuid'] === $matiere
+                            && ($c['statut'] ?? 'actif') === 'actif') {
+                            $affecte = true;
+                            break;
+                        }
+                    }
+                }
+
+                return Http::response(['succes' => true, 'data' => [
+                    'enseignant_uuid' => $enseignant,
+                    'matiere_uuid' => $matiere,
+                    'classe_uuid' => $classe,
+                    'affecte' => $affecte,
+                ]]);
+            }
+
+            if (str_contains($r->url(), '/v1/interne/affectations')) {
+                if (! $this->contratComplet) {
+                    return Http::response(['succes' => true, 'donnees' => null, 'data' => ['incomplet' => true]], 200);
+                }
+
+                $liste = $tenant === self::TENANT ? $this->creneaux : [];
+                $liste = array_values(array_filter($liste, fn ($c) => $c['classe_uuid'] === ($q['classe_uuid'] ?? null)
+                    && $c['enseignant_uuid'] === ($q['enseignant_uuid'] ?? null)
+                    && (! isset($q['matiere_uuid']) || $c['matiere_uuid'] === $q['matiere_uuid'])));
+
+                return Http::response(['succes' => true, 'data' => array_map(fn ($c) => [
+                    'uuid' => $c['uuid'],
+                    'enseignant_uuid' => $c['enseignant_uuid'],
+                    'matiere_uuid' => $c['matiere_uuid'],
+                    'classe_uuid' => $c['classe_uuid'],
+                    'annee_scolaire' => '2026-2027',
+                    'statut' => $c['statut'] ?? 'actif',
+                ], $liste)]);
+            }
+
             if (str_contains($r->url(), '/v1/interne/emplois-du-temps')) {
                 $creneaux = $tenant === self::TENANT ? $this->creneaux : [];
                 $creneaux = array_values(array_filter($creneaux, fn ($c) => $c['classe_uuid'] === ($q['classe_uuid'] ?? null)

@@ -18,6 +18,13 @@ env_secrets/
 *.log
 logs/
 
+# Python / Django
+__pycache__/
+*.py[cod]
+/elearning/elearningenv/
+venv/
+.venv/
+
 .cache/
 .nest/
 *.tsbuildinfo
@@ -50,3 +57,10 @@ pdf_*.txt
 
 /etablissements/storage/app/private
 /etablissements/storage/app/geonames/
+
+# Cahiers des charges (non versionnés)
+CDC_*.pdf
+*_CDC.pdf
+
+# Fichiers d'environnement locaux (secrets gérés hors dépôt)
+/env.*
