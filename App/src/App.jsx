@@ -32,6 +32,8 @@ import EtablissementsPage from './pages/AdministrationPrincipale/EtablissementsP
 import ServicesPage from './pages/AdministrationPrincipale/ServicesPage'
 import ServiceDetailPage from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
+import InscriptionPage from './pages/inscription/InscriptionPage'
+import ScolaritePage from './pages/scolarite/ScolaritePage'
 
 export default function App() {
   useEffect(() => { document.title = ENV.appName }, [])
@@ -61,6 +63,12 @@ export default function App() {
       {/* ── Portail : rôles portail uniquement ── */}
       <Route element={<RequireAuth roles={PORTAIL_ROLES} />}>
         <Route path={PORTAIL_PATH} element={<Portail />} />
+      </Route>
+
+      {/* ── Modules Inscription & Scolarité ── */}
+      <Route element={<RequireAuth />}>
+        <Route path="/inscription" element={<InscriptionPage />} />
+        <Route path="/scolarite" element={<ScolaritePage />} />
       </Route>
 
       {/* ── Dashboard temporaire ── */}
