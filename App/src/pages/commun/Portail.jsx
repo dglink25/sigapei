@@ -12,6 +12,7 @@ import { serviceDisponible } from '../../config/services/registre'
 import { MODE_SOUS_DOMAINE, lienEtablissement } from '../../lib/etablissements/subdomain'
 import { allerVersEtablissement } from '../../lib/identite/transfert'
 import { portailService } from '../../services/identite/portail.service'
+import { accueilService } from '../../services/etablissements/etablissement.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import Bloc3D     from '../../components/etablissements/Bloc3D'
@@ -48,6 +49,7 @@ export default function Portail() {
   const navigate  = useNavigate()
   const slug      = useSlugEtablissement()
   const [data, setData]     = useState(undefined)
+  const [logoUrl, setLogoUrl] = useState(null)
   const [erreur, setErreur] = useState(false)
   usePageTitle('Portail')
 
@@ -61,6 +63,13 @@ export default function Portail() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     charger()
   }, [charger])
+
+  useEffect(() => {
+    if (!slug) return
+    let annule = false
+    accueilService.lire(slug).then((r) => { if (!annule) setLogoUrl(r?.logoUrl ?? null) }).catch(() => {})
+    return () => { annule = true }
+  }, [slug])
 
   /* ── Infos utilisateur ── */
   const nom      = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
@@ -162,7 +171,9 @@ export default function Portail() {
             {/* Gauche : logo + nom établissement */}
             <Link to={lienEtablissement(slug, '/portail')} className="portail-bar-brand">
               <span className="portail-bar-logo">
-                <img src="/sigapei.png" alt={ENV.appName} />
+                {logoUrl
+                  ? <img src={logoUrl} alt={etab?.nom ?? ''} style={{ width:'100%', height:'100%', objectFit:'contain', borderRadius:6 }} />
+                  : <img src="/sigapei.png" alt={ENV.appName} />}
               </span>
               <span className="portail-bar-texte">                
                 <span className="portail-bar-nom">{etab?.nom ?? ENV.appName}</span>

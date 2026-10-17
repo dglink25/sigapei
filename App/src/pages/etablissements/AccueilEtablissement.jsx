@@ -58,7 +58,10 @@ export default function AccueilEtablissement() {
     return (
       <div className="ae-error">
         <div className="ae-error-card">
-          <img src="/sigapei.png" alt={ENV.appName} className="ae-error-logo" />
+          {data.logoUrl
+            ? <img src={data.logoUrl} alt={data.nom ?? ''} className="ae-error-logo" />
+            : <img src="/sigapei.png" alt={ENV.appName} className="ae-error-logo" />
+          }
           <Building2 size={48} className="ae-error-icon ae-error-icon--warn" />
           <h1>{data.nom ?? 'Établissement'}</h1>
           <p>{data.message ?? "Cet établissement n'est pas accessible pour le moment."}</p>
