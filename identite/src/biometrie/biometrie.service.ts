@@ -124,4 +124,14 @@ export class BiometrieService {
     empreinte.statut = StatutEmpreinte.REVOQUEE;
     return this.repo.save(empreinte);
   }
+
+  async listerParUtilisateur(utilisateurId: string) {
+    const empreintes = await this.repo.find({ where: { utilisateurId, statut: StatutEmpreinte.ACTIVE } });
+    return empreintes.map(e => ({
+      credentialId: e.credentialId,
+      appareilId:   e.appareilId,
+      statut:       e.statut,
+      dateCreation: e.dateCreation,
+    }));
+  }
 }
