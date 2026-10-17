@@ -1,77 +1,269 @@
-/* ═══════════════════════════════════════════════════════
-   Portail et espace établissement - SIGAPEI
-   Charte : Vert #006B3C · Or #E9AA20 · Crème #FFF6DD
-   Les blocs de services sont dans components/etablissements/bloc3d.css
-═══════════════════════════════════════════════════════ */
-
+/* ── Shell ── */
 .portail-shell {
-  min-height: 100dvh; display: flex; flex-direction: column;
-  background: var(--sg-page-bg, #f4f6f5); color: var(--sg-text, #1a2a1e);
-  font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif; font-size: 15px;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--sg-page-bg, #f4f6f5);
+  color: var(--sg-text, #1a2a1e);
+  font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
+  font-size: 15px;
+  /* Réservé pour le footer fixe */
+  padding-bottom: 48px;
 }
-.portail-shell *, .portail-shell *::before, .portail-shell *::after { box-sizing: border-box; }
+.portail-shell *,
+.portail-shell *::before,
+.portail-shell *::after { box-sizing: border-box; }
 
-/* ── Barre discrète ── */
-.portail-bar { position: sticky; top: 0; z-index: 100; background: var(--sg-surface, #fff); border-bottom: 1px solid var(--sg-border, #dde4df); }
-.portail-bar-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: 1200px; margin: 0 auto; padding: 10px 24px; }
-.portail-bar-brand { display: flex; align-items: center; gap: 12px; min-width: 0; color: inherit; text-decoration: none; }
-.portail-bar-logo { flex: none; width: 38px; height: 38px; object-fit: contain; }
-.portail-bar-texte { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
-.portail-bar-nom { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; font-weight: 700; color: #006B3C; }
-.portail-bar-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; color: var(--sg-text-secondary, #5a6b5f); }
-.portail-bar-actions { display: flex; align-items: center; gap: 4px; flex: none; }
-.portail-icon-btn {
-  display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 10px;
-  background: transparent; color: var(--sg-text-secondary, #5a6b5f); cursor: pointer; text-decoration: none;
-  transition: background 0.15s ease, color 0.15s ease;
+/* ════════════════════════════════════════
+   HEADER — sticky en haut
+════════════════════════════════════════ */
+.portail-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--sg-surface, #fff);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
-.portail-icon-btn:hover { background: var(--sg-theme-hover, rgba(0, 0, 0, 0.05)); color: var(--sg-text, #1a2a1e); }
-.portail-icon-btn--logout:hover { background: rgba(192, 57, 43, 0.08); color: #c0392b; }
+
+/* Bande or pleine largeur — EN BAS du header */
+.portail-header-band {
+  height: 5px;
+  background: #E9AA20;
+  width: 100%;
+  display: block;
+}
+
+/* Barre principale */
+.portail-bar {
+  border-bottom: 1px solid var(--sg-border, #dde4df);
+}
+.portail-bar-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 12px 24px;
+}
+
+/* Logo + nom établissement (gauche) */
+.portail-bar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+.portail-bar-logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  padding: 5px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--sg-border, #dde4df);
+  box-shadow: 0 2px 8px rgba(0, 60, 34, 0.10);
+}
+.portail-bar-logo img { width: 100%; height: 100%; object-fit: contain; }
+.portail-bar-texte { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.portail-bar-sur {
+  font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: #a07010;
+}
+.portail-bar-nom {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 1.2rem; font-weight: 700; line-height: 1.2;
+  color: #006B3C;
+}
+
+/* Utilisateur (centre) */
+.portail-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.portail-avatar {
+  flex: none;
+  display: grid; place-items: center;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: #006B3C;
+  color: #FFF6DD;
+  font-size: 0.82rem; font-weight: 700;
+  box-shadow: 0 0 0 2px var(--sg-surface, #fff), 0 0 0 4px #E9AA20;
+}
+.portail-user-texte { display: flex; flex-direction: column; line-height: 1.25; }
+.portail-user-nom  { font-size: 0.88rem; font-weight: 700; color: var(--sg-text, #1a2a1e); white-space: nowrap; }
+.portail-user-role { font-size: 0.72rem; font-weight: 600; color: var(--sg-text-secondary, #5a6b5f); white-space: nowrap; }
+
+/* Actions (droite) */
+.portail-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.portail-icon-btn {
+  display: grid; place-items: center;
+  width: 38px; height: 38px;
+  border: 0; border-radius: 10px;
+  background: transparent;
+  color: var(--sg-text-secondary, #5a6b5f);
+  cursor: pointer; text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.portail-icon-btn:hover        { background: var(--sg-theme-hover, rgba(0,0,0,0.05)); color: #006B3C; }
+.portail-icon-btn--logout:hover { background: rgba(192,57,43,0.08); color: #c0392b; }
 .portail-icon-btn:focus-visible { outline: 2px solid #E9AA20; outline-offset: 2px; }
 
-/* ── Corps ── */
-.portail-main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 30px 24px 60px; }
-.portail-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 34px; padding-bottom: 12px; border-bottom: 1px solid var(--sg-border, #dde4df); }
-.portail-section-title { margin: 0; font-size: 1.05rem; font-weight: 700; letter-spacing: 0; color: #006B3C; }
-.portail-section-count { font-size: 0.82rem; font-weight: 600; color: var(--sg-text-secondary, #5a6b5f); }
+/* ════════════════════════════════════════
+   CONTENU
+════════════════════════════════════════ */
+.portail-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
 
-/* ── Boutons et pastilles ── */
+/* Section en-tête */
+.portail-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 32px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--sg-border, #dde4df);
+}
+.portail-section-title { margin: 0; font-size: 1rem; font-weight: 700; color: #006B3C; }
+
+/* Nouveau badge pour la date */
+.portail-badge-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--sg-surface-2, #f4f6f5);
+  border: 1px solid var(--sg-border, #dde4df);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--sg-text-secondary, #5a6b5f);
+}
+.portail-badge-date svg {
+  color: #E9AA20; /* Couleur or pour l'icône */
+}
+
+/* Bouton action */
 .portail-card-btn {
-  display: inline-flex; align-items: center; gap: 5px; padding: 9px 18px; border: 0; border-radius: 8px;
-  background: #006B3C; color: #FFF6DD; font: inherit; font-size: 0.85rem; font-weight: 700; text-decoration: none; cursor: pointer;
-  transition: filter 0.15s ease;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 9px 18px; border: 0; border-radius: 8px;
+  background: #006B3C; color: #FFF6DD;
+  font: inherit; font-size: 0.85rem; font-weight: 700;
+  text-decoration: none; cursor: pointer;
+  transition: filter 0.15s;
 }
 .portail-card-btn:hover { filter: brightness(1.1); }
-.portail-card-soon { padding: 4px 12px; border-radius: 999px; background: var(--sg-surface-2, #f4f6f5); font-size: 0.72rem; font-weight: 700; color: var(--sg-text-secondary, #5a6b5f); }
+.portail-card-soon {
+  padding: 4px 12px; border-radius: 999px;
+  background: var(--sg-surface-2, #f4f6f5);
+  font-size: 0.72rem; font-weight: 700;
+  color: var(--sg-text-secondary, #5a6b5f);
+}
 
-/* ── Bandeau et états ── */
-@keyframes portail-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* Bandeau alerte */
+@keyframes portail-rise { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:none } }
 .portail-banner {
-  display: flex; align-items: flex-start; gap: 12px; margin-bottom: 24px; padding: 14px 16px; border-radius: 12px;
-  background: rgba(192, 57, 43, 0.07); border: 1px solid rgba(192, 57, 43, 0.22); font-size: 0.88rem; line-height: 1.5;
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 24px; padding: 14px 16px; border-radius: 12px;
+  background: rgba(192,57,43,0.07); border: 1px solid rgba(192,57,43,0.22);
+  font-size: 0.88rem; line-height: 1.5;
 }
 .portail-banner svg { flex: none; margin-top: 2px; color: #c0392b; }
 .portail-banner strong { display: block; }
+
+/* État vide/erreur */
 .portail-etat {
-  display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 48px 20px; text-align: center;
-  background: var(--sg-surface, #fff); border: 1px solid var(--sg-border, #dde4df); border-radius: 16px;
-  color: var(--sg-text-secondary, #5a6b5f); animation: portail-rise 0.3s ease both;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 48px 20px; text-align: center;
+  background: var(--sg-surface, #fff);
+  border: 1px solid var(--sg-border, #dde4df); border-radius: 16px;
+  color: var(--sg-text-secondary, #5a6b5f);
+  animation: portail-rise 0.3s ease both;
 }
 .portail-etat svg { color: #006B3C; opacity: 0.85; }
-.portail-etat h2 { margin: 0; font-size: 1.1rem; font-weight: 700; letter-spacing: 0; color: var(--sg-text, #1a2a1e); }
-.portail-etat p { margin: 0; max-width: 420px; font-size: 0.9rem; line-height: 1.55; }
+.portail-etat h2  { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--sg-text, #1a2a1e); }
+.portail-etat p   { margin: 0; max-width: 420px; font-size: 0.9rem; line-height: 1.55; }
 
-/* ── Pied de page ── */
-.portail-footer { display: flex; align-items: center; justify-content: center; padding: 16px 24px; border-top: 1px solid var(--sg-border, #dde4df); background: var(--sg-surface, #fff); font-size: 0.82rem; color: var(--sg-text-secondary, #5a6b5f); }
+/* ════════════════════════════════════════
+   FOOTER — FIXE en bas de l'écran
+════════════════════════════════════════ */
+.portail-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
 
-/* ── Thème sombre ── */
-[data-theme='dark'] .portail-bar-nom { color: #4ade80; }
-[data-theme='dark'] .portail-section-title, [data-theme='dark'] .portail-etat svg { color: #4ade80; }
-[data-theme='dark'] .portail-icon-btn--logout:hover { background: rgba(248, 113, 113, 0.10); color: #f87171; }
-[data-theme='dark'] .portail-banner svg { color: #f87171; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 24px;
 
-@media (max-width: 600px) {
-  .portail-bar-inner { padding: 8px 14px; }
-  .portail-main { padding: 22px 14px 44px; }
+  background: var(--sg-surface, #fff);
+  border-top: 1px solid var(--sg-border, #dde4df);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+
+  font-size: 0.8rem;
+  color: var(--sg-text-secondary, #5a6b5f);
 }
-@media (prefers-reduced-motion: reduce) { .portail-etat { animation: none !important; } }
+
+/* ════════════════════════════════════════
+   THÈME SOMBRE
+════════════════════════════════════════ */
+[data-theme='dark'] .portail-bar-nom        { color: #4ade80; }
+[data-theme='dark'] .portail-bar-sur        { color: #E9AA20; }
+[data-theme='dark'] .portail-bar-logo       { background: var(--sg-surface-2); }
+[data-theme='dark'] .portail-icon-btn:hover { color: #4ade80; }
+[data-theme='dark'] .portail-icon-btn--logout:hover { background: rgba(248,113,113,0.10); color: #f87171; }
+[data-theme='dark'] .portail-section-title  { color: #4ade80; }
+[data-theme='dark'] .portail-etat svg       { color: #4ade80; }
+[data-theme='dark'] .portail-banner svg     { color: #f87171; }
+[data-theme='dark'] .portail-footer         { box-shadow: 0 -2px 12px rgba(0,0,0,0.4); }
+[data-theme='dark'] .portail-badge-date     { background: var(--sg-surface-2); border-color: var(--sg-border); color: var(--sg-text-secondary); }
+
+/* ════════════════════════════════════════
+   RESPONSIVE
+════════════════════════════════════════ */
+
+/* Tablette (≤ 900px) : masquer le texte utilisateur, garder avatar */
+@media (max-width: 900px) {
+  .portail-user-texte { display: none; }
+  .portail-bar-inner  { gap: 12px; }
+}
+
+/* Mobile (≤ 600px) : layout compact */
+@media (max-width: 600px) {
+  .portail-bar-inner     { padding: 10px 14px; gap: 8px; }
+  .portail-bar-logo      { width: 38px; height: 38px; }
+  .portail-bar-nom       { font-size: 1rem; }
+  .portail-bar-sur       { display: none; }
+  .portail-avatar        { width: 34px; height: 34px; font-size: 0.76rem; }
+  .portail-icon-btn      { width: 34px; height: 34px; }
+  .portail-main          { padding: 20px 14px 40px; }
+  .portail-footer        { font-size: 0.75rem; padding: 0 12px; }
+}
+
+/* Très petit (≤ 380px) : masquer texte établissement, garder logo */
+@media (max-width: 380px) {
+  .portail-bar-texte { display: none; }
+  .portail-user      { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portail-etat { animation: none; }
+}

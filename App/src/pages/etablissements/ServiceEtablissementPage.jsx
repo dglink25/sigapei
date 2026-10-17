@@ -8,11 +8,46 @@ import { lienEtablissement } from '../../lib/etablissements/subdomain'
 import { portailService } from '../../services/identite/portail.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import usePageTitle from '../../hooks/commun/usePageTitle'
-import EtablissementHeader from '../../components/etablissements/EtablissementHeader'
 import Loader from '../../components/commun/Loader'
 import '../commun/Portail.css'
 
-/** https://<slug>.sigapei.com/<code-du-service>/... : vérifie l'accès, puis affiche le service ou « Bientôt disponible ». */
+/**
+ * Affiche le contenu d'un service quand il est disponible,
+ * ou un écran "Bientôt disponible" sinon.
+ * Header/sidebar fournis par PortailLayout.
+ */
+function ServiceContenu({ service, Icone, slug }) {
+  const Composant = COMPOSANTS_SERVICES[service.code]
+  if (Composant) {
+    return (
+      <Suspense fallback={<Loader mode="inline" label="Chargement du service…" />}>
+        <Composant service={service} />
+      </Suspense>
+    )
+  }
+  return (
+    <div className="portail-etat" role="status">
+      <Icone size={40} aria-hidden="true" />
+      <h2>{service.nom}</h2>
+      <p>
+        {service.description || 'Ce service'} sera disponible très prochainement.
+        Vous y avez déjà accès : il s'ouvrira ici dès son activation.
+      </p>
+      <span className="portail-card-soon">
+        <Construction size={12} aria-hidden="true" style={{ verticalAlign: '-1px' }} /> Bientôt disponible
+      </span>
+      <Link to={lienEtablissement(slug, '/portail')} className="portail-card-btn">
+        <ArrowLeft size={14} aria-hidden="true" /> Retour au portail
+      </Link>
+    </div>
+  )
+}
+
+/**
+ * Page d'un service de l'établissement.
+ * Vérifie l'accès puis affiche le service ou "Bientôt disponible".
+ * Header/sidebar fournis par PortailLayout.
+ */
 export default function ServiceEtablissementPage() {
   const { code } = useParams()
   const slug = useSlugEtablissement()
@@ -44,27 +79,15 @@ export default function ServiceEtablissementPage() {
     return () => { annule = true }
   }, [code, slug, navigate, notify])
 
-  const Composant = COMPOSANTS_SERVICES[code]
   const Icone = iconePourCode(code)
 
   return (
-    <div className="portail-shell">
-      <EtablissementHeader slug={slug} etablissementNom={etat.etablissement?.nom} />
-      <main className="portail-main">
-        {etat.chargement ? (
-          <Loader mode="inline" label="Ouverture du service…" />
-        ) : Composant ? (
-          <Suspense fallback={<Loader mode="inline" label="Chargement du service…" />}><Composant service={etat.service} /></Suspense>
-        ) : (
-          <div className="portail-etat" role="status">
-            <Icone size={40} aria-hidden="true" />
-            <h2>{etat.service.nom}</h2>
-            <p>{etat.service.description || 'Ce service'} sera disponible très prochainement. Vous y avez déjà accès : il s'ouvrira ici dès son activation.</p>
-            <span className="portail-card-soon"><Construction size={12} aria-hidden="true" style={{ verticalAlign: '-1px' }} /> Bientôt disponible</span>
-            <Link to={lienEtablissement(slug, '/portail')} className="portail-card-btn"><ArrowLeft size={14} aria-hidden="true" /> Retour au portail</Link>
-          </div>
-        )}
-      </main>
-    </div>
+    <main className="portail-main">
+      {etat.chargement ? (
+        <Loader mode="inline" label="Ouverture du service…" />
+      ) : (
+        <ServiceContenu service={etat.service} Icone={Icone} slug={slug} />
+      )}
+    </main>
   )
 }
