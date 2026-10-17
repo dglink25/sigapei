@@ -7,7 +7,7 @@ gestion différenciée du compte selon le programme pédagogique (béninois vs f
 consultation consolidée en lecture seule pure des paiements de scolarité.
 
 - **Port** : `4004`
-- **Documentation interactive (JSON)** : `http://localhost:4004/docs`
+- **Documentation interactive (Swagger UI)** : `http://localhost:4004/docs` (JSON brut OpenAPI : `/docs-json`)
 - **Documentation technique détaillée** : [docs/api-documentation.md](docs/api-documentation.md)
 - **Préfixe API** : toutes les routes métier sont sous `/v1/...` (ex: `GET /v1/classes`)
 - **Sonde de santé** : `GET /sante`
