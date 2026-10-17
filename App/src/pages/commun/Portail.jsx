@@ -1,182 +1,148 @@
-import { Link } from 'react-router-dom'
-import {
-  BookOpen, Calendar, GraduationCap, FileText,
-  DollarSign, UserCheck, ClipboardList, BarChart3,
-  Library, Cpu, LogOut, Settings, Bell, ChevronRight
-} from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { Navigate, useNavigate } from 'react-router-dom'
+import { Building2, ChevronRight, RefreshCw, Settings, TriangleAlert } from 'lucide-react'
 import { useAuth } from '../../context/identite/AuthContext'
+import { useNotify } from '../../context/commun/NotifyContext'
 import { ENV } from '../../config/commun/env'
-import { SECURITY_PATH, roleCodeOf } from '../../config/identite/routes'
-import ThemeToggle from '../../components/commun/ThemeToggle'
+import { roleCodeOf } from '../../config/identite/routes'
+import { serviceDisponible } from '../../config/services/registre'
+import { MODE_SOUS_DOMAINE, lienEtablissement } from '../../lib/etablissements/subdomain'
+import { allerVersEtablissement } from '../../lib/identite/transfert'
+import { portailService } from '../../services/identite/portail.service'
+import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import usePageTitle from '../../hooks/commun/usePageTitle'
+import EtablissementHeader from '../../components/etablissements/EtablissementHeader'
+import Bloc3D from '../../components/etablissements/Bloc3D'
+import Loader from '../../components/commun/Loader'
 import './Portail.css'
 
-const MODULES = [
-  {
-    id: 'scolarite',
-    titre: 'Scolarité',
-    description: 'Cycles, classes, dossiers élèves, mutations',
-    icon: GraduationCap,
-    dispo: true,
-    path: '/scolarite',
-  },
-  {
-    id: 'cours',
-    titre: 'Cours & E-learning',
-    description: 'Accéder aux cours en ligne',
-    icon: BookOpen,
-    dispo: false,
-  },
-  {
-    id: 'emploi-du-temps',
-    titre: 'Emploi du temps',
-    description: 'Consulter votre planning',
-    icon: Calendar,
-    dispo: false,
-  },
-  {
-    id: 'notes',
-    titre: 'Notes & Bulletins',
-    description: 'Résultats et relevés de notes',
-    icon: ClipboardList,
-    dispo: false,
-  },
-  {
-    id: 'finance',
-    titre: 'Finance',
-    description: 'Paiements et reçus',
-    icon: DollarSign,
-    dispo: false,
-  },
-  {
-    id: 'inscription',
-    titre: 'Inscription',
-    description: 'Dossiers de candidature et admissions',
-    icon: UserCheck,
-    dispo: true,
-    path: '/inscription',
-  },
-  {
-    id: 'bibliotheque',
-    titre: 'Bibliothèque',
-    description: 'Ressources pédagogiques',
-    icon: Library,
-    dispo: false,
-  },
-  {
-    id: 'rapports',
-    titre: 'Rapports',
-    description: 'Statistiques et bilans',
-    icon: BarChart3,
-    dispo: false,
-  },
-  {
-    id: 'cahier-texte',
-    titre: 'Cahier de texte',
-    description: 'Suivi des leçons',
-    icon: FileText,
-    dispo: false,
-  },
-  {
-    id: 'outils',
-    titre: 'Outils numériques',
-    description: 'Applications disponibles',
-    icon: Cpu,
-    dispo: false,
-  },
-]
+const PILLS = {
+  ACCES_NON_ACCORDE: 'Accès non accordé',
+  SERVICE_BLOQUE: 'Service suspendu',
+  ETABLISSEMENT_INACTIF: 'Indisponible',
+}
+
+const MOTIFS = {
+  ACCES_NON_ACCORDE: "Accès non accordé. Contactez l'administrateur de votre établissement.",
+  SERVICE_BLOQUE: 'Service suspendu pour votre établissement.',
+  ETABLISSEMENT_INACTIF: 'Établissement suspendu : accès indisponible.',
+}
+
+function Etat({ icone: Icone, titre, message, children }) {
+  return (
+    <div className="portail-etat" role="status">
+      <Icone size={40} aria-hidden="true" />
+      <h2>{titre}</h2>
+      <p>{message}</p>
+      {children}
+    </div>
+  )
+}
 
 export default function Portail() {
   const { user, logout } = useAuth()
-  const nom = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
+  const notify = useNotify()
+  const navigate = useNavigate()
+  const slug = useSlugEtablissement()
+  const [data, setData] = useState(undefined) // undefined = chargement
+  const [erreur, setErreur] = useState(false)
   usePageTitle('Portail')
+
+  const charger = useCallback(async () => {
+    setErreur(false)
+    try {
+      setData(await portailService.lire())
+    } catch (err) {
+      notify.fromError(err)
+      setErreur(true)
+    }
+  }, [notify])
+
+  useEffect(() => {
+    charger()
+  }, [charger])
+
+  const nom = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
+  const prenom = nom.split(' ')[0]
   const roleCode = roleCodeOf(user)
-  const initiales = nom.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
+  const etab = data?.etablissement
+  const nonConforme = etab && etab.slug !== slug
+
+  /* Local : on corrige l'adresse vers l'établissement de l'utilisateur */
+  if (nonConforme && !MODE_SOUS_DOMAINE) return <Navigate to={lienEtablissement(etab.slug, '/portail')} replace />
+
+  let corps
+  if (erreur) {
+    corps = (
+      <Etat icone={TriangleAlert} titre="Portail indisponible" message="Impossible de charger vos services pour le moment.">
+        <button type="button" className="portail-card-btn" onClick={charger}><RefreshCw size={14} aria-hidden="true" /> Réessayer</button>
+      </Etat>
+    )
+  } else if (data === undefined) {
+    corps = <Loader mode="inline" label="Chargement de vos services…" />
+  } else if (!etab) {
+    corps = (
+      <Etat icone={Building2} titre="Aucun établissement" message="Votre compte n'est rattaché à aucun établissement actif.">
+        <button type="button" className="portail-card-btn" onClick={() => logout('manual')}>Déconnexion</button>
+      </Etat>
+    )
+  } else if (nonConforme) {
+    corps = (
+      <Etat icone={Building2} titre="Autre établissement" message="Votre compte appartient à un autre établissement que celui de cette adresse.">
+        <button type="button" className="portail-card-btn" onClick={() => allerVersEtablissement(etab.slug, '/portail', navigate).catch(notify.fromError)}>
+          Aller à mon établissement <ChevronRight size={14} aria-hidden="true" />
+        </button>
+      </Etat>
+    )
+  } else {
+    const services = data.services ?? []
+    const suspendu = etab.statut !== 'actif'
+    corps = (
+      <>
+        {suspendu && (
+          <div className="portail-banner" role="status">
+            <TriangleAlert size={18} aria-hidden="true" />
+            <div><strong>Établissement suspendu</strong> Tous les services sont momentanément indisponibles.</div>
+          </div>
+        )}
+
+        <section aria-labelledby="portail-titre">
+          <div className="portail-section-head">
+            <h2 id="portail-titre" className="portail-section-title">Mes services</h2>
+            <span className="portail-section-count">{services.length} service{services.length > 1 ? 's' : ''}</span>
+          </div>
+          {services.length === 0 && !data.estAdmin ? (
+            <Etat icone={Building2} titre="Aucun service pour le moment" message="Aucun service n'est encore disponible pour votre établissement." />
+          ) : (
+            <div className="bloc3d-grid">
+              {data.estAdmin && (
+                <Bloc3D etat="config" index={0} icone={Settings} nom="Configuration" pill="Ouvrir" to={lienEtablissement(slug, '/configuration')} />
+              )}
+              {services.map((s, i) => {
+                const index = i + 1
+                if (!s.accessible) {
+                  return (
+                    <Bloc3D key={s.uuid} etat="verrouille" index={index} numero={index} nom={s.nom}
+                      pill={PILLS[s.motif] ?? 'Indisponible'} motif={MOTIFS[s.motif] ?? 'Accès indisponible.'} />
+                  )
+                }
+                return serviceDisponible(s.code)
+                  ? <Bloc3D key={s.uuid} etat="actif" index={index} numero={index} nom={s.nom} pill="Se connecter" to={lienEtablissement(slug, `/${s.code}`)} />
+                  : <Bloc3D key={s.uuid} etat="bientot" index={index} numero={index} nom={s.nom} pill="Bientôt disponible" motif="Bientôt disponible" />
+              })}
+            </div>
+          )}
+        </section>
+      </>
+    )
+  }
 
   return (
     <div className="portail-shell">
-
-      {/* ── Header ── */}
-      <header className="portail-header">
-        <div className="portail-header-left">
-          <img src="/sigapei.png" alt={ENV.appName} className="portail-logo" />
-          <span className="portail-appname">{ENV.appName}</span>
-        </div>
-        <div className="portail-header-right">
-          <button className="portail-icon-btn" aria-label="Notifications">
-            <Bell size={20} />
-          </button>
-          <ThemeToggle className="portail-icon-btn" />
-          <Link to={SECURITY_PATH} className="portail-icon-btn" aria-label="Paramètres">
-            <Settings size={20} />
-          </Link>
-          <div className="portail-user-chip">
-            <span className="portail-avatar">{initiales}</span>
-            <span className="portail-user-name">{nom.split(' ')[0]}</span>
-          </div>
-          <button
-            className="portail-icon-btn portail-icon-btn--logout"
-            onClick={() => logout('manual')}
-            aria-label="Déconnexion"
-            title="Déconnexion"
-          >
-            <LogOut size={20} />
-          </button>
-        </div>
-      </header>
-
-      {/* ── Corps ── */}
-      <main className="portail-main">
-
-        {/* Bandeau de bienvenue */}
-        <section className="portail-hero">
-          <div className="portail-hero-text">
-            <h1>Bienvenue, <strong>{nom.split(' ')[0]}</strong></h1>
-            <p>Accédez à vos services SIGAPEI depuis ce portail.</p>
-          </div>
-          {roleCode && (
-            <span className="portail-role-badge">{roleCode.replace(/_/g, ' ')}</span>
-          )}
-        </section>
-
-        {/* Grille de modules */}
-        <section className="portail-section">
-          <h2 className="portail-section-title">Mes services</h2>
-          <div className="portail-grid">
-            {MODULES.map((mod) => {
-              const Icon = mod.icon
-              return (
-                <div
-                  key={mod.id}
-                  className={`portail-card ${mod.dispo ? '' : 'portail-card--soon'}`}
-                >
-                  <div className="portail-card-icon">
-                    <Icon size={32} aria-hidden="true" />
-                  </div>
-                  <p className="portail-card-titre">{mod.titre}</p>
-                  <p className="portail-card-desc">{mod.description}</p>
-                  {mod.dispo ? (
-                    <Link to={mod.path ?? '#'} className="portail-card-btn">
-                      Accéder <ChevronRight size={14} />
-                    </Link>
-                  ) : (
-                    <span className="portail-card-soon">Bientôt disponible</span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </section>
-
-      </main>
-
-      {/* ── Footer ── */}
+      <EtablissementHeader slug={slug} etablissementNom={etab?.nom} sousTitre={etab ? `Bienvenue, ${prenom}${roleCode ? ` · ${roleCode.replace(/_/g, ' ')}` : ''}` : undefined} />
+      <main className="portail-main">{corps}</main>
       <footer className="portail-footer">
         <span>© {new Date().getFullYear()} {ENV.appName}</span>
-        <Link to={SECURITY_PATH}>Sécurité du compte</Link>
-        <button className="portail-footer-logout" onClick={() => logout('manual')}>
-          <LogOut size={14} /> Déconnexion
-        </button>
       </footer>
     </div>
   )

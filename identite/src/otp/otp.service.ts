@@ -66,12 +66,11 @@ export class OtpService {
   }
 
   /**
-   * Envoie un OTP par e-mail (format contraint : 12 caracteres, >=2 speciaux,
-   * >=2 majuscules, >=2 minuscules).
+   * Envoie un OTP par e-mail (format 6 chiffres, uniforme avec le canal telephone).
    */
   async envoyerParEmail(utilisateurId: string, email: string): Promise<void> {
     await this.verifierQuotaRenvoi(email);
-    const code = genererOtpEmail(12);
+    const code = genererOtpEmail();
     await this.enregistrerOtp(email, code, CanalOtp.EMAIL, utilisateurId);
     const dureeMinutes = Math.round(this.config.get<number>('otp.ttlSeconds')! / 60);
     const envoye = await this.smtp.envoyerCodeOtp(email, code, dureeMinutes);

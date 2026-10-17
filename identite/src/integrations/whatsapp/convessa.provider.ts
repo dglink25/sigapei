@@ -96,9 +96,10 @@ export class ConvessaProvider implements OnModuleInit {
     return (
       `*SIGAPEI - Code de vérification*\n\n` +
       `${code}\n\n` +
-      `Ce code est valable ${dureeMinutes} minutes et ne peut être utilisé qu'une seule fois.\n` +
-      `Ne le communiquez à personne, y compris au personnel SIGAPEI.\n\n` +
-      `Vous n'êtes pas à l'origine de cette demande ? Ignorez simplement ce message.`
+      `Valable ${dureeMinutes} minutes - usage unique.\n` +
+      `Ne communiquez ce code à personne, y compris au personnel SIGAPEI.\n\n` +
+      `Vous n'êtes pas à l'origine de cette demande ? Ignorez ce message.\n\n` +
+      `SIGAPEI - Plateforme E-Académique`
     );
   }
 
