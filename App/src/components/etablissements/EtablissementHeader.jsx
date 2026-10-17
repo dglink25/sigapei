@@ -23,7 +23,7 @@ const dateDuJour = () => {
 }
 
 
-export default function EtablissementHeader({ slug, etablissementNom, accueil }) {
+export default function EtablissementHeader({ slug, etablissementNom, etablissementLogoUrl, accueil }) {
   const { user, logout } = useAuth()
   const nom = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
   const prenom = nom.split(' ')[0]
@@ -37,7 +37,11 @@ export default function EtablissementHeader({ slug, etablissementNom, accueil })
       <div className="portail-bar">
         <div className="portail-bar-inner">
           <Link to={lienEtablissement(slug, '/portail')} className="portail-bar-brand">
-            <span className="portail-bar-logo"><img src="/sigapei.png" alt="" /></span>
+            <span className="portail-bar-logo">
+              {etablissementLogoUrl
+                ? <img src={etablissementLogoUrl} alt={etablissementNom ?? ''} style={{ width:'100%', height:'100%', objectFit:'contain', borderRadius:6 }} />
+                : <img src="/sigapei.png" alt="" />}
+            </span>
             <span className="portail-bar-texte">
               <span className="portail-bar-nom">{etablissementNom ?? ENV.appName}</span>
             </span>

@@ -7,6 +7,7 @@ import { ENV } from '../../config/commun/env'
 import { roleCodeOf } from '../../config/identite/routes'
 import { lienEtablissement } from '../../lib/etablissements/subdomain'
 import { portailService } from '../../services/identite/portail.service'
+import { accueilService } from '../../services/etablissements/etablissement.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import './PortailLayout.css'
 
@@ -28,6 +29,7 @@ export default function PortailLayout() {
   const slug = useSlugEtablissement()
   const [navOuvert, setNavOuvert] = useState(false)
   const [etablissementNom, setEtablissementNom] = useState(null)
+  const [logoUrl, setLogoUrl] = useState(null)
 
   useEffect(() => {
     let annule = false
@@ -36,6 +38,13 @@ export default function PortailLayout() {
       .catch(() => {})
     return () => { annule = true }
   }, [])
+
+  useEffect(() => {
+    if (!slug) return
+    let annule = false
+    accueilService.lire(slug).then((r) => { if (!annule) setLogoUrl(r?.logoUrl ?? null) }).catch(() => {})
+    return () => { annule = true }
+  }, [slug])
 
   const nom = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
   const initiales = nom.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
@@ -81,7 +90,10 @@ export default function PortailLayout() {
             onClick={() => setNavOuvert(false)}
             aria-label="Retour au portail"
           >
-            <img src="/sigapei.png" alt={ENV.appName} className="pl-nav-logo" />
+            {logoUrl
+              ? <img src={logoUrl} alt={etablissementNom ?? ''} className="pl-nav-logo" style={{ objectFit:'contain', borderRadius:5 }} />
+              : <img src="/sigapei.png" alt={ENV.appName} className="pl-nav-logo" />
+            }
           </Link>
           <div className="pl-nav-etab">
             <span className="pl-nav-etab-nom">{etablissementNom ?? ENV.appName}</span>
