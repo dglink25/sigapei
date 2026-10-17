@@ -15,9 +15,10 @@ const MODULES = [
   {
     id: 'scolarite',
     titre: 'Scolarité',
-    description: 'Inscription, dossiers, attestations',
+    description: 'Cycles, classes, dossiers élèves, mutations',
     icon: GraduationCap,
-    dispo: false,
+    dispo: true,
+    path: '/scolarite',
   },
   {
     id: 'cours',
@@ -50,9 +51,10 @@ const MODULES = [
   {
     id: 'inscription',
     titre: 'Inscription',
-    description: 'Dossier d\'admission',
+    description: 'Dossiers de candidature et admissions',
     icon: UserCheck,
-    dispo: false,
+    dispo: true,
+    path: '/inscription',
   },
   {
     id: 'bibliotheque',
