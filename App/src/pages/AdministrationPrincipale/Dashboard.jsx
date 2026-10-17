@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth }          from '../../context/identite/AuthContext'
 import { useNotify }        from '../../context/commun/NotifyContext'
-import { SECURITY_PATH }    from '../../config/identite/routes'
+import { COMPTE_PATH }      from '../../config/identite/routes'
 import { ADMIN_PATHS }      from '../../config/etablissements/config'
 import { SERVICE_PATHS }    from '../../config/services/config'
 import { adminService }     from '../../services/etablissements/etablissement.service'
@@ -21,7 +21,7 @@ const ESPACES = [
   { label: 'Indicateurs',    icon: BarChart3,  path: '/admin/indicateurs',          desc: 'Tableaux de bord' },
   { label: 'Utilisateurs',   icon: Users,      path: '/admin/utilisateurs',         desc: 'Comptes & rôles' },
   { label: 'Rapports',       icon: TrendingUp, path: '/admin/rapports',             desc: 'Statistiques' },
-  { label: 'Paramètres',     icon: Settings,   path: SECURITY_PATH,                 desc: 'Configuration' },
+  { label: 'Paramètres',     icon: Settings,   path: COMPTE_PATH,                   desc: 'Configuration' },
 ]
 
 export default function Dashboard() {

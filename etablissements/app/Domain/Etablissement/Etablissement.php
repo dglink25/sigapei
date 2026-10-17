@@ -9,8 +9,8 @@ use App\Domain\Geo\Pays;
 use App\Support\GenereUuid;
 use Illuminate\Database\Eloquent\Model;
 
-class Etablissement extends Model
-{
+class Etablissement extends Model{
+
     use GenereUuid;
 
     protected $table = 'etablissements';
@@ -27,8 +27,7 @@ class Etablissement extends Model
         'date_validation' => 'datetime',
     ];
 
-    public function pays()
-    {
+    public function pays()    {
         return $this->belongsTo(Pays::class);
     }
 

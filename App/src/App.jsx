@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { ENV } from './config/commun/env'
 import {
-  FORBIDDEN_PATH, HOME_PATH, LOGIN_PATH, SECURITY_PATH, COMPTE_PATH,
+  FORBIDDEN_PATH, HOME_PATH, LOGIN_PATH, COMPTE_PATH,
   ADMIN_DASHBOARD_PATH, PORTAIL_PATH, DASHBOARD_TEMP_PATH,
 } from './config/identite/routes'
 import { ADMIN_PATHS, PATHS } from './config/etablissements/config'
@@ -13,7 +13,6 @@ import RequireEtablissement from './components/identite/RequireEtablissement'
 
 /* Pages publiques */
 import AuthPage       from './pages/identite/AuthPage'
-import SecuritePage   from './pages/identite/SecuritePage'
 import DemandePage    from './pages/etablissements/DemandePage'
 import CorrectionPage from './pages/etablissements/CorrectionPage'
 import Home           from './pages/commun/Home'
@@ -25,42 +24,59 @@ import Portail       from './pages/commun/Portail'
 import DashboardTemp from './pages/commun/DashboardTemp'
 
 /* Espace d'établissement */
-import AccueilEtablissement from './pages/etablissements/AccueilEtablissement'
-import ConfigurationPage    from './pages/etablissements/ConfigurationPage'
-import ServiceEtablissementPage     from './pages/etablissements/ServiceEtablissementPage'
-import RedirectionPortail   from './pages/identite/RedirectionPortail'
-import TransfertPage        from './pages/identite/TransfertPage'
+import AccueilEtablissement     from './pages/etablissements/AccueilEtablissement'
+import ConfigurationPage        from './pages/etablissements/ConfigurationPage'
+import ServiceEtablissementPage from './pages/etablissements/ServiceEtablissementPage'
+import RedirectionPortail       from './pages/identite/RedirectionPortail'
+import TransfertPage            from './pages/identite/TransfertPage'
 import { VersConnexion, VersEtablissement } from './pages/commun/Redirections'
 
+/* Layout portail établissement */
+import PortailLayout from './components/commun/PortailLayout'
+
 /* Administration principale */
-import AdminLayout        from './pages/AdministrationPrincipale/AdminLayout'
-import Dashboard          from './pages/AdministrationPrincipale/Dashboard'
-import DemandesPage       from './pages/AdministrationPrincipale/DemandesPage'
-import DemandeDetailPage  from './pages/AdministrationPrincipale/DemandeDetailPage'
-import EtablissementsPage from './pages/AdministrationPrincipale/EtablissementsPage'
-import ServicesPage from './pages/AdministrationPrincipale/ServicesPage'
-import ServiceDetailPage from './pages/AdministrationPrincipale/ServiceDetailPage'
+import AdminLayout            from './pages/AdministrationPrincipale/AdminLayout'
+import Dashboard              from './pages/AdministrationPrincipale/Dashboard'
+import DemandesPage           from './pages/AdministrationPrincipale/DemandesPage'
+import DemandeDetailPage      from './pages/AdministrationPrincipale/DemandeDetailPage'
+import EtablissementsPage     from './pages/AdministrationPrincipale/EtablissementsPage'
+import ServicesPage           from './pages/AdministrationPrincipale/ServicesPage'
+import ServiceDetailPage      from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
 
-/** Hôte d'un établissement (sous-domaine, production) : on ne sert que l'espace de cet établissement. */
+/** Hôte d'un établissement (sous-domaine, production). */
 const SLUG_HOTE = MODE_SOUS_DOMAINE ? detecterSlugEtablissement() : null
 
 /**
- * Routes d'un établissement : accueil public, portail, configuration (administrateur), services (/<code-service>/...).
+ * Routes d'un établissement enveloppées dans PortailLayout (sidebar institutionnelle).
  * base = '' sur un sous-domaine ; '/etablissements/:slug' en local.
  */
 function routesEtablissement(base) {
   const p = (sub) => (base ? `${base}${sub}` : sub || '/')
   return (
     <>
+      {/* ── Public : accueil de l'établissement ── */}
       <Route path={p('')} element={<AccueilEtablissement />} />
       <Route path={p('/auth/callback')} element={<TransfertPage />} />
+
+      {/* ── Portail : page autonome sans sidebar ── */}
       <Route element={<RequireEtablissement />}>
         <Route path={p('/portail')} element={<Portail />} />
-        <Route path={p('/:code/*')} element={<ServiceEtablissementPage />} />
       </Route>
+
+      {/* ── Services, compte, configuration : avec sidebar PortailLayout ── */}
+      <Route element={<RequireEtablissement />}>
+        <Route element={<PortailLayout />}>
+          <Route path={p('/compte')} element={<ComptePage />} />
+          <Route path={p('/:code/*')} element={<ServiceEtablissementPage />} />
+        </Route>
+      </Route>
+
+      {/* ── Configuration : admin uniquement, aussi dans PortailLayout ── */}
       <Route element={<RequireAuth roles={['administrateur']} />}>
-        <Route path={p('/configuration')} element={<ConfigurationPage />} />
+        <Route element={<PortailLayout />}>
+          <Route path={p('/configuration')} element={<ConfigurationPage />} />
+        </Route>
       </Route>
     </>
   )
@@ -75,9 +91,6 @@ export default function App() {
       <Routes>
         {routesEtablissement('')}
         <Route path={LOGIN_PATH} element={<VersConnexion />} />
-        <Route element={<RequireAuth />}>
-          <Route path={SECURITY_PATH} element={<SecuritePage />} />
-        </Route>
         <Route element={<RequireEtablissement />}>
           <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
         </Route>
@@ -99,7 +112,7 @@ export default function App() {
       <Route path={PATHS.demande}         element={<DemandePage />} />
       <Route path={PATHS.correctionRoute} element={<CorrectionPage />} />
 
-      {/* ── Espace d'établissement : sous-domaine en production, /etablissements/:slug en local ── */}
+      {/* ── Espace d'établissement ── */}
       {MODE_SOUS_DOMAINE
         ? <Route path="/etablissements/:slug" element={<VersEtablissement />} />
         : routesEtablissement(BASE_ROUTE_ETABLISSEMENT)}
@@ -107,28 +120,23 @@ export default function App() {
       {/* ── Accueil public ── */}
       <Route path={HOME_PATH} element={<Home />} />
 
-      {/* ── Sécurité rétrocompat (sans layout) ── */}
-      <Route element={<RequireAuth />}>
-        <Route path={SECURITY_PATH} element={<SecuritePage />} />
-      </Route>
-
-      {/* ── Redirection intelligente : portail de l'établissement, ou tableau de bord temporaire sans service ── */}
+      {/* ── Redirection intelligente post-login ── */}
       <Route element={<RequireEtablissement />}>
         <Route path={PORTAIL_PATH} element={<RedirectionPortail />} />
         <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
       </Route>
 
-      {/* ── Administration : super_admin - /compte dans le layout admin ── */}
+      {/* ── Administration : super_admin ── */}
       <Route element={<RequireAuth roles={['super_admin']} />}>
         <Route element={<AdminLayout />}>
-          <Route path={ADMIN_DASHBOARD_PATH}       element={<Dashboard />} />
-          <Route path={COMPTE_PATH}                 element={<ComptePage />} />
-          <Route path={ADMIN_PATHS.demandes}        element={<DemandesPage />} />
-          <Route path={ADMIN_PATHS.detailRoute}     element={<DemandeDetailPage />} />
-          <Route path={ADMIN_PATHS.etablissements}  element={<EtablissementsPage />} />
+          <Route path={ADMIN_DASHBOARD_PATH}            element={<Dashboard />} />
+          <Route path={COMPTE_PATH}                      element={<ComptePage />} />
+          <Route path={ADMIN_PATHS.demandes}             element={<DemandesPage />} />
+          <Route path={ADMIN_PATHS.detailRoute}          element={<DemandeDetailPage />} />
+          <Route path={ADMIN_PATHS.etablissements}       element={<EtablissementsPage />} />
           <Route path={SERVICE_PATHS.etablissementRoute} element={<EtablissementServicesPage />} />
-          <Route path={SERVICE_PATHS.liste}         element={<ServicesPage />} />
-          <Route path={SERVICE_PATHS.detailRoute}   element={<ServiceDetailPage />} />
+          <Route path={SERVICE_PATHS.liste}              element={<ServicesPage />} />
+          <Route path={SERVICE_PATHS.detailRoute}        element={<ServiceDetailPage />} />
         </Route>
       </Route>
 
