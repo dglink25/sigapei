@@ -23,10 +23,12 @@ export function roleCodeOf(user) {
   return user.role?.code ?? user.roleCode ?? ''
 }
 
-/** Résout le chemin de redirection post-connexion selon le rôle de l'utilisateur */
+/**
+ * Résout le chemin de redirection post-connexion :
+ * super administrateur -> administration ; tout autre rôle -> PORTAIL_PATH, redirection intelligente
+ * (portail de son établissement s'il est administrateur ou a au moins un service, sinon tableau de bord temporaire).
+ */
 export function redirectionPostLogin(roleCode) {
-  if (!roleCode) return PORTAIL_PATH
   if (roleCode === 'super_admin') return ADMIN_DASHBOARD_PATH
-  if (PORTAIL_ROLES.includes(roleCode)) return PORTAIL_PATH
-  return DASHBOARD_TEMP_PATH
+  return PORTAIL_PATH
 }

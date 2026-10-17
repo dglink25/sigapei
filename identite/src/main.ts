@@ -21,8 +21,16 @@ async function bootstrap() {
 
   // --- Securite HTTP de base ---
   app.use(helmet());
+  // CORS_ORIGINS accepte des jokers de sous-domaine, ex: https://sigapei.com,https://*.sigapei.com
+  const origines = config.get<string[]>('corsOrigins') ?? [];
+  const motifs = origines.map((o) =>
+    o.includes('*') ? new RegExp(`^${o.replace(/[.+?^${}()|[\]\\*]/g, '\\$&').replace(/\\\*/g, '[a-z0-9-]+')}$`, 'i') : o,
+  );
   app.enableCors({
-    origin: config.get<string[]>('corsOrigins')?.length ? config.get<string[]>('corsOrigins') : true,
+    origin: origines.length
+      ? (origin: string | undefined, cb: (err: Error | null, ok?: boolean) => void) =>
+          cb(null, !origin || motifs.some((m) => (typeof m === 'string' ? m === origin : m.test(origin))))
+      : true,
     credentials: true,
   });
 

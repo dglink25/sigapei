@@ -4,11 +4,12 @@ import { ENV } from './config/commun/env'
 import {
   FORBIDDEN_PATH, HOME_PATH, LOGIN_PATH, SECURITY_PATH, COMPTE_PATH,
   ADMIN_DASHBOARD_PATH, PORTAIL_PATH, DASHBOARD_TEMP_PATH,
-  PORTAIL_ROLES, NON_ADMIN_ROLES
 } from './config/identite/routes'
 import { ADMIN_PATHS, PATHS } from './config/etablissements/config'
 import { SERVICE_PATHS } from './config/services/config'
+import { BASE_ROUTE_ETABLISSEMENT, MODE_SOUS_DOMAINE, detecterSlugEtablissement } from './lib/etablissements/subdomain'
 import { PublicOnly, RequireAuth } from './components/identite'
+import RequireEtablissement from './components/identite/RequireEtablissement'
 
 /* Pages publiques */
 import AuthPage       from './pages/identite/AuthPage'
@@ -23,7 +24,15 @@ import ComptePage    from './pages/commun/ComptePage'
 import Portail       from './pages/commun/Portail'
 import DashboardTemp from './pages/commun/DashboardTemp'
 
+/* Espace d'établissement */
 import AccueilEtablissement from './pages/etablissements/AccueilEtablissement'
+import ConfigurationPage    from './pages/etablissements/ConfigurationPage'
+import ServiceEtablissementPage     from './pages/etablissements/ServiceEtablissementPage'
+import RedirectionPortail   from './pages/identite/RedirectionPortail'
+import TransfertPage        from './pages/identite/TransfertPage'
+import { VersConnexion, VersEtablissement } from './pages/commun/Redirections'
+
+/* Administration principale */
 import AdminLayout        from './pages/AdministrationPrincipale/AdminLayout'
 import Dashboard          from './pages/AdministrationPrincipale/Dashboard'
 import DemandesPage       from './pages/AdministrationPrincipale/DemandesPage'
@@ -32,12 +41,53 @@ import EtablissementsPage from './pages/AdministrationPrincipale/EtablissementsP
 import ServicesPage from './pages/AdministrationPrincipale/ServicesPage'
 import ServiceDetailPage from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
-import InscriptionPage from './pages/inscription/InscriptionPage'
-import ScolaritePage from './pages/scolarite/ScolaritePage'
+
+/** Hôte d'un établissement (sous-domaine, production) : on ne sert que l'espace de cet établissement. */
+const SLUG_HOTE = MODE_SOUS_DOMAINE ? detecterSlugEtablissement() : null
+
+/**
+ * Routes d'un établissement : accueil public, portail, configuration (administrateur), services (/<code-service>/...).
+ * base = '' sur un sous-domaine ; '/etablissements/:slug' en local.
+ */
+function routesEtablissement(base) {
+  const p = (sub) => (base ? `${base}${sub}` : sub || '/')
+  return (
+    <>
+      <Route path={p('')} element={<AccueilEtablissement />} />
+      <Route path={p('/auth/callback')} element={<TransfertPage />} />
+      <Route element={<RequireEtablissement />}>
+        <Route path={p('/portail')} element={<Portail />} />
+        <Route path={p('/:code/*')} element={<ServiceEtablissementPage />} />
+      </Route>
+      <Route element={<RequireAuth roles={['administrateur']} />}>
+        <Route path={p('/configuration')} element={<ConfigurationPage />} />
+      </Route>
+    </>
+  )
+}
 
 export default function App() {
   useEffect(() => { document.title = ENV.appName }, [])
 
+  /* ── Sous-domaine d'un établissement ── */
+  if (SLUG_HOTE) {
+    return (
+      <Routes>
+        {routesEtablissement('')}
+        <Route path={LOGIN_PATH} element={<VersConnexion />} />
+        <Route element={<RequireAuth />}>
+          <Route path={SECURITY_PATH} element={<SecuritePage />} />
+        </Route>
+        <Route element={<RequireEtablissement />}>
+          <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
+        </Route>
+        <Route path={FORBIDDEN_PATH} element={<ForbiddenPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    )
+  }
+
+  /* ── Plateforme (domaine de base, ou application locale) ── */
   return (
     <Routes>
       {/* ── Visiteurs uniquement ── */}
@@ -49,8 +99,10 @@ export default function App() {
       <Route path={PATHS.demande}         element={<DemandePage />} />
       <Route path={PATHS.correctionRoute} element={<CorrectionPage />} />
 
-      {/* ── Page d'accueil publique d'un établissement ── */}
-      <Route path="/etablissements/:slug" element={<AccueilEtablissement />} />
+      {/* ── Espace d'établissement : sous-domaine en production, /etablissements/:slug en local ── */}
+      {MODE_SOUS_DOMAINE
+        ? <Route path="/etablissements/:slug" element={<VersEtablissement />} />
+        : routesEtablissement(BASE_ROUTE_ETABLISSEMENT)}
 
       {/* ── Accueil public ── */}
       <Route path={HOME_PATH} element={<Home />} />
@@ -60,19 +112,9 @@ export default function App() {
         <Route path={SECURITY_PATH} element={<SecuritePage />} />
       </Route>
 
-      {/* ── Portail : rôles portail uniquement ── */}
-      <Route element={<RequireAuth roles={PORTAIL_ROLES} />}>
-        <Route path={PORTAIL_PATH} element={<Portail />} />
-      </Route>
-
-      {/* ── Modules Inscription & Scolarité ── */}
-      <Route element={<RequireAuth />}>
-        <Route path="/inscription" element={<InscriptionPage />} />
-        <Route path="/scolarite" element={<ScolaritePage />} />
-      </Route>
-
-      {/* ── Dashboard temporaire ── */}
-      <Route element={<RequireAuth roles={NON_ADMIN_ROLES} />}>
+      {/* ── Redirection intelligente : portail de l'établissement, ou tableau de bord temporaire sans service ── */}
+      <Route element={<RequireEtablissement />}>
+        <Route path={PORTAIL_PATH} element={<RedirectionPortail />} />
         <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
       </Route>
 

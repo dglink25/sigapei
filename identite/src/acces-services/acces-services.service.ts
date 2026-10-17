@@ -104,6 +104,41 @@ export class AccesServicesService {
 
   /* ───────────────────────── Cote administrateur de l'etablissement ───────────────────────── */
 
+  /**
+   * Portail de l'utilisateur : TOUS les services de son etablissement (actifs au catalogue), avec l'etat de son acces.
+   * Un service sans acces reste visible (verrouille) ; motif : ACCES_NON_ACCORDE | SERVICE_BLOQUE | ETABLISSEMENT_INACTIF.
+   * L'administrateur de l'etablissement a le droit sur tous les services (sauf bloques par la plateforme).
+   */
+  async portail(utilisateurUuid: string) {
+    const vide = (motif: string) => ({ etablissement: null, estAdmin: false, services: [], motif });
+    const u = await this.utilisateurRepo.findOne({ where: { uuid: utilisateurUuid } });
+    if (!u || u.statut !== StatutUtilisateur.ACTIF) return vide('COMPTE_INACTIF');
+    if (!u.tenantId) return vide('AUCUN_ETABLISSEMENT');
+    const etab = await this.ref.trouverParUuid(u.tenantId);
+    if (!etab) return vide('ETABLISSEMENT_INTROUVABLE');
+
+    const estAdmin = u.role.code === ROLE_ADMIN;
+    const etabActif = etab.statut === 'actif';
+    const lignes: Array<{ uuid: string; code: string; nom: string; description: string | null; assignationActive: boolean; droit: boolean }> =
+      await this.dataSource.query(
+        `SELECT s.uuid, s.code, s.nom, s.description,
+                (es.status = 'active') AS "assignationActive",
+                ($2::boolean OR EXISTS (
+                   SELECT 1 FROM "identite"."users_services_etablissement" a
+                    WHERE a.etablissement_services_id = es.id AND a.user_id = $3 AND a.autorised = true)) AS droit
+           FROM "identite"."etablissement_services" es
+           JOIN "identite"."services" s ON s.id = es.service_id
+          WHERE es.etablissement_id = $1 AND s.status = 'active'
+          ORDER BY s.nom`,
+        [etab.id, estAdmin, u.id],
+      );
+    const services = lignes.map((l) => {
+      const motif = !etabActif ? 'ETABLISSEMENT_INACTIF' : !l.assignationActive ? 'SERVICE_BLOQUE' : !l.droit ? 'ACCES_NON_ACCORDE' : undefined;
+      return { uuid: l.uuid, code: l.code, nom: l.nom, description: l.description, accessible: motif === undefined, ...(motif ? { motif } : {}) };
+    });
+    return { etablissement: { uuid: etab.uuid, nom: etab.nom, slug: etab.slug, statut: etab.statut }, estAdmin, services };
+  }
+
   /** Services assignes a mon etablissement (actifs ou bloques). */
   async listerServicesEtablissement(acteurUuid: string) {
     const { etab } = await this.contexteAdmin(acteurUuid);

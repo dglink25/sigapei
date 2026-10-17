@@ -1,0 +1,10 @@
+/* Configuration de l'établissement - hérite de .ap (admin.css), services.css et admin-ui.css */
+.cfg { padding: 0; max-width: 1100px; margin: 0 auto; }
+.cfg .ap-tab:disabled { opacity: 0.55; cursor: not-allowed; }
+.cfg .ap-tab:disabled:hover { border-color: var(--ap-border); color: var(--ap-text); }
+.cfg-services { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.cfg-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.cfg-acces { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; }
+.cfg-list { display: grid; gap: 10px; }
+.cfg-hint { margin: 0 0 14px; font-size: 0.85rem; color: var(--ap-muted); line-height: 1.5; }
+@media (max-width: 720px) { .cfg-bar { align-items: stretch; } }

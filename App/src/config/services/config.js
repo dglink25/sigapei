@@ -46,10 +46,16 @@ export const MESSAGES_ERREUR = {
   SERVICE_INTROUVABLE: "Ce service n'existe plus. Actualisez la page.",
   SERVICE_ASSIGNE: (d) =>
     `Ce service est encore assigné à ${d?.etablissements ?? 'plusieurs'} établissement(s). Retirez-le d'abord ou désactivez-le.`,
-  SERVICE_INACTIF: 'Ce service est désactivé au catalogue : il ne peut pas être assigné.',
+  SERVICE_INACTIF: 'Ce service est inactif ou bloqué : opération impossible.',
   SERVICE_DEJA_ASSIGNE: 'Ce service est déjà assigné à cet établissement.',
   ASSIGNATION_INTROUVABLE: "Cette assignation n'existe plus. Actualisez la page.",
   ETABLISSEMENT_INTROUVABLE: 'Cet établissement est introuvable.',
   ETABLISSEMENT_ARCHIVE: 'Cet établissement est archivé : aucune assignation possible.',
   AUCUNE_MODIFICATION: 'Aucune modification à enregistrer.',
+  ADMINISTRATEUR_DROITS_IMPLICITES: 'Un administrateur dispose déjà de tous les droits : ils ne sont pas modifiables.',
+  UTILISATEUR_INTROUVABLE: "Cet utilisateur n'existe pas dans votre établissement.",
+  UTILISATEUR_ARCHIVE: 'Ce compte est archivé : impossible de lui accorder un accès.',
+  SERVICE_NON_ASSIGNE: "Ce service n'est pas assigné à votre établissement.",
+  ETABLISSEMENT_INACTIF: 'Votre établissement est suspendu : aucune modification possible.',
+  ACCES_REFUSE: "Cette action est réservée à l'administrateur de l'établissement.",
 }
