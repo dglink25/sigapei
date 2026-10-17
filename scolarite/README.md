@@ -322,7 +322,9 @@ scolarite/
 │       ├── migrations/          Création des tables du schéma scolarite
 │       └── Seeders/             Données de test (classes béninoises et françaises)
 ├── tests/
-│   └── Unit/                    Tests unitaires capacité & programmes
+│   ├── Feature/                 Tests du contrat d'API interne (InterneApiTest.php)
+│   └── Unit/                    Tests de la règle pédagogique béninois/français (ReglePedagogiqueTest.php)
+├── phpunit.xml
 ├── .env.example
 ├── composer.json
 ├── docker-compose.yml
