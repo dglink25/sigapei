@@ -30,6 +30,7 @@ class OpenApiSpec
                 ['name' => 'Onboarding', 'description' => "Demande d'inscription d'un établissement en 5 étapes, sans authentification."],
                 ['name' => 'Corrections', 'description' => 'Correction d\'un dossier via un lien signé à usage unique, sans authentification.'],
                 ['name' => 'Établissements', 'description' => 'Cycles autorisés, plans disponibles et abonnement d\'un établissement actif.'],
+                ['name' => 'Mon établissement', 'description' => "Profil de l'établissement, modifiable par son administrateur. Headers X-Internal-Secret + X-User-Role + X-Tenant-Uuid (posés par la Gateway après vérification du JWT)."],
                 ['name' => 'Interne', 'description' => 'Back-office Super Administrateur et passerelle API (Gateway). Header X-Internal-Secret obligatoire.'],
                 ['name' => 'Santé', 'description' => 'Sonde de disponibilité.'],
             ],
@@ -49,6 +50,7 @@ Documentation du microservice **Établissements** de la plateforme SIGAPEI : onb
 - Les routes **publiques** (accueil, géographie, informations d'un établissement par son code, onboarding, corrections) n'exigent aucune authentification.
 - Chaque établissement a un **code public unique de 4 caractères** (`XXXX`, lettres majuscules et chiffres sans I, L, O, 0, 1), distinct du `slug` (URL) et du `matricule` (identifiant de connexion du dirigeant, jamais exposé publiquement).
 - Les routes **`/interne/*`** exigent le header `X-Internal-Secret` (bouton **Authorize**). Elles ne sont jamais appelées par un client final.
+- Les routes **`/interne/mon-etablissement*`** exigent en plus `X-User-Role: administrateur` et `X-Tenant-Uuid` (uuid de l'établissement de l'utilisateur), posés par la Gateway après vérification du JWT d'api-identite. L'établissement visé n'est jamais lu dans l'URL.
 - Réponse en succès : `{ "success": true, ... }`.
 - Réponse en erreur : `{ "success": false, "error": { "code", "message", "details" }, "path", "timestamp" }`. Les erreurs levées directement par un contrôleur peuvent omettre `path` et `timestamp`.
 
@@ -130,6 +132,15 @@ MD;
         ];
     }
 
+    /** Headers de contexte utilisateur posés par la Gateway pour /interne/mon-etablissement*. */
+    private static function paramsContexteTenant(): array
+    {
+        return [
+            ['name' => 'X-User-Role', 'in' => 'header', 'required' => true, 'description' => 'Doit valoir `administrateur`.', 'schema' => ['type' => 'string', 'example' => 'administrateur']],
+            ['name' => 'X-Tenant-Uuid', 'in' => 'header', 'required' => true, 'description' => "Uuid de l'établissement de l'utilisateur, tiré du JWT par la Gateway.", 'schema' => ['type' => 'string', 'format' => 'uuid']],
+        ];
+    }
+
     /** Parametres de recherche communs aux listes de departements, communes et arrondissements. */
     private static function paramsRecherche(): array
     {
@@ -177,7 +188,7 @@ MD;
                 'get' => [
                     'tags' => ['Accueil'],
                     'summary' => "Page d'accueil publique d'un établissement",
-                    'description' => "Contenu public d'un établissement, retrouvé par son slug. Si l'établissement est suspendu ou archivé, un contenu dégradé est retourné (`degrade: true`) à la place du contenu normal. Mis en cache Redis, invalidé à chaque changement de statut.",
+                    'description' => "Contenu public d'un établissement, retrouvé par son slug. Si l'établissement est suspendu ou archivé, un contenu dégradé est retourné (`degrade: true`) à la place du contenu normal. Mis en cache Redis, invalidé à chaque changement de statut et à chaque modification du profil.",
                     'parameters' => [self::paramSlug()],
                     'responses' => [
                         '200' => self::succes("Contenu de l'établissement (normal ou dégradé)", [
@@ -308,7 +319,7 @@ MD;
                 'post' => [
                     'tags' => ['Onboarding'],
                     'summary' => 'Téléverse un document (étape 4)',
-                    'description' => "Envoie un fichier vers le stockage objet (S3/MinIO). Seule la référence (chemin, type MIME, taille) est écrite en base. Taille maximale : 10 Mo. Formats attendus : PDF, JPG, PNG (SVG accepté pour le logo).",
+                    'description' => "Envoie un fichier vers le stockage objet (S3/MinIO). Seule la référence (chemin, type MIME, taille) est écrite en base. Documents `autorisation` et `piece_identite` : 10 Mo maximum, formats PDF, JPG, PNG.\n\n**Logo** : jpg, png ou webp, 2 Mo maximum, SVG refusé. Une demande n'a qu'un seul logo : un nouvel envoi remplace l'ancien. Le logo est **obligatoire** pour pouvoir soumettre la demande.\n\nUn document n'est accepté que pour un brouillon ou un dossier en `correction_demandee` ; après validation, le logo se change via `POST /interne/mon-etablissement/logo`.",
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande (brouillon).')],
                     'requestBody' => [
                         'required' => true,
@@ -321,7 +332,7 @@ MD;
                                         'type' => [
                                             'type' => 'string',
                                             'enum' => ['autorisation', 'piece_identite', 'logo'],
-                                            'description' => "`autorisation` : fiche d'autorisation d'enseignement délivrée par l'État. `piece_identite` : pièce d'identité du fondateur/dirigeant. `logo` : facultatif à la soumission.",
+                                            'description' => "`autorisation` : fiche d'autorisation d'enseignement délivrée par l'État. `piece_identite` : pièce d'identité du fondateur/dirigeant. `logo` : obligatoire pour soumettre.",
                                         ],
                                         'fichier' => ['type' => 'string', 'format' => 'binary'],
                                     ],
@@ -343,7 +354,7 @@ MD;
                 'post' => [
                     'tags' => ['Onboarding'],
                     'summary' => 'Soumet la demande finalisée (étape 5)',
-                    'description' => "La localisation doit être complète : le pays est obligatoire, puis chaque niveau (département, commune, arrondissement) l'est tant que le référentiel en propose pour le niveau choisi ; l'adresse est obligatoire. Sinon `422` avec le détail par champ. Seul un brouillon peut être soumis (`409` sinon). Passe la demande au statut `soumise`, horodate la soumission et publie l'événement `demande.soumise` (notifications WhatsApp + e-mail à l'établissement, au dirigeant et au Super Administrateur, envoyées par le microservice Communication).\n\nLe jeton CAPTCHA est vérifié côté serveur avant tout traitement.",
+                    'description' => "Le **logo est obligatoire** : sans document de type `logo`, `422` (champ `documents.logo`). La localisation doit être complète : le pays est obligatoire, puis chaque niveau (département, commune, arrondissement) l'est tant que le référentiel en propose pour le niveau choisi ; l'adresse est obligatoire. Sinon `422` avec le détail par champ. Seul un brouillon peut être soumis (`409` sinon). Passe la demande au statut `soumise`, horodate la soumission et publie l'événement `demande.soumise` (notifications WhatsApp + e-mail à l'établissement, au dirigeant et au Super Administrateur, envoyées par le microservice Communication).\n\nLe jeton CAPTCHA est vérifié côté serveur avant tout traitement.",
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
                     'requestBody' => [
                         'required' => true,
@@ -450,7 +461,7 @@ MD;
                 'get' => [
                     'tags' => ['Établissements'],
                     'summary' => "Informations publiques d'un établissement par son code",
-                    'description' => "Retrouve un établissement à partir de son **code public à 4 caractères** (`XXXX`), sans authentification. La casse n'a pas d'importance (`ab3k` = `AB3K`).\n\nNe contient que des informations déjà publiques : jamais le matricule, ni les coordonnées GPS, ni les identifiants internes. Un établissement suspendu ou archivé retourne un contenu dégradé (`degrade: true`). Mis en cache Redis, invalidé à chaque changement de statut.\n\nUn code qui n'a pas exactement 4 caractères alphanumériques répond directement `404`.",
+                    'description' => "Retrouve un établissement à partir de son **code public à 4 caractères** (`XXXX`), sans authentification. La casse n'a pas d'importance (`ab3k` = `AB3K`).\n\nNe contient que des informations déjà publiques : jamais le matricule, ni les coordonnées GPS, ni les identifiants internes. Un établissement suspendu ou archivé retourne un contenu dégradé (`degrade: true`). Mis en cache Redis, invalidé à chaque changement de statut et à chaque modification du profil.\n\nUn code qui n'a pas exactement 4 caractères alphanumériques répond directement `404`.",
                     'parameters' => [[
                         'name' => 'code',
                         'in' => 'path',
@@ -476,7 +487,7 @@ MD;
                 'get' => [
                     'tags' => ['Établissements'],
                     'summary' => "Cycles que l'établissement peut activer",
-                    'description' => "Dérivés des types choisis à l'étape 1 : `primaire` → maternelle + primaire ; `secondaire` → secondaire ; `universite` → universitaire. Consommé par le microservice Scolarité.",
+                    'description' => "Dérivés des types de l'établissement : `primaire` → maternelle + primaire ; `secondaire` → secondaire ; `universite` → universitaire. Quand l'administrateur retire un type, ses cycles passent à `inactif` (sans suppression). Consommé par le microservice Scolarité.",
                     'parameters' => [self::paramSlug()],
                     'responses' => [
                         '200' => self::succes('Cycles autorisés', [
@@ -519,6 +530,72 @@ MD;
                             'statut' => ['type' => 'string', 'enum' => ['essai', 'actif'], 'example' => 'essai'],
                         ]),
                         '404' => self::reponseRef('RessourceIntrouvable'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // ---------------- Mon établissement (administrateur de l'établissement) ----------------
+            '/interne/mon-etablissement' => [
+                'get' => [
+                    'tags' => ['Mon établissement'],
+                    'summary' => "Profil de l'établissement de l'administrateur connecté",
+                    'description' => "Inclut le matricule (jamais exposé publiquement) et la liste `champsModifiables`. L'établissement est déduit du header `X-Tenant-Uuid`, jamais de l'URL.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'responses' => [
+                        '200' => self::succes('Profil', ['etablissement' => self::ref('ProfilEtablissement')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+                'patch' => [
+                    'tags' => ['Mon établissement'],
+                    'summary' => 'Modifie partiellement le profil',
+                    'description' => "Seules les clés envoyées sont modifiées. **Modifiables** : `types`, `adresse_complete`, `localisation` (hiérarchie complète, remplace l'ancienne, validée comme à l'onboarding), `geolocalisation`. Le logo se change via `POST /interne/mon-etablissement/logo`.\n\nTout autre champ (nom, slug, code, matricule, statut, email, téléphones, année d'ouverture, dirigeant...) est refusé : `422` listant les champs refusés dans `details`, rien n'est modifié. Un corps vide répond aussi `422`.\n\n`types` : au moins un. Un type ajouté crée ou réactive ses cycles autorisés ; un type retiré passe ses cycles à `inactif` (sans suppression). Les abonnements ne sont pas modifiés. Établissement non `actif` : `409`. Les caches publics sont invalidés.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json(self::ref('ModificationEtablissement'), [
+                            'adresse_complete' => 'Rue 45, face à la pharmacie',
+                            'geolocalisation' => ['latitude' => 6.3702930, 'longitude' => 2.3912360],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Profil mis à jour', ['etablissement' => self::ref('ProfilEtablissement')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '409' => self::reponseRef('ConflitStatut'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/logo' => [
+                'post' => [
+                    'tags' => ['Mon établissement'],
+                    'summary' => 'Remplace le logo',
+                    'description' => "Formats jpg, png, webp ; 2 Mo maximum ; SVG refusé. L'ancien logo (fichier et ligne) est supprimé et `logoDocumentId` est mis à jour. Établissement non `actif` : `409`. Les caches publics sont invalidés.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => [
+                            'multipart/form-data' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'required' => ['fichier'],
+                                    'properties' => ['fichier' => ['type' => 'string', 'format' => 'binary']],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Logo remplacé', ['logoDocumentId' => ['type' => 'string', 'format' => 'uuid']]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '409' => self::reponseRef('ConflitStatut'),
                         '422' => self::reponseRef('DonneesInvalides'),
                     ],
                 ],
@@ -580,7 +657,7 @@ MD;
                 'post' => [
                     'tags' => ['Interne'],
                     'summary' => 'Valide définitivement la demande',
-                    'description' => "La localisation doit être complète (même règle qu'à la soumission), sinon `422` : demander alors une correction. En **une seule transaction** : crée l'établissement (statut `actif`) avec son code public, son slug et son matricule, enregistre ses cycles autorisés et passe la demande à `validee`. Publie ensuite `etablissement.valide`, que le microservice Identité consomme pour créer le compte administrateur du dirigeant.\n\nSlug : minuscules, sans accents, suffixe numérique en cas de collision (`jean-marie-2`). Matricule : mot significatif le plus court du nom + code à 4 chiffres (ex. `kisito8945`).",
+                    'description' => "La localisation doit être complète (même règle qu'à la soumission), sinon `422` : demander alors une correction. En **une seule transaction** : crée l'établissement (statut `actif`) avec son code public, son slug et son matricule, rattache le logo de la demande (`logoDocumentId`), enregistre ses cycles autorisés et passe la demande à `validee`. Publie ensuite `etablissement.valide`, que le microservice Identité consomme pour créer le compte administrateur du dirigeant.\n\nSlug : minuscules, sans accents, suffixe numérique en cas de collision (`jean-marie-2`). Matricule : mot significatif le plus court du nom + code à 4 chiffres (ex. `kisito8945`).",
                     'security' => $secret,
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
                     'responses' => [
@@ -601,7 +678,7 @@ MD;
                 'post' => [
                     'tags' => ['Interne'],
                     'summary' => 'Suspend un établissement',
-                    'description' => "Effet immédiat : le statut passe à `suspendu`, les caches Redis du slug sont invalidés et `etablissement.suspendu` est publié. La page d'accueil publique affiche alors un contenu dégradé.",
+                    'description' => "Effet immédiat : le statut passe à `suspendu`, les caches Redis du slug sont invalidés et `etablissement.suspendu` est publié. La page d'accueil publique affiche alors un contenu dégradé. Tant qu'il est suspendu, son administrateur ne peut plus modifier le profil (`409`).",
                     'security' => $secret,
                     'parameters' => [self::paramUuid('uuid', "Uuid de l'établissement.")],
                     'responses' => [
@@ -717,8 +794,15 @@ MD;
                         'error' => ['code' => 'SECRET_INTERNE_INVALIDE', 'message' => 'Acces reserve aux services internes de la plateforme.'],
                     ]),
                 ],
+                'AccesAdministrateurRequis' => [
+                    'description' => "Rôle `administrateur` absent, ou header `X-Tenant-Uuid` absent ou invalide.",
+                    'content' => self::json(self::ref('Erreur'), [
+                        'success' => false,
+                        'error' => ['code' => 'ROLE_ADMINISTRATEUR_REQUIS', 'message' => "Action réservée à l'administrateur de l'établissement."],
+                    ]),
+                ],
                 'ConflitStatut' => [
-                    'description' => "Action impossible dans l'état actuel de la demande (ex. demande déjà soumise ou déjà validée).",
+                    'description' => "Action impossible dans l'état actuel de la demande ou de l'établissement (ex. demande déjà soumise ou déjà validée, établissement non actif).",
                     'content' => self::json(self::ref('Erreur'), [
                         'success' => false,
                         'error' => ['code' => 'CONFLIT', 'message' => 'Cette demande a déjà été soumise.', 'details' => null],
@@ -913,6 +997,83 @@ MD;
                         'statut' => ['type' => 'string', 'enum' => ['actif', 'suspendu', 'archive']],
                         'degrade' => ['type' => 'boolean'],
                         'message' => ['type' => 'string', 'description' => 'Présent uniquement en contenu dégradé.'],
+                    ],
+                ],
+                'ModificationEtablissement' => [
+                    'type' => 'object',
+                    'description' => 'Tous les champs sont facultatifs ; au moins un est requis. Toute autre clé est refusée (`422`).',
+                    'properties' => [
+                        'types' => [
+                            'type' => 'array',
+                            'minItems' => 1,
+                            'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']],
+                            'description' => 'Remplace la liste des types. Un type retiré passe ses cycles à `inactif`.',
+                        ],
+                        'adresse_complete' => ['type' => 'string', 'minLength' => 5, 'maxLength' => 1000],
+                        'localisation' => [
+                            'type' => 'object',
+                            'required' => ['pays_uuid'],
+                            'description' => "Hiérarchie complète : remplace l'ancienne. Un niveau absent est effacé ; la règle de complétude de l'onboarding s'applique.",
+                            'properties' => [
+                                'pays_uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                'departement_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true],
+                                'commune_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true],
+                                'arrondissement_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true],
+                            ],
+                        ],
+                        'geolocalisation' => [
+                            'type' => 'object',
+                            'required' => ['latitude', 'longitude'],
+                            'properties' => [
+                                'latitude' => ['type' => 'number', 'minimum' => -90, 'maximum' => 90],
+                                'longitude' => ['type' => 'number', 'minimum' => -180, 'maximum' => 180],
+                            ],
+                        ],
+                    ],
+                ],
+                'ProfilEtablissement' => [
+                    'type' => 'object',
+                    'description' => "Profil vu par l'administrateur de l'établissement (matricule inclus). `nom`, `contact`, `anneeOuverture`, `code`, `slug` et `matricule` sont en lecture seule.",
+                    'properties' => [
+                        'uuid' => ['type' => 'string', 'format' => 'uuid'],
+                        'code' => ['type' => 'string', 'example' => 'K7QP'],
+                        'slug' => ['type' => 'string', 'example' => 'complexe-scolaire-kisito'],
+                        'matricule' => ['type' => 'string', 'example' => 'kisito8945'],
+                        'nom' => ['type' => 'string'],
+                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']]],
+                        'anneeOuverture' => ['type' => 'integer', 'example' => 2015],
+                        'logoDocumentId' => ['type' => 'string', 'nullable' => true],
+                        'adresseComplete' => ['type' => 'string'],
+                        'localisation' => [
+                            'type' => 'object',
+                            'description' => 'Chaque niveau : { uuid, nom } (pays : + code), ou null.',
+                            'properties' => [
+                                'pays' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'code' => ['type' => 'string', 'example' => 'BJ'], 'nom' => ['type' => 'string']]],
+                                'departement' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                                'commune' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                                'arrondissement' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                            ],
+                        ],
+                        'geolocalisation' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'latitude' => ['type' => 'number', 'nullable' => true],
+                                'longitude' => ['type' => 'number', 'nullable' => true],
+                            ],
+                        ],
+                        'contact' => [
+                            'type' => 'object',
+                            'description' => 'Lecture seule.',
+                            'properties' => [
+                                'email' => ['type' => 'string'],
+                                'telephone1' => ['type' => 'string'],
+                                'telephone2' => ['type' => 'string', 'nullable' => true],
+                            ],
+                        ],
+                        'cyclesAutorises' => ['type' => 'array', 'items' => self::ref('CycleAutorise')],
+                        'statut' => ['type' => 'string', 'enum' => ['actif', 'suspendu', 'archive']],
+                        'dateValidation' => ['type' => 'string', 'format' => 'date-time'],
+                        'champsModifiables' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['types', 'adresse_complete', 'localisation', 'geolocalisation', 'logo']],
                     ],
                 ],
                 'AccueilPlateforme' => [

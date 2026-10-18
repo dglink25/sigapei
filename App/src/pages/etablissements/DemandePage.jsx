@@ -22,12 +22,15 @@ const TITLES = {
   1: ["Informations sur l'établissement", 'Présentez votre établissement.'],
   2: ['Localisation', 'Où se situe votre établissement ?'],
   3: ['Dirigeant', 'Qui dirige l’établissement ?'],
-  4: ['Documents', "Joignez les pièces justificatives (obligatoires : autorisation et pièce d'identité)."],
+  4: ['Documents', "Joignez les pièces justificatives (toutes obligatoires : autorisation, pièce d'identité et logo)."],
   5: ['Confirmation', 'Vérifiez vos informations avant de soumettre.'],
 }
 
 /** Section de la demande enregistree (brouillon) a la fin de chaque etape. */
 const STEP_SECTIONS = { 1: ['etablissement'], 2: ['localisation'], 3: ['dirigeant'], 4: [], 5: [] }
+
+/** Documents exiges avant la soumission (le serveur refuse aussi la soumission sans logo : 422 `documents.logo`). */
+const CHAMPS_DOCUMENTS = STEP_CHAMPS[4]
 
 const isEmptyDraft = (form, uuid) => !uuid && JSON.stringify(form) === JSON.stringify(EMPTY_FORM)
 
@@ -98,6 +101,14 @@ export default function DemandePage() {
 
   const scrollToError = () => setTimeout(() => document.querySelector('.has-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
 
+  /** Revient a l'etape 4 en signalant les documents manquants (brouillon restaure, ou refus du serveur). */
+  function retourDocuments(errs) {
+    setErrors(errs)
+    setStep(4)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollToError()
+  }
+
   /** POST /demandes : cree le brouillon (sans uuid) ou le fusionne (avec uuid). */
   async function enregistrer(sections, geo) {
     const payload = draftPayload(form, { uuid, sections, geo })
@@ -133,6 +144,16 @@ export default function DemandePage() {
       notify.warning('Formulaire incomplet', 'Veuillez corriger les champs signalés avant de continuer.')
       return scrollToError()
     }
+
+    // Soumission : un brouillon restaure peut ne pas avoir de logo -> retour a l'etape des documents.
+    if (step === 5) {
+      const manquants = validateChamps(CHAMPS_DOCUMENTS, form, docs)
+      if (Object.keys(manquants).length) {
+        notify.warning('Documents manquants', "Joignez tous les documents obligatoires, dont le logo, avant de soumettre.")
+        return retourDocuments(manquants)
+      }
+    }
+
     setErrors({})
     setBusy(true)
     try {
@@ -153,7 +174,14 @@ export default function DemandePage() {
         notify.success('Demande soumise', 'Un message de confirmation vous est envoyé par WhatsApp et par e-mail.')
       }
     } catch (err) {
-      notify.fromError(err)
+      // Le serveur refuse la soumission sans logo : 422, details.error.details['documents.logo']
+      const logoRefuse = err?.details?.error?.details?.['documents.logo']
+      if (logoRefuse) {
+        notify.warning('Logo manquant', "Le logo de l'établissement est obligatoire pour soumettre la demande.")
+        retourDocuments({ [DOC_TYPES.logo.champ]: Array.isArray(logoRefuse) ? logoRefuse[0] : String(logoRefuse) })
+      } else {
+        notify.fromError(err)
+      }
     } finally {
       setBusy(false)
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\DocsController;
 use App\Http\Controllers\EtablissementController;
 use App\Http\Controllers\GeoController;
 use App\Http\Controllers\InterneController;
+use App\Http\Controllers\MonEtablissementController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
@@ -72,5 +73,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/etablissements/{uuid}/suspendre', [InterneController::class, 'suspendre']);
         Route::post('/etablissements/{uuid}/reactiver', [InterneController::class, 'reactiver']);
         Route::get('/resolution-slug/{slug}', [InterneController::class, 'resolutionSlug']);
+
+        // --- Profil de l'etablissement, modifie par SON administrateur (contexte pose par la Gateway) ---
+        Route::middleware('contexte.tenant')->prefix('mon-etablissement')->group(function () {
+            Route::get('/', [MonEtablissementController::class, 'afficher']);
+            Route::patch('/', [MonEtablissementController::class, 'modifier']);
+            Route::post('/logo', [MonEtablissementController::class, 'remplacerLogo']);
+        });
     });
 });

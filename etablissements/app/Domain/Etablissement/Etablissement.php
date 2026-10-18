@@ -60,4 +60,10 @@ class Etablissement extends Model{
     {
         return $this->hasMany(\App\Domain\Abonnement\EtablissementModule::class);
     }
+
+    /** Demande d'origine : porte les documents (dont le logo) et les infos du dirigeant. */
+    public function demande()
+    {
+        return $this->hasOne(\App\Domain\Onboarding\DemandeEtablissement::class, 'etablissement_id');
+    }
 }
