@@ -57,7 +57,7 @@ class PersonnelController extends Controller
         return $this->ok($personnel->load(['grade', 'contrats.grade', 'affectations', 'conges', 'rolesRh']));
     }
 
-    /** GET /v1/personnel/{uuid}/affectations — affectations classes/matières d'un enseignant. */
+    /** GET /v1/personnel/{uuid}/affectations - affectations classes/matières d'un enseignant. */
     public function affectations(Request $request, Personnel $personnel): JsonResponse
     {
         $request->validate([
@@ -145,7 +145,7 @@ class PersonnelController extends Controller
     }
 
     /**
-     * POST /v1/personnel/{uuid}/statut — change le statut (départ, suspension, retraite).
+     * POST /v1/personnel/{uuid}/statut - change le statut (départ, suspension, retraite).
      * Remplace toute suppression physique (règle transverse plateforme).
      */
     public function changerStatut(Request $request, Personnel $personnel): JsonResponse

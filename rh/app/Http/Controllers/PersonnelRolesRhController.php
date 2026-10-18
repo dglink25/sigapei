@@ -23,7 +23,7 @@ class PersonnelRolesRhController extends Controller
         private readonly RabbitMqPublisher $publisher,
     ) {}
 
-    /** GET /v1/personnel/{personnel}/roles-rh — rôles RH d'un membre. */
+    /** GET /v1/personnel/{personnel}/roles-rh - rôles RH d'un membre. */
     public function index(Personnel $personnel): JsonResponse
     {
         return $this->ok(
@@ -31,7 +31,7 @@ class PersonnelRolesRhController extends Controller
         );
     }
 
-    /** POST /v1/personnel/{personnel}/roles-rh — attribution d'un rôle RH. */
+    /** POST /v1/personnel/{personnel}/roles-rh - attribution d'un rôle RH. */
     public function attribuer(Request $request, Personnel $personnel): JsonResponse
     {
         $d = $request->validate([
@@ -67,7 +67,7 @@ class PersonnelRolesRhController extends Controller
         return $this->ok($attribution->load('roleRh'), 'Rôle RH attribué.', 201);
     }
 
-    /** POST /v1/personnel/{personnel}/roles-rh/{roleRh}/retirer — retrait d'un rôle RH. */
+    /** POST /v1/personnel/{personnel}/roles-rh/{roleRh}/retirer - retrait d'un rôle RH. */
     public function retirer(Personnel $personnel, RoleRh $roleRh): JsonResponse
     {
         $supprime = PersonnelRoleRh::where('personnel_id', $personnel->id)

@@ -106,7 +106,7 @@ class ContratsController extends Controller
     }
 
     /**
-     * POST /v1/contrats/{uuid}/cloturer — met fin au contrat (jamais de suppression).
+     * POST /v1/contrats/{uuid}/cloturer - met fin au contrat (jamais de suppression).
      */
     public function cloturer(Request $request, Contrat $contrat): JsonResponse
     {

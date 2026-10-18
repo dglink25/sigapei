@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class DemanderChangementEmailDto {
-  @ApiProperty({ example: 'nouveau@exemple.com', description: 'Nouvel e-mail souhaité — un code OTP sera envoyé à cette adresse' })
+  @ApiProperty({ example: 'nouveau@exemple.com', description: 'Nouvel e-mail souhaité - un code OTP sera envoyé à cette adresse' })
   @IsEmail()
   @MaxLength(255)
   nouvelEmail: string;
@@ -22,7 +22,7 @@ export class ConfirmerChangementEmailDto {
 }
 
 export class DemanderChangementTelephoneDto {
-  @ApiProperty({ example: '+22997000000', description: 'Nouveau numéro E.164 — un OTP sera envoyé par SMS et WhatsApp' })
+  @ApiProperty({ example: '+22997000000', description: 'Nouveau numéro E.164 - un OTP sera envoyé par SMS et WhatsApp' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(20)

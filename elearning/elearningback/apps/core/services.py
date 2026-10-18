@@ -66,7 +66,7 @@ class DroitsService:
         except (urllib.error.URLError, OSError, ValueError) as erreur:
             logger.error(
                 'RH (affectations) injoignable ou réponse invalide : %s '
-                '— refus (fail closed). enseignant=%s tenant=%s',
+                '- refus (fail closed). enseignant=%s tenant=%s',
                 erreur, enseignant_id, tenant_id,
             )
             return False

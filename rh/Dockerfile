@@ -1,5 +1,5 @@
 # ============================================================
-# api-rh — image de production en deux étapes
+# api-rh - image de production en deux étapes
 # PHP 8.4, extensions pdo_pgsql, redis, amqp, bcmath, intl.
 # Serveur : nginx + php-fpm (supervisord). Port interne 4009 (non publié).
 # La même image sert l'API, le worker de file et le planificateur.

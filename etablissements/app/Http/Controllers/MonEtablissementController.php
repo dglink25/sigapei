@@ -8,20 +8,17 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 /** Profil de l'etablissement de l'administrateur connecte (contexte fourni par ContexteTenant). */
-class MonEtablissementController extends Controller
-{
+class MonEtablissementController extends Controller {
     public function __construct(private EtablissementProfilService $profil) {}
 
-    public function afficher(Request $request): JsonResponse
-    {
+    public function afficher(Request $request): JsonResponse    {
         return response()->json([
             'success' => true,
             'etablissement' => $this->profil->representer($request->attributes->get('etablissement')),
         ]);
     }
 
-    public function modifier(Request $request): JsonResponse
-    {
+    public function modifier(Request $request): JsonResponse    {
         $etablissement = $request->attributes->get('etablissement');
 
         $this->profil->exigerActif($etablissement);

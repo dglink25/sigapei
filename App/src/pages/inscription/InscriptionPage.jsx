@@ -135,8 +135,8 @@ export default function InscriptionPage() {
                     </td>
                     <td>{c.classe_visee?.nom ?? c.classe_nom ?? c.classe_visee_id ?? 'Non assignée'}</td>
                     <td>
-                      <div>{c.parent_nom ?? c.nom_parent ?? '—'}</div>
-                      <div className="text-xs text-muted">{c.parent_telephone ?? c.telephone_parent ?? '—'}</div>
+                      <div>{c.parent_nom ?? c.nom_parent ?? '-'}</div>
+                      <div className="text-xs text-muted">{c.parent_telephone ?? c.telephone_parent ?? '-'}</div>
                     </td>
                     <td>
                       <span className={`status-pill status-pill--${c.statut}`}>

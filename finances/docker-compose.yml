@@ -1,5 +1,5 @@
 # ============================================================
-# api-finances — orchestration locale
+# api-finances - orchestration locale
 # PostgreSQL (Neon), Redis et RabbitMQ partagés : réseau externe `sigapei`.
 # Pré-requis : docker network create sigapei
 # ============================================================

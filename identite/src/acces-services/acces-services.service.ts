@@ -136,7 +136,7 @@ export class AccesServicesService {
       const motif = !etabActif ? 'ETABLISSEMENT_INACTIF' : !l.assignationActive ? 'SERVICE_BLOQUE' : !l.droit ? 'ACCES_NON_ACCORDE' : undefined;
       return { uuid: l.uuid, code: l.code, nom: l.nom, description: l.description, accessible: motif === undefined, ...(motif ? { motif } : {}) };
     });
-    return { etablissement: { uuid: etab.uuid, nom: etab.nom, slug: etab.slug, statut: etab.statut }, estAdmin, services };
+    return { etablissement: { uuid: etab.uuid, nom: etab.nom, slug: etab.slug, statut: etab.statut, logoDocumentId: etab.logoDocumentId ?? null }, estAdmin, services };
   }
 
   /** Services assignes a mon etablissement (actifs ou bloques). */

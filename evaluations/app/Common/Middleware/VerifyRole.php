@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Vérification des rôles — guide suprême §01 Tableau 1 + tasks §1.5.
+ * Vérification des rôles - guide suprême §01 Tableau 1 + tasks §1.5.
  * Toujours posé APRÈS VerifyTenantAndJwt.
  *
  * Rôles plateforme : super_admin | administrateur | personnel | enseignant | apprenant | parent
@@ -24,7 +24,7 @@ class VerifyRole
                 'Vous devez être connecté pour effectuer cette action.',
                 'NON_AUTHENTIFIE',
                 401,
-                'current_user absent du container — VerifyTenantAndJwt non appliqué en amont'
+                'current_user absent du container - VerifyTenantAndJwt non appliqué en amont'
             );
         }
 

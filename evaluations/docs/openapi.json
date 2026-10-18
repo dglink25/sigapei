@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "SIGAPEI — API Évaluations",
+    "title": "SIGAPEI - API Évaluations",
     "version": "1.0.0",
     "description": "Notes, barèmes, coefficients, moyennes, classements, bulletins et contestations.\n\n**Accès** : uniquement via la Gateway, qui ajoute les en-têtes de contexte et le secret interne. Un appel direct sans `X-Internal-Secret` est refusé (401).\n\nRéponses : `{success, message, data}` ; erreurs : `{success: false, message, error: {code, details?}}`. Montants et notes en **chaînes décimales** (\"14.50\"), jamais en nombres flottants. Identifiants : uuid uniquement."
   },

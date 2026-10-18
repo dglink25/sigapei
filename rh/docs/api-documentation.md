@@ -1,4 +1,4 @@
-# API RH — documentation
+# API RH - documentation
 
 Microservice **Ressources Humaines** de la plateforme SIGAPEI.
 
@@ -39,7 +39,7 @@ reçoivent le tenant via le paramètre `tenant_id`.
 // POST /roles-rh
 { "nom": "Chef de département", "description": "…", "fonctions": ["dossiers", "conges"] }
 
-// PATCH /roles-rh/{uuid}/modules   — remplace l'ensemble des fonctions accordées
+// PATCH /roles-rh/{uuid}/modules   - remplace l'ensemble des fonctions accordées
 { "fonctions": ["affectations", "charges_horaires"] }
 
 // POST /personnel/{uuid}/roles-rh

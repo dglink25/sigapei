@@ -6,7 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * CDC §6.1 : séparation des tâches — initiateur ≠ validateur, activée par défaut.
+ * CDC §6.1 : séparation des tâches - initiateur ≠ validateur, activée par défaut.
  */
 class DecaissementController extends Controller
 {
@@ -22,7 +22,7 @@ class DecaissementController extends Controller
         return response()->json(['message' => 'Non implémenté'], 501);
     }
 
-    /** PUT /v1/decaissements/{uuid}/rejeter — motif obligatoire */
+    /** PUT /v1/decaissements/{uuid}/rejeter - motif obligatoire */
     public function rejeter(Request $request, string $uuid): JsonResponse
     {
         return response()->json(['message' => 'Non implémenté'], 501);

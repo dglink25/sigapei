@@ -1,5 +1,5 @@
 # ============================================================
-# api-rh — orchestration
+# api-rh - orchestration
 # PostgreSQL (Neon), Redis et RabbitMQ partagés : réseau externe `sigapei`.
 # Pré-requis : docker network create sigapei
 # Processus : API HTTP, worker de file, planificateur.

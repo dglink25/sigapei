@@ -7,7 +7,6 @@ import { ENV } from '../../config/commun/env'
 import { roleCodeOf } from '../../config/identite/routes'
 import { lienEtablissement } from '../../lib/etablissements/subdomain'
 import { portailService } from '../../services/identite/portail.service'
-import { accueilService } from '../../services/etablissements/etablissement.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import './PortailLayout.css'
 
@@ -34,17 +33,15 @@ export default function PortailLayout() {
   useEffect(() => {
     let annule = false
     portailService.lire()
-      .then((r) => { if (!annule) setEtablissementNom(r?.etablissement?.nom ?? null) })
+      .then((r) => {
+        if (!annule) {
+          setEtablissementNom(r?.etablissement?.nom ?? null)
+          setLogoUrl(r?.etablissement?.logoUrl ?? null)
+        }
+      })
       .catch(() => {})
     return () => { annule = true }
   }, [])
-
-  useEffect(() => {
-    if (!slug) return
-    let annule = false
-    accueilService.lire(slug).then((r) => { if (!annule) setLogoUrl(r?.logoUrl ?? null) }).catch(() => {})
-    return () => { annule = true }
-  }, [slug])
 
   const nom = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
   const initiales = nom.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()

@@ -4,7 +4,7 @@ import { InternalSecretGuard } from '../common/guards/internal-secret.guard';
 import { SansContexteUtilisateur } from '../common/decorators/public.decorator';
 
 /**
- * Endpoints internes — consommes via X-Internal-Secret.
+ * Endpoints internes - consommes via X-Internal-Secret.
  * CDC section 17.
  *
  * /interne/permission-active/{apprenant_uuid} : consomme par Vie scolaire

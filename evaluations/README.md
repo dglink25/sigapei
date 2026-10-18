@@ -1,11 +1,11 @@
-# api-evaluations — Microservice Évaluations — SIGAPEI
+# api-evaluations - Microservice Évaluations - SIGAPEI
 
 Notes, barèmes, coefficients, moyennes, classements, bulletins (calcul à la volée, instantané figé à la clôture), contestations.
 Compositions en ligne surveillées : phase 2, bloquée par le contrat d'interface E-learning (routes non exposées).
 
 - **Port interne** : `4006` (non publié, accès via la Gateway sur le réseau `sigapei`)
-- **Préfixe API** : `/v1/...` — **Santé** : `GET /health` (et `/sante`)
-- **Documentation** : [docs/api-documentation.md](docs/api-documentation.md) — contrat OpenAPI 3 : [docs/openapi.json](docs/openapi.json), servi sur `GET /docs`
+- **Préfixe API** : `/v1/...` - **Santé** : `GET /health` (et `/sante`)
+- **Documentation** : [docs/api-documentation.md](docs/api-documentation.md) - contrat OpenAPI 3 : [docs/openapi.json](docs/openapi.json), servi sur `GET /docs`
 - **Stack** : Laravel 12, PHP 8.4, PostgreSQL schéma `evaluations`, Redis DB `4`, RabbitMQ
 - **Processus** (même image) : API (nginx + php-fpm), worker de file (clôtures), planificateur (escalades)
 
@@ -62,7 +62,7 @@ Paramétrables par établissement **et** par cycle (`PUT /v1/parametres-notation
 | `absence_non_justifiee` | **`zero`** · `exclure` (absence justifiée et dispense : toujours exclues) |
 | `regle_rattrapage` | **`meilleure`** · `remplacer` · `moyenne` |
 | `classement_actif` | **oui** · non |
-| `echelle_appreciation` | tranches `[min, max[` contiguës couvrant exactement le barème (la dernière inclut max) — validé à l'enregistrement |
+| `echelle_appreciation` | tranches `[min, max[` contiguës couvrant exactement le barème (la dernière inclut max) - validé à l'enregistrement |
 
 - Une épreuve notée sur 10 ou 40 (`note_sur`) est ramenée sur le barème de la grille.
 - **Rang** : calculé sur la moyenne affichée ; ex æquo = même rang, le suivant est décalé (1, 2, 2, 4).
@@ -94,20 +94,20 @@ Paramétrables par établissement **et** par cycle (`PUT /v1/parametres-notation
 | `POST` | `/modeles-bulletin` | administrateur |
 | `GET` / `POST` | `/matieres` · `PUT /matieres/{uuid}` · `PUT /matieres/{uuid}/coefficients` | lecture : admin, enseignant · écriture : admin |
 | `GET` / `POST` | `/periodes` | lecture : tous · création : admin |
-| `POST` | `/periodes/{uuid}/cloturer` | administrateur — **202**, archivage en tâche de fond |
+| `POST` | `/periodes/{uuid}/cloturer` | administrateur - **202**, archivage en tâche de fond |
 | `GET` / `POST` | `/evaluations` | admin, enseignant affecté |
 | `POST` | `/evaluations/{uuid}/verrouiller` | enseignant de l'évaluation |
-| `POST` | `/notes` | enseignant affecté — lot de 1 à 200 notes, `version` obligatoire pour modifier |
+| `POST` | `/notes` | enseignant affecté - lot de 1 à 200 notes, `version` obligatoire pour modifier |
 | `GET` | `/notes/classe/{uuid}?periode_uuid=&matiere_uuid=` | admin, enseignant affecté |
-| `PUT` | `/notes/{uuid}/corriger` | administrateur — motif ≥ 10 car. ; après clôture : nouvelle version des bulletins concernés |
+| `PUT` | `/notes/{uuid}/corriger` | administrateur - motif ≥ 10 car. ; après clôture : nouvelle version des bulletins concernés |
 | `GET` | `/bulletins/apprenant/{uuid}?periode_uuid=` | admin, enseignant de la classe, l'apprenant, ses parents |
-| `GET` | `/bulletins/apprenant/{uuid}/pdf?periode_uuid=` | idem — voir §7 |
+| `GET` | `/bulletins/apprenant/{uuid}/pdf?periode_uuid=` | idem - voir §7 |
 | `GET` | `/classements/classe/{uuid}?periode_uuid=` | admin, enseignant de la classe |
 | `GET` / `POST` | `/contestations` · `PUT /contestations/{uuid}/traiter` | ouverture : apprenant, parent · traitement : enseignant de l'évaluation, admin |
 | `GET` | `/interne/eligibilite-document/{apprenant_uuid}` | `X-Internal-Secret` + `X-Tenant-Id` (Demandes administratives) |
-| `POST` | `/interne/notes-elearning` | `X-Internal-Secret` + `X-Tenant-Id` (E-learning) — report d'une note de devoir/quiz, idempotent, compte directement dans la moyenne |
+| `POST` | `/interne/notes-elearning` | `X-Internal-Secret` + `X-Tenant-Id` (E-learning) - report d'une note de devoir/quiz, idempotent, compte directement dans la moyenne |
 
-Erreurs : `{"success": false, "message": "...", "error": {"code": "...", "details": {...}}}` — 409 pour les conflits métier (période clôturée, note modifiée entre-temps...), 422 pour les données invalides, 503 si un service amont ne répond pas.
+Erreurs : `{"success": false, "message": "...", "error": {"code": "...", "details": {...}}}` - 409 pour les conflits métier (période clôturée, note modifiée entre-temps...), 422 pour les données invalides, 503 si un service amont ne répond pas.
 
 ## 6. Événements RabbitMQ publiés (échange `sigapei.events`, après validation de la transaction)
 
@@ -125,7 +125,7 @@ Tant qu'ils ne sont pas livrés, les actions concernées répondent **503** (fai
 
 | Service | Besoin |
 |---|---|
-| **Scolarité** — `GET /v1/interne/apprenants` | ajouter `utilisateur_uuid` (compte de l'apprenant) et `parents[].parent_uuid` (uuid Identité du parent) |
-| **Scolarité** — `GET /v1/interne/emplois-du-temps` | exposer `enseignant_uuid` et `matiere_uuid` (uuid de la matière d'Évaluations) au lieu de `enseignant_id`/`matiere_id`, accepter le filtre `enseignant_uuid` — source des affectations tant que RH n'existe pas |
+| **Scolarité** - `GET /v1/interne/apprenants` | ajouter `utilisateur_uuid` (compte de l'apprenant) et `parents[].parent_uuid` (uuid Identité du parent) |
+| **Scolarité** - `GET /v1/interne/emplois-du-temps` | exposer `enseignant_uuid` et `matiere_uuid` (uuid de la matière d'Évaluations) au lieu de `enseignant_id`/`matiere_id`, accepter le filtre `enseignant_uuid` - source des affectations tant que RH n'existe pas |
 | **Documents** (transverse) | stockage des PDF et URL signées : la génération PDF des bulletins sera branchée dessus |
 | **E-learning** (Roc) | adapter `EvaluationsClient` à `POST /v1/interne/notes-elearning` (en-têtes, corps, réponse, uuid de matière d'Évaluations) ; contrat des compositions en ligne (phase 2) |

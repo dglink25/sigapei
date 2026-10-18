@@ -1,4 +1,4 @@
-# api-rh — Microservice Ressources Humaines — SIGAPEI
+# api-rh - Microservice Ressources Humaines - SIGAPEI
 
 Personnel, grades, contrats, affectations (matière ↔ classe ↔ enseignant), congés et
 **rôles RH personnalisés**. Source de vérité de la **règle 5** de la plateforme : les
@@ -6,7 +6,7 @@ autres microservices (E-learning, Évaluations, Vie scolaire) vérifient ici qu'
 enseignant est bien affecté avant toute écriture.
 
 - **Port interne** : `4009` (non publié, accès via la Gateway sur le réseau `sigapei`)
-- **Préfixe API** : `/v1/...` — **Santé** : `GET /health` (et `/sante`)
+- **Préfixe API** : `/v1/...` - **Santé** : `GET /health` (et `/sante`)
 - **Stack** : Laravel 12, PHP 8.4, PostgreSQL schéma `rh`, Redis DB `7`, RabbitMQ
 - **Documentation technique complète** : [`docs/documentation-technique.md`](docs/documentation-technique.md)
 

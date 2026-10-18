@@ -24,7 +24,7 @@ class NotesController extends Controller
     ) {}
 
     /**
-     * POST /v1/notes — saisit ou met à jour une ou plusieurs notes d'une évaluation (grille façon tableur).
+     * POST /v1/notes - saisit ou met à jour une ou plusieurs notes d'une évaluation (grille façon tableur).
      * Une note existante ne se modifie qu'avec la `version` lue (pas d'écrasement silencieux).
      */
     public function saisir(Request $request): JsonResponse
@@ -49,7 +49,7 @@ class NotesController extends Controller
         return $this->ok(array_map(fn (Note $n) => $this->presenter($n, $evaluation), $notes), 'Notes enregistrées.');
     }
 
-    /** GET /v1/notes/classe/{uuid}?periode_uuid=&matiere_uuid= — grille des notes d'une classe. */
+    /** GET /v1/notes/classe/{uuid}?periode_uuid=&matiere_uuid= - grille des notes d'une classe. */
     public function parClasse(Request $request, string $classeUuid): JsonResponse
     {
         $d = $request->validate([
@@ -86,7 +86,7 @@ class NotesController extends Controller
         ]);
     }
 
-    /** PUT /v1/notes/{uuid}/corriger — administrateur, motif obligatoire (CDC §9). */
+    /** PUT /v1/notes/{uuid}/corriger - administrateur, motif obligatoire (CDC §9). */
     public function corriger(Request $request, Note $note): JsonResponse
     {
         $d = $request->validate([

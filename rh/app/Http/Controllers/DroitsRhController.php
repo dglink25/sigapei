@@ -16,7 +16,7 @@ class DroitsRhController extends Controller
         private readonly DroitsRh $droits,
     ) {}
 
-    /** GET /v1/rh/mes-fonctions — fonctions RH accordées à l'utilisateur courant. */
+    /** GET /v1/rh/mes-fonctions - fonctions RH accordées à l'utilisateur courant. */
     public function mesFonctions(): JsonResponse
     {
         $fonctions = $this->droits->fonctionsPourUtilisateur(Contexte::utilisateurUuid());

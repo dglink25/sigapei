@@ -106,7 +106,7 @@ class CongesController extends Controller
     }
 
     /**
-     * PUT /v1/conges/{uuid}/traiter — validation ou refus par la direction.
+     * PUT /v1/conges/{uuid}/traiter - validation ou refus par la direction.
      */
     public function traiter(Request $request, Conge $conge): JsonResponse
     {

@@ -104,7 +104,7 @@ class RolesRhController extends Controller
     }
 
     /**
-     * PATCH /v1/roles-rh/{uuid}/modules — sélection des fonctions accordées (CDC RH §5.7).
+     * PATCH /v1/roles-rh/{uuid}/modules - sélection des fonctions accordées (CDC RH §5.7).
      */
     public function definirModules(Request $request, RoleRh $roleRh): JsonResponse
     {
@@ -130,7 +130,7 @@ class RolesRhController extends Controller
     }
 
     /**
-     * POST /v1/roles-rh/{uuid}/archiver — archivage (jamais de suppression).
+     * POST /v1/roles-rh/{uuid}/archiver - archivage (jamais de suppression).
      */
     public function archiver(RoleRh $roleRh): JsonResponse
     {

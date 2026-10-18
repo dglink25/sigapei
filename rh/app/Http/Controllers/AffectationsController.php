@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Affectations personnel ↔ matière ↔ classe — SOURCE DE VÉRITÉ de la règle 5.
+ * Affectations personnel ↔ matière ↔ classe - SOURCE DE VÉRITÉ de la règle 5.
  *
  * `matiere_uuid` et `classe_uuid` sont des UUID EXTERNES (schémas
  * `evaluations.matieres` et `scolarite.classes`) : aucune FK locale (règle 4).
@@ -120,7 +120,7 @@ class AffectationsController extends Controller
     }
 
     /**
-     * POST /v1/affectations/{uuid}/cloturer — termine l'affectation (jamais de suppression).
+     * POST /v1/affectations/{uuid}/cloturer - termine l'affectation (jamais de suppression).
      */
     public function cloturer(Affectation $affectation): JsonResponse
     {

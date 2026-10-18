@@ -108,11 +108,11 @@ export function refreshSession() {
 export function createHttp(baseUrl) {
   const root = `${baseUrl}${ENV.apiPrefix}`
 
-  async function request(method, path, { body, auth = true, retry = true } = {}) {
+  async function request(method, path, { body, auth = true, retry = true, headers: extraHeaders = {} } = {}) {
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), ENV.timeout)
-    const headers = { Accept: 'application/json' }
-    if (body !== undefined) headers['Content-Type'] = 'application/json'
+    const headers = { Accept: 'application/json', ...extraHeaders }
+    if (body !== undefined && !(body instanceof FormData)) headers['Content-Type'] = 'application/json'
     const token = auth ? tokenStore.getAccess() : null
     if (token) headers.Authorization = `Bearer ${token}`
 
@@ -121,7 +121,7 @@ export function createHttp(baseUrl) {
       res = await fetch(root + path, {
         method,
         headers,
-        body: body !== undefined ? JSON.stringify(body) : undefined,
+        body: body instanceof FormData ? body : (body !== undefined ? JSON.stringify(body) : undefined),
         signal: ctrl.signal,
       })
     } catch (err) {
@@ -143,7 +143,7 @@ export function createHttp(baseUrl) {
 
       if (!isSecretError) {
         // Vrai 401 JWT : tenter un refresh
-        if (await refreshSession()) return request(method, path, { body, auth, retry: false })
+        if (await refreshSession()) return request(method, path, { body, auth, retry: false, headers: extraHeaders })
         sessionExpired = true
         authEvents.emit('expired')
       }
@@ -175,6 +175,14 @@ export function createHttp(baseUrl) {
     put: (p, b, o) => request('PUT', p, { ...o, body: b }),
     patch: (p, b, o) => request('PATCH', p, { ...o, body: b }),
     delete: (p, o) => request('DELETE', p, o),
+    /** Crée une instance avec des headers additionnels fixes (ex: X-User-Role, X-Tenant-Uuid). */
+    withHeaders: (fixed) => ({
+      get: (p, o) => request('GET', p, { ...o, headers: { ...fixed, ...(o?.headers ?? {}) } }),
+      post: (p, b, o) => request('POST', p, { ...o, body: b, headers: { ...fixed, ...(o?.headers ?? {}) } }),
+      put: (p, b, o) => request('PUT', p, { ...o, body: b, headers: { ...fixed, ...(o?.headers ?? {}) } }),
+      patch: (p, b, o) => request('PATCH', p, { ...o, body: b, headers: { ...fixed, ...(o?.headers ?? {}) } }),
+      delete: (p, o) => request('DELETE', p, { ...o, headers: { ...fixed, ...(o?.headers ?? {}) } }),
+    }),
   }
 }
 

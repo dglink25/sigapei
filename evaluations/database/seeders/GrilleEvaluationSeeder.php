@@ -15,28 +15,28 @@ class GrilleEvaluationSeeder extends Seeder
     {
         $grilles = [
             [
-                'code' => 'beninois_secondaire', 'nom' => 'Programme béninois — Secondaire (sur 20)',
+                'code' => 'beninois_secondaire', 'nom' => 'Programme béninois - Secondaire (sur 20)',
                 'cycle' => 'secondaire', 'programme' => 'beninois', 'type_notation' => 'chiffree',
                 'note_min' => 0, 'note_max' => 20, 'avec_coefficients' => true, 'avec_classement' => true,
                 'niveaux_competence' => null,
                 'description' => 'Notation chiffrée sur 20, coefficients par matière, moyenne pondérée et classement.',
             ],
             [
-                'code' => 'francais_secondaire', 'nom' => 'Programme français — Secondaire (sur 20)',
+                'code' => 'francais_secondaire', 'nom' => 'Programme français - Secondaire (sur 20)',
                 'cycle' => 'secondaire', 'programme' => 'francais', 'type_notation' => 'chiffree',
                 'note_min' => 0, 'note_max' => 20, 'avec_coefficients' => true, 'avec_classement' => true,
                 'niveaux_competence' => null,
                 'description' => 'Notation sur 20 ; le classement peut être désactivé par l\'établissement.',
             ],
             [
-                'code' => 'beninois_primaire', 'nom' => 'Programme béninois — Primaire (sur 20)',
+                'code' => 'beninois_primaire', 'nom' => 'Programme béninois - Primaire (sur 20)',
                 'cycle' => 'primaire', 'programme' => 'beninois', 'type_notation' => 'chiffree',
                 'note_min' => 0, 'note_max' => 20, 'avec_coefficients' => true, 'avec_classement' => true,
                 'niveaux_competence' => null,
                 'description' => 'Notation chiffrée sur 20 pour le primaire.',
             ],
             [
-                'code' => 'competences_primaire', 'nom' => 'Compétences — Primaire (sans note chiffrée)',
+                'code' => 'competences_primaire', 'nom' => 'Compétences - Primaire (sans note chiffrée)',
                 'cycle' => 'primaire', 'programme' => 'autre', 'type_notation' => 'competences',
                 'note_min' => 0, 'note_max' => 20, 'avec_coefficients' => false, 'avec_classement' => false,
                 'niveaux_competence' => json_encode([
@@ -47,7 +47,7 @@ class GrilleEvaluationSeeder extends Seeder
                 'description' => 'Livret de compétences : niveaux d\'acquisition, ni moyenne ni rang.',
             ],
             [
-                'code' => 'universitaire_lmd', 'nom' => 'Universitaire — LMD (sur 20)',
+                'code' => 'universitaire_lmd', 'nom' => 'Universitaire - LMD (sur 20)',
                 'cycle' => 'universitaire', 'programme' => 'autre', 'type_notation' => 'chiffree',
                 'note_min' => 0, 'note_max' => 20, 'avec_coefficients' => true, 'avec_classement' => false,
                 'niveaux_competence' => null,

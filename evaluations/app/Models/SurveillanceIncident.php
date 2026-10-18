@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Common\Tenant\AppartientAuTenant;
 
-/** Phase 2 — compositions en ligne. */
+/** Phase 2 - compositions en ligne. */
 class SurveillanceIncident extends Modele
 {
     use AppartientAuTenant;

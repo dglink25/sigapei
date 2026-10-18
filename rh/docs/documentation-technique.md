@@ -1,4 +1,4 @@
-# Module RH — Documentation technique
+# Module RH - Documentation technique
 
 Microservice **Ressources Humaines** (`api-rh`), conformément au cahier des charges
 technique **`CDC_Technique_Module_RH_E-Academique.pdf`** (schéma logique `rh`).
@@ -15,8 +15,8 @@ technique **`CDC_Technique_Module_RH_E-Academique.pdf`** (schéma logique `rh`).
 
 | Tâche | Contenu | État |
 |---|---|---|
-| **Tâche 1 — Cadrage + socle technique** | Création du microservice (migrations du schéma `rh`, `Modele`/`AppartientAuTenant`/`Contexte`, middlewares `auth.tenant` + `role` + `secret.interne`, enveloppe de réponse, journalisation d'événements RabbitMQ, `Dockerfile` + `docker-compose`, contrat OpenAPI, tests d'API) | ✅ |
-| **Tâche 2 — Modèle de données + endpoints CRUD** | **personnel**, **enseignant** (affectations matière ↔ classe) et **rattachement rôle** (`roles_rh`, `role_rh_modules`, `personnel_roles_rh`), avec leurs endpoints de création / consultation / modification / archivage | ✅ |
+| **Tâche 1 - Cadrage + socle technique** | Création du microservice (migrations du schéma `rh`, `Modele`/`AppartientAuTenant`/`Contexte`, middlewares `auth.tenant` + `role` + `secret.interne`, enveloppe de réponse, journalisation d'événements RabbitMQ, `Dockerfile` + `docker-compose`, contrat OpenAPI, tests d'API) | ✅ |
+| **Tâche 2 - Modèle de données + endpoints CRUD** | **personnel**, **enseignant** (affectations matière ↔ classe) et **rattachement rôle** (`roles_rh`, `role_rh_modules`, `personnel_roles_rh`), avec leurs endpoints de création / consultation / modification / archivage | ✅ |
 | Hors périmètre courant | Absences, évaluations du personnel, intervenants externes, charge horaire calculée, tableau de bord RH | ⏳ (autres phases du CDC §16) |
 | Présent depuis l'origine | Grades, contrats, congés | ✅ |
 
@@ -59,7 +59,7 @@ Le module a été construit en cohérence avec les **règles transverses de la p
 
 ---
 
-## 4. Modèle de données — schéma `rh`
+## 4. Modèle de données - schéma `rh`
 
 | Table | Colonnes principales | Contraintes / index |
 |---|---|---|
@@ -68,9 +68,9 @@ Le module a été construit en cohérence avec les **règles transverses de la p
 | `contrats` | `personnel_id`, `type_contrat`, `grade_id`, `date_debut`, `date_fin`, `statut` | index partiel : **un seul contrat actif** sans date de fin par personnel |
 | `affectations` | `personnel_id`, `matiere_uuid`, `classe_uuid`, `annee_scolaire`, `heures_semaine`, `statut` | index partiel : **une seule affectation active** par (personnel, matière, classe, année) |
 | `conges` | `personnel_id`, `type_conge`, `date_debut`, `date_fin`, `jours`, `demandeur_uuid`, `traitee_par_uuid`, `statut` | cycle `en_attente → approuvee/refusee/annulee` |
-| **`roles_rh`** | `uuid`, `tenant_id`, `nom`, `description`, `statut` (`actif`/`archive`) | **Tâche 2** — `unique(tenant_id, nom)` |
-| **`role_rh_modules`** | `role_rh_id`, `fonction`, `inclus` | **Tâche 2** — `unique(role_rh_id, fonction)` ; `CHECK fonction IN (dossiers, affectations, charges_horaires, conges, evaluations, contrats_intervenants)` |
-| **`personnel_roles_rh`** | `personnel_id`, `role_rh_id`, `date_attribution` | **Tâche 2** — `unique(personnel_id, role_rh_id)` |
+| **`roles_rh`** | `uuid`, `tenant_id`, `nom`, `description`, `statut` (`actif`/`archive`) | **Tâche 2** - `unique(tenant_id, nom)` |
+| **`role_rh_modules`** | `role_rh_id`, `fonction`, `inclus` | **Tâche 2** - `unique(role_rh_id, fonction)` ; `CHECK fonction IN (dossiers, affectations, charges_horaires, conges, evaluations, contrats_intervenants)` |
+| **`personnel_roles_rh`** | `personnel_id`, `role_rh_id`, `date_attribution` | **Tâche 2** - `unique(personnel_id, role_rh_id)` |
 
 Règles communes :
 - `id` (bigint) **jamais exposé** : toutes les routes et références utilisent `uuid` (`Modele`).
@@ -150,12 +150,12 @@ secret, avec `tenant_id` passé en paramètre.
 | Pas d'`id` interne exposé | `Modele` cache `id`/`tenant_id`, `getRouteKeyName() = uuid` |
 | Règle 5 (affectations) | `affectations` = source de vérité ; vérification interne `affectations/verifier` |
 | Cohérence métier | unicité du matricule, du nom de rôle par tenant, chevauchement de congé, affectation déjà active, personnel inactif |
-| Événements | journalisation RabbitMQ (`rh.*.cree`, `rh.role.attribue`…) — voir README §6 |
+| Événements | journalisation RabbitMQ (`rh.*.cree`, `rh.role.attribue`…) - voir README §6 |
 | Performance (§13) | index sur `(tenant_id, …)` ; `par_page` borné à 100 |
 
 > **Point d'attention** : la séparation des rôles à la validation d'un congé (§12,
 > « le validateur ne peut jamais être le demandeur ») n'est **pas encore** appliquée
-> sur `PUT /conges/{uuid}/traiter` — hors périmètre des tâches 1-2.
+> sur `PUT /conges/{uuid}/traiter` - hors périmètre des tâches 1-2.
 
 ---
 
@@ -169,9 +169,9 @@ vendor/bin/pint --test    # style de code
 
 Couverture des règles critiques (§15 « jeu de tests ») :
 
-- **isolation multi-tenant** — un rôle RH / un personnel d'un autre tenant reste invisible ;
-- **moteur de rôles** — création, sélection des fonctions, attribution, retrait, archivage, rôles plateforme refusés ;
-- **règle 5** — vérification d'affectation interne, affectation déjà active, personnel inactif ;
-- **pas de suppression physique** — `DELETE` → 405 sur personnel et rôles RH ;
-- **contrats internes** — `/interne/*` conforme aux attentes d'Évaluations, Vie scolaire et E-learning ;
-- **sécurité** — `/interne/*` sans secret → 403.
+- **isolation multi-tenant** - un rôle RH / un personnel d'un autre tenant reste invisible ;
+- **moteur de rôles** - création, sélection des fonctions, attribution, retrait, archivage, rôles plateforme refusés ;
+- **règle 5** - vérification d'affectation interne, affectation déjà active, personnel inactif ;
+- **pas de suppression physique** - `DELETE` → 405 sur personnel et rôles RH ;
+- **contrats internes** - `/interne/*` conforme aux attentes d'Évaluations, Vie scolaire et E-learning ;
+- **sécurité** - `/interne/*` sans secret → 403.

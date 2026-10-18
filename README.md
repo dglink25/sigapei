@@ -126,7 +126,7 @@ git push                      # fusion automatique vers develop, puis retest
 | [`evaluations`](evaluations) | `4006` | `evaluations` | Notes, barèmes, coefficients, moyennes, classements, bulletins (calcul à la volée), contestations | [README](evaluations/README.md) |
 | [`demandes`](demandes) | `4007` | `demandes` | Guichet unique de documents (apprenants, personnel, enseignants), permissions d'absence, réclamations | [README](demandes/README.md) (`/docs`) |
 | [`finances`](finances) | `4008` | `finances` | Double flux entrant/sortant, FedaPay/KkiaPay, décaissements à double validation, abonnement & hibernation | [README](finances/README.md) |
-| [`elearning`](elearning) | — | `elearning` | *(à documenter par son responsable)* | — |
+| [`elearning`](elearning) | - | `elearning` | *(à documenter par son responsable)* | - |
 
 
 Chaque microservice est **autonome dans son propre dossier** (son propre

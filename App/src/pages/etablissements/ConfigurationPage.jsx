@@ -5,6 +5,7 @@ import { portailService } from '../../services/identite/portail.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import AccesDroitsPanel from '../../components/etablissements/AccesDroitsPanel'
+import InfosEtablissementPanel from '../../components/etablissements/InfosEtablissementPanel'
 import '../AdministrationPrincipale/admin.css'
 import '../../components/administration/admin-ui.css'
 import '../AdministrationPrincipale/services.css'
@@ -14,11 +15,16 @@ const SECTIONS = [
   { id: 'droits', label: "Droits d'accès" },
   { id: 'utilisateurs', label: 'Utilisateurs', bientot: true },
   { id: 'roles', label: 'Rôles', bientot: true },
-  { id: 'etablissement', label: "Informations de l'établissement", bientot: true },
+  { id: 'etablissement', label: "Informations de l'établissement" },
 ]
 
+const SOUS_TITRES = {
+  droits: 'Gérez les accès de vos utilisateurs aux services de votre établissement',
+  etablissement: "Mettez à jour le logo, les types, l'adresse et la localisation de votre établissement",
+}
+
 /**
- * Panneau de configuration — réservé à l'administrateur de l'établissement.
+ * Panneau de configuration - réservé à l'administrateur de l'établissement.
  * Header/sidebar fournis par PortailLayout.
  */
 export default function ConfigurationPage() {
@@ -44,7 +50,7 @@ export default function ConfigurationPage() {
       <div className="ap-page-head sv-rise">
         <div>
           <h2 className="ap-page-title">Configuration{etab ? ` · ${etab.nom}` : ''}</h2>
-          <p className="ap-page-sub">Gérez les accès de vos utilisateurs aux services de votre établissement</p>
+          <p className="ap-page-sub">{SOUS_TITRES[section] ?? SOUS_TITRES.droits}</p>
         </div>
       </div>
 
@@ -67,6 +73,7 @@ export default function ConfigurationPage() {
       </div>
 
       {section === 'droits' && <AccesDroitsPanel />}
+      {section === 'etablissement' && <InfosEtablissementPanel />}
     </div>
   )
 }

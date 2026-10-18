@@ -13,8 +13,8 @@ use RuntimeException;
  * avec X-Internal-Secret et X-Tenant-Id (Scolarité applique son propre filtre tenant).
  *
  * Champs exploités dans la réponse (`donnees`) :
- *   uuid, statut, classe {uuid, cycle, niveau, programme}            — exposés aujourd'hui
- *   utilisateur_uuid, parents[].parent_uuid                          — CONTRAT DEMANDÉ À SCOLARITÉ
+ *   uuid, statut, classe {uuid, cycle, niveau, programme}            - exposés aujourd'hui
+ *   utilisateur_uuid, parents[].parent_uuid                          - CONTRAT DEMANDÉ À SCOLARITÉ
  * Tant qu'un champ demandé est absent, la vérification correspondante échoue (fail closed) :
  * on refuse plutôt que de deviner l'identité d'un apprenant ou d'un parent.
  *

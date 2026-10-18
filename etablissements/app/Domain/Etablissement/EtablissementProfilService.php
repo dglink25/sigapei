@@ -16,8 +16,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * qui liste les champs refuses. La modification est partielle : seules les cles
  * envoyees sont traitees.
  */
-class EtablissementProfilService
-{
+class EtablissementProfilService {
     public const CHAMPS_MODIFIABLES = ['types', 'adresse_complete', 'localisation', 'geolocalisation'];
 
     private const CLES_LOCALISATION = ['pays_uuid', 'departement_uuid', 'commune_uuid', 'arrondissement_uuid'];
@@ -31,16 +30,14 @@ class EtablissementProfilService
         private LogoService $logos,
     ) {}
 
-    public function exigerActif(Etablissement $etablissement): void
-    {
+    public function exigerActif(Etablissement $etablissement): void    {
         if ($etablissement->statut !== 'actif') {
             abort(409, "Cet établissement n'est pas actif : son profil ne peut pas être modifié.");
         }
     }
 
     /** 422 listant chaque champ non modifiable ; 422 aussi si le corps est vide. */
-    public function exigerChampsAutorises(array $donnees): void
-    {
+    public function exigerChampsAutorises(array $donnees): void    {
         $erreurs = [];
 
         foreach (array_diff(array_keys($donnees), self::CHAMPS_MODIFIABLES) as $cle) {
