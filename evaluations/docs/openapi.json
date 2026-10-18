@@ -1,0 +1,3901 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SIGAPEI — API Évaluations",
+    "version": "1.0.0",
+    "description": "Notes, barèmes, coefficients, moyennes, classements, bulletins et contestations.\n\n**Accès** : uniquement via la Gateway, qui ajoute les en-têtes de contexte et le secret interne. Un appel direct sans `X-Internal-Secret` est refusé (401).\n\nRéponses : `{success, message, data}` ; erreurs : `{success: false, message, error: {code, details?}}`. Montants et notes en **chaînes décimales** (\"14.50\"), jamais en nombres flottants. Identifiants : uuid uniquement."
+  },
+  "servers": [
+    {
+      "url": "http://api-evaluations:4006",
+      "description": "Réseau Docker sigapei (derrière la Gateway)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Supervision"
+    },
+    {
+      "name": "Barèmes"
+    },
+    {
+      "name": "Matières"
+    },
+    {
+      "name": "Périodes"
+    },
+    {
+      "name": "Évaluations"
+    },
+    {
+      "name": "Notes"
+    },
+    {
+      "name": "Bulletins"
+    },
+    {
+      "name": "Contestations"
+    },
+    {
+      "name": "Interne"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Supervision"
+        ],
+        "summary": "Sonde de santé",
+        "description": "Publique, sans donnée.",
+        "responses": {
+          "200": {
+            "description": "Service disponible"
+          }
+        },
+        "security": [],
+        "operationId": "get_health"
+      }
+    },
+    "/v1/grilles": {
+      "get": {
+        "tags": [
+          "Barèmes"
+        ],
+        "summary": "Lister les barèmes (plateforme + établissement)",
+        "description": "**Rôles autorisés** : administrateur, enseignant.\n\n",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Grille"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          }
+        },
+        "parameters": [
+          {
+            "name": "cycle",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "primaire",
+                "secondaire",
+                "universitaire"
+              ]
+            }
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_grilles"
+      },
+      "post": {
+        "tags": [
+          "Barèmes"
+        ],
+        "summary": "Créer un barème propre à l'établissement",
+        "description": "**Rôles autorisés** : administrateur.\n\n",
+        "responses": {
+          "201": {
+            "description": "Barème créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Grille"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "nom",
+                  "cycle",
+                  "programme",
+                  "type_notation"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9_]+$",
+                    "maxLength": 60
+                  },
+                  "nom": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "cycle": {
+                    "type": "string",
+                    "enum": [
+                      "primaire",
+                      "secondaire",
+                      "universitaire"
+                    ]
+                  },
+                  "programme": {
+                    "type": "string",
+                    "enum": [
+                      "beninois",
+                      "francais",
+                      "autre"
+                    ]
+                  },
+                  "type_notation": {
+                    "type": "string",
+                    "enum": [
+                      "chiffree",
+                      "competences"
+                    ]
+                  },
+                  "note_min": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\.\\d{1,2})?$",
+                    "example": "0"
+                  },
+                  "note_max": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\.\\d{1,2})?$",
+                    "example": "20"
+                  },
+                  "avec_coefficients": {
+                    "type": "boolean"
+                  },
+                  "avec_classement": {
+                    "type": "boolean"
+                  },
+                  "niveaux_competence": {
+                    "type": "array",
+                    "description": "Obligatoire si type_notation = competences (2 à 10 niveaux)",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "libelle": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_grilles"
+      }
+    },
+    "/v1/parametres-notation/{cycle}": {
+      "parameters": [
+        {
+          "name": "cycle",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "primaire",
+              "secondaire",
+              "universitaire"
+            ]
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Barèmes"
+        ],
+        "summary": "Règles de notation d'un cycle",
+        "description": "**Rôles autorisés** : administrateur, enseignant.\n\n409 `PARAMETRES_NON_CONFIGURES` tant que l'établissement n'a rien configuré.",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ParametresNotation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_parametres_notation_cycle"
+      },
+      "put": {
+        "tags": [
+          "Barèmes"
+        ],
+        "summary": "Configurer les règles de notation d'un cycle",
+        "description": "**Rôles autorisés** : administrateur.\n\nMoyenne d'une matière selon `ponderation_types` (défaut : interrogations regroupées en une note, chaque devoir/composition compte une note ⇒ (MI + D1 + D2) / 3), puis moyenne générale = Σ(moyenne matière × coefficient) / Σ coefficients.\n\nL'échelle d'appréciation doit être faite de tranches [min, max[ contiguës couvrant exactement le barème (la dernière inclut max).",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ParametresNotation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "grille_uuid",
+                  "echelle_appreciation"
+                ],
+                "properties": {
+                  "grille_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "ponderation_types": {
+                    "type": "object",
+                    "description": "Par type d'épreuve : `bloc` = les notes du type forment UNE note (leur moyenne) ; `individuel` = chaque note compte. Types absents : valeur par défaut.",
+                    "additionalProperties": {
+                      "type": "object",
+                      "required": [
+                        "mode",
+                        "poids"
+                      ],
+                      "properties": {
+                        "mode": {
+                          "type": "string",
+                          "enum": [
+                            "bloc",
+                            "individuel"
+                          ]
+                        },
+                        "poids": {
+                          "type": "string",
+                          "pattern": "^\\d+(\\.\\d{1,2})?$",
+                          "example": "1"
+                        }
+                      }
+                    },
+                    "example": {
+                      "interrogation": {
+                        "mode": "bloc",
+                        "poids": "1"
+                      },
+                      "devoir_surveille": {
+                        "mode": "individuel",
+                        "poids": "1"
+                      },
+                      "composition": {
+                        "mode": "individuel",
+                        "poids": "2"
+                      }
+                    }
+                  },
+                  "decimales": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3,
+                    "default": 2
+                  },
+                  "note_non_saisie": {
+                    "type": "string",
+                    "enum": [
+                      "exclure",
+                      "zero"
+                    ],
+                    "default": "exclure"
+                  },
+                  "absence_non_justifiee": {
+                    "type": "string",
+                    "enum": [
+                      "exclure",
+                      "zero"
+                    ],
+                    "default": "zero"
+                  },
+                  "regle_rattrapage": {
+                    "type": "string",
+                    "enum": [
+                      "remplacer",
+                      "meilleure",
+                      "moyenne"
+                    ],
+                    "default": "meilleure"
+                  },
+                  "classement_actif": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "delai_escalade_contestation_jours": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 90,
+                    "default": 7
+                  },
+                  "echelle_appreciation": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "min",
+                        "max",
+                        "mention"
+                      ],
+                      "properties": {
+                        "min": {
+                          "type": "string",
+                          "pattern": "^\\d+(\\.\\d{1,2})?$",
+                          "example": "10"
+                        },
+                        "max": {
+                          "type": "string",
+                          "pattern": "^\\d+(\\.\\d{1,2})?$",
+                          "example": "12"
+                        },
+                        "mention": {
+                          "type": "string",
+                          "maxLength": 60,
+                          "example": "Passable"
+                        }
+                      }
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "grille_uuid": "31398e42-9cd0-427b-b341-ea8a2275dd6e",
+                "decimales": 2,
+                "echelle_appreciation": [
+                  {
+                    "min": "0",
+                    "max": "10",
+                    "mention": "Insuffisant"
+                  },
+                  {
+                    "min": "10",
+                    "max": "12",
+                    "mention": "Passable"
+                  },
+                  {
+                    "min": "12",
+                    "max": "14",
+                    "mention": "Assez bien"
+                  },
+                  {
+                    "min": "14",
+                    "max": "16",
+                    "mention": "Bien"
+                  },
+                  {
+                    "min": "16",
+                    "max": "20",
+                    "mention": "Très bien"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "put_parametres_notation_cycle"
+      }
+    },
+    "/v1/modeles-bulletin": {
+      "post": {
+        "tags": [
+          "Barèmes"
+        ],
+        "summary": "Créer ou mettre à jour le modèle de bulletin d'un cycle",
+        "description": "**Rôles autorisés** : administrateur.\n\nPrésentation uniquement : aucune règle de calcul ici.",
+        "responses": {
+          "201": {
+            "description": "Modèle créé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ModeleBulletin"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Modèle mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ModeleBulletin"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "cycle",
+                  "en_tete",
+                  "colonnes_affichees"
+                ],
+                "properties": {
+                  "cycle": {
+                    "type": "string",
+                    "enum": [
+                      "primaire",
+                      "secondaire",
+                      "universitaire"
+                    ]
+                  },
+                  "en_tete": {
+                    "type": "object",
+                    "required": [
+                      "titre"
+                    ],
+                    "properties": {
+                      "titre": {
+                        "type": "string"
+                      },
+                      "sous_titre": {
+                        "type": "string"
+                      },
+                      "logo_document_uuid": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
+                  },
+                  "colonnes_affichees": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "matiere",
+                        "coefficient",
+                        "notes",
+                        "moyenne",
+                        "moyenne_classe",
+                        "min_classe",
+                        "max_classe",
+                        "rang",
+                        "appreciation"
+                      ]
+                    }
+                  },
+                  "mentions_bas_de_page": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_modeles_bulletin"
+      }
+    },
+    "/v1/matieres": {
+      "get": {
+        "tags": [
+          "Matières"
+        ],
+        "summary": "Lister les matières",
+        "description": "**Rôles autorisés** : administrateur, enseignant.\n\n",
+        "responses": {
+          "200": {
+            "description": "Liste paginée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Matiere"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          }
+        },
+        "parameters": [
+          {
+            "name": "actives",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "par_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "25 par défaut, 100 au maximum"
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_matieres"
+      },
+      "post": {
+        "tags": [
+          "Matières"
+        ],
+        "summary": "Créer une matière",
+        "description": "**Rôles autorisés** : administrateur.\n\n",
+        "responses": {
+          "201": {
+            "description": "Matière créée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Matiere"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "nom",
+                  "coefficient_defaut"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "nom": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "coefficient_defaut": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\.\\d{1,2})?$",
+                    "example": "4"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_matieres"
+      }
+    },
+    "/v1/matieres/{matiere_uuid}": {
+      "parameters": [
+        {
+          "name": "matiere_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Matière"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Matières"
+        ],
+        "summary": "Modifier une matière",
+        "description": "**Rôles autorisés** : administrateur.\n\n",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Matiere"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "nom": {
+                    "type": "string"
+                  },
+                  "coefficient_defaut": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\.\\d{1,2})?$",
+                    "example": "3"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "put_matieres_matiere_uuid"
+      }
+    },
+    "/v1/matieres/{matiere_uuid}/coefficients": {
+      "parameters": [
+        {
+          "name": "matiere_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Matière"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Matières"
+        ],
+        "summary": "Remplacer les coefficients par niveau",
+        "description": "**Rôles autorisés** : administrateur.\n\nEx. Mathématiques coef 4 par défaut, 5 en Terminale. Liste vide = coefficient par défaut partout.",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Matiere"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "coefficients"
+                ],
+                "properties": {
+                  "coefficients": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "cycle",
+                        "niveau",
+                        "coefficient"
+                      ],
+                      "properties": {
+                        "cycle": {
+                          "type": "string",
+                          "enum": [
+                            "primaire",
+                            "secondaire",
+                            "universitaire"
+                          ]
+                        },
+                        "niveau": {
+                          "type": "string",
+                          "example": "Tle"
+                        },
+                        "coefficient": {
+                          "type": "string",
+                          "pattern": "^\\d+(\\.\\d{1,2})?$",
+                          "example": "5"
+                        }
+                      }
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "put_matieres_matiere_uuid_coefficients"
+      }
+    },
+    "/v1/periodes": {
+      "get": {
+        "tags": [
+          "Périodes"
+        ],
+        "summary": "Lister les périodes",
+        "description": "**Rôles autorisés** : administrateur, enseignant, apprenant, parent.\n\n",
+        "responses": {
+          "200": {
+            "description": "Liste paginée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Periode"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          }
+        },
+        "parameters": [
+          {
+            "name": "annee_scolaire",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{4}$"
+            }
+          },
+          {
+            "name": "cycle",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "primaire",
+                "secondaire",
+                "universitaire"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "par_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "25 par défaut, 100 au maximum"
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_periodes"
+      },
+      "post": {
+        "tags": [
+          "Périodes"
+        ],
+        "summary": "Créer une période",
+        "description": "**Rôles autorisés** : administrateur.\n\nRefus si chevauchement de dates avec une autre période du même cycle.",
+        "responses": {
+          "201": {
+            "description": "Période créée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Periode"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "annee_scolaire",
+                  "cycle",
+                  "type",
+                  "numero",
+                  "libelle",
+                  "date_debut",
+                  "date_fin"
+                ],
+                "properties": {
+                  "annee_scolaire": {
+                    "type": "string",
+                    "example": "2026-2027"
+                  },
+                  "cycle": {
+                    "type": "string",
+                    "enum": [
+                      "primaire",
+                      "secondaire",
+                      "universitaire"
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "trimestre",
+                      "semestre"
+                    ]
+                  },
+                  "numero": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3
+                  },
+                  "libelle": {
+                    "type": "string",
+                    "example": "1er trimestre"
+                  },
+                  "date_debut": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "date_fin": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_periodes"
+      }
+    },
+    "/v1/periodes/{periode_uuid}/cloturer": {
+      "parameters": [
+        {
+          "name": "periode_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Période"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Périodes"
+        ],
+        "summary": "Clôturer une période (archivage des bulletins)",
+        "description": "**Rôles autorisés** : administrateur.\n\nPasse la période en `en_cloture` puis, en tâche de fond : calcul de toutes les classes, archivage d'un bulletin par apprenant (version 1), statut `cloturee`, événement `evaluations.bulletin.publie`. Tout ou rien : en cas d'échec, la période redevient `ouverte`. Limité à 10 requêtes/minute.",
+        "responses": {
+          "202": {
+            "description": "Clôture lancée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "periode_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "statut": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "429": {
+            "$ref": "#/components/responses/ErrDebit"
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_periodes_periode_uuid_cloturer"
+      }
+    },
+    "/v1/evaluations": {
+      "get": {
+        "tags": [
+          "Évaluations"
+        ],
+        "summary": "Lister les évaluations d'une classe",
+        "description": "**Rôles autorisés** : administrateur, enseignant (uniquement les siennes, classe/matière affectées).\n\n",
+        "responses": {
+          "200": {
+            "description": "Liste paginée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Evaluation"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "parameters": [
+          {
+            "name": "classe_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periode_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "matiere_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "par_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "25 par défaut, 100 au maximum"
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_evaluations"
+      },
+      "post": {
+        "tags": [
+          "Évaluations"
+        ],
+        "summary": "Créer une évaluation",
+        "description": "**Rôles autorisés** : administrateur, enseignant affecté à la matière dans la classe.\n\nLa date doit être dans la période (ouverte). `note_sur` : barème de l'épreuve (sur 10, 20, 40...), ramené sur la grille au calcul. `rattrapage_de_uuid` : épreuve initiale de même classe/matière/période.",
+        "responses": {
+          "201": {
+            "description": "Évaluation créée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Evaluation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "periode_uuid",
+                  "matiere_uuid",
+                  "classe_uuid",
+                  "type",
+                  "libelle",
+                  "date_evaluation"
+                ],
+                "properties": {
+                  "periode_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "matiere_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "classe_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "enseignant_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Obligatoire pour l'administrateur"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "devoir_surveille",
+                      "interrogation",
+                      "composition",
+                      "examen_officiel",
+                      "evaluation_competence",
+                      "note_elearning"
+                    ]
+                  },
+                  "libelle": {
+                    "type": "string",
+                    "maxLength": 150
+                  },
+                  "date_evaluation": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "coefficient": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\.\\d{1,2})?$",
+                    "example": "1",
+                    "default": "1"
+                  },
+                  "note_sur": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\.\\d{1,2})?$",
+                    "example": "20",
+                    "default": "20"
+                  },
+                  "rattrapage_de_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "periode_uuid": "01a1372e-25fd-726e-9ffa-df5004030b6b",
+                "matiere_uuid": "01a1372e-2602-7080-9c18-d25037ea394d",
+                "classe_uuid": "c1523a72-7888-410e-87b3-68b2ba072486",
+                "type": "interrogation",
+                "libelle": "Interrogation 1",
+                "date_evaluation": "2026-10-10",
+                "note_sur": "10"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_evaluations"
+      }
+    },
+    "/v1/evaluations/{evaluation_uuid}/verrouiller": {
+      "parameters": [
+        {
+          "name": "evaluation_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Évaluation"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Évaluations"
+        ],
+        "summary": "Verrouiller sa saisie",
+        "description": "**Rôles autorisés** : enseignant de l'évaluation.\n\nPlus aucune saisie possible par l'enseignant ; seule l'administration peut ensuite corriger.",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Evaluation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_evaluations_evaluation_uuid_verrouiller"
+      }
+    },
+    "/v1/notes": {
+      "post": {
+        "tags": [
+          "Notes"
+        ],
+        "summary": "Saisir ou modifier des notes (grille façon tableur)",
+        "description": "**Rôles autorisés** : enseignant de l'évaluation, toujours affecté.\n\nLot de 1 à 200 notes. Contrôles : période ouverte, saisie non verrouillée, apprenant inscrit dans la classe, note ≤ `note_sur`, 2 décimales max.\n\n**Création** : sans `version`. **Modification** : `version` lue obligatoire ; si quelqu'un a modifié la note entre-temps → 409 `NOTE_MODIFIEE_ENTRE_TEMPS`. Chaque modification est tracée (journal immuable).\n\n`statut` : `saisie` (avec `valeur`, ou `niveau_competence` pour un barème de compétences), `absent_justifie`, `absent_non_justifie`, `dispense` (sans valeur).",
+        "responses": {
+          "200": {
+            "description": "Notes enregistrées",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Note"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "evaluation_uuid",
+                  "notes"
+                ],
+                "properties": {
+                  "evaluation_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "notes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "apprenant_uuid",
+                        "statut"
+                      ],
+                      "properties": {
+                        "apprenant_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "statut": {
+                          "type": "string",
+                          "enum": [
+                            "saisie",
+                            "absent_justifie",
+                            "absent_non_justifie",
+                            "dispense"
+                          ]
+                        },
+                        "valeur": {
+                          "type": "string",
+                          "pattern": "^\\d+(\\.\\d{1,2})?$",
+                          "example": "14.5"
+                        },
+                        "niveau_competence": {
+                          "type": "string"
+                        },
+                        "commentaire": {
+                          "type": "string",
+                          "maxLength": 255
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "evaluation_uuid": "01a1372e-261c-73b4-ac4c-ff5964c32c41",
+                "notes": [
+                  {
+                    "apprenant_uuid": "d48d11b1-c6d9-4e71-a614-e4bbf5884a99",
+                    "statut": "saisie",
+                    "valeur": "8"
+                  },
+                  {
+                    "apprenant_uuid": "c280e027-a0af-426b-8c04-dad89d6d784d",
+                    "statut": "absent_justifie"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_notes"
+      }
+    },
+    "/v1/notes/classe/{classe_uuid}": {
+      "parameters": [
+        {
+          "name": "classe_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Classe (Scolarité)"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Notes"
+        ],
+        "summary": "Grille des notes d'une classe",
+        "description": "**Rôles autorisés** : administrateur, enseignant affecté (matiere_uuid obligatoire pour lui).\n\n",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "periode": {
+                          "type": "object"
+                        },
+                        "evaluations": {
+                          "type": "array",
+                          "items": {
+                            "allOf": [
+                              {
+                                "$ref": "#/components/schemas/Evaluation"
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "saisie_verrouillee": {
+                                    "type": "boolean"
+                                  },
+                                  "notes": {
+                                    "type": "array",
+                                    "items": {
+                                      "$ref": "#/components/schemas/Note"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "parameters": [
+          {
+            "name": "periode_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "matiere_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_notes_classe_classe_uuid"
+      }
+    },
+    "/v1/notes/{note_uuid}/corriger": {
+      "parameters": [
+        {
+          "name": "note_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Note"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Notes"
+        ],
+        "summary": "Corriger une note (tracé)",
+        "description": "**Rôles autorisés** : administrateur.\n\nMotif obligatoire (10 caractères min.), `version` obligatoire. Possible après clôture : chaque bulletin archivé de la classe dont le contenu change reçoit une nouvelle version (les anciennes restent consultables).",
+        "responses": {
+          "200": {
+            "description": "Note corrigée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Note"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "statut",
+                  "motif",
+                  "version"
+                ],
+                "properties": {
+                  "statut": {
+                    "type": "string",
+                    "enum": [
+                      "saisie",
+                      "absent_justifie",
+                      "absent_non_justifie",
+                      "dispense"
+                    ]
+                  },
+                  "valeur": {
+                    "type": "string",
+                    "pattern": "^\\d+(\\.\\d{1,2})?$",
+                    "example": "16"
+                  },
+                  "niveau_competence": {
+                    "type": "string"
+                  },
+                  "motif": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 1000
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "statut": "saisie",
+                "valeur": "16",
+                "version": 1,
+                "motif": "Erreur de report constatée sur la copie."
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "put_notes_note_uuid_corriger"
+      }
+    },
+    "/v1/bulletins/apprenant/{apprenant_uuid}": {
+      "parameters": [
+        {
+          "name": "apprenant_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Apprenant (Scolarité)"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Bulletins"
+        ],
+        "summary": "Bulletin d'un apprenant",
+        "description": "**Rôles autorisés** : administrateur, enseignant de la classe, l'apprenant lui-même, ses parents rattachés.\n\nPériode ouverte : calcul à la volée (`provisoire: true`). Période clôturée : dernière version archivée + historique `versions`.",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Bulletin"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "parameters": [
+          {
+            "name": "periode_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_bulletins_apprenant_apprenant_uuid"
+      }
+    },
+    "/v1/bulletins/apprenant/{apprenant_uuid}/pdf": {
+      "parameters": [
+        {
+          "name": "apprenant_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Apprenant"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Bulletins"
+        ],
+        "summary": "PDF du bulletin archivé",
+        "description": "**Rôles autorisés** : mêmes droits que le bulletin.\n\nRenvoie l'uuid du document stocké par le service Documents (URL signée). **En attente du service Documents** : répond 409 `PDF_EN_ATTENTE` tant que le PDF n'existe pas.",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "document_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "parameters": [
+          {
+            "name": "periode_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_bulletins_apprenant_apprenant_uuid_pdf"
+      }
+    },
+    "/v1/classements/classe/{classe_uuid}": {
+      "parameters": [
+        {
+          "name": "classe_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Classe"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Bulletins"
+        ],
+        "summary": "Classement et statistiques d'une classe",
+        "description": "**Rôles autorisés** : administrateur, enseignant de la classe.\n\nRang calculé sur la moyenne affichée ; ex æquo = même rang, le suivant est décalé (1, 2, 2, 4). Sans rang si le classement est désactivé.",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Classement"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "parameters": [
+          {
+            "name": "periode_uuid",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_classements_classe_classe_uuid"
+      }
+    },
+    "/v1/contestations": {
+      "get": {
+        "tags": [
+          "Contestations"
+        ],
+        "summary": "Lister les contestations",
+        "description": "**Rôles autorisés** : administrateur (toutes), enseignant (ses évaluations), apprenant/parent (les siennes).\n\n",
+        "responses": {
+          "200": {
+            "description": "Liste paginée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Contestation"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          }
+        },
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ouverte",
+                "en_examen",
+                "resolue",
+                "rejetee"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "par_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "25 par défaut, 100 au maximum"
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "get_contestations"
+      },
+      "post": {
+        "tags": [
+          "Contestations"
+        ],
+        "summary": "Contester une note",
+        "description": "**Rôles autorisés** : apprenant (sa note), parent (note d'un enfant rattaché).\n\nUne seule contestation en cours par note et par demandeur. 10 requêtes/minute.",
+        "responses": {
+          "201": {
+            "description": "Contestation enregistrée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Contestation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          },
+          "429": {
+            "$ref": "#/components/responses/ErrDebit"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "note_uuid",
+                  "motif"
+                ],
+                "properties": {
+                  "note_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "motif": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 2000
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "post_contestations"
+      }
+    },
+    "/v1/contestations/{contestation_uuid}/traiter": {
+      "parameters": [
+        {
+          "name": "contestation_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Contestation"
+        }
+      ],
+      "put": {
+        "tags": [
+          "Contestations"
+        ],
+        "summary": "Traiter une contestation",
+        "description": "**Rôles autorisés** : enseignant de l'évaluation, administrateur.\n\nTransitions : ouverte → en_examen | resolue | rejetee ; en_examen → resolue | rejetee. `reponse` obligatoire pour clore. Ne modifie jamais la note : utiliser PUT /v1/notes/{uuid}/corriger.",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Contestation"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "409": {
+            "$ref": "#/components/responses/ErrConflit"
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "statut"
+                ],
+                "properties": {
+                  "statut": {
+                    "type": "string",
+                    "enum": [
+                      "en_examen",
+                      "resolue",
+                      "rejetee"
+                    ]
+                  },
+                  "reponse": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "operationId": "put_contestations_contestation_uuid_traiter"
+      }
+    },
+    "/v1/interne/eligibilite-document/{apprenant_uuid}": {
+      "parameters": [
+        {
+          "name": "apprenant_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "description": "Apprenant"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Interne"
+        ],
+        "summary": "Bulletins archivés disponibles (Demandes administratives)",
+        "description": "**Appel inter-services uniquement** : `X-Internal-Secret` + `X-Tenant-Id`. Dernière version de chaque période clôturée.",
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "apprenant_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "eligible": {
+                          "type": "boolean"
+                        },
+                        "bulletins": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bulletin_uuid": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "periode_uuid": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "periode": {
+                                "type": "string"
+                              },
+                              "annee_scolaire": {
+                                "type": "string"
+                              },
+                              "version": {
+                                "type": "integer"
+                              },
+                              "pdf_disponible": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Secret interne absent ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": []
+          }
+        ],
+        "operationId": "get_interne_eligibilite_document_apprenant_uuid"
+      }
+    },
+    "/v1/interne/notes-elearning": {
+      "post": {
+        "tags": [
+          "Interne"
+        ],
+        "summary": "Report d'une note E-learning (devoir noté, tentative de quiz)",
+        "description": "**Appel inter-services uniquement** (microservice E-learning) : `X-Internal-Secret` + `X-Tenant-Id`.\n\n- Une épreuve `note_elearning` par devoir/quiz (`activite_uuid`), créée au premier report dans la période ouverte qui couvre `date` (cycle de l'apprenant).\n- Une note par apprenant et par activité : rejouer le même report ne crée rien (200, même `note_uuid`) ; une valeur différente met la note à jour (nouvelle `version`, tracée dans l'audit) tant que la période est ouverte.\n- L'épreuve garde le barème (`note_sur`) de son premier report ; un report sur un autre barème est ramené dessus.\n- La note compte directement dans la moyenne (poids du type `note_elearning` paramétrable par établissement).",
+        "operationId": "post_interne_notes_elearning",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source",
+                  "source_uuid",
+                  "activite_uuid",
+                  "activite_libelle",
+                  "apprenant_uuid",
+                  "matiere_uuid",
+                  "enseignant_uuid",
+                  "valeur",
+                  "note_sur",
+                  "date"
+                ],
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "devoir",
+                      "quiz"
+                    ]
+                  },
+                  "source_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Soumission ou tentative d'origine (traçabilité)"
+                  },
+                  "activite_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Devoir ou quiz : une épreuve par activité"
+                  },
+                  "activite_libelle": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "example": "Fractions"
+                  },
+                  "apprenant_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "matiere_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "uuid de la matière d'Évaluations (GET /v1/matieres)"
+                  },
+                  "enseignant_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Enseignant qui a noté : doit être affecté à la matière dans la classe"
+                  },
+                  "valeur": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}(\\.\\d{1,2})?$",
+                    "example": "14"
+                  },
+                  "note_sur": {
+                    "type": "string",
+                    "pattern": "^\\d{1,3}(\\.\\d{1,2})?$",
+                    "example": "20"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-10-15"
+                  },
+                  "commentaire": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Note créée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "note_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "evaluation_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "periode_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "valeur": {
+                          "type": "string",
+                          "example": "14.00"
+                        },
+                        "note_sur": {
+                          "type": "string",
+                          "example": "20.00"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Note déjà reportée (inchangée ou mise à jour)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "note_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "evaluation_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "periode_uuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "valeur": {
+                          "type": "string",
+                          "example": "14.00"
+                        },
+                        "note_sur": {
+                          "type": "string",
+                          "example": "20.00"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Secret interne absent ou invalide, ou enseignant non affecté",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PERIODE_CLOTUREE, PERIODE_INTROUVABLE, SAISIE_VERROUILLEE, ACTIVITE_INCOHERENTE, BAREME_INCOMPATIBLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ErrValidation"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SecretInterne": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Internal-Secret",
+        "description": "INTERNAL_API_SECRET de la plateforme (ajouté par la Gateway)"
+      },
+      "Tenant": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Tenant-Id",
+        "description": "Identifiant numérique de l'établissement (claim tenantId du JWT)"
+      },
+      "Utilisateur": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-User-Id",
+        "description": "uuid de l'utilisateur connecté (claim sub du JWT)"
+      },
+      "Role": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-User-Role",
+        "description": "super_admin | administrateur | personnel | enseignant | apprenant | parent"
+      }
+    },
+    "schemas": {
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "par_page": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "pages": {
+            "type": "integer"
+          }
+        }
+      },
+      "Erreur": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "description": "Message lisible par l'utilisateur final"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Code technique stable"
+              },
+              "details": {
+                "type": "object",
+                "description": "422 : erreurs par champ",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Grille": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "example": "beninois_secondaire"
+          },
+          "nom": {
+            "type": "string"
+          },
+          "cycle": {
+            "type": "string",
+            "enum": [
+              "primaire",
+              "secondaire",
+              "universitaire"
+            ]
+          },
+          "programme": {
+            "type": "string",
+            "enum": [
+              "beninois",
+              "francais",
+              "autre"
+            ]
+          },
+          "type_notation": {
+            "type": "string",
+            "enum": [
+              "chiffree",
+              "competences"
+            ]
+          },
+          "note_min": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "0.00"
+          },
+          "note_max": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "20.00"
+          },
+          "avec_coefficients": {
+            "type": "boolean"
+          },
+          "avec_classement": {
+            "type": "boolean"
+          },
+          "niveaux_competence": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "libelle": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "origine": {
+            "type": "string",
+            "enum": [
+              "plateforme",
+              "etablissement"
+            ]
+          }
+        }
+      },
+      "ParametresNotation": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cycle": {
+            "type": "string",
+            "enum": [
+              "primaire",
+              "secondaire",
+              "universitaire"
+            ]
+          },
+          "ponderation_types": {
+            "type": "object",
+            "description": "Par type d'épreuve : `bloc` = les notes du type forment UNE note (leur moyenne) ; `individuel` = chaque note compte. Types absents : valeur par défaut.",
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "mode",
+                "poids"
+              ],
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "enum": [
+                    "bloc",
+                    "individuel"
+                  ]
+                },
+                "poids": {
+                  "type": "string",
+                  "pattern": "^\\d+(\\.\\d{1,2})?$",
+                  "example": "1"
+                }
+              }
+            },
+            "example": {
+              "interrogation": {
+                "mode": "bloc",
+                "poids": "1"
+              },
+              "devoir_surveille": {
+                "mode": "individuel",
+                "poids": "1"
+              },
+              "composition": {
+                "mode": "individuel",
+                "poids": "2"
+              }
+            }
+          },
+          "decimales": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3,
+            "example": 2
+          },
+          "note_non_saisie": {
+            "type": "string",
+            "enum": [
+              "exclure",
+              "zero"
+            ]
+          },
+          "absence_non_justifiee": {
+            "type": "string",
+            "enum": [
+              "exclure",
+              "zero"
+            ]
+          },
+          "regle_rattrapage": {
+            "type": "string",
+            "enum": [
+              "remplacer",
+              "meilleure",
+              "moyenne"
+            ]
+          },
+          "classement_actif": {
+            "type": "boolean"
+          },
+          "echelle_appreciation": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "required": [
+                "min",
+                "max",
+                "mention"
+              ],
+              "properties": {
+                "min": {
+                  "type": "string",
+                  "pattern": "^\\d+(\\.\\d{1,2})?$",
+                  "example": "10"
+                },
+                "max": {
+                  "type": "string",
+                  "pattern": "^\\d+(\\.\\d{1,2})?$",
+                  "example": "12"
+                },
+                "mention": {
+                  "type": "string",
+                  "maxLength": 60,
+                  "example": "Passable"
+                }
+              }
+            }
+          },
+          "delai_escalade_contestation_jours": {
+            "type": "integer"
+          },
+          "grille": {
+            "$ref": "#/components/schemas/Grille"
+          }
+        }
+      },
+      "Matiere": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "code": {
+            "type": "string",
+            "example": "MATH"
+          },
+          "nom": {
+            "type": "string",
+            "example": "Mathématiques"
+          },
+          "coefficient_defaut": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "4.00"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "coefficients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "uuid": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "cycle": {
+                  "type": "string",
+                  "enum": [
+                    "primaire",
+                    "secondaire",
+                    "universitaire"
+                  ]
+                },
+                "niveau": {
+                  "type": "string",
+                  "example": "Tle"
+                },
+                "coefficient": {
+                  "type": "string",
+                  "pattern": "^\\d+(\\.\\d{1,2})?$",
+                  "example": "5.00"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Periode": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "annee_scolaire": {
+            "type": "string",
+            "example": "2026-2027"
+          },
+          "cycle": {
+            "type": "string",
+            "enum": [
+              "primaire",
+              "secondaire",
+              "universitaire"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "trimestre",
+              "semestre"
+            ]
+          },
+          "numero": {
+            "type": "integer"
+          },
+          "libelle": {
+            "type": "string"
+          },
+          "date_debut": {
+            "type": "string",
+            "format": "date"
+          },
+          "date_fin": {
+            "type": "string",
+            "format": "date"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "ouverte",
+              "en_cloture",
+              "cloturee"
+            ]
+          },
+          "cloturee_par_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "cloturee_le": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "Evaluation": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "classe_uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "enseignant_uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "devoir_surveille",
+              "interrogation",
+              "composition",
+              "examen_officiel",
+              "evaluation_competence",
+              "note_elearning"
+            ]
+          },
+          "libelle": {
+            "type": "string"
+          },
+          "date_evaluation": {
+            "type": "string",
+            "format": "date"
+          },
+          "coefficient": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "1.00"
+          },
+          "note_sur": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "20.00"
+          },
+          "saisie_cloturee_le": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "periode": {
+            "$ref": "#/components/schemas/Periode"
+          },
+          "matiere": {
+            "$ref": "#/components/schemas/Matiere"
+          }
+        }
+      },
+      "Note": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "evaluation_uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "apprenant_uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "saisie",
+              "absent_justifie",
+              "absent_non_justifie",
+              "dispense"
+            ]
+          },
+          "valeur": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "14.50",
+            "nullable": true
+          },
+          "niveau_competence": {
+            "type": "string",
+            "nullable": true
+          },
+          "commentaire": {
+            "type": "string",
+            "nullable": true
+          },
+          "version": {
+            "type": "integer",
+            "description": "À renvoyer pour toute modification (verrou optimiste)"
+          },
+          "saisi_le": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modifie_le": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Bulletin": {
+        "type": "object",
+        "properties": {
+          "apprenant": {
+            "type": "object",
+            "properties": {
+              "uuid": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "nom": {
+                "type": "string"
+              },
+              "prenom": {
+                "type": "string"
+              },
+              "matricule": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "classe": {
+            "type": "object",
+            "properties": {
+              "uuid": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "nom": {
+                "type": "string"
+              },
+              "cycle": {
+                "type": "string",
+                "enum": [
+                  "primaire",
+                  "secondaire",
+                  "universitaire"
+                ]
+              },
+              "niveau": {
+                "type": "string"
+              },
+              "programme": {
+                "type": "string"
+              }
+            }
+          },
+          "periode": {
+            "type": "object",
+            "properties": {
+              "uuid": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "libelle": {
+                "type": "string"
+              },
+              "annee_scolaire": {
+                "type": "string"
+              }
+            }
+          },
+          "moyenne": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "15.00",
+            "nullable": true
+          },
+          "mention": {
+            "type": "string",
+            "nullable": true
+          },
+          "rang": {
+            "type": "integer",
+            "nullable": true,
+            "description": "null si classement désactivé"
+          },
+          "ex_aequo": {
+            "type": "boolean"
+          },
+          "effectif": {
+            "type": "integer"
+          },
+          "moyenne_classe": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d{1,2})?$",
+            "example": "13.25",
+            "nullable": true
+          },
+          "matieres": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "matiere_uuid": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "matiere_nom": {
+                  "type": "string"
+                },
+                "coefficient": {
+                  "type": "string",
+                  "pattern": "^\\d+(\\.\\d{1,2})?$",
+                  "example": "4.00"
+                },
+                "moyenne": {
+                  "type": "string",
+                  "pattern": "^\\d+(\\.\\d{1,2})?$",
+                  "example": "15.00",
+                  "nullable": true
+                },
+                "moyennes_blocs": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "example": {
+                    "interrogation": "16.00"
+                  }
+                },
+                "moyenne_classe": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "min_classe": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "max_classe": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "notes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "evaluation_uuid": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "statut": {
+                        "type": "string"
+                      },
+                      "valeur": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "note_sur": {
+                        "type": "string"
+                      },
+                      "retenue": {
+                        "type": "boolean"
+                      },
+                      "valeur_retenue": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Note ramenée sur le barème de la grille"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "regles_appliquees": {
+            "type": "object",
+            "description": "Règles de calcul affichées sur le bulletin"
+          },
+          "provisoire": {
+            "type": "boolean",
+            "description": "true : période ouverte, calcul à la volée"
+          },
+          "version": {
+            "type": "integer",
+            "nullable": true
+          },
+          "bulletin_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Bulletin archivé uniquement"
+          },
+          "motif_version": {
+            "type": "string",
+            "nullable": true
+          },
+          "versions": {
+            "type": "array",
+            "description": "Période clôturée : historique des versions",
+            "items": {
+              "type": "object",
+              "properties": {
+                "bulletin_uuid": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "version": {
+                  "type": "integer"
+                },
+                "moyenne": {
+                  "type": "string"
+                },
+                "rang": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "motif_version": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "genere_le": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "pdf_disponible": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Classement": {
+        "type": "object",
+        "properties": {
+          "periode": {
+            "type": "object"
+          },
+          "classe_uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "classement_actif": {
+            "type": "boolean"
+          },
+          "moyenne_classe": {
+            "type": "string",
+            "nullable": true
+          },
+          "effectif_classe": {
+            "type": "integer"
+          },
+          "distribution": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "matiere_uuid": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "matiere_nom": {
+                  "type": "string"
+                },
+                "effectif": {
+                  "type": "integer"
+                },
+                "min": {
+                  "type": "string"
+                },
+                "max": {
+                  "type": "string"
+                },
+                "moyenne": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "apprenants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "apprenant_uuid": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "nom": {
+                  "type": "string"
+                },
+                "prenom": {
+                  "type": "string"
+                },
+                "moyenne": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "rang": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "ex_aequo": {
+                  "type": "boolean"
+                },
+                "mention": {
+                  "type": "string",
+                  "nullable": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "Contestation": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "demandeur_uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "demandeur_role": {
+            "type": "string",
+            "enum": [
+              "apprenant",
+              "parent"
+            ]
+          },
+          "statut": {
+            "type": "string",
+            "enum": [
+              "ouverte",
+              "en_examen",
+              "resolue",
+              "rejetee"
+            ]
+          },
+          "motif": {
+            "type": "string"
+          },
+          "reponse": {
+            "type": "string",
+            "nullable": true
+          },
+          "traitee_par_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "ouverte_le": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "escaladee_le": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cloturee_le": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "ModeleBulletin": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cycle": {
+            "type": "string",
+            "enum": [
+              "primaire",
+              "secondaire",
+              "universitaire"
+            ]
+          },
+          "en_tete": {
+            "type": "object"
+          },
+          "colonnes_affichees": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mentions_bas_de_page": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    },
+    "responses": {
+      "ErrNonAuthentifie": {
+        "description": "Contexte Gateway absent ou invalide (secret interne, tenant, utilisateur)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erreur"
+            },
+            "example": {
+              "success": false,
+              "message": "Accès refusé.",
+              "error": {
+                "code": "APPEL_NON_AUTORISE"
+              }
+            }
+          }
+        }
+      },
+      "ErrAcces": {
+        "description": "Rôle non autorisé ou relation refusée (classe non affectée, enfant non rattaché...)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erreur"
+            },
+            "example": {
+              "success": false,
+              "message": "Vous n'avez pas accès à cette ressource.",
+              "error": {
+                "code": "ACCES_REFUSE"
+              }
+            }
+          }
+        }
+      },
+      "ErrIntrouvable": {
+        "description": "Ressource introuvable dans cet établissement",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erreur"
+            },
+            "example": {
+              "success": false,
+              "message": "Ressource introuvable.",
+              "error": {
+                "code": "RESSOURCE_INTROUVABLE"
+              }
+            }
+          }
+        }
+      },
+      "ErrConflit": {
+        "description": "Conflit métier (période clôturée, note modifiée entre-temps, doublon...)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erreur"
+            },
+            "example": {
+              "success": false,
+              "message": "La période est clôturée : la saisie est fermée.",
+              "error": {
+                "code": "PERIODE_CLOTUREE"
+              }
+            }
+          }
+        }
+      },
+      "ErrValidation": {
+        "description": "Données invalides",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erreur"
+            },
+            "example": {
+              "success": false,
+              "message": "La note ne peut pas dépasser le barème de l'épreuve (10.00).",
+              "error": {
+                "code": "DONNEES_INVALIDES",
+                "details": {
+                  "notes.0.valeur": [
+                    "La note ne peut pas dépasser le barème de l'épreuve (10.00)."
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ErrDebit": {
+        "description": "Trop de requêtes",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erreur"
+            },
+            "example": {
+              "success": false,
+              "message": "Trop de requêtes. Patientez un instant.",
+              "error": {
+                "code": "TROP_DE_REQUETES"
+              }
+            }
+          }
+        }
+      },
+      "ErrDependance": {
+        "description": "Service amont (Scolarité) injoignable ou contrat incomplet : refus par défaut",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erreur"
+            },
+            "example": {
+              "success": false,
+              "message": "Un service de la plateforme est momentanément indisponible. Réessayez plus tard.",
+              "error": {
+                "code": "SERVICE_DEPENDANT_INDISPONIBLE"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

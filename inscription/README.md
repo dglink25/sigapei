@@ -352,7 +352,9 @@ inscription/
 │       ├── migrations/          Création des tables du schéma inscription
 │       └── Seeders/             Données de test
 ├── tests/
-│   └── Unit/                    Tests unitaires validation & motifs
+│   ├── Feature/                 Tests d'intégration d'appels internes (InterneClientTest.php)
+│   └── Unit/                    Tests unitaires validation admission
+├── phpunit.xml
 ├── .env.example
 ├── composer.json
 ├── docker-compose.yml

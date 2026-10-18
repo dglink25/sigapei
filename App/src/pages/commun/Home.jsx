@@ -532,111 +532,17 @@ export default function Home() {
             </div>
           </section>
 
-          {/* ── Security Section ─────────────────────────────────── */}
-          <section id="hp-securite" className="hp-band hp-sec-rv">
-            <div className="hp-w">
-              <h2 className="hp-rv">Sécurité &amp; Souveraineté des Données</h2>
-              <p className="hp-lead hp-rv">
-                Vos données scolaires et financières sont chiffrées et protégées selon les normes internationales les plus strictes.
-              </p>
-
-              <div className="hp-trust">
-                <div className="hp-tr">
-                  <div className="hp-n">99.9%</div>
-                  <p>Disponibilité garantie avec haute fiabilité et sauvegardes automatiques en temps réel.</p>
-                </div>
-                <div className="hp-tr">
-                  <div className="hp-n">256-bit</div>
-                  <p>Toutes les transactions financières et données personnelles sont intégralement chiffrées.</p>
-                </div>
-                <div className="hp-tr">
-                  <div className="hp-n">Conforme</div>
-                  <p>Respect strict des lois et réglementations sur la protection des données personnelles.</p>
-                </div>
-              </div>
-
-              <div className="hp-pay">
-                <span>MTN Mobile Money</span>
-                <span>Orange Money</span>
-                <span>Moov Money</span>
-                <span>Wave</span>
-                <span>Visa / Mastercard</span>
-                <span>Virement Bancaire</span>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Offers Section ───────────────────────────────────── */}
-          <section id="hp-offres" className="hp-sec-rv">
-            <div className="hp-w">
-              <h2 className="hp-rv">Des tarifs adaptés à la taille de votre école.</h2>
-              <p className="hp-lead hp-rv">
-                Pas de frais cachés. Choisissez la formule correspondant à votre effectif d&apos;apprenants.
-              </p>
-
-              <div className="hp-plans">
-                <div className="hp-pl">
-                  <h3>Primaire &amp; Maternelle</h3>
-                  <div className="hp-who">Écoles élémentaires &amp; préscolaires</div>
-                  <ul>
-                    <li><i className="hp-dia" />Appel numérique quotidien</li>
-                    <li><i className="hp-dia" />Bulletins simples &amp; compétences</li>
-                    <li><i className="hp-dia" />Suivi des frais de scolarité</li>
-                    <li><i className="hp-dia" />Alertes SMS aux parents</li>
-                  </ul>
-                  <a className="hp-btn hp-b-l" href="/demande">Demander un devis</a>
-                </div>
-
-                <div className="hp-pl hp-hot">
-                  <span className="hp-pop">Le plus choisi</span>
-                  <h3>Collège &amp; Lycée</h3>
-                  <div className="hp-who">Établissements secondaires</div>
-                  <ul>
-                    <li><i className="hp-dia" />Gestion des séries &amp; coefs</li>
-                    <li><i className="hp-dia" />Bulletins PDF sécurisés</li>
-                    <li><i className="hp-dia" />Paiements Mobile Money</li>
-                    <li><i className="hp-dia" />Cartes d&apos;élèves QR-Code</li>
-                    <li><i className="hp-dia" />E-Learning &amp; Devoirs</li>
-                  </ul>
-                  <a className="hp-btn hp-b-o" href="/demande">Choisir cette formule</a>
-                </div>
-
-                <div className="hp-pl">
-                  <h3>Université &amp; Supérieur</h3>
-                  <div className="hp-who">Facultés &amp; Grands Instituts</div>
-                  <ul>
-                    <li><i className="hp-dia" />Système LMD &amp; Crédits ECTS</li>
-                    <li><i className="hp-dia" />Portail d&apos;examens &amp; délibérations</li>
-                    <li><i className="hp-dia" />Gestion des vacataires</li>
-                    <li><i className="hp-dia" />Suivi des mémoires &amp; stages</li>
-                  </ul>
-                  <a className="hp-btn hp-b-l" href="/demande">Demander un devis</a>
-                </div>
-
-                <div className="hp-pl">
-                  <h3>Groupe Scolaire</h3>
-                  <div className="hp-who">Réseaux multi-établissements</div>
-                  <ul>
-                    <li><i className="hp-dia" />Dashboard consolidé réseau</li>
-                    <li><i className="hp-dia" />Transferts d&apos;élèves inter-écoles</li>
-                    <li><i className="hp-dia" />Supervision budgétaire groupe</li>
-                    <li><i className="hp-dia" />Support dédié 24/7 &amp; API</li>
-                  </ul>
-                  <a className="hp-btn hp-b-l" href="/demande">Contact Groupe</a>
-                </div>
-              </div>
-            </div>
-          </section>
-
           {/* ── Final CTA ────────────────────────────────────────── */}
           <section id="hp-final" className="hp-final hp-sec-rv">
             <div className="hp-w">
-              <i className="hp-lg" style={{ width: 96, height: 96, margin: '0 auto 22px' }} role="img" aria-label="Logo sigapei" />
-              <h2 className="hp-rv">Prêt à moderniser la gestion de votre établissement ?</h2>
-              <p className="hp-rv">
+              <div className="hp-final-logo-wrap">
+                <i className="hp-lg hp-final-logo" role="img" aria-label="Logo sigapei" />
+              </div>
+              <h2 className="hp-rv hp-final-title">Prêt à moderniser la gestion de votre établissement ?</h2>
+              <p className="hp-rv hp-final-text">
                 Rejoignez les centaines d&apos;écoles qui font confiance à sigapei pour leur transformation numérique.
               </p>
-              <div className="hp-cta hp-rv" style={{ marginTop: 24 }}>
+              <div className="hp-cta hp-rv hp-final-actions" style={{ marginTop: 24 }}>
                 <a className="hp-btn hp-b-o" href="/demande">Inscrire mon établissement</a>
                 <a className="hp-btn hp-b-l" href="#hp-profils">Explorer les fonctionnalités</a>
               </div>
@@ -647,16 +553,44 @@ export default function Home() {
 
         {/* ── Footer ───────────────────────────────────────────────── */}
         <footer className="hp-footer">
-          <div className="hp-w">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <i className="hp-lg" style={{ width: 36, height: 36 }} role="img" aria-label="Logo" />
-              <span className="hp-ft-brand">SIGAPEI</span>
+          <div className="hp-w hp-footer-inner">
+            <div className="hp-footer-brand">
+              <div className="hp-footer-logo">
+                <i className="hp-lg" style={{ width: 36, height: 36 }} role="img" aria-label="Logo SIGAPEI" />
+              </div>
+              <div>
+                <div className="hp-ft-brand">SIGAPEI</div>
+                <p>Plateforme de gestion scolaire</p>
+              </div>
             </div>
+
+            <div className="hp-footer-col">
+              <div className="hp-footer-label">Entreprise</div>
+              <a href="#hp-profils">Pourquoi nous</a>
+              <a href="#hp-modules">Modules</a>
+              <a href="#hp-offres">Tarifs</a>
+            </div>
+
+            <div className="hp-footer-col">
+              <div className="hp-footer-label">Ressources</div>
+              <a href="#hp-demarrer">Démarrer</a>
+              <a href="#hp-securite">Sécurité</a>
+              <a href="#hp-final">Devis</a>
+            </div>
+
+            <div className="hp-footer-col hp-footer-contact">
+              <div className="hp-footer-label">Contact</div>
+              <a href="mailto:contact@sigapei.com">contact@sigapei.com</a>
+              <a href="tel:+22500000000">+225 00 00 00 00</a>
+              <span>Abidjan, Côte d’Ivoire</span>
+            </div>
+          </div>
+
+          <div className="hp-w hp-footer-bottom">
             <div>© 2026 SIGAPEI. Tous droits réservés.</div>
-            <div style={{ display: 'flex', gap: 16, fontSize: '0.75rem' }}>
+            <div className="hp-footer-legal">
               <a href="#">Mentions légales</a>
               <a href="#">Confidentialité</a>
-              <a href="#">Sécurité</a>
             </div>
           </div>
         </footer>
