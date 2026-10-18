@@ -1,4 +1,5 @@
 """Vues de l'application Quiz."""
+from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
@@ -294,7 +295,12 @@ class TentativesViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
                  'evaluation_note_id': tentative.evaluation_note_id},
             )
         try:
-            tentative.evaluation_note_id = reporter_tentative(tentative)
+            tentative.evaluation_note_id = reporter_tentative(
+                tentative,
+                enseignant_id=request.utilisateur_id,
+                matiere_evaluations_uuid=tentative.quiz.matiere_id,
+                date_report=date.today(),
+            )
         except ServiceExterneNonConfigure as erreur:
             return Response({'detail': str(erreur)},
                             status=status.HTTP_503_SERVICE_UNAVAILABLE)

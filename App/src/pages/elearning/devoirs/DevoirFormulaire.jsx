@@ -129,7 +129,7 @@ export function DevoirFormulaire() {
 
         <div className="grille-2-colonnes">
           <div className="champ">
-            <label htmlFor="devoir-matiere">Matière - UUID (evaluations.matieres) *</label>
+            <label htmlFor="devoir-matiere">Matière *</label>
             <input
               id="devoir-matiere"
               type="text"
@@ -139,7 +139,7 @@ export function DevoirFormulaire() {
             />
           </div>
           <div className="champ">
-            <label htmlFor="devoir-classe">Classe - UUID (scolarite.classes) *</label>
+            <label htmlFor="devoir-classe">Classe *</label>
             <input
               id="devoir-classe"
               type="text"

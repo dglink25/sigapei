@@ -34,8 +34,8 @@ export function StatistiquesPage() {
         </div>
       </div>
       <p className="texte-efface">
-        Indicateurs calculés en direct par /v1/statistiques/ - aucune donnée
-        n'est dupliquée depuis les autres microservices.
+        Indicateurs calculés en direct - aucune donnée n'est dupliquée depuis
+        les autres services.
       </p>
 
       <h2>Vue d'ensemble</h2>

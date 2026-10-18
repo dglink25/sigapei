@@ -9,9 +9,7 @@ import { Pagination } from '../../../components/elearning/Pagination.jsx'
 import { SqueletteTableau } from '../../../components/elearning/Squelette.jsx'
 import { formaterDateHeure, uuidCourt } from '../../../lib/elearning/format.js'
 
-/** Ligne d'un média : lien direct Cloudinary si disponible, sinon demande
- * d'une URL signée S3/MinIO à la demande (le hook reste désactivé tant
- * que le bouton n'est pas actionné). */
+/** Ligne d'un média : lien direct ou URL temporaire à la demande. */
 function LigneMedia({ media }) {
   const urlSignee = useUrlSignee(media.uuid, { enabled: false })
 
@@ -79,9 +77,8 @@ export function MediasListe() {
         </div>
       </div>
       <p className="texte-efface">
-        Les fichiers sont envoyés directement vers Cloudinary (signature
-        fournie par le backend) ou référencés par URL externe. Aucune
-        suppression physique : DELETE est refusé côté API.
+        Référencez un fichier ou une URL externe (YouTube, lien direct…).
+        Aucune suppression physique : DELETE est refusé côté API.
       </p>
 
       <div className="carte">
@@ -111,7 +108,7 @@ export function MediasListe() {
                     <tr>
                       <th>Type</th>
                       <th>Nom</th>
-                      <th>UUID</th>
+                      <th>Identifiant</th>
                       <th>Créé le</th>
                       <th>Accès</th>
                     </tr>

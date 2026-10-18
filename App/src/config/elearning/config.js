@@ -34,8 +34,8 @@ export const ELEARNING_PATHS = {
 // - SANS_PARENT : tentatives de quiz (le parent n'y a pas accès) ;
 // - APPRENANT : passation d'un quiz ;
 // - ADMINISTRATION : PUT /v1/parametres/ du tenant.
-export const GESTION = ['enseignant', 'administrateur']
-export const SANS_PARENT = ['apprenant', 'enseignant', 'administrateur']
-export const ADMINISTRATION = ['administrateur']
+export const GESTION = ['enseignant', 'administrateur', 'super_admin']
+export const SANS_PARENT = ['apprenant', 'enseignant', 'administrateur', 'super_admin']
+export const ADMINISTRATION = ['administrateur', 'super_admin']
 export const APPRENANT = ['apprenant']
 export const ELEVES = ['apprenant', 'parent']

@@ -101,7 +101,7 @@ export function DevoirsListe() {
 
       <form className="barre-filtres" onSubmit={appliquerFiltres}>
         <div className="champ">
-          <label htmlFor="filtre-matiere-devoir">Matière (UUID)</label>
+          <label htmlFor="filtre-matiere-devoir">Matière</label>
           <input
             id="filtre-matiere-devoir"
             type="text"
@@ -113,7 +113,7 @@ export function DevoirsListe() {
           />
         </div>
         <div className="champ">
-          <label htmlFor="filtre-classe-devoir">Classe (UUID)</label>
+          <label htmlFor="filtre-classe-devoir">Classe</label>
           <input
             id="filtre-classe-devoir"
             type="text"

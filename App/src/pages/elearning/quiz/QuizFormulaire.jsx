@@ -205,27 +205,27 @@ export function QuizFormulaire() {
           <div className="grille-2-colonnes">
             <div className="champ">
               <label htmlFor="quiz-matiere">
-                Discipline - UUID (evaluations.matieres) *
+                Discipline - UUID *
               </label>
               <input
                 id="quiz-matiere"
                 type="text"
                 value={matiereId}
                 onChange={(e) => setMatiereId(e.target.value)}
-                placeholder={matiereProfil || 'UUID de la matière'}
+                placeholder={matiereProfil || 'Matière'}
                 required
               />
             </div>
             <div className="champ">
               <label htmlFor="quiz-classe">
-                Classe - UUID (scolarite.classes) *
+                Classe *
               </label>
               <input
                 id="quiz-classe"
                 type="text"
                 value={classeId}
                 onChange={(e) => setClasseId(e.target.value)}
-                placeholder={classeProfil || 'UUID de la classe'}
+                placeholder={classeProfil || 'Classe'}
                 required
               />
             </div>

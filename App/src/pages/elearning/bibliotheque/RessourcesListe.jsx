@@ -12,7 +12,7 @@ import { peutPublier, useProfilStore } from '../../../context/elearning/profil.j
 import { formaterDate, uuidCourt } from '../../../lib/elearning/format.js'
 
 /** Aperçu du média d'une ressource : lecteur vidéo (HLS/YouTube), image
- * ou lien de document ; les médias S3/MinIO nécessitent une URL signée. */
+ * ou lien de document distant. */
 function ApercuMedia({ media }) {
   if (!media) return null
   return (
@@ -49,8 +49,7 @@ function ApercuMedia({ media }) {
       )}
       {!media.url_cloudinary && (
         <p className="aide">
-          Média stocké sur S3/MinIO : utilisez l'action « URL signée » de la
-          page Médias pour obtenir un lien temporaire.
+          Le lien temporaire est indisponible pour l&#39;instant.
         </p>
       )}
     </>
@@ -58,7 +57,7 @@ function ApercuMedia({ media }) {
 }
 
 /** Dépôt d'une ressource : le média est obligatoire (déjà référencé dans
- * /v1/medias/ ou créé à la volée), les mots-clés guident la recherche. */
+: le média est déjà référencé ou créé à la volée.) */
 function FormulaireDepotRessource() {
   const matiereProfil = useProfilStore((etat) => etat.matiereId)
   const classeProfil = useProfilStore((etat) => etat.classeId)
@@ -125,7 +124,7 @@ function FormulaireDepotRessource() {
 
       <div className="grille-2-colonnes">
         <div className="champ">
-          <label htmlFor="ressource-matiere">Matière - UUID (evaluations.matieres) *</label>
+          <label htmlFor="ressource-matiere">Matière *</label>
           <input
             id="ressource-matiere"
             type="text"
@@ -135,7 +134,7 @@ function FormulaireDepotRessource() {
           />
         </div>
         <div className="champ">
-          <label htmlFor="ressource-classe">Classe - UUID (scolarite.classes) *</label>
+          <label htmlFor="ressource-classe">Classe *</label>
           <input
             id="ressource-classe"
             type="text"
@@ -148,7 +147,7 @@ function FormulaireDepotRessource() {
 
       <div className="grille-2-colonnes">
         <div className="champ">
-          <label htmlFor="ressource-enseignant">Enseignant - UUID (rh.personnel)</label>
+          <label htmlFor="ressource-enseignant">Enseignant</label>
           <input
             id="ressource-enseignant"
             type="text"

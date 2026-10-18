@@ -71,9 +71,8 @@ export function FormulaireMedia({ onCree, dossier = 'elearning' }) {
       {mode === 'upload' ? (
         <div className="champ">
           <p className="aide">
-            Le fichier est envoyé directement vers Cloudinary avec une
-            signature fournie par le backend ; seul le résultat (URL,
-            identifiant public) est référencé dans /v1/medias/.
+            Le fichier est envoyé vers le service de médias ; seul le résultat
+            (URL, identifiant public) est référencé.
           </p>
           <input
             type="file"

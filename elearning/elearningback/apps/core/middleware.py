@@ -12,7 +12,14 @@ import uuid
 
 from django.http import JsonResponse
 
-ROLES_CONNUS = ('enseignant', 'apprenant', 'parent', 'administrateur')
+ROLES_CONNUS = ('enseignant', 'apprenant', 'parent', 'administrateur', 'super_admin')
+
+# Routes publiques : ne exigent ni X-Tenant-ID ni X-Role.
+ROUTES_PUBLIQUES = ('/documentation/',)
+
+# Roles dispenses d'en-tete X-Tenant-ID (pas d'attachement a un etablissement
+# specifique : super_admin voit l'ensemble de la plateforme).
+ROLES_SANS_TENANT = ('super_admin',)
 
 
 class TenantMiddleware:
@@ -23,7 +30,26 @@ class TenantMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.path.startswith('/v1/'):
+        if not request.path.startswith('/v1/'):
+            return self.get_response(request)
+
+        # Routes publiques : pas de tenant ni de role requis.
+        if request.path in ROUTES_PUBLIQUES:
+            return self.get_response(request)
+
+        role = request.headers.get('X-Role', '').strip()
+        if role not in ROLES_CONNUS:
+            return self._erreur(
+                403,
+                "L'en-tête 'X-Role' est requis sur les endpoints /v1/ "
+                '(valeurs acceptées : enseignant, apprenant, parent, '
+                'administrateur, super_admin).',
+            )
+        request.role = role
+
+        # super_admin n'est attache a aucun etablissement specifique :
+        # il n'a pas besoin d'en-tete X-Tenant-ID.
+        if role not in ROLES_SANS_TENANT:
             brut = request.headers.get('X-Tenant-ID', '').strip()
             if not brut:
                 return self._erreur(
@@ -38,29 +64,21 @@ class TenantMiddleware:
                     400,
                     "L'en-tête 'X-Tenant-ID' doit être un UUID valide.",
                 )
+        else:
+            request.tenant_id = None
 
-            role = request.headers.get('X-Role', '').strip()
-            if role not in ROLES_CONNUS:
+        apprenant = request.headers.get('X-Apprenant-ID', '').strip()
+        if apprenant:
+            try:
+                request.apprenant_id = str(uuid.UUID(apprenant))
+            except ValueError:
                 return self._erreur(
-                    403,
-                    "L'en-tête 'X-Role' est requis sur les endpoints /v1/ "
-                    '(valeurs acceptées : enseignant, apprenant, parent, '
-                    'administrateur).',
+                    400,
+                    "L'en-tête 'X-Apprenant-ID' doit être un UUID "
+                    'valide.',
                 )
-            request.role = role
-
-            apprenant = request.headers.get('X-Apprenant-ID', '').strip()
-            if apprenant:
-                try:
-                    request.apprenant_id = str(uuid.UUID(apprenant))
-                except ValueError:
-                    return self._erreur(
-                        400,
-                        "L'en-tête 'X-Apprenant-ID' doit être un UUID "
-                        'valide.',
-                    )
-            else:
-                request.apprenant_id = None
+        else:
+            request.apprenant_id = None
         return self.get_response(request)
 
     @staticmethod

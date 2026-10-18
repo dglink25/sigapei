@@ -1,4 +1,5 @@
 """Vues du socle commun."""
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import RetrieveUpdateAPIView
 
 from apps.core.models import ParametresModule
@@ -23,7 +24,14 @@ class ParametresView(RetrieveUpdateAPIView):
         return [RolePermission()]
 
     def get_object(self):
+        tenant_id = getattr(self.request, 'tenant_id', None)
+        if not tenant_id:
+            # super_admin (ou tout rôle sans tenant) : pas de paramètres
+            # spécifiques à un établissement à retourner.
+            raise ValidationError(
+                'Ce endpoint nécessite un tenant (X-Tenant-ID).',
+            )
         parametres, _ = ParametresModule.objects.get_or_create(
-            tenant_id=self.request.tenant_id,
+            tenant_id=tenant_id,
         )
         return parametres

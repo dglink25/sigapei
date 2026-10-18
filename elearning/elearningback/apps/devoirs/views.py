@@ -1,4 +1,5 @@
 """Vues de l'application Devoirs."""
+from datetime import date
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -205,7 +206,12 @@ class SoumissionsViewSet(TenantViewSetMixin, viewsets.ReadOnlyModelViewSet):
                  'evaluation_note_id': soumission.evaluation_note_id},
             )
         try:
-            soumission.evaluation_note_id = reporter_soumission(soumission)
+            soumission.evaluation_note_id = reporter_soumission(
+                soumission,
+                enseignant_id=request.utilisateur_id,
+                matiere_evaluations_uuid=soumission.devoir.matiere_id,
+                date_report=date.today(),
+            )
         except ServiceExterneNonConfigure as erreur:
             return Response({'detail': str(erreur)},
                             status=status.HTTP_503_SERVICE_UNAVAILABLE)

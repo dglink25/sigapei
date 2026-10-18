@@ -177,27 +177,27 @@ export function CoursFormulaire() {
           <div className="grille-2-colonnes">
             <div className="champ">
               <label htmlFor="cours-matiere">
-                Discipline - UUID (evaluations.matieres) *
+                Discipline - UUID *
               </label>
               <input
                 id="cours-matiere"
                 type="text"
                 value={matiereId}
                 onChange={(e) => setMatiereId(e.target.value)}
-                placeholder={matiereProfil || 'UUID de la matière'}
+                placeholder={matiereProfil || 'Matière'}
                 required
               />
             </div>
             <div className="champ">
               <label htmlFor="cours-enseignant">
-                Enseignant auteur - UUID (rh.personnel)
+                Enseignant auteur *
               </label>
               <input
                 id="cours-enseignant"
                 type="text"
                 value={enseignantId}
                 onChange={(e) => setEnseignantId(e.target.value)}
-                placeholder={enseignantProfil || 'UUID de l\u2019enseignant'}
+                placeholder={enseignantProfil || 'Enseignant'}
               />
             </div>
           </div>
@@ -253,7 +253,7 @@ export function CoursFormulaire() {
 
           <div className="champ">
             <label htmlFor="cours-nouvelle-classe">
-              Ajouter une classe - UUID (scolarite.classes)
+              Ajouter une classe
             </label>
             <div className="selection-media-ligne">
               <input
@@ -261,7 +261,7 @@ export function CoursFormulaire() {
                 type="text"
                 value={nouvelleClasse}
                 onChange={(e) => setNouvelleClasse(e.target.value)}
-                placeholder={classeProfil || 'UUID de la classe'}
+                placeholder={classeProfil || 'Classe'}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -282,8 +282,7 @@ export function CoursFormulaire() {
               </button>
             </div>
             <p className="aide">
-              Les classes appartiennent au service scolarite : seuls des UUID
-              sont référencés ici (règle 4 des frontières microservices).
+              Choisissez la ou les classes cibles du cours.
             </p>
           </div>
 

@@ -43,7 +43,7 @@ export function messageErreur(erreur) {
     return 'Une erreur inattendue est survenue.'
   }
   if (!erreur.response) {
-    return 'Serveur injoignable : vérifiez que le backend est démarré (port 8000).'
+    return 'Serveur injoignable : vérifiez votre connexion et réessayez.'
   }
   const { status, data } = erreur.response
   if (status === 400 && data && typeof data === 'object') {
@@ -59,7 +59,7 @@ export function messageErreur(erreur) {
   if (status === 401) return 'Authentification requise.'
   if (status === 403) return 'Accès refusé.'
   if (status === 404) return 'Ressource introuvable.'
-  if (status === 405) return 'Action non autorisée par l\u2019API.'
+  if (status === 405) return 'Cette action n&#39;est pas autorisée.'
   if (status === 500) return 'Erreur interne du serveur.'
-  return `Erreur ${status}.`
+  return 'Une erreur est survenue.'
 }

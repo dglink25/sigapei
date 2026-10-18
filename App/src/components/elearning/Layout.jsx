@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 
 import { Icone } from './Icone.jsx'
 import { ROLES, useProfilStore } from '../../context/elearning/profil.js'
 import { ADMINISTRATION, ELEVES, GESTION, SANS_PARENT } from '../../config/elearning/config.js'
+import { syncProfilDepuisIdentite } from '../../context/elearning/profil.js'
 
 // Rôles autorisés par entrée (bilan RBAC validé) : pas de `roles` =
 // tous les rôles. L'apprenant et le parent ne voient ni Médias, ni
@@ -73,6 +74,15 @@ export function Layout() {
   const libelleRole =
     ROLES.find((element) => element.valeur === role)?.libelle ?? role
 
+  // Synchronise le profil elearning avec la session identite (tenant_id, role)
+  // au montage, pour ne pas avoir a saisir le tenant ni le role a la main.
+  useEffect(() => {
+    const synchro = syncProfilDepuisIdentite()
+    if (synchro && (!tenantId || synchro.role !== role)) {
+      majProfil(synchro)
+    }
+  }, [majProfil, tenantId, role])
+
   // Contexte scolaire de démonstration (aucune API ne les persiste).
   const [annee, setAnnee] = useState('2025-2026')
   const [trimestre, setTrimestre] = useState('Trimestre 1')
@@ -126,8 +136,7 @@ export function Layout() {
       </aside>
 
       <div className="contenu-principal">
-        {/* Barre supérieure (PC) - la recherche globale est masquée :
-            aucune API transverse ne l'alimente (décision validée). */}
+        {/* Barre supérieure (PC) */}
         <header className="topbar">
           <span
             className="badge-synchro"
@@ -185,6 +194,23 @@ export function Layout() {
           </Link>
         </header>
 
+        {/* Bannière d'identité : rôle et tenant actifs */}
+        <div className="alerte alerte-info" role="status">
+          <span className="texte-efface">Connecté en tant que</span>
+          <strong>{libelleRole}</strong>
+          {tenantId ? (
+            <>
+              <span className="texte-efface">·</span>
+              <span className="texte-efface">Tenant :</span>
+              <code className="police-mono">
+                {tenantId.slice(0, 8)}…
+              </code>
+            </>
+          ) : (
+            <span className="texte-efface">· Tenant : aucun (super_admin)</span>
+          )}
+        </div>
+
         {/* En-tête mobile (< 768px) */}
         <header className="entete-mobile">
           <Link to="/elearning/" className="marque">
@@ -200,7 +226,7 @@ export function Layout() {
         </header>
 
         <main className="contenu">
-          {!tenantId && (
+          {!tenantId && role !== 'super_admin' && (
             <div className="alerte alerte-avertissement" role="alert">
               Aucun tenant configuré : toutes les routes /v1/ exigent l'en-tête
               X-Tenant-ID.{' '}

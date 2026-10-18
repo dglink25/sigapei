@@ -56,7 +56,7 @@ export function ParametresPage() {
       <div className="titre-page">
         <div>
           <h1>Paramètres du module</h1>
-          <span className="badge badge-texte">Singleton du tenant</span>
+          <span className="badge badge-texte">Paramètres du tenant</span>
         </div>
       </div>
       <p className="texte-efface">

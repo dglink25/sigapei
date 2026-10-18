@@ -56,7 +56,7 @@ export function CoursListe() {
 
       <form className="barre-filtres" onSubmit={appliquerFiltres}>
         <div className="champ">
-          <label htmlFor="filtre-matiere">Matière (UUID)</label>
+          <label htmlFor="filtre-matiere">Matière</label>
           <input
             id="filtre-matiere"
             type="text"
@@ -68,7 +68,7 @@ export function CoursListe() {
           />
         </div>
         <div className="champ">
-          <label htmlFor="filtre-classe">Classe (UUID)</label>
+          <label htmlFor="filtre-classe">Classe</label>
           <input
             id="filtre-classe"
             type="text"

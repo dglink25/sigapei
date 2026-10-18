@@ -89,8 +89,7 @@ export function SelectionMedia({
           )}
           {!mediaChoisi.data.url_cloudinary && (
             <p className="aide">
-              Document stocké sur S3/MinIO : utilisez l'action « URL signée »
-              de la page Médias pour obtenir un lien temporaire.
+              Le lien temporaire est indisponible pour l&#39;instant.
             </p>
           )}
         </div>

@@ -56,7 +56,7 @@ export function QuizListe() {
 
       <form className="barre-filtres" onSubmit={appliquerFiltres}>
         <div className="champ">
-          <label htmlFor="filtre-matiere-quiz">Matière (UUID)</label>
+          <label htmlFor="filtre-matiere-quiz">Matière</label>
           <input
             id="filtre-matiere-quiz"
             type="text"
@@ -68,7 +68,7 @@ export function QuizListe() {
           />
         </div>
         <div className="champ">
-          <label htmlFor="filtre-classe-quiz">Classe (UUID)</label>
+          <label htmlFor="filtre-classe-quiz">Classe</label>
           <input
             id="filtre-classe-quiz"
             type="text"

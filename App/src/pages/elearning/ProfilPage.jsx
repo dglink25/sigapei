@@ -19,11 +19,9 @@ export function ProfilPage() {
       </div>
 
       <p className="texte-efface">
-        L'authentification SSO (JWT émis par le microservice Identité)
-        n'est pas encore branchée sur ce module. Ce profil tient lieu de
-        session : il définit le tenant envoyé dans l'en-tête X-Tenant-ID,
-        le rôle simulé et les identifiants externes qui préremplissent les
-        formulaires (matière, classe, enseignant, apprenant).
+        Ce profil de session définit l'établissement (tenant), le rôle et
+        les identifiants externes qui préremplissent les formulaires
+        (matière, classe, enseignant, apprenant).
       </p>
 
       <PanneauProfil />

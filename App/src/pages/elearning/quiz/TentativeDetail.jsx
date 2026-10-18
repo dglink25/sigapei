@@ -261,13 +261,13 @@ export function TentativeDetail() {
                   reporter.isPending || Boolean(donnees.evaluation_note_id)
                 }
                 onClick={() => reporter.mutate(uuid)}
-                title="Report de la note totale vers evaluations.notes"
+                title="Reporter la note totale vers le service des notes"
               >
                 {donnees.evaluation_note_id
                   ? 'Note déjà reportée'
                   : reporter.isPending
                     ? 'Report…'
-                    : 'Reporter vers evaluations.notes'}
+                    : 'Reporter vers le service des notes'}
               </button>
             )}
           </div>

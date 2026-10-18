@@ -302,7 +302,7 @@ export function QuizPassation() {
           <h2>Démarrer une tentative</h2>
           <div className="champ">
             <label htmlFor="passation-apprenant">
-              Apprenant - UUID (scolarite.apprenants) *
+              Apprenant *
             </label>
             <input
               id="passation-apprenant"

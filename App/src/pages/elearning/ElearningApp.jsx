@@ -31,9 +31,7 @@ import {
 
 /**
  * Garde de route du module : redirige vers l'accueil du module si le rôle
- * simulé n'est pas autorisé. La sécurité de référence reste celle de
- * l'API (en-tête X-Role vérifié par les permissions DRF) — ceci n'empêche
- * que d'afficher une page inutile.
+ * simulé n'est pas autorisé. Ceci n'empêche que d'afficher une page inutile.
  */
 function RouteProtegee({ roles, children }) {
   const role = useProfilStore((etat) => etat.role)
@@ -45,9 +43,8 @@ function RouteProtegee({ roles, children }) {
 
 /**
  * Racine du module E-Learning, montée en route descendante sous
- * /elearning/* dans App.jsx. Accès en démonstration (stand-in des
- * claims JWT de la gateway) : rôle et tenant proviennent du profil
- * de démonstration persisté, les routes restent relatives au module.
+ * /elearning/* dans App.jsx. Rôle et tenant proviennent du profil
+ * de démonstration, les routes restent relatives au module.
  */
 export default function ElearningApp() {
   return (

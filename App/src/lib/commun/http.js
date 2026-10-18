@@ -115,6 +115,9 @@ export function createHttp(baseUrl) {
     if (body !== undefined) headers['Content-Type'] = 'application/json'
     const token = auth ? tokenStore.getAccess() : null
     if (token) headers.Authorization = `Bearer ${token}`
+    const user = tokenStore.getUser()
+    if (user?.tenant_id) headers['X-Tenant-ID'] = String(user.tenant_id)
+    if (user?.role) headers['X-Role'] = String(user.role)
 
     let res
     try {

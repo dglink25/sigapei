@@ -43,7 +43,7 @@ export function ActiviteApprenantPage() {
       <form className="barre-filtres" onSubmit={consulter}>
         <div className="champ">
           <label htmlFor="activite-apprenant">
-            Apprenant - UUID (scolarite.apprenants) *
+            Apprenant *
           </label>
           <input
             id="activite-apprenant"

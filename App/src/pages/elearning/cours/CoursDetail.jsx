@@ -82,7 +82,7 @@ function LeconAffichee({ lecon, numero, monter, descendre }) {
                   ouvrir
                 </a>
               ) : (
-                'URL signée S3/MinIO requise (page Médias).'
+                'Lien temporaire indisponible pour l&#39;instant.'
               )}
             </p>
           )}

@@ -41,7 +41,7 @@ const TRANCHES = [
 ]
 
 /** Dépôt d'une copie : apprenant concerné, déposant (apprenant ou parent)
- * et pièces jointes (médias déjà référencés dans /v1/medias/). */
+ et pièces jointes. */
 function FormulaireDepot({ devoir }) {
   const apprenantProfil = useProfilStore((etat) => etat.apprenantId)
   const [apprenantId, setApprenantId] = useState('')
@@ -103,7 +103,7 @@ function FormulaireDepot({ devoir }) {
       <div className="grille-2-colonnes">
         <div className="champ">
           <label htmlFor="depot-apprenant">
-            Apprenant - UUID (scolarite.apprenants) *
+            Apprenant *
           </label>
           <input
             id="depot-apprenant"
@@ -115,14 +115,14 @@ function FormulaireDepot({ devoir }) {
         </div>
         <div className="champ">
           <label htmlFor="depot-soumis-par">
-            Déposé par - UUID (apprenant ou parent)
+            Déposé par *
           </label>
           <input
             id="depot-soumis-par"
             type="text"
             value={soumisPar}
             onChange={(e) => setSoumisPar(e.target.value)}
-            placeholder={apprenantId || 'UUID du déposant'}
+            placeholder={apprenantId || 'Déposant'}
           />
         </div>
       </div>
@@ -283,7 +283,7 @@ function LigneSoumission({ soumission, noteMax }) {
               soumission.note_reportee ||
               reporter.isPending
             }
-            title="Reporter la note vers evaluations.notes"
+            title="Reporter la note vers le service des notes"
           >
             {reporter.isPending ? '…' : 'Reporter'}
           </button>
@@ -379,7 +379,7 @@ function SectionEnseignant({ devoir, stats }) {
               type="search"
               value={recherche}
               onChange={(evenement) => setRecherche(evenement.target.value)}
-              placeholder="Rechercher un apprenant (UUID)…"
+              placeholder="Rechercher un apprenant…"
               aria-label="Rechercher un apprenant"
             />
           </div>
@@ -496,7 +496,7 @@ function SectionEnseignant({ devoir, stats }) {
           </p>
           <p className="texte-efface">
             {stats
-              ? `${stats.copies_notees} copie(s) notée(s) - ${stats.notes_reportees} note(s) déjà transmise(s) à evaluations.notes.`
+              ? `${stats.copies_notees} copie(s) notée(s) - ${stats.notes_reportees} note(s) déjà transmise(s).`
               : 'Transmission copie par copie depuis le registre.'}
           </p>
           <button
@@ -510,8 +510,8 @@ function SectionEnseignant({ devoir, stats }) {
             Reporter les notes ({aReporter.length})
           </button>
           <p className="aide">
-            Le service evaluations doit être configuré (EVALUATIONS_API_URL),
-            sinon le report renvoie une erreur 503.
+            Si le report n&#39;est pas disponible, le service de notes est
+            momentanément indisponible.
           </p>
         </section>
       </aside>
@@ -571,7 +571,7 @@ function MesSoumissions({ uuidDevoir, apprenantId }) {
                       ) : (
                         <>
                           {fichier.media?.nom_fichier || 'Pièce jointe'}
-                          {' '}(S3/MinIO : URL signée requise)
+                          {' '}(lien temporaire indisponible)
                         </>
                       )}
                     </span>

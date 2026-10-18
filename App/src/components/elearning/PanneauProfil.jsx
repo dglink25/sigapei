@@ -92,9 +92,7 @@ function CartePreferences() {
   if (parametres.isError) {
     return (
       <p className="texte-efface">
-        Hors périmètre pour l'instant : les préférences de notification
-        nécessitent les champs alertes_sms, recap_email et notifications_push
-        sur le singleton ParametresModule côté backend.
+        Les préférences de notification ne sont pas encore disponibles pour ce tenant.
       </p>
     )
   }
@@ -132,22 +130,21 @@ function CartePreferences() {
         )
       ) : (
         <p className="aide">
-          Lecture seule : le paramétrage du tenant est réservé à
-          l'administrateur.
+          Lecture seule : ce paramétrage est réservé à l'administrateur.
         </p>
       )}
       <p className="aide">
-        Enregistrées dans le singleton /v1/parametres/ du tenant (PUT).
+        Enregistrées dans les paramètres du tenant.
       </p>
     </div>
   )
 }
 
 /**
- * Stand-in du SSO : tant que la gateway ne fournit pas de JWT, ce panneau
- * définit le tenant (X-Tenant-ID), le rôle et les UUID externes utilisés
- * pour préremplir formulaires et filtres. Tout est persisté en
- * localStorage et prend effet immédiatement sur les requêtes suivantes.
+ * Panneau de session de démonstration : définit le tenant (X-Tenant-ID),
+ * le rôle et les UUID externes utilisés pour préremplir formulaires et
+ * filtres. Tout est persisté en localStorage et prend effet immédiatement
+ * sur les requêtes suivantes.
  */
 export function PanneauProfil() {
   const notify = useNotify()
@@ -250,6 +247,12 @@ export function PanneauProfil() {
           ))}
         </div>
         <p className="aide">{EFFET_ROLE[valeurs.role]}</p>
+        {valeurs.role === 'super_admin' && (
+          <p className="aide">
+            Super administrateur : accès à toutes les vues, aucun tenant
+            requis.
+          </p>
+        )}
       </section>
 
       {/* Tenant & identifiants */}
@@ -261,10 +264,10 @@ export function PanneauProfil() {
 
         <ChampUuid
           id="profil-tenant"
-          libelle="Identifiant du tenant (X-Tenant-ID) *"
+          libelle="Identifiant du tenant (X-Tenant-ID)"
           champ="tenantId"
           placeholder="UUID de l'établissement, ex. 3f2c…"
-          aide="Obligatoire : le backend refuse toute requête /v1/ sans en-tête X-Tenant-ID valide."
+          aide="Obligatoire pour tous les rôles sauf super_admin."
           valeurs={valeurs}
           modifier={modifier}
         />
@@ -318,9 +321,8 @@ export function PanneauProfil() {
           />
         </div>
         <p className="aide">
-          Le tenant part dans l'en-tête X-Tenant-ID de chaque requête /v1/ ;
-          l'identifiant utilisateur est une référence externe (rh.personnel ou
-          scolarite.apprenants), jamais une clé locale.
+          Le tenant détermine l'établissement cible de chaque requête ; l'identifiant
+          utilisateur est une référence externe, jamais une clé locale.
         </p>
       </section>
 
@@ -369,7 +371,7 @@ export function PanneauProfil() {
       <section className="section">
         <div className="element-tete">
           <h2 style={{ margin: 0 }}>Préférences de notification</h2>
-          <span className="texte-efface">Singleton /v1/parametres/ du tenant</span>
+          <span className="texte-efface">Paramètres du tenant</span>
         </div>
         <CartePreferences />
       </section>
@@ -385,7 +387,7 @@ export function PanneauProfil() {
           className="bouton bouton-secondaire"
           onClick={() =>
             notify.info(
-              'Hors périmètre : le multi-établissements relève du SSO de la plateforme.',
+              'Le changement d’établissement relève de la plateforme d’authentification.',
             )
           }
         >
@@ -395,7 +397,7 @@ export function PanneauProfil() {
           type="button"
           className="bouton bouton-secondaire"
           onClick={() =>
-            notify.info('Hors périmètre : aucune session SSO n\u2019est branchée.')
+            notify.info('Déconnexion hors périmètre du module.')
           }
         >
           Se déconnecter
