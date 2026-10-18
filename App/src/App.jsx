@@ -32,6 +32,7 @@ import EtablissementsPage from './pages/AdministrationPrincipale/EtablissementsP
 import ServicesPage from './pages/AdministrationPrincipale/ServicesPage'
 import ServiceDetailPage from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
+import ElearningApp from './pages/elearning/ElearningApp'
 
 export default function App() {
   useEffect(() => { document.title = ENV.appName }, [])
@@ -81,6 +82,9 @@ export default function App() {
           <Route path={SERVICE_PATHS.detailRoute}   element={<ServiceDetailPage />} />
         </Route>
       </Route>
+
+      {/* ── E-Learning : module en démonstration (/elearning) ── */}
+      <Route path="/elearning/*" element={<ElearningApp />} />
 
       {/* ── Erreurs ── */}
       <Route path={FORBIDDEN_PATH} element={<ForbiddenPage />} />

@@ -1,0 +1,1695 @@
+/* ==========================================================================
+   SIGAPEI - E-Learning E-Académique : design system global
+   Palette institutionnelle : vert #006B3C, or #E9AA20, crème #FFF6DD.
+   Typographie Inter, chiffres tabulaires (tnum).
+   ========================================================================== */
+
+.el-app {
+  /* ---- Surfaces ---- */
+  --fond: #f9f9ff;                 /* canevas de page */
+  --surface: #ffffff;             /* cartes, panneaux */
+  --surface-basse: #f1f3ff;       /* surface-container-low */
+  --surface-conteneur: #e9edff;   /* surface-container */
+  --surface-haute: #e1e8fd;
+  --surface-max: #dce2f7;
+  --bord: #e5e7eb;                /* séparateurs neutres */
+
+  /* ---- Texte ---- */
+  --texte: #141b2b;               /* on-surface */
+  --texte-variant: #3f4941;       /* on-surface-variant */
+  --texte-efface: #6b7280;        /* métadonnées secondaires */
+
+  /* ---- Vert institutionnel (primaire) ---- */
+  --vert: #006b3c;
+  --vert-fonce: #005530;          /* survol */
+  --vert-encre: #00502c;          /* texte sur fond vert clair */
+  --vert-clair: #e6f3ec;          /* fond « validé » */
+  --vert-contour: #b8e0cc;
+  --vert-fixe: #9df6b9;           /* primary-fixed */
+  --vert-sur-fixe: #00210f;       /* on-primary-fixed */
+  --teinte-surface: #046d3e;      /* surface-tint */
+
+  /* ---- Or SIGAPEI (accent opérationnel) ---- */
+  --or: #e9aa20;                  /* action principale */
+  --or-fonce: #d49615;            /* survol */
+  --or-vif: #fdbb33;              /* secondary-container */
+  --or-clair: #ffdea8;            /* secondary-fixed */
+  --sur-or: #271900;              /* on-secondary-fixed */
+  --or-encre: #966606;            /* texte « en attente » */
+  --or-badge: #fef6e7;            /* fond « en attente » */
+  --or-contour: #fbdc96;
+
+  /* ---- Crème (cartes mises en avant) ---- */
+  --creme: #fff6dd;
+  --creme-contour: #f3e1b1;
+  --creme-encre: #6d4d00;         /* on-secondary-container */
+  --tertiaire-clair: #ebe2ca;     /* tertiary-fixed */
+
+  /* ---- Rouge (alertes) ---- */
+  --erreur: #ba1a1a;
+  --erreur-vif: #dc2626;          /* statut critique */
+  --erreur-clair: #ffdad6;        /* error-container */
+  --erreur-encre: #93000a;        /* on-error-container */
+  --erreur-badge: #fee2e2;
+  --erreur-contour: #fca5a5;
+
+  /* ---- Marine (états « en cours / différé ») ---- */
+  --marine: #293040;              /* inverse-surface */
+  --marine-clair: #edf0ff;        /* inverse-on-surface */
+
+  /* ---- Ombres (3 niveaux) ---- */
+  --ombre: 0 1px 3px rgba(17, 24, 39, 0.05), 0 1px 2px rgba(17, 24, 39, 0.03);
+  --ombre-mise-en-avant: 0 4px 6px -1px rgba(0, 107, 60, 0.08), 0 2px 4px -2px rgba(0, 107, 60, 0.04);
+  --ombre-flottant: 0 10px 15px -3px rgba(17, 24, 39, 0.1), 0 4px 6px -4px rgba(17, 24, 39, 0.05);
+
+  /* ---- Rayons ---- */
+  --rayon: 16px;                  /* cartes & conteneurs */
+  --rayon-bouton: 8px;            /* boutons, champs, menus */
+  --rayon-feuille: 24px;          /* feuilles & modales */
+
+  /* ---- Alias de compatibilité (ancien code) ---- */
+  --primaire: var(--vert);
+  --primaire-fonce: var(--vert-fonce);
+  --primaire-clair: var(--vert-clair);
+  --succes: var(--vert);
+  --succes-clair: var(--vert-clair);
+  --avertissement: var(--or-encre);
+  --avertissement-clair: var(--or-badge);
+  --info: var(--marine);
+  --info-clair: var(--marine-clair);
+  --violet: var(--or-encre);      /* anciens badges violets → or */
+  --violet-clair: var(--or-badge);
+
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  accent-color: var(--vert);
+}
+
+/* ------------------------------------------------------------------- Base */
+
+.el-app, .el-app * {
+  box-sizing: border-box;
+}
+
+.el-app {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font-size: 15px;
+  line-height: 1.5;
+  font-feature-settings: 'tnum' 1; /* chiffres tabulaires */
+  -webkit-font-smoothing: antialiased;
+}
+
+.el-app a {
+  color: var(--vert-encre);
+  text-decoration: none;
+}
+
+.el-app a:hover {
+  text-decoration: underline;
+}
+
+.el-app h1, .el-app h2, .el-app h3 {
+  line-height: 1.25;
+  margin: 0 0 0.5rem;
+}
+
+.el-app h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+.el-app h2 { font-size: 1.25rem; font-weight: 600; }
+.el-app h3 { font-size: 1.125rem; font-weight: 600; }
+
+.el-app :focus-visible {
+  outline: 2px solid var(--vert);
+  outline-offset: 2px;
+}
+
+.el-app input:focus-visible, .el-app select:focus-visible, .el-app textarea:focus-visible {
+  outline: none;
+}
+
+/* ------------------------------------------- Icônes Material Symbols */
+
+.el-app .icone {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.el-app .icone-plein { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.el-app .icone-lg { font-size: 24px; }
+.el-app .icone-sm { font-size: 16px; }
+
+/* ---------------------------------------------------------------- Layout */
+
+.el-app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Barre latérale institutionnelle (PC, > 1024px) */
+.el-app .barre-laterale {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--bord);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.el-app .marque {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--texte);
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+  padding: 0 0.5rem;
+}
+
+.el-app .marque:hover {
+  text-decoration: none;
+  color: var(--vert-encre);
+}
+
+.el-app .marque-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--teinte-surface), var(--vert-fonce));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.el-app .marque small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--texte-efface);
+  letter-spacing: 0.02em;
+}
+
+.el-app .barre-laterale nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.el-app .barre-laterale nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--texte-variant);
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.el-app .barre-laterale nav a:hover {
+  background: var(--surface-basse);
+  text-decoration: none;
+  color: var(--vert-encre);
+}
+
+.el-app .barre-laterale nav a.active {
+  background: var(--vert);
+  color: #fff;
+}
+
+.el-app .barre-laterale-pied {
+  border-top: 1px solid var(--bord);
+  padding-top: 1rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--texte-efface);
+}
+
+.el-app .barre-laterale-pied a {
+  color: var(--vert-encre);
+  font-weight: 500;
+}
+
+/* Carte utilisateur / établissement (pied de barre latérale) */
+.el-app .carte-utilisateur {
+  background: var(--surface-basse);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.el-app .carte-utilisateur strong {
+  display: block;
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+.el-app .carte-utilisateur small {
+  display: block;
+  font-size: 0.75rem;
+}
+
+.el-app .barre-laterale .carte-utilisateur {
+  margin-bottom: 0.9rem;
+}
+
+/* Zone principale */
+.el-app .contenu-principal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Barre supérieure (PC) */
+.el-app .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--bord);
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.55rem 2.5rem;
+  min-height: 64px;
+  flex-wrap: wrap;
+}
+
+.el-app .recherche-champ {
+  position: relative;
+  flex: 1;
+  max-width: 380px;
+  min-width: 160px;
+}
+
+.el-app .recherche-champ .icone {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texte-efface);
+  pointer-events: none;
+}
+
+.el-app .recherche-champ input {
+  padding-left: 2.5rem;
+}
+
+.el-app .badge-synchro {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--vert-clair);
+  color: var(--vert-encre);
+  border: 1px solid var(--vert-contour);
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Segments (commutateur de rôle) */
+.el-app .segmente {
+  display: inline-flex;
+  background: var(--surface-conteneur);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.el-app .segmente-bouton {
+  border: none;
+  background: none;
+  padding: 0.32rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--texte-variant);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.el-app .segmente-bouton:hover {
+  color: var(--vert-encre);
+}
+
+.el-app .segmente-actif {
+  background: var(--surface);
+  color: var(--vert-encre);
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.1);
+}
+
+/* Sélecteur compact (année / trimestre de la barre supérieure) */
+.el-app .select-compact {
+  width: auto;
+  min-width: 110px;
+  min-height: 38px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.el-app .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--vert);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.el-app .avatar-lg {
+  width: 64px;
+  height: 64px;
+  font-size: 1.25rem;
+}
+
+.el-app .contenu {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+  padding: 1.75rem 2.5rem 3rem;
+}
+
+/* En-tête mobile & navigation basse : affichés seulement < 768px */
+.el-app .entete-mobile { display: none; }
+.el-app .bottom-nav { display: none; }
+
+/* ----------------------------------------------------------------- Cartes */
+
+.el-app .carte {
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  box-shadow: var(--ombre);
+  padding: 1.25rem 1.4rem;
+}
+
+.el-app .carte-interieure {
+  background: var(--surface-basse);
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-top: 0.6rem;
+}
+
+/* Carte mise en avant (politique de retard, transmission…) */
+.el-app .carte-creme {
+  background: var(--creme);
+  border: 1px solid var(--creme-contour);
+  box-shadow: var(--ombre-mise-en-avant);
+}
+
+/* Bandeau de statut en haut de carte */
+.el-app .carte-bandeau-or { border-top: 6px solid var(--or-vif); }
+.el-app .carte-bandeau-vert { border-top: 6px solid var(--vert); }
+.el-app .carte-bandeau-gris { border-top: 6px solid var(--surface-max); }
+.el-app .carte-bandeau-rouge { border-top: 6px solid var(--erreur-vif); }
+
+.el-app .grille-cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.el-app .carte h3 a { color: var(--texte); }
+.el-app .carte h3 a:hover { color: var(--vert-encre); }
+
+.el-app .carte-pied {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 0.8rem;
+  font-size: 0.82rem;
+  color: var(--texte-efface);
+  align-items: center;
+}
+
+.el-app .titre-page {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+/* Bandeau d'actions collant (formulaires : Annuler | Publier) */
+.el-app .bandeau-sticky {
+  position: sticky;
+  top: 64px;
+  z-index: 30;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--bord);
+  padding: 0.7rem 0;
+  margin: -0.5rem 0 1.25rem;
+}
+
+.el-app .bandeau-sticky .titre-page { margin-bottom: 0; }
+
+.el-app .bandeau-sticky h1 { margin: 0; font-size: 1.15rem; }
+
+/* ------------------------------------------------- Indicateurs clés (KPI) */
+
+.el-app .kpi-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.el-app .kpi {
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  box-shadow: var(--ombre);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.el-app .kpi-icone {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--vert-clair);
+  color: var(--vert);
+  display: grid;
+  place-items: center;
+}
+
+.el-app .kpi-valeur {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--texte);
+  line-height: 1.2;
+}
+
+.el-app .kpi-libelle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texte-efface);
+}
+
+.el-app .kpi-or .kpi-icone { background: var(--or-badge); color: var(--or-encre); }
+.el-app .kpi-rouge .kpi-icone { background: var(--erreur-badge); color: var(--erreur-vif); }
+.el-app .kpi-creme {
+  background: var(--creme);
+  border-color: var(--creme-contour);
+}
+
+/* ---------------------------------------------------------------- Boutons */
+
+.el-app .bouton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+  border-radius: var(--rayon-bouton);
+  padding: 0.6rem 1.15rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.el-app .bouton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Action opérationnelle principale : or SIGAPEI */
+.el-app .bouton-primaire {
+  background: var(--or);
+  color: #111827;
+}
+
+.el-app .bouton-primaire:hover:not(:disabled) { background: var(--or-fonce); }
+
+/* Action institutionnelle : vert */
+.el-app .bouton-vert {
+  background: var(--vert);
+  color: #fff;
+}
+
+.el-app .bouton-vert:hover:not(:disabled) { background: var(--vert-fonce); }
+
+.el-app .bouton-secondaire {
+  background: var(--surface);
+  border-color: var(--bord);
+  color: var(--texte);
+}
+
+.el-app .bouton-secondaire:hover:not(:disabled) {
+  background: var(--fond);
+  border-color: var(--vert);
+}
+
+.el-app .bouton-danger {
+  background: var(--erreur-badge);
+  color: var(--erreur-vif);
+  border-color: var(--erreur-contour);
+}
+
+.el-app .bouton-danger:hover:not(:disabled) { background: var(--erreur-clair); }
+
+.el-app .bouton-compact {
+  padding: 0.38rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* ----------------------------------------------------------- Roue (spinner) */
+
+.el-app .roue {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: rotation 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes rotation {
+  to { transform: rotate(360deg); }
+}
+
+.el-app .chargement-en-cours {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--texte-efface);
+  font-size: 0.88rem;
+  margin: 0.5rem 0 0;
+}
+
+/* ------------------------------------------------------------ Formulaires */
+
+.el-app .formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.el-app .champ {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.el-app .champ label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Champs tactiles : 44px minimum, focus vert */
+.el-app input, .el-app select, .el-app textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--texte);
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon-bouton);
+  padding: 0.6rem 0.85rem;
+  min-height: 44px;
+  width: 100%;
+}
+
+.el-app input:focus, .el-app select:focus, .el-app textarea:focus {
+  border-color: var(--vert);
+  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.15);
+}
+
+.el-app textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.el-app .aide {
+  font-size: 0.82rem;
+  color: var(--texte-efface);
+  margin: 0;
+}
+
+.el-app .erreur-champ {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--erreur-vif);
+  margin: 0.35rem 0 0;
+}
+
+.el-app .texte-efface { color: var(--texte-efface); }
+
+.el-app .grille-2-colonnes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.el-app .barre-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  padding: 0.9rem 1rem;
+}
+
+.el-app .barre-filtres .champ {
+  min-width: 180px;
+  flex: 1;
+}
+
+/* Interrupteur (toggle) */
+.el-app .interrupteur {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--texte);
+  user-select: none;
+}
+
+.el-app .interrupteur input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.el-app .interrupteur-piste {
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--surface-max);
+  position: relative;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.el-app .interrupteur-bouton {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.el-app .interrupteur input:checked + .interrupteur-piste { background: var(--vert); }
+
+.el-app .interrupteur input:checked + .interrupteur-piste .interrupteur-bouton {
+  transform: translateX(20px);
+}
+
+.el-app .interrupteur input:focus-visible + .interrupteur-piste {
+  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.15);
+}
+
+/* Interrupteur verrouillé (lecture seule — ex. hors rôle administrateur) */
+.el-app .interrupteur-desactive {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Stepper de durée (± 5 min) */
+.el-app .stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--bord);
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.el-app .stepper button {
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--vert-encre);
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.el-app .stepper button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.el-app .stepper-valeur {
+  min-width: 72px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-left: 1px solid var(--bord);
+  border-right: 1px solid var(--bord);
+  padding: 0.45rem 0;
+}
+
+/* Chips (classes, mots-clés amovibles) */
+.el-app .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.el-app .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--surface-conteneur);
+  color: var(--marine);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.el-app .chip-suppr {
+  border: none;
+  background: rgba(20, 27, 43, 0.08);
+  color: var(--texte-variant);
+  border-radius: 999px;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.el-app .chip-suppr:hover {
+  background: var(--erreur-badge);
+  color: var(--erreur-vif);
+}
+
+.el-app .bouton-ajout-chip {
+  border: 1px dashed var(--vert-contour);
+  background: var(--vert-clair);
+  color: var(--vert-encre);
+  border-radius: 999px;
+  padding: 0.28rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.el-app .bouton-ajout-chip:hover { border-color: var(--vert); }
+
+/* Zone de dépôt de fichiers (glisser-déposer) */
+.el-app .zone-depot {
+  border: 2px dashed var(--vert-contour);
+  border-radius: var(--rayon);
+  background: var(--fond);
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--texte-efface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.zone-depot:hover,
+.el-app .zone-depot.survol {
+  border-color: var(--vert);
+  background: var(--vert-clair);
+}
+
+.el-app .zone-depot .icone {
+  font-size: 28px;
+  color: var(--vert);
+}
+
+/* ------------------------------------------------ Pills & compteurs de statut */
+
+.el-app .pills {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+}
+
+.el-app .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--bord);
+  background: var(--surface);
+  color: var(--texte-variant);
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.el-app .pill:hover {
+  border-color: var(--vert);
+  color: var(--vert-encre);
+}
+
+.el-app .pill-actif {
+  background: var(--vert);
+  border-color: var(--vert);
+  color: #fff;
+}
+
+.el-app .pill-actif:hover { color: #fff; }
+
+.el-app .compteur {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-max);
+  color: var(--marine);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.el-app .pill-actif .compteur {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.el-app .compteur-or { background: var(--or-badge); color: var(--or-encre); }
+.el-app .compteur-rouge { background: var(--erreur-badge); color: var(--erreur-vif); }
+
+/* --------------------------------------------------------------- Onglets */
+
+.el-app .onglets {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--bord);
+  overflow-x: auto;
+}
+
+.el-app .onglet {
+  border: none;
+  background: none;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--texte-efface);
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.el-app .onglet:hover { color: var(--vert-encre); }
+
+.el-app .onglet-actif {
+  color: var(--vert-encre);
+  border-bottom-color: var(--vert);
+}
+
+/* ------------------------------------------------------ Barre de progression */
+
+.el-app .barre-progression {
+  height: 8px;
+  background: var(--surface-conteneur);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.el-app .barre-progression-remplie {
+  height: 100%;
+  background: var(--vert);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.el-app .barre-progression-or .barre-progression-remplie { background: var(--or-vif); }
+.el-app .barre-progression-rouge .barre-progression-remplie { background: var(--erreur-vif); }
+
+/* ----------------------------------------------------------- Histogramme */
+
+.el-app .histogramme {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+  height: 150px;
+  margin-top: 1rem;
+}
+
+.el-app .histo-colonne {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.35rem;
+  height: 100%;
+}
+
+.el-app .histo-zone {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.el-app .histo-barre {
+  width: 100%;
+  max-width: 56px;
+  background: var(--vert);
+  border-radius: 6px 6px 0 0;
+  min-height: 4px;
+  transition: height 0.3s ease;
+}
+
+.el-app .histo-barre-or { background: var(--or-vif); }
+
+.el-app .histo-valeur {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--vert-encre);
+}
+
+.el-app .histo-etiquette {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--texte-efface);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- Badges */
+
+.el-app .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.el-app .badge-brouillon { background: var(--surface-max); color: var(--marine); border-color: var(--surface-haute); }
+.el-app .badge-publie, .el-app .badge-valide { background: var(--vert-clair); color: var(--vert-encre); border-color: var(--vert-contour); }
+.el-app .badge-archive { background: var(--tertiaire-clair); color: var(--creme-encre); }
+.el-app .badge-en_cours { background: var(--marine-clair); color: var(--marine); }
+.el-app .badge-soumis { background: var(--or-badge); color: var(--or-encre); border-color: var(--or-contour); }
+.el-app .badge-retard, .el-app .badge-blocage { background: var(--erreur-badge); color: var(--erreur-vif); border-color: var(--erreur-contour); }
+.el-app .badge-penalite { background: var(--or-badge); color: var(--or-encre); border-color: var(--or-contour); }
+.el-app .badge-immediate { background: var(--vert-clair); color: var(--vert-encre); border-color: var(--vert-contour); }
+.el-app .badge-differee { background: var(--marine-clair); color: var(--marine); }
+.el-app .badge-video { background: var(--marine-clair); color: var(--marine); }
+.el-app .badge-document { background: var(--or-clair); color: var(--creme-encre); }
+.el-app .badge-image { background: var(--vert-clair); color: var(--vert-encre); }
+.el-app .badge-texte { background: var(--surface-max); color: var(--marine); }
+.el-app .badge-qcm, .el-app .badge-ouverte { background: var(--vert-clair); color: var(--vert-encre); }
+.el-app .badge-vrai_faux { background: var(--or-clair); color: var(--creme-encre); }
+.el-app .badge-role { background: var(--surface-conteneur); color: var(--vert-encre); }
+
+.el-app .mot-cle {
+  display: inline-block;
+  background: var(--vert-clair);
+  color: var(--vert-encre);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------- Alertes */
+
+.el-app .alerte {
+  border-radius: 12px;
+  padding: 0.85rem 1.1rem;
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  border: 1px solid transparent;
+}
+
+.el-app .alerte-avertissement { background: var(--or-badge); color: var(--or-encre); border-color: var(--or-contour); }
+.el-app .alerte-erreur { background: var(--erreur-clair); color: var(--erreur-encre); border-color: var(--erreur-contour); }
+.el-app .alerte-info { background: var(--marine-clair); color: var(--marine); }
+
+/* ------------------------------------------------------------ Squelettes */
+
+.el-app .squelette {
+  background: linear-gradient(100deg, var(--surface-conteneur) 40%, #f7f8ff 50%, var(--surface-conteneur) 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+.el-app .squelette-ligne {
+  height: 0.9rem;
+  margin: 0.45rem 0;
+}
+
+.el-app .squelette-carte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.el-app .squelette-texte { margin-top: 0.5rem; }
+
+.el-app .squelette-tableau-ligne {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(3, 1fr);
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--bord);
+}
+
+/* ------------------------------------------------------------- Tableaux */
+
+.el-app .tableau-defilant {
+  overflow-x: auto;
+}
+
+.el-app table.tableau {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 0.9rem;
+}
+
+.el-app table.tableau th, .el-app table.tableau td {
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--bord);
+  vertical-align: middle;
+}
+
+.el-app table.tableau th {
+  background: #f8faf9;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vert-encre);
+  border-bottom: 2px solid var(--bord);
+}
+
+/* Zébrage discret pour la lecture rapide des registres */
+.el-app table.tableau tbody tr:nth-child(even) td {
+  background: #fafbfb;
+}
+
+.el-app table.tableau tr:last-child td { border-bottom: none; }
+
+/* ------------------------------------------------------------ Pagination */
+
+.el-app .pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1.4rem 0 0.5rem;
+  font-size: 0.88rem;
+  color: var(--texte-efface);
+}
+
+/* --------------------------------------------------------------- Toasts */
+
+.el-app .toasts {
+  position: fixed;
+  bottom: 1.2rem;
+  right: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  z-index: 1000;
+  max-width: min(420px, calc(100vw - 2.4rem));
+}
+
+.el-app .toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: var(--marine);
+  color: var(--marine-clair);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  box-shadow: var(--ombre-flottant);
+  animation: entree-toast 0.25s ease;
+}
+
+@keyframes entree-toast {
+  from { transform: translateY(8px); opacity: 0; }
+}
+
+.el-app .toast-icone {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.el-app .toast-succes .toast-icone { background: var(--vert); }
+.el-app .toast-erreur .toast-icone { background: var(--erreur); }
+.el-app .toast-info .toast-icone { background: var(--or); }
+
+.el-app .toast-message {
+  margin: 0;
+  font-size: 0.88rem;
+  flex: 1;
+}
+
+.el-app .toast-fermer {
+  background: none;
+  border: none;
+  color: #aab3cf;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0;
+}
+
+/* ------------------------------------------------------------- Markdown */
+
+.el-app .markdown { line-height: 1.65; }
+
+.el-app .markdown > :first-child { margin-top: 0; }
+.el-app .markdown > :last-child { margin-bottom: 0; }
+
+.el-app .markdown h1, .el-app .markdown h2, .el-app .markdown h3, .el-app .markdown h4 {
+  margin: 1.2em 0 0.4em;
+}
+
+.el-app .markdown code {
+  background: var(--surface-basse);
+  border-radius: 5px;
+  padding: 0.12em 0.38em;
+  font-size: 0.86em;
+}
+
+.el-app .markdown pre {
+  background: var(--marine);
+  color: var(--marine-clair);
+  padding: 0.9rem 1.1rem;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+
+.el-app .markdown pre code { background: none; padding: 0; }
+
+.el-app .markdown blockquote {
+  border-left: 3px solid var(--vert);
+  margin: 0.8em 0;
+  padding: 0.1em 0 0.1em 0.9em;
+  color: var(--texte-efface);
+}
+
+.el-app .markdown img, .el-app .markdown-image {
+  max-width: 100%;
+  border-radius: 12px;
+}
+
+.el-app .markdown table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.el-app .markdown th, .el-app .markdown td {
+  border: 1px solid var(--bord);
+  padding: 0.4rem 0.6rem;
+}
+
+.el-app .markdown-compacte { font-size: 0.9rem; }
+
+/* --------------------------------------------------------------- Vidéo */
+
+.el-app .video-cadre {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--marine);
+  margin: 0.6rem 0;
+}
+
+.el-app .video-cadre iframe, .el-app .video-cadre video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* ----------------------------------------------------- Éditeur Markdown */
+
+.el-app .editeur-markdown .editeur-bandeau {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.el-app .editeur-libelle { flex: 1; }
+
+.el-app .editeur-outils {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.el-app .editeur-outils button {
+  border: 1px solid var(--bord);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--texte-variant);
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  min-height: 32px;
+}
+
+.el-app .editeur-outils button:hover {
+  border-color: var(--vert);
+  color: var(--vert-encre);
+}
+
+.el-app .editeur-outils button .icone { font-size: 18px; }
+
+.el-app .editeur-apercu { margin-top: 0.55rem; }
+
+/* ----------------------------------------------------- Sélection média */
+
+.el-app .selection-media-ligne {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.el-app .selection-media-ligne select { flex: 1; }
+
+.el-app .selection-media-ligne input { flex: 1; }
+
+.el-app .media-apercu img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.el-app .selection-media-ligne-bloc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.el-app .formulaire-media .modes {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+/* ----------------------------------------------------------------- Divers */
+
+.el-app .liste-elements {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.el-app .element {
+  background: var(--surface);
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  padding: 1rem 1.2rem;
+}
+
+.el-app .element-tete {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.el-app .element-tete h3 { margin: 0; flex: 1; }
+.el-app .element-tete h2 { margin: 0; flex: 1; font-size: 1.05rem; }
+
+.el-app .actions-ligne {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.el-app .champ-inline {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.el-app .champ-inline input { width: 110px; }
+
+.el-app .liste-options {
+  margin: 0.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.el-app .option-reponse {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+  cursor: pointer;
+}
+
+.el-app .option-correcte {
+  color: var(--vert-encre);
+  font-weight: 600;
+}
+
+.el-app .stat-mini {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.el-app .stat-mini .carte {
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.el-app .stat-valeur {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--vert-encre);
+}
+
+.el-app .stat-libelle {
+  font-size: 0.78rem;
+  color: var(--texte-efface);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.el-app .section {
+  margin-top: 2rem;
+}
+
+/* Fil d'Ariane (PC) */
+.el-app .fil-ariane {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--texte-efface);
+  margin-bottom: 0.9rem;
+}
+
+.el-app .fil-ariane a {
+  color: var(--vert-encre);
+  font-weight: 500;
+}
+
+.el-app .fil-ariane .separateur {
+  color: var(--vert-contour);
+}
+
+/* Minuteur d'urgence (J-1) */
+.el-app .minuteur {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--erreur-vif);
+  font-weight: 700;
+}
+
+.el-app .rebond {
+  animation: rebond 1s ease infinite;
+}
+
+@keyframes rebond {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* Polices & copies techniques (UUID) */
+.el-app .police-mono {
+  font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+  font-size: 0.85rem;
+}
+
+.el-app .copie-ligne {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.el-app .copie-ligne input { flex: 1; }
+
+/* Colonnes 8/4 des écrans de détail (registre + panneau latéral) */
+.el-app .colonnes-detail {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+/* Grands choix (tentatives de quiz, simulateur de rôle) */
+.el-app .grands-choix {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+
+.el-app .grand-choix {
+  border: 1px solid var(--bord);
+  border-radius: var(--rayon);
+  background: var(--surface);
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.el-app .grand-choix:hover { border-color: var(--vert); }
+
+.el-app .grand-choix-actif {
+  border-color: var(--vert);
+  background: var(--vert-clair);
+  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.12);
+}
+
+.el-app .grand-choix-titre {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--texte);
+}
+
+.el-app .grand-choix-sous {
+  font-size: 0.78rem;
+  color: var(--texte-efface);
+}
+
+/* Numéro d'étape (formulaires en sections) */
+.el-app .numero-etape {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--vert);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* Statistiques en 3 colonnes (carte tenant) */
+.el-app .stats-3-colonnes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+/* ------------------------------------------------------------ Responsive */
+
+/* Tablette (768 → 1024px) */
+@media (max-width: 1024px) {
+.el-app .barre-laterale {
+    width: 220px;
+    padding: 1.25rem 0.85rem;
+  }
+
+.el-app .topbar { padding: 0.55rem 1.5rem; }
+
+.el-app .contenu { padding: 1.5rem 1.5rem 2.5rem; }
+
+.el-app .colonnes-detail { grid-template-columns: 1fr; }
+}
+
+/* Mobile (< 768px) : en-tête vert + navigation basse */
+@media (max-width: 767px) {
+.el-app .barre-laterale { display: none; }
+
+.el-app .topbar { display: none; }
+
+.el-app .entete-mobile {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--vert);
+    color: #fff;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.75rem 1rem;
+    box-shadow: var(--ombre);
+  }
+
+.el-app .entete-mobile .marque {
+    color: #fff;
+    margin: 0;
+    flex: 1;
+    padding: 0;
+  }
+
+.el-app .entete-mobile .marque small { color: #bde8d0; }
+
+.el-app .entete-mobile .marque-logo { background: rgba(255, 255, 255, 0.16); }
+
+.el-app .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--surface);
+    border-top: 1px solid var(--bord);
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 10px rgba(17, 24, 39, 0.06);
+  }
+
+.el-app .bottom-nav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.12rem;
+    color: var(--texte-efface);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 0.3rem 0;
+    border-radius: 10px;
+  }
+
+.el-app .bottom-nav a .icone { font-size: 24px; }
+
+.el-app .bottom-nav a.actif {
+    color: var(--or-fonce);
+    background: var(--or-badge);
+  }
+
+.el-app .contenu {
+    padding: 4.75rem 1rem 5.5rem;
+  }
+
+.el-app .kpi-grille { grid-template-columns: repeat(2, 1fr); }
+
+.el-app .stats-3-colonnes { grid-template-columns: 1fr; }
+
+.el-app .grille-2-colonnes { grid-template-columns: 1fr; }
+
+.el-app .titre-page { align-items: flex-start; }
+
+.el-app .bandeau-sticky { top: 3.75rem; padding: 0.55rem 0; }
+}

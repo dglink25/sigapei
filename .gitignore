@@ -48,3 +48,9 @@ pdf_*.txt
 
 /etablissements/storage/app/private
 /etablissements/storage/app/geonames/
+__pycache__/
+*.pyc
+
+*.sqlite3
+db.sqlite3
+*AGENTS.md
