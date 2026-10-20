@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import {
   MapPin, Mail, Phone, GraduationCap,
-  BookOpen, Building2, LogIn, ExternalLink
+  BookOpen, Building2, LogIn, ExternalLink, LayoutGrid
 } from 'lucide-react'
 import { accueilService } from '../../services/etablissements/etablissement.service'
-import { detecterSlugEtablissement, urlPlateforme } from '../../lib/etablissements/subdomain'
+import { detecterSlugEtablissement, urlPlateforme, lienEtablissement } from '../../lib/etablissements/subdomain'
+import { tokenStore } from '../../lib/identite/tokenStore'
 import LienConnexion from '../../components/etablissements/LienConnexion'
 import { ENV } from '../../config/commun/env'
 import Loader from '../../components/commun/Loader'
@@ -22,9 +23,19 @@ const TYPE_LABELS = {
 export default function AccueilEtablissement() {
   const { slug: slugParam } = useParams()
   const slug = slugParam ?? detecterSlugEtablissement()
-  const [data,    setData]    = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [erreur,  setErreur]  = useState(null)
+  const [data,       setData]       = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [erreur,     setErreur]     = useState(null)
+  const [connecte,   setConnecte]   = useState(false)
+
+  useEffect(() => {
+    // Vérifier si un token valide existe en localStorage (sans appel réseau)
+    const payload = tokenStore.getAccess()
+    setConnecte(!!payload)
+  }, [])
+
+  // Lien "Mon espace" : portail de cet établissement
+  const lienMonEspace = lienEtablissement(slug, '/portail')
 
   useEffect(() => {
     if (!slug) return
@@ -97,9 +108,14 @@ export default function AccueilEtablissement() {
               )}
             </div>
           </div>
-          <LienConnexion slug={slug} className="ae-btn ae-btn--login">
-            <LogIn size={16} /> Se connecter
-          </LienConnexion>
+          {connecte
+            ? <a href={lienMonEspace} className="ae-btn ae-btn--login">
+                <LayoutGrid size={16} /> Mon espace
+              </a>
+            : <LienConnexion slug={slug} className="ae-btn ae-btn--login">
+                <LogIn size={16} /> Se connecter
+              </LienConnexion>
+          }
         </div>
       </header>
 
@@ -116,9 +132,14 @@ export default function AccueilEtablissement() {
             d'Administration des Établissements Privés d'Enseignement Intégrés
           </p>
           <div className="ae-hero-actions">
-            <LienConnexion slug={slug} className="ae-btn">
-              <LogIn size={16} /> Connexion espace établissement
-            </LienConnexion>
+            {connecte
+              ? <a href={lienMonEspace} className="ae-btn">
+                  <LayoutGrid size={16} /> Mon espace établissement
+                </a>
+              : <LienConnexion slug={slug} className="ae-btn">
+                  <LogIn size={16} /> Connexion espace établissement
+                </LienConnexion>
+            }
             <a href={urlPlateforme('/')} className="ae-btn ae-btn--ghost">
               <ExternalLink size={15} /> SIGAPEI
             </a>
@@ -168,9 +189,14 @@ export default function AccueilEtablissement() {
           <BookOpen size={32} className="ae-cta-icon" />
           <h3>Accédez à votre espace</h3>
           <p>Élèves, enseignants, parents et administration - connectez-vous pour accéder aux services de l'établissement.</p>
-          <LienConnexion slug={slug} className="ae-btn ae-btn--gold">
-            <LogIn size={16} /> Se connecter
-          </LienConnexion>
+          {connecte
+            ? <a href={lienMonEspace} className="ae-btn ae-btn--gold">
+                <LayoutGrid size={16} /> Mon espace
+              </a>
+            : <LienConnexion slug={slug} className="ae-btn ae-btn--gold">
+                <LogIn size={16} /> Se connecter
+              </LienConnexion>
+          }
         </div>
       </section>
 

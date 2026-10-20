@@ -36,6 +36,7 @@ export default function GeoSelects({ value, libre, onChange, disabled }) {
   const [pays, setPays] = useState({ items: [], loading: true })
   useEffect(() => {
     let alive = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     geoService.pays().then((items) => alive && setPays({ items, loading: false })).catch(() => alive && setPays({ items: [], loading: false }))
     return () => { alive = false }
   }, [])

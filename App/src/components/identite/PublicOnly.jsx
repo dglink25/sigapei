@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/identite/AuthContext'
 import { useNotify } from '../../context/commun/NotifyContext'
@@ -13,15 +13,13 @@ export default function PublicOnly({ children }) {
   const { status, user } = useAuth()
   const notify   = useNotify()
   const location = useLocation()
-  const notified = useRef(false)
-
-  useEffect(() => { notified.current = false }, [location.pathname])
+  const [notified, setNotified] = useState(false)
 
   if (status === 'loading') return <Loader label="Chargement de votre session…" />
 
   if (status === 'authenticated') {
-    if (!notified.current) {
-      notified.current = true
+    if (!notified) {
+      setNotified(true)
       const nom = user?.nomComplet ?? user?.nom_complet ?? ''
       notify.info(
         'Session active',

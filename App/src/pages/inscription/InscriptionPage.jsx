@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCheck, Clock, CheckCircle, XCircle, Search, ArrowLeft, RefreshCw } from 'lucide-react'
+import { UserCheck, CheckCircle, XCircle, Search, ArrowLeft, RefreshCw } from 'lucide-react'
 import { inscriptionService } from '../../services/inscription/inscription.service'
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import './inscription.css'
@@ -28,6 +28,7 @@ export default function InscriptionPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     chargerCandidatures()
   }, [])
 

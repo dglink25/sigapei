@@ -136,7 +136,7 @@ export function createHttp(baseUrl) {
     if (res.status === 401 && auth && token && retry) {
       // Lire le corps d'abord pour détecter SECRET_INTERNE_INVALIDE avant de tenter un refresh
       const peekText = await res.text()
-      let peekData = null
+      let peekData
       try { peekData = peekText ? JSON.parse(peekText) : null } catch { peekData = null }
 
       const isSecretError = peekData?.error?.code === 'SECRET_INTERNE_INVALIDE'
@@ -158,7 +158,7 @@ export function createHttp(baseUrl) {
     }
 
     const text = await res.text()
-    let data = null
+    let data
     try { data = text ? JSON.parse(text) : null } catch { data = null }
 
     if (!res.ok) {

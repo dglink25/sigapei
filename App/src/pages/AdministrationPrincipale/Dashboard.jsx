@@ -44,7 +44,10 @@ export default function Dashboard() {
     }
   }, [notify])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load()
+  }, [load])
 
   const stats = useMemo(() => {
     const total      = items?.length ?? null

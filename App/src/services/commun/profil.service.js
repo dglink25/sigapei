@@ -1,5 +1,5 @@
 import { authApi as api } from '../../lib/commun/http'
-import { getDeviceId, getDeviceInfo } from '../../lib/identite/device'
+import { getDeviceId } from '../../lib/identite/device'
 
 /**
  * Service Profil - commun à tous les rôles connectés.

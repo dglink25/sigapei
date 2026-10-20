@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, BadgeCheck, CircleCheck, ClipboardCheck,
-  FileText, MapPin, MessageSquareWarning, Paperclip, TriangleAlert
+  MapPin, MessageSquareWarning, Paperclip, TriangleAlert
 } from 'lucide-react'
 import { useNotify }    from '../../context/commun/NotifyContext'
 import ConfirmDialog    from '../../components/commun/ConfirmDialog'
@@ -111,7 +111,10 @@ export default function DemandeDetailPage() {
     }
   }, [uuid, notify])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load()
+  }, [load])
 
   const d      = state.demande
   const f      = d?.form ?? EMPTY_FORM

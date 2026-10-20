@@ -35,7 +35,7 @@ export function uploadLogo({ file, onProgress }) {
       xhr.timeout = 120000
       xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(Math.round((e.loaded / e.total) * 100))
       xhr.onload = () => {
-        let data = null
+        let data
         try { data = JSON.parse(xhr.responseText) } catch { data = null }
         if (xhr.status >= 200 && xhr.status < 300) resolve(data)
         else reject(buildError(xhr.status, data))

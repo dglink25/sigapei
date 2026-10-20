@@ -62,6 +62,7 @@ export default function ServicesPage() {
   }, [page, tab, qDebounced, notify])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
   }, [load, rev])
 

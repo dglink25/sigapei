@@ -1,62 +1,50 @@
-import { useEffect, useRef } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/identite/AuthContext'
 import { useNotify } from '../../context/commun/NotifyContext'
 import Loader from '../commun/Loader'
-import { FORBIDDEN_PATH, LOGIN_PATH, redirectionPostLogin, roleCodeOf } from '../../config/identite/routes'
+import { LOGIN_PATH, redirectionPostLogin, roleCodeOf } from '../../config/identite/routes'
 
 export const roleOf = (u) => u?.role?.code ?? u?.roleCode ?? (typeof u?.role === 'string' ? u.role : undefined)
 
 /**
  * GARDE D'AUTHENTIFICATION
  *
- * - Non connecté      → notification info + redirect /login (avec retour automatique après connexion)
- * - Rôle insuffisant  → notification warning + redirect vers la page d'accueil du rôle
+ * - Non connecté      → notification + redirect /login
+ * - Rôle insuffisant  → notification + redirect vers l'accueil du rôle
  * - Session en cours  → Loader animé
  */
 export default function RequireAuth({ children, roles }) {
   const { status, user, logoutReason } = useAuth()
-  const notify  = useNotify()
+  const notify   = useNotify()
   const location = useLocation()
-
-  /* ── Refs pour n'envoyer la notif qu'une seule fois par tentative ── */
-  const notifiedUnauth  = useRef(false)
-  const notifiedForbid  = useRef(false)
-
-  /* Reset quand la location change (nouvelle tentative d'accès) */
-  useEffect(() => {
-    notifiedUnauth.current = false
-    notifiedForbid.current = false
-  }, [location.pathname])
+  const [notifiedUnauth, setNotifiedUnauth] = useState(false)
+  const [notifiedForbid, setNotifiedForbid] = useState(false)
 
   if (status === 'loading') return <Loader label="Chargement de votre session…" />
 
   /* ── Non connecté ── */
   if (status !== 'authenticated') {
-    if (!notifiedUnauth.current) {
-      notifiedUnauth.current = true
-      notify.warning(
-        'Connexion requise',
-        'Vous devez être connecté pour accéder à cette page.',
-      )
+    if (logoutReason) return <Loader label="Redirection en cours…" />
+    if (!notifiedUnauth) {
+      setNotifiedUnauth(true)
+      notify.warning('Connexion requise', 'Vous devez être connecté pour accéder à cette page.')
     }
-    const from = logoutReason === 'manual' ? undefined : location
-    return <Navigate to={LOGIN_PATH} replace state={{ from }} />
+    return <Navigate to={LOGIN_PATH} replace state={{ from: location }} />
   }
 
   /* ── Connecté mais rôle insuffisant ── */
   if (roles?.length && !roles.includes(roleOf(user))) {
-    if (!notifiedForbid.current) {
-      notifiedForbid.current = true
+    if (!notifiedForbid) {
+      setNotifiedForbid(true)
       const roleCode = roleCodeOf(user)
       notify.error(
         'Accès refusé',
         `Votre rôle « ${roleCode.replace(/_/g, ' ')} » ne vous permet pas d'accéder à cette page.`,
       )
     }
-    /* Rediriger vers la bonne page d'accueil pour ce rôle */
-    const destination = redirectionPostLogin(roleCodeOf(user))
-    return <Navigate to={destination} replace />
+    return <Navigate to={redirectionPostLogin(roleCodeOf(user))} replace />
   }
 
   return children ?? <Outlet />

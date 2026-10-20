@@ -1,5 +1,24 @@
 import { useState, useEffect } from 'react'
+import { tokenStore, decodeJwt } from '../../lib/identite/tokenStore'
+import { lireSlugEtablissementCache, urlEtablissement, urlPlateforme } from '../../lib/etablissements/subdomain'
+import { ADMIN_DASHBOARD_PATH } from '../../config/identite/routes'
 import './Home.css'
+
+/**
+ * Calcule le lien "Mon espace" quand l'utilisateur est connecté :
+ * - super_admin → /admin/dashboard
+ * - utilisateur établissement → portail de son établissement
+ * - fallback → /portail
+ */
+function monEspaceUrl() {
+  const payload  = decodeJwt(tokenStore.getAccess() ?? '')
+  if (!payload) return null
+  const roleCode = payload?.roleCode ?? payload?.role ?? ''
+  if (roleCode === 'super_admin') return urlPlateforme(ADMIN_DASHBOARD_PATH)
+  const slug = lireSlugEtablissementCache()
+  if (slug) return urlEtablissement(slug) + '/portail'
+  return '/portail'
+}
 
 /* ─── Données ─────────────────────────────────────────────────────── */
 const profilesData = [
@@ -119,6 +138,12 @@ export default function Home() {
   const [isSuspended, setIsSuspended] = useState(false)
   const [activeNav, setActiveNav] = useState('top')
   const [activeTab, setActiveTab] = useState(0)
+  const [espaceUrl, setEspaceUrl] = useState(null)
+
+  // Détecter si connecté pour adapter le bouton header
+  useEffect(() => {
+    setEspaceUrl(monEspaceUrl())
+  }, [])
 
   const [apprenants, setApprenants] = useState(0)
   const [presence, setPresence] = useState(0)
@@ -250,6 +275,10 @@ export default function Home() {
               </svg>
             </button>
 
+            {espaceUrl
+              ? <a className="hp-btn hp-b-s" href={espaceUrl}>Mon espace</a>
+              : <a className="hp-btn hp-b-s" href="/login">Se connecter</a>
+            }
             <a className="hp-btn hp-b-g" href="/demande">Inscrire mon école</a>
           </div>
         </div>
@@ -286,7 +315,10 @@ export default function Home() {
                 </p>
 
                 <div className="hp-cta hp-hi">
-                  <a className="hp-btn hp-b-o" href="/demande">Inscrire mon établissement</a>
+                  {espaceUrl
+                    ? <a className="hp-btn hp-b-o" href={espaceUrl}>Retrouver mon espace</a>
+                    : <a className="hp-btn hp-b-o" href="/demande">Inscrire mon établissement</a>
+                  }
                   <a className="hp-btn hp-b-l" href="#hp-modules">Découvrir les modules</a>
                 </div>
 

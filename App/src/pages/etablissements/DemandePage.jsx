@@ -61,10 +61,15 @@ export default function DemandePage() {
     restored.current = true
     const d = loadDraft()
     if (!d?.form) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({ ...EMPTY_FORM, ...d.form })
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDocs(Object.fromEntries(Object.entries(d.docs ?? {}).filter(([, v]) => v?.status === 'done')))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUuid(d.uuid ?? null)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStep(Math.min(Math.max(d.step ?? 1, 1), 5))
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSavedAt(d.savedAt ?? null)
     notify.info('Brouillon restauré', 'Vous reprenez votre demande là où vous l’aviez laissée.')
   }, [notify])

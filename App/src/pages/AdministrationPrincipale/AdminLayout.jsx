@@ -5,7 +5,6 @@ import {
   BarChart3, Settings, LogOut, Bell, Menu, X, Layers
 } from 'lucide-react'
 import { useAuth } from '../../context/identite/AuthContext'
-import { useNotify } from '../../context/commun/NotifyContext'
 import { withAuth } from '../../components/identite/RequireAuth'
 import ThemeToggle from '../../components/commun/ThemeToggle'
 import { ENV } from '../../config/commun/env'
@@ -60,7 +59,6 @@ function titreDepuisRoute(pathname, defaut) {
 
 function AdminLayoutInner({ pageTitle }) {
   const { user, logout } = useAuth()
-  const notify = useNotify()
   const location = useLocation()
   const [navOuvert, setNavOuvert] = useState(false)
 

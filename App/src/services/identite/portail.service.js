@@ -1,6 +1,7 @@
 import { authApi as api } from '../../lib/commun/http'
 import { API_BASE } from '../../config/etablissements/config'
 import { ENV } from '../../config/commun/env'
+import { sauvegarderSlugEtablissement } from '../../lib/etablissements/subdomain'
 
 /**
  * Construit l'URL publique du logo depuis son UUID de document.
@@ -19,11 +20,14 @@ function logoDocumentUrl(logoDocumentId) {
 export const portailService = {
   lire: async () => {
     const r = await api.get('/moi/portail')
-    // Enrichir l'établissement avec logoUrl construit depuis logoDocumentId
-    if (r?.etablissement && r.etablissement.logoDocumentId) {
-      r.etablissement.logoUrl = logoDocumentUrl(r.etablissement.logoDocumentId)
-    } else if (r?.etablissement) {
-      r.etablissement.logoUrl = null
+    if (r?.etablissement) {
+      // Sauvegarder le slug pour la redirection post-déconnexion
+      if (r.etablissement.slug) sauvegarderSlugEtablissement(r.etablissement.slug)
+      if (r.etablissement.logoDocumentId) {
+        r.etablissement.logoUrl = logoDocumentUrl(r.etablissement.logoDocumentId)
+      } else {
+        r.etablissement.logoUrl = null
+      }
     }
     return r
   },

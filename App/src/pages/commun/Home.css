@@ -127,6 +127,15 @@
 
 .hp-b-g { background: var(--hp-g); color: var(--hp-c); }
 
+.hp-b-s {
+  border: 1.5px solid var(--hp-g);
+  color: var(--hp-g);
+  background: transparent;
+}
+.hp-b-s:hover { background: rgba(0,107,60,0.08); }
+#hp[data-theme="dark"] .hp-b-s { border-color: var(--hp-c); color: var(--hp-c); }
+#hp[data-theme="dark"] .hp-b-s:hover { background: rgba(255,246,221,0.10); }
+
 .hp-b-l {
   border-color: var(--hp-g);
   color: var(--hp-g);
