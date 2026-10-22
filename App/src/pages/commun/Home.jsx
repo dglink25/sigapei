@@ -1,600 +1,575 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import {
+  ArrowRight,
+  BarChart3,
+  BookOpen,
+  Building2,
+  Check,
+  CheckCircle2,
+  ClipboardCheck,
+  FileCheck2,
+  GraduationCap,
+  Lock,
+  Menu,
+  MonitorPlay,
+  School,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  UserPlus,
+  X,
+} from 'lucide-react'
 import './Home.css'
 
-/* ─── Données ─────────────────────────────────────────────────────── */
-const profilesData = [
+const MODULES = [
   {
-    id: 'fondateur',
-    title: 'Fondateur & Directeur Général',
-    role: 'Supervision Globale & Contrôle Financier',
-    desc: "Supervision globale du réseau ou de l'établissement, suivi des recettes en temps réel, statistiques d'assiduité et contrôle d'accès instantané.",
-    features: [
-      "Tableau de bord consolidé pour l'ensemble des établissements du groupe",
-      "Gestion immédiate du statut d'accès (activation / suspension en un clic)",
-      'Traçabilité intégrale de toutes les transactions et actes administratifs',
-      'Suivi analytique du taux de recouvrement et des impayés',
-    ],
-    phoneTitle: 'Directeur Général',
-    phoneSubtitle: '4 Écoles connectées',
-    rows: [
-      { label: 'Recettes ce mois', val: '48.2 M FCFA', status: 'ok', tag: '+14%' },
-      { label: 'Taux de présence', val: '96.8 %', status: 'ok', tag: 'Optimal' },
-      { label: 'Bulletins T1 validés', val: '100 %', status: 'ok', tag: 'Terminé' },
-    ],
+    n: '01',
+    icon: UserPlus,
+    tag: 'Admission',
+    titre: 'Inscriptions & Admissions',
+    texte:
+      'Formulaire en ligne multi-étapes, dépôt dématérialisé des pièces d’identité et d’autorisation, validation hiérarchique et attribution automatique des matricules.',
+    points: ['Circuit de validation dirigé', 'Contrôle des pièces justificatives', 'Notification aux familles'],
   },
   {
-    id: 'enseignant',
-    title: 'Enseignants & Équipe Pédagogique',
-    role: 'Appel Numérique & Suivi des Notes',
-    desc: "Saisie rapide des notes sur smartphone ou tablette, appel numérique en classe en 3 secondes, cahier de texte électronique et transmission des devoirs.",
-    features: [
-      "Faire l'appel en classe depuis n'importe quel smartphone",
-      'Saisie simplifiée des notes avec calcul automatique des moyennes',
-      'Partage direct des cours, exercices et devoirs à la maison',
-      "Communication fluide avec l'administration et les parents",
-    ],
-    phoneTitle: 'Espace Enseignant',
-    phoneSubtitle: 'Classe de Terminale C',
-    rows: [
-      { label: 'Appel du jour', val: '34 / 35 Présents', status: 'ok', tag: 'Fait' },
-      { label: 'Devoir de Math', val: '28 Copie(s) rendue(s)', status: 'wa', tag: 'En cours' },
-      { label: 'Moyenne Classe', val: '14.8 / 20', status: 'ok', tag: 'Satisfaisant' },
-    ],
+    n: '02',
+    icon: GraduationCap,
+    tag: 'Cursus',
+    titre: 'Scolarité & Dossiers Élèves',
+    texte:
+      'Gestion unifiée des effectifs, composition des classes par filière et cycle, archivage sécurisé du dossier individuel et édition instantanée des attestations scolaires.',
+    points: ['Fiches élèves exhaustives', 'Gestion des passages de classe', 'Historique scolaire complet'],
   },
   {
-    id: 'apprenant',
-    title: 'Apprenants & Étudiants',
-    role: 'Emploi du Temps, Devoirs & Bulletins',
-    desc: "Consultation de l'emploi du temps en direct, cahier de devoirs interactif, téléchargement des cours et accès sécurisé aux bulletins scolaires.",
-    features: [
-      "Accès 24h/24 à l'emploi du temps et aux salles de cours",
-      'Dépôt en ligne des travaux et devoirs à domicile',
-      'Téléchargement des bulletins trimestriels en PDF sécurisé',
-      "Bibliothèque numérique et ressources d'apprentissage",
-    ],
-    phoneTitle: 'Espace Apprenant',
-    phoneSubtitle: 'KOUASSI Jean-Marc',
-    rows: [
-      { label: 'Prochain cours', val: 'Physique - Salle 12', status: 'ok', tag: '14h00' },
-      { label: 'Moyenne T1', val: '15.4 / 20', status: 'ok', tag: 'Rang: 2e' },
-      { label: 'Devoirs à rendre', val: '2 Exercices', status: 'wa', tag: 'Demain' },
-    ],
+    n: '03',
+    icon: ClipboardCheck,
+    tag: 'Pédagogie',
+    titre: 'Évaluations & Bulletins',
+    texte:
+      'Saisie rapide des notes par les professeurs, calcul automatisé des moyennes avec coefficients, validation par la direction et génération des livrets officiels.',
+    points: ['Coefficients personnalisables', 'Bulletins de notes infalsifiables', 'Transmission directe aux parents'],
   },
   {
-    id: 'parent',
-    title: "Parents d'Élèves & Tuteurs",
-    role: 'Alertes Instantanées & Paiements Mobile',
-    desc: "Notifications instantanées des absences/retards, règlement des frais par Mobile Money (MTN, Orange, Moov, Wave), suivi des notes et demandes de documents.",
-    features: [
-      "Alertes instantanées SMS / WhatsApp en cas de retard ou d'absence",
-      'Paiement rapide des frais de scolarité via Mobile Money ou Carte',
-      'Consultation en temps réel des notes et appréciations des professeurs',
-      'Demande et téléchargement des certificats de scolarité en ligne',
-    ],
-    phoneTitle: 'Portail Parent',
-    phoneSubtitle: 'Suivi de 2 Enfants',
-    rows: [
-      { label: 'Paiement Scolarité', val: '25 000 FCFA', status: 'ok', tag: 'Validé' },
-      { label: "Présence aujourd'hui", val: 'Présent en classe', status: 'ok', tag: '07h45' },
-      { label: 'Alertes récents', val: '0 Absence', status: 'ok', tag: 'À jour' },
-    ],
+    n: '04',
+    icon: School,
+    tag: 'Discipline',
+    titre: 'Vie Scolaire & Présences',
+    texte:
+      'Pointage numérique des absences et retards par heure de cours, registre des faits disciplinaires, convocations et alertes automatiques vers les tuteurs légaux.',
+    points: ['Appel digitalisé en classe', 'Suivi disciplinaire rigoureux', 'Alertes retards & absences'],
   },
   {
-    id: 'secretariat',
-    title: 'Secrétariat & Comptabilité',
-    role: 'Inscriptions, Cartes QR-Code & Facturation',
-    desc: "Gestion des candidatures, suivi des impayés, impression automatique des cartes scolaires avec QR-Code et édition des états financiers officiels.",
-    features: [
-      'Validation en ligne des dossiers de pré-inscription et réinscription',
-      'Facturation automatique et relance ciblée des soldes impayés',
-      "Génération et impression des cartes d'étudiants avec QR-Code sécurisé",
-      'Édition automatique des registres matricules et attestations',
-    ],
-    phoneTitle: 'Secrétariat & Finance',
-    phoneSubtitle: 'Gestion Administrative',
-    rows: [
-      { label: 'Nouvelles inscriptions', val: '+145 Dossiers', status: 'ok', tag: 'Validés' },
-      { label: 'Cartes imprimées', val: '620 Cartes QR', status: 'ok', tag: 'Terminé' },
-      { label: 'Relances scolarité', val: '12 Envoyer SMS', status: 'wa', tag: 'En attente' },
-    ],
+    n: '05',
+    icon: MonitorPlay,
+    tag: 'E-Learning',
+    titre: 'Plateforme E-Learning',
+    texte:
+      'Espace pédagogique multimédia : diffusion des supports de cours, assignation de devoirs avec politique de remise, quiz auto-corrigés et bibliothèque partagée.',
+    points: ['Dépôt de cours & devoirs', 'Quiz et tests d’évaluation', 'Ressources documentaires'],
+  },
+  {
+    n: '06',
+    icon: Users,
+    tag: 'Personnel',
+    titre: 'Ressources Humaines',
+    texte:
+      'Registre du personnel enseignant et administratif, gestion des contrats, plannings de service, suivi des présences et affectations par classe et matière.',
+    points: ['Affectations matières/classes', 'Dossiers du personnel', 'Suivi des heures d’enseignement'],
   },
 ]
 
-const tickerItems = [
-  'sigapei • SIGAPEI',
-  'Une seule base de vérité',
-  'Présences en temps réel',
-  'Inscriptions en ligne',
-  'Bulletins certifiés PDF',
-  'Paiements Mobile Money & Banque',
-  'Cartes QR-Code sécurisées',
-  "Du primaire à l'université",
+const ROLES = [
+  {
+    titre: 'Direction & Administration',
+    role: 'Pilotage global',
+    desc: 'Visibilité totale sur les indicateurs de présence, les flux d’inscription, la trésorerie et la conformité administrative de chaque site.',
+    icon: Building2,
+  },
+  {
+    titre: 'Enseignants & Pédagogues',
+    role: 'Outils du quotidien',
+    desc: 'Saisie simplifiée des notes, appel numérique en classe, partage de supports de cours et communication avec l’équipe éducative.',
+    icon: BookOpen,
+  },
+  {
+    titre: 'Élèves & Responsables Légaux',
+    role: 'Transparence & Suivi',
+    desc: 'Consultation sécurisée des bulletins, alertes d’absences en direct, devoirs à rendre et relevés d’assiduité depuis tout terminal.',
+    icon: ShieldCheck,
+  },
 ]
-
-const headlineWords = ['Toute', 'la', 'vie', 'de', 'votre', 'école,', 'dans', 'une', 'seule', 'plateforme.']
 
 export default function Home() {
-  const [isDark, setIsDark] = useState(false)
-  const [isSide, setIsSide] = useState(false)
-  const [isSuspended, setIsSuspended] = useState(false)
-  const [activeNav, setActiveNav] = useState('top')
-  const [activeTab, setActiveTab] = useState(0)
+  const [menuOuvert, setMenuOuvert] = useState(false)
+  const [activeSection, setActiveSection] = useState('')
 
-  const [apprenants, setApprenants] = useState(0)
-  const [presence, setPresence] = useState(0)
-  const [recettes, setRecettes] = useState(0)
-
-  // Animate KPI numbers on mount
   useEffect(() => {
-    let start = 0
-    const interval = setInterval(() => {
-      start += 1
-      if (start <= 100) {
-        setApprenants(Math.floor((620 * start) / 100))
-        setPresence(Math.floor((96 * start) / 100))
-        setRecettes(parseFloat(((8.4 * start) / 100).toFixed(1)))
-      } else {
-        clearInterval(interval)
-      }
-    }, 20)
-    return () => clearInterval(interval)
-  }, [])
-
-  // Scroll listener - parallax + active nav
-  useEffect(() => {
-    const root = document.getElementById('hp')
-    if (!root) return
+    const sectionIds = ['modules', 'apercu', 'rejoindre']
     const handleScroll = () => {
-      const sy = window.scrollY
-      root.querySelectorAll('.hp-par').forEach((el) => {
-        const d = parseFloat(el.getAttribute('data-d') || '0')
-        el.style.transform = `translateY(${sy * d * 0.015}px)`
-      })
-      const sections = root.querySelectorAll('section[id]')
-      let current = 'top'
-      sections.forEach((sec) => {
-        const top = sec.offsetTop - 140
-        if (sy >= top) current = sec.id
-      })
-      setActiveNav(current)
+      // Si l'utilisateur est en bas de page (zone CTA / Footer)
+      const isAtBottom = (window.innerHeight + window.scrollY) >= (document.documentElement.scrollHeight - 140)
+      if (isAtBottom) {
+        setActiveSection('rejoindre')
+        return
+      }
+
+      let current = ''
+      for (const id of sectionIds) {
+        const el = document.getElementById(id)
+        if (el) {
+          const rect = el.getBoundingClientRect()
+          // La section est active quand elle occupe le champ de vision principal
+          if (rect.top <= 280 && rect.bottom >= 140) {
+            current = id
+            break
+          }
+        }
+      }
+      setActiveSection(current)
     }
+
     window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Intersection Observer - scroll reveal
-  useEffect(() => {
-    const root = document.getElementById('hp')
-    if (!root) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('in')
-            if (entry.target.id === 'hp-chart') {
-              entry.target.querySelectorAll('i[data-h]').forEach((bar) => {
-                const h = bar.getAttribute('data-h')
-                if (h) bar.style.height = `${h}%`
-              })
-            }
-          }
-        })
-      },
-      { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
-    )
-    root.querySelectorAll('.hp-rv, .hp-steps, #hp-chart').forEach((el) => observer.observe(el))
-
-    const secObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) entry.target.classList.add('sec-in')
-        })
-      },
-      { threshold: 0.05 }
-    )
-    root.querySelectorAll('.hp-sec-rv').forEach((el) => secObserver.observe(el))
-
-    return () => { observer.disconnect(); secObserver.disconnect() }
-  }, [])
-
-  const current = profilesData[activeTab]
+  const scrollTo = (e, id) => {
+    e.preventDefault()
+    setMenuOuvert(false)
+    setActiveSection(id)
+    const el = document.getElementById(id)
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.scrollY - 76
+      window.scrollTo({ top: y, behavior: 'smooth' })
+    }
+  }
 
   return (
-    <div
-      id="hp"
-      data-theme={isDark ? 'dark' : 'light'}
-      data-side={isSide ? 'true' : 'false'}
-    >
-      {/* ── Header ─────────────────────────────────────────────────── */}
-      <header id="hp-hd">
-        <div className="hp-nav">
-          <a href="#hp-top" className="hp-brand">
-            <i className="hp-lg" role="img" aria-label="Logo" />
-            <span>SIGAPEI</span>
+    <div className="sg-page">
+      {/* ─────────────────────────────────────────────────────────────
+          1. HEADER ÉQUILIBRÉ & PROPORTIONNÉ
+      ───────────────────────────────────────────────────────────── */}
+      <header className="sg-header">
+        <div className="sg-container sg-header-inner">
+          <a href="/" className="sg-brand" aria-label="SIGAPEI - Accueil">
+            <img
+              src="/images/sigapei-logo.png"
+              alt="Logo SIGAPEI"
+              className="sg-brand-logo"
+            />
+            <span className="sg-brand-name">SIGAPEI</span>
           </a>
 
-          <nav className="hp-links" aria-label="Navigation principale">
-            <a href="#hp-profils" className={activeNav === 'hp-profils' ? 'act' : ''}>Pour qui</a>
-            <a href="#hp-modules" className={activeNav === 'hp-modules' ? 'act' : ''}>Modules</a>
-            <a href="#hp-demarrer" className={activeNav === 'hp-demarrer' ? 'act' : ''}>Démarrer</a>
-            <a href="#hp-securite" className={activeNav === 'hp-securite' ? 'act' : ''}>Sécurité</a>
-            <a href="#hp-offres" className={activeNav === 'hp-offres' ? 'act' : ''}>Offres</a>
+          <nav className="sg-nav" aria-label="Navigation principale">
+            <a
+              href="#modules"
+              onClick={(e) => scrollTo(e, 'modules')}
+              className={`sg-nav-link ${activeSection === 'modules' ? 'sg-nav-link-active' : ''}`}
+            >
+              Modules
+            </a>
+            <a
+              href="#apercu"
+              onClick={(e) => scrollTo(e, 'apercu')}
+              className={`sg-nav-link ${activeSection === 'apercu' ? 'sg-nav-link-active' : ''}`}
+            >
+              Aperçu & Rôles
+            </a>
+            <a
+              href="#rejoindre"
+              onClick={(e) => scrollTo(e, 'rejoindre')}
+              className={`sg-nav-link ${activeSection === 'rejoindre' ? 'sg-nav-link-active' : ''}`}
+            >
+              Adhésion
+            </a>
           </nav>
 
-          <div className="hp-acts">
-            <button
-              className="hp-ib"
-              onClick={() => setIsDark(!isDark)}
-              aria-label="Basculer entre mode jour et nuit"
-            >
-              <svg className="hp-sun" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-              </svg>
-              <svg className="hp-moon" viewBox="0 0 24 24">
-                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-              </svg>
-            </button>
-
-            <button
-              className="hp-ib"
-              id="hp-lay"
-              onClick={() => setIsSide(!isSide)}
-              aria-label="Basculer entre barre de navigation et barre latérale"
-              aria-pressed={isSide}
-            >
-              <svg viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="16" rx="3" />
-                <path d="M9 4v16" />
-              </svg>
-            </button>
-
-            <a className="hp-btn hp-b-g" href="/demande">Inscrire mon école</a>
+          <div className="sg-header-actions">
+            <a href="/login" className="sg-btn sg-btn-subtle">
+              Connexion
+            </a>
+            <a href="/demande" className="sg-btn sg-btn-primary">
+              Démarrer
+              <ArrowRight size={15} />
+            </a>
           </div>
+
+          <button
+            type="button"
+            className="sg-burger"
+            onClick={() => setMenuOuvert(!menuOuvert)}
+            aria-label={menuOuvert ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={menuOuvert}
+          >
+            {menuOuvert ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
+
+        {/* Menu mobile rétractable */}
+        {menuOuvert && (
+          <div className="sg-mobile-drawer">
+            <nav className="sg-mobile-nav" aria-label="Menu mobile">
+              <a
+                href="#modules"
+                onClick={(e) => scrollTo(e, 'modules')}
+                className={activeSection === 'modules' ? 'sg-mobile-link-active' : ''}
+              >
+                Modules opérationnels
+              </a>
+              <a
+                href="#apercu"
+                onClick={(e) => scrollTo(e, 'apercu')}
+                className={activeSection === 'apercu' ? 'sg-mobile-link-active' : ''}
+              >
+                Aperçu & Rôles
+              </a>
+              <a
+                href="#rejoindre"
+                onClick={(e) => scrollTo(e, 'rejoindre')}
+                className={activeSection === 'rejoindre' ? 'sg-mobile-link-active' : ''}
+              >
+                Inscrire un établissement
+              </a>
+              <a href="/login" onClick={() => setMenuOuvert(false)} className="sg-mobile-login">Espace Connexion</a>
+              <a href="/demande" onClick={() => setMenuOuvert(false)} className="sg-btn sg-btn-primary sg-btn-block">
+                Inscrire un établissement
+                <ArrowRight size={16} />
+              </a>
+            </nav>
+          </div>
+        )}
       </header>
 
-      {/* Scrim overlay */}
-      <div className="hp-scrim" onClick={() => setIsSide(false)} />
-
-      {/* ── Page ───────────────────────────────────────────────────── */}
-      <div id="hp-page">
-        <main id="hp-top">
-
-          {/* ── Hero ─────────────────────────────────────────────── */}
-          <section className="hp-hero hp-sec-rv">
-            <div className="hp-par p1" data-d="30"><div className="hp-sh" /></div>
-            <div className="hp-par p2" data-d="-22"><div className="hp-sh" /></div>
-            <div className="hp-par p3" data-d="18"><div className="hp-sh" /></div>
-            <div className="hp-par p4" data-d="-34"><div className="hp-sh" /></div>
-
-            <div className="hp-w">
-              <div>
-                <h1 id="hp-h1">
-                  {headlineWords.map((word, idx) => (
-                    <span key={idx}>
-                      <span className="hp-wd" style={{ animationDelay: `${0.1 + idx * 0.08}s` }}>{word}</span>
-                      {' '}
-                    </span>
-                  ))}
-                </h1>
-
-                <p className="hp-lead hp-hi">
-                  Inscriptions, notes, bulletins, paiements, présences et demandes de documents.
-                  Une seule base de vérité pour le fondateur, l&apos;enseignant, l&apos;apprenant et le parent.
-                </p>
-
-                <div className="hp-cta hp-hi">
-                  <a className="hp-btn hp-b-o" href="/demande">Inscrire mon établissement</a>
-                  <a className="hp-btn hp-b-l" href="#hp-modules">Découvrir les modules</a>
-                </div>
-
-                <div className="hp-cyc hp-hi">
-                  <span><i className="hp-dia" />Primaire</span>
-                  <span><i className="hp-dia" />Secondaire</span>
-                  <span><i className="hp-dia" />Universitaire</span>
-                  <span><i className="hp-dia" />Installable sur mobile</span>
-                </div>
+      <main>
+        {/* ─────────────────────────────────────────────────────────────
+            2. HERO SECTION : COMPOSITION ÉDITORIALE & VISUEL PRODUIT
+        ───────────────────────────────────────────────────────────── */}
+        <section className="sg-hero">
+          <div className="sg-container sg-hero-grid">
+            {/* Colonne éditoriale */}
+            <div className="sg-hero-editorial">
+              <div className="sg-kicker">
+                <span className="sg-kicker-dot" aria-hidden="true" />
+                <span className="sg-kicker-text">Plateforme de gestion académique unifiée</span>
               </div>
 
-              <div className="hp-vis">
-                <div className="hp-chip hp-c1">
-                  <i className="hp-dia" />
-                  <div>Paiement reçu<small>MTN MoMo · 25 000 FCFA</small></div>
-                </div>
-                <div className="hp-chip hp-c2">
-                  <i className="hp-dia" />
-                  <div>Bulletin publié<small>6e A · parents notifiés</small></div>
-                </div>
-                <div className="hp-chip hp-c3">
-                  <i className="hp-dia" />
-                  <div>Absence signalée<small>Parent prévenu en direct</small></div>
-                </div>
+              <h1 className="sg-hero-title">
+                Le système moderne pour piloter votre{' '}
+                <span className="sg-text-green">établissement scolaire</span>.
+              </h1>
 
-                <div className={`hp-dash${isSuspended ? ' off' : ''}`} aria-label="Aperçu du tableau de bord">
-                  <div className="hp-bar">
-                    <i /><i /><i />
-                    <b>app.sigapei.com/les-flamboyants/administration</b>
-                  </div>
-
-                  <div className="hp-dbody">
-                    <div className="hp-dash-side">
-                      <div className="on">Tableau de bord</div>
-                      <div>Apprenants</div>
-                      <div>Notes</div>
-                      <div>Finances</div>
-                      <div>Demandes</div>
-                      <div>Personnel</div>
-                    </div>
-
-                    <div className="hp-dmain">
-                      <div className="hp-dtop">
-                        <strong>Les Flamboyants</strong>
-                        <button
-                          className="hp-sw"
-                          onClick={() => setIsSuspended(!isSuspended)}
-                          aria-pressed={isSuspended}
-                          aria-label="Simuler une suspension"
-                        >
-                          <b>{isSuspended ? 'Suspendu' : 'Actif'}</b>
-                          <span />
-                        </button>
-                      </div>
-
-                      <div className="hp-kp">
-                        <div><small>Apprenants</small><b>{apprenants}</b></div>
-                        <div><small>Présence</small><b><span>{presence}</span> %</b></div>
-                        <div><small>Recettes FCFA</small><b><span>{recettes}</span> M</b></div>
-                      </div>
-
-                      <div className="hp-chart" id="hp-chart" aria-hidden="true">
-                        <i data-h="45" />
-                        <i data-h="60" />
-                        <i data-h="52" />
-                        <i data-h="74" />
-                        <i data-h="68" />
-                        <i className="a" data-h="88" />
-                        <i data-h="80" />
-                      </div>
-
-                      <div className="hp-alert">
-                        <i className="hp-dia" />
-                        12 soldes impayés depuis plus de 30 jours
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="hp-lock">
-                    <strong>Accès suspendu</strong>
-                    Cet établissement est suspendu. Contactez la plateforme E-Académique.
-                    <small>Effet immédiat, une seule écriture en base.</small>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Marquee Ticker ───────────────────────────────────── */}
-          <div className="hp-tk" aria-hidden="true">
-            <div className="hp-tr2">
-              <span>
-                {tickerItems.map((item, idx) => (
-                  <span key={idx}><i className="hp-dia" /><span>{item}</span></span>
-                ))}
-              </span>
-              <span>
-                {tickerItems.map((item, idx) => (
-                  <span key={`r${idx}`}><i className="hp-dia" /><span>{item}</span></span>
-                ))}
-              </span>
-            </div>
-          </div>
-
-          {/* ── Profiles Section ─────────────────────────────────── */}
-          <section id="hp-profils" className="hp-sec-rv hp-sect-alt">
-            <div className="hp-w">
-              <h2 className="hp-rv">Un espace pensé pour chacun.</h2>
-              <p className="hp-lead hp-rv">
-                Chaque profil voit uniquement ce qui lui sert, avec des droits définis par le fondateur.
+              <p className="sg-hero-subtitle">
+                SIGAPEI unifie les inscriptions, la scolarité, les évaluations, la vie
+                scolaire et le e-learning au sein d'une plateforme sécurisée,
+                conçue pour les écoles, collèges, lycées et universités.
               </p>
 
-              <div className="hp-tabs hp-rv" role="tablist">
-                {profilesData.map((p, idx) => (
-                  <button
-                    key={p.id}
-                    className="hp-tab"
-                    role="tab"
-                    aria-selected={activeTab === idx}
-                    onClick={() => setActiveTab(idx)}
-                  >
-                    {p.title.split('&')[0]}
-                  </button>
-                ))}
+              <div className="sg-hero-actions">
+                <a href="/demande" className="sg-btn sg-btn-gold">
+                  Inscrire mon établissement
+                  <ArrowRight size={17} />
+                </a>
+                <a href="/login" className="sg-btn sg-btn-outline">
+                  <Lock size={15} />
+                  Espace Connexion
+                </a>
               </div>
 
-              <div className="hp-panel hp-rv" role="tabpanel">
-                <div>
-                  <span className="hp-tag hp-ok" style={{ marginBottom: 8, display: 'inline-block' }}>{current.role}</span>
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--hp-head)', marginTop: 4, marginBottom: 12 }}>
-                    {current.title}
-                  </h3>
-                  <p style={{ color: 'var(--hp-mut)', fontSize: '0.95rem', lineHeight: 1.6 }}>{current.desc}</p>
-                  <ul>
-                    {current.features.map((feat, fIdx) => (
-                      <li key={fIdx}>
-                        <i className="hp-dia" />
-                        <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>{feat}</span>
+              <div className="sg-hero-guarantees">
+                <div className="sg-guarantee-item">
+                  <CheckCircle2 size={16} className="sg-icon-green" />
+                  <span>Multi-établissements</span>
+                </div>
+                <div className="sg-guarantee-item">
+                  <ShieldCheck size={16} className="sg-icon-green" />
+                  <span>Données hautement sécurisées</span>
+                </div>
+                <div className="sg-guarantee-item">
+                  <Sparkles size={16} className="sg-icon-gold" />
+                  <span>Déploiement rapide</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Colonne visuelle : Mockup soigné & éléments concrets */}
+            <div className="sg-hero-visual-wrapper">
+              <div className="sg-app-window">
+                {/* Barre de fenêtre supérieure */}
+                <div className="sg-app-bar">
+                  <div className="sg-bar-dots">
+                    <span className="sg-dot sg-dot-red" />
+                    <span className="sg-dot sg-dot-yellow" />
+                    <span className="sg-dot sg-dot-green" />
+                  </div>
+                  <div className="sg-bar-url">
+                    <Lock size={11} />
+                    <span>sigapei.ci / portail-direction</span>
+                  </div>
+                  <span className="sg-bar-badge">Connecté</span>
+                </div>
+
+                {/* Corps de l'application avec aperçu réel */}
+                <div className="sg-app-preview">
+                  <img
+                    src="/images/dashboard-preview.jpg"
+                    alt="Aperçu du tableau de bord SIGAPEI"
+                    className="sg-preview-image"
+                    loading="eager"
+                  />
+                  <div className="sg-preview-gradient" aria-hidden="true" />
+                </div>
+
+                {/* Modules & accès réels de la plateforme */}
+                <div className="sg-app-features-bar">
+                  <div className="sg-feat-chip">
+                    <Building2 size={15} className="sg-icon-green" />
+                    <span>Portail Direction</span>
+                  </div>
+                  <div className="sg-feat-chip">
+                    <Users size={15} className="sg-icon-green" />
+                    <span>Espace Enseignants</span>
+                  </div>
+                  <div className="sg-feat-chip">
+                    <MonitorPlay size={15} className="sg-icon-green" />
+                    <span>Application Mobile</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ─────────────────────────────────────────────────────────────
+            3. BANDEAU DE VALEUR : 4 CHIFFRES CLÉS
+        ───────────────────────────────────────────────────────────── */}
+        <section className="sg-kpi-banner">
+          <div className="sg-container sg-kpi-grid">
+            <div className="sg-kpi-cell">
+              <span className="sg-kpi-val">06</span>
+              <span className="sg-kpi-label">Modules interconnectés en temps réel</span>
+            </div>
+            <div className="sg-kpi-cell">
+              <span className="sg-kpi-val">100 %</span>
+              <span className="sg-kpi-label">Accessible sur web, tablette & mobile</span>
+            </div>
+            <div className="sg-kpi-cell">
+              <span className="sg-kpi-val">Multi</span>
+              <span className="sg-kpi-label">Gestion centralisée multi-établissements</span>
+            </div>
+            <div className="sg-kpi-cell">
+              <span className="sg-kpi-val">Tous cycles</span>
+              <span className="sg-kpi-label">Primaire, secondaire & enseignement supérieur</span>
+            </div>
+          </div>
+        </section>
+
+        {/* ─────────────────────────────────────────────────────────────
+            4. SECTION MODULES OPÉRATIONNELS (GRILLE 3x2 HARMONIEUSE)
+        ───────────────────────────────────────────────────────────── */}
+        <section className="sg-section sg-section-modules" id="modules">
+          <div className="sg-container">
+            <div className="sg-section-header">
+              <span className="sg-section-kicker">Écosystème modulaire</span>
+              <h2 className="sg-section-title">
+                Six modules métiers conçus pour l’excellence pédagogique.
+              </h2>
+              <p className="sg-section-lead">
+                Chaque module répond aux exigences quotidiennes de vos équipes,
+                tout en alimentant automatiquement le dossier central de votre établissement.
+              </p>
+            </div>
+
+            <div className="sg-modules-grid">
+              {MODULES.map(({ n, icon: Icon, tag, titre, texte, points }) => (
+                <article key={n} className="sg-module-card">
+                  <div className="sg-card-top">
+                    <div className="sg-module-icon">
+                      <Icon size={22} />
+                    </div>
+                    <div className="sg-module-meta">
+                      <span className="sg-module-tag">{tag}</span>
+                      <span className="sg-module-index">{n}</span>
+                    </div>
+                  </div>
+
+                  <h3 className="sg-module-title">{titre}</h3>
+                  <p className="sg-module-desc">{texte}</p>
+
+                  <ul className="sg-module-points">
+                    {points.map((pt) => (
+                      <li key={pt}>
+                        <Check size={14} className="sg-check-icon" />
+                        <span>{pt}</span>
                       </li>
                     ))}
                   </ul>
-                </div>
 
-                <div className="hp-phone">
-                  <div className="hp-scr">
-                    <div>
-                      <h4>{current.phoneTitle}</h4>
-                      <small>{current.phoneSubtitle}</small>
-                    </div>
-                    {current.rows.map((r, rIdx) => (
-                      <div key={rIdx} className="hp-row">
-                        <div>
-                          <div style={{ fontSize: '11px', color: '#5B6B62', fontWeight: 600 }}>{r.label}</div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0F241A' }}>{r.val}</div>
-                        </div>
-                        <span className={`hp-tag hp-${r.status}`}>{r.tag}</span>
-                      </div>
-                    ))}
+                  <div className="sg-card-footer">
+                    <a href="/login" className="sg-card-link">
+                      Accéder au module
+                      <ArrowRight size={14} />
+                    </a>
                   </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─────────────────────────────────────────────────────────────
+            5. APERÇU FONCTIONNEL : PROFILS & GESTION MULTI-RÔLES
+        ───────────────────────────────────────────────────────────── */}
+        <section className="sg-section sg-section-roles" id="apercu">
+          <div className="sg-container">
+            <div className="sg-roles-layout">
+              <div className="sg-roles-intro">
+                <span className="sg-section-kicker">Gouvernance & Sécurité</span>
+                <h2 className="sg-section-title">
+                  Une interface adaptée aux responsabilités de chacun.
+                </h2>
+                <p className="sg-section-lead">
+                  Grâce à un cloisonnement strict par rôles, chaque utilisateur
+                  accède exactement aux informations indispensables à sa mission.
+                </p>
+
+                <div className="sg-roles-cards">
+                  {ROLES.map(({ titre, role, desc, icon: Icon }) => (
+                    <div key={titre} className="sg-role-card">
+                      <div className="sg-role-icon">
+                        <Icon size={20} />
+                      </div>
+                      <div className="sg-role-body">
+                        <div className="sg-role-header">
+                          <h4>{titre}</h4>
+                          <span className="sg-role-tag">{role}</span>
+                        </div>
+                        <p>{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Panneau institutionnel d'engagement */}
+              <div className="sg-trust-panel">
+                <div className="sg-trust-content">
+                  <span className="sg-trust-badge">Garantie SIGAPEI</span>
+                  <h3>Conformité académique & pérennité des données</h3>
+                  <p>
+                    La plateforme est conçue pour respecter fidèlement les normes
+                    d'organisation scolaire, le calcul des moyennes et la gestion des
+                    livrets conformément aux arrêtés ministériels.
+                  </p>
+                  <div className="sg-trust-divider" />
+                  <div className="sg-trust-checks">
+                    <div>
+                      <strong>Multi-cursus</strong>
+                      <span>Primaire, collège, lycée, enseignement supérieur</span>
+                    </div>
+                    <div>
+                      <strong>Intégrité</strong>
+                      <span>Traçabilité intégrale des modifications de notes</span>
+                    </div>
+                    <div>
+                      <strong>Souveraineté</strong>
+                      <span>Données hébergées en environnement hautement sécurisé</span>
+                    </div>
+                  </div>
+                  <a href="/demande" className="sg-btn sg-btn-gold sg-btn-block">
+                    Faire une demande pour mon école
+                    <ArrowRight size={16} />
+                  </a>
                 </div>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* ── Modules Section ──────────────────────────────────── */}
-          <section id="hp-modules" className="hp-sec-rv">
-            <div className="hp-w">
-              <h2 className="hp-rv">Tout ce dont un établissement a besoin.</h2>
-              <p className="hp-lead hp-rv">
-                Chaque information existe à un seul endroit. Elle est partagée entre modules, jamais recopiée.
+        {/* ─────────────────────────────────────────────────────────────
+            6. CTA FINAL D'ADHÉSION
+        ───────────────────────────────────────────────────────────── */}
+        <section className="sg-cta-section" id="rejoindre">
+          <div className="sg-container">
+            <div className="sg-cta-box">
+              <div className="sg-cta-text">
+                <span className="sg-cta-kicker">Rejoindre le réseau SIGAPEI</span>
+                <h2>Votre établissement mérite une gestion d’exception.</h2>
+                <p>
+                  Déposez votre demande d'ouverture en ligne en moins de 10 minutes.
+                  Notre service administratif vérifie votre dossier et active vos accès officiels.
+                </p>
+              </div>
+
+              <div className="sg-cta-action-group">
+                <a href="/demande" className="sg-btn sg-btn-gold sg-btn-lg">
+                  Inscrire mon établissement
+                  <ArrowRight size={18} />
+                </a>
+                <a href="/login" className="sg-btn sg-btn-ghost-dark sg-btn-lg">
+                  Accès espace existant
+                </a>
+                <span className="sg-cta-note">
+                  Validation administrative sous 24h à 48h ouvrées.
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* ─────────────────────────────────────────────────────────────
+          7. FOOTER ÉLÉGANT & INSTITUTIONNEL
+      ───────────────────────────────────────────────────────────── */}
+      <footer className="sg-footer">
+        <div className="sg-container">
+          <div className="sg-footer-main">
+            <div className="sg-footer-brand-col">
+              <a href="/" className="sg-footer-brand-link" aria-label="SIGAPEI - Accueil">
+                <img
+                  src="/images/sigapei-logo.png"
+                  alt="Logo SIGAPEI"
+                  className="sg-footer-brand-logo"
+                />
+                <div className="sg-footer-brand-text">
+                  <span className="sg-footer-brand-title">SIGAPEI</span>
+                  <span className="sg-footer-brand-sub">Système de gestion académique</span>
+                </div>
+              </a>
+              <p className="sg-footer-desc">
+                Système Intégré de Gestion Administrative et Pédagogique des
+                Établissements d'Instruction. La référence numérique de la gouvernance scolaire.
               </p>
-
-              <div className="hp-mods">
-                <div className="hp-mod hp-big hp-rv">
-                  <i className="hp-dia" />
-                  <h3>Finances et paiements</h3>
-                  <p>Frais de scolarité, reçus automatiques, intégration Mobile Money (MTN, Orange, Moov, Wave) et banques. Suivi en direct des impayés et recouvrement.</p>
-                </div>
-                <div className="hp-mod hp-rv">
-                  <i className="hp-dia" />
-                  <h3>Scolarité &amp; Bulletins</h3>
-                  <p>Calcul automatique des moyennes, gestion des coefficients par série et édition des bulletins officiels en PDF sécurisés.</p>
-                </div>
-                <div className="hp-mod hp-rv">
-                  <i className="hp-dia" />
-                  <h3>Vie Scolaire &amp; Présences</h3>
-                  <p>Appel numérique en classe sur mobile, gestion des retards/absences et alertes directes transmises aux parents.</p>
-                </div>
-                <div className="hp-mod hp-rv">
-                  <i className="hp-dia" />
-                  <h3>Inscriptions &amp; Réinscriptions</h3>
-                  <p>Portail de pré-inscription en ligne, numérisation des pièces justificatives et validation des dossiers d&apos;admission.</p>
-                </div>
-                <div className="hp-mod hp-rv">
-                  <i className="hp-dia" />
-                  <h3>E-Learning &amp; Devoirs</h3>
-                  <p>Bibliothèque numérique, dépôt de cours, devoirs à rendre et quiz d&apos;évaluation accessibles 24/7.</p>
-                </div>
-                <div className="hp-mod hp-rv">
-                  <i className="hp-dia" />
-                  <h3>Supervision Multi-Écoles</h3>
-                  <p>Consolidation des données pour les groupes scolaires, comparatifs inter-écoles et tableaux de bord consolidés.</p>
-                </div>
-                <div className="hp-mod hp-rv">
-                  <i className="hp-dia" />
-                  <h3>Identité &amp; Cartes QR-Code</h3>
-                  <p>Gestion fine des rôles et génération automatique des cartes d&apos;étudiants sécurisées avec QR-Code.</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Steps Section ────────────────────────────────────── */}
-          <section id="hp-demarrer" className="hp-sec-rv hp-sect-alt">
-            <div className="hp-w">
-              <h2 className="hp-rv">Comment démarrer avec sigapei ?</h2>
-              <p className="hp-lead hp-rv">
-                Une mise en service rapide en 4 étapes simples, sans infrastructure lourde ni installation complexe.
-              </p>
-
-              <div className="hp-steps in">
-                <div className="hp-st">
-                  <em>01</em>
-                  <h3>Inscription de l&apos;école</h3>
-                  <p>Création de votre espace établissement personnalisé en moins de 2 minutes.</p>
-                </div>
-                <div className="hp-st">
-                  <em>02</em>
-                  <h3>Import des effectifs</h3>
-                  <p>Importation facile des apprenants et enseignants via fichier Excel / CSV.</p>
-                </div>
-                <div className="hp-st">
-                  <em>03</em>
-                  <h3>Paramétrage des cycles</h3>
-                  <p>Configuration des classes, séries, coefficients et frais de scolarité.</p>
-                </div>
-                <div className="hp-st">
-                  <em>04</em>
-                  <h3>Ouverture des accès</h3>
-                  <p>Envoi des identifiants sécurisés aux enseignants, apprenants et parents.</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Final CTA ────────────────────────────────────────── */}
-          <section id="hp-final" className="hp-final hp-sec-rv">
-            <div className="hp-w">
-              <div className="hp-final-logo-wrap">
-                <i className="hp-lg hp-final-logo" role="img" aria-label="Logo sigapei" />
-              </div>
-              <h2 className="hp-rv hp-final-title">Prêt à moderniser la gestion de votre établissement ?</h2>
-              <p className="hp-rv hp-final-text">
-                Rejoignez les centaines d&apos;écoles qui font confiance à sigapei pour leur transformation numérique.
-              </p>
-              <div className="hp-cta hp-rv hp-final-actions" style={{ marginTop: 24 }}>
-                <a className="hp-btn hp-b-o" href="/demande">Inscrire mon établissement</a>
-                <a className="hp-btn hp-b-l" href="#hp-profils">Explorer les fonctionnalités</a>
-              </div>
-            </div>
-          </section>
-
-        </main>
-
-        {/* ── Footer ───────────────────────────────────────────────── */}
-        <footer className="hp-footer">
-          <div className="hp-w hp-footer-inner">
-            <div className="hp-footer-brand">
-              <div className="hp-footer-logo">
-                <i className="hp-lg" style={{ width: 36, height: 36 }} role="img" aria-label="Logo SIGAPEI" />
-              </div>
-              <div>
-                <div className="hp-ft-brand">SIGAPEI</div>
-                <p>Plateforme de gestion scolaire</p>
-              </div>
             </div>
 
-            <div className="hp-footer-col">
-              <div className="hp-footer-label">Entreprise</div>
-              <a href="#hp-profils">Pourquoi nous</a>
-              <a href="#hp-modules">Modules</a>
-              <a href="#hp-offres">Tarifs</a>
+            <div className="sg-footer-links-col">
+              <h5>Navigation</h5>
+              <ul>
+                <li><a href="#modules" onClick={(e) => scrollTo(e, 'modules')}>Modules du système</a></li>
+                <li><a href="#apercu" onClick={(e) => scrollTo(e, 'apercu')}>Gouvernance & Rôles</a></li>
+                <li><a href="#rejoindre" onClick={(e) => scrollTo(e, 'rejoindre')}>Adhésion d'un établissement</a></li>
+              </ul>
             </div>
 
-            <div className="hp-footer-col">
-              <div className="hp-footer-label">Ressources</div>
-              <a href="#hp-demarrer">Démarrer</a>
-              <a href="#hp-securite">Sécurité</a>
-              <a href="#hp-final">Devis</a>
-            </div>
-
-            <div className="hp-footer-col hp-footer-contact">
-              <div className="hp-footer-label">Contact</div>
-              <a href="mailto:contact@sigapei.com">contact@sigapei.com</a>
-              <a href="tel:+22500000000">+225 00 00 00 00</a>
-              <span>Abidjan, Côte d’Ivoire</span>
+            <div className="sg-footer-links-col">
+              <h5>Portails d'accès</h5>
+              <ul>
+                <li><a href="/login">Connexion générale</a></li>
+                <li><a href="/demande">Dépôt de candidature</a></li>
+                <li><a href="/securite">Sécurité & Confidentialité</a></li>
+              </ul>
             </div>
           </div>
 
-          <div className="hp-w hp-footer-bottom">
-            <div>© 2026 SIGAPEI. Tous droits réservés.</div>
-            <div className="hp-footer-legal">
-              <a href="#">Mentions légales</a>
-              <a href="#">Confidentialité</a>
+          <div className="sg-footer-bottom">
+            <p>© {new Date().getFullYear()} SIGAPEI — Tous droits réservés.</p>
+            <div className="sg-footer-chips">
+              <span>Primaire</span>
+              <span>Secondaire</span>
+              <span>Supérieur</span>
             </div>
           </div>
-        </footer>
-      </div>
+        </div>
+      </footer>
     </div>
   )
 }
