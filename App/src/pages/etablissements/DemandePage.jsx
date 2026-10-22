@@ -33,6 +33,7 @@ const isEmptyDraft = (form, uuid) => !uuid && JSON.stringify(form) === JSON.stri
 
 export default function DemandePage() {
   const notify = useNotify()
+  const [step, setStep] = useState(1)
   usePageTitle("Inscrire mon établissement")
 
   // Afficher le badge reCAPTCHA uniquement sur ce formulaire public

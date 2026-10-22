@@ -26,6 +26,8 @@ class NoteService
 {
     private const MOTIF_SAISIE = 'Modification par l\'enseignant pendant la période de saisie';
 
+    private const MOTIF_ELEARNING = 'Nouveau report depuis E-learning';
+
     public function __construct(
         private readonly ControleAcces $acces,
         private readonly ScolariteClient $scolarite,
@@ -137,6 +139,57 @@ class NoteService
         $this->bulletins->invalider($periode, $evaluation->classe_uuid);
 
         return $note;
+    }
+
+    /**
+     * Report d'une note E-learning (appel interne). Pas de verrou optimiste côté appelant : E-learning
+     * reste maître de la valeur tant que la période est ouverte. Une valeur identique ne change rien
+     * (idempotent) ; une valeur différente crée une nouvelle version tracée dans audit_note.
+     *
+     * @param  array{uuid: string, roleCode: string}  $auteur
+     * @return array{note: Note, creee: bool}
+     */
+    public function reporterElearning(Evaluation $evaluation, string $apprenantUuid, string $valeur, ?string $commentaire, string $sourceUuid, array $auteur): array
+    {
+        $evaluation->loadMissing('periode');
+        $grille = $this->parametres->pour($evaluation->periode->cycle)->grille;
+        if ($grille->type_notation !== 'chiffree') {
+            throw MetierException::conflit('Le barème de ce cycle est par compétences : une note chiffrée E-learning ne peut pas y être reportée.', 'BAREME_INCOMPATIBLE');
+        }
+
+        $saisie = ['statut' => 'saisie', 'valeur' => $valeur, 'commentaire' => $commentaire];
+        $this->validerContenu($saisie, $evaluation, $grille, '');
+
+        return DB::transaction(function () use ($evaluation, $apprenantUuid, $saisie, $sourceUuid, $auteur) {
+            $note = Note::where('evaluation_id', $evaluation->id)
+                ->where('apprenant_uuid', $apprenantUuid)
+                ->lockForUpdate()
+                ->first();
+
+            if ($note === null) {
+                $note = new Note([
+                    'apprenant_uuid' => $apprenantUuid,
+                    'saisi_par_uuid' => $auteur['uuid'],
+                    'saisi_le' => now(),
+                    'version' => 1,
+                    'source_elearning_uuid' => $sourceUuid,
+                ]);
+                $note->evaluation_id = $evaluation->id;
+                $this->appliquer($note, $saisie);
+                $note->save();
+
+                return ['note' => $note, 'creee' => true];
+            }
+
+            $versionAvant = $note->version;
+            $this->modifier($note, $saisie, $auteur, self::MOTIF_ELEARNING, false);
+            if ($note->version !== $versionAvant) {
+                $note->source_elearning_uuid = $sourceUuid;
+                $note->save();
+            }
+
+            return ['note' => $note, 'creee' => false];
+        });
     }
 
     // ------------------------------------------------------------------------------------------

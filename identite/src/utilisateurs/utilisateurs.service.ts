@@ -84,6 +84,33 @@ export class UtilisateursService {
     return this.recupRepo.find({ where: { utilisateurId } });
   }
 
+  async modifierProfil(utilisateurId: string, patch: { nomComplet?: string; photoUrl?: string }) {
+    const u = await this.utilisateurRepo.findOneOrFail({ where: { id: utilisateurId } });
+    if (patch.nomComplet) u.nomComplet = patch.nomComplet.trim();
+    if (patch.photoUrl !== undefined) u.photoUrl = patch.photoUrl || null;
+    return this.utilisateurRepo.save(u);
+  }
+
+  async changerEmail(utilisateurId: string, nouvelEmail: string) {
+    const existe = await this.trouverParEmail(nouvelEmail.toLowerCase());
+    if (existe && existe.id !== utilisateurId) {
+      throw new Error('ADRESSE_EMAIL_DEJA_UTILISEE');
+    }
+    await this.utilisateurRepo.update({ id: utilisateurId }, { email: nouvelEmail.toLowerCase() });
+  }
+
+  async changerTelephone(utilisateurId: string, nouveauTelephone: string) {
+    const existe = await this.trouverParTelephone(nouveauTelephone);
+    if (existe && existe.id !== utilisateurId) {
+      throw new Error('TELEPHONE_DEJA_UTILISE');
+    }
+    await this.utilisateurRepo.update({ id: utilisateurId }, { telephone: nouveauTelephone });
+  }
+
+  async listerEmpreintes(utilisateurId: string) {
+    return [];
+  }
+
   async enregistrerQuestionSecurite(utilisateurId: string, questionId: string, reponseHash: string) {
     const existante = await this.questionRepo.findOne({ where: { utilisateurId, questionId } });
     if (existante) {

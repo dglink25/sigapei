@@ -32,12 +32,4 @@ export default () => ({
     exchange: process.env.RABBITMQ_EXCHANGE ?? 'sigapei.events',
   },
 
-  aws: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_DEFAULT_REGION ?? 'us-east-1',
-    bucket: process.env.AWS_BUCKET ?? 'sigapei-documents',
-    endpoint: process.env.AWS_ENDPOINT,
-    usePathStyle: process.env.AWS_USE_PATH_STYLE_ENDPOINT === 'true',
-  },
 });

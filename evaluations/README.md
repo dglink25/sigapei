@@ -105,6 +105,7 @@ Paramétrables par établissement **et** par cycle (`PUT /v1/parametres-notation
 | `GET` | `/classements/classe/{uuid}?periode_uuid=` | admin, enseignant de la classe |
 | `GET` / `POST` | `/contestations` · `PUT /contestations/{uuid}/traiter` | ouverture : apprenant, parent · traitement : enseignant de l'évaluation, admin |
 | `GET` | `/interne/eligibilite-document/{apprenant_uuid}` | `X-Internal-Secret` + `X-Tenant-Id` (Demandes administratives) |
+| `POST` | `/interne/notes-elearning` | `X-Internal-Secret` + `X-Tenant-Id` (E-learning) — report d'une note de devoir/quiz, idempotent, compte directement dans la moyenne |
 
 Erreurs : `{"success": false, "message": "...", "error": {"code": "...", "details": {...}}}` — 409 pour les conflits métier (période clôturée, note modifiée entre-temps...), 422 pour les données invalides, 503 si un service amont ne répond pas.
 
@@ -127,4 +128,4 @@ Tant qu'ils ne sont pas livrés, les actions concernées répondent **503** (fai
 | **Scolarité** — `GET /v1/interne/apprenants` | ajouter `utilisateur_uuid` (compte de l'apprenant) et `parents[].parent_uuid` (uuid Identité du parent) |
 | **Scolarité** — `GET /v1/interne/emplois-du-temps` | exposer `enseignant_uuid` et `matiere_uuid` (uuid de la matière d'Évaluations) au lieu de `enseignant_id`/`matiere_id`, accepter le filtre `enseignant_uuid` — source des affectations tant que RH n'existe pas |
 | **Documents** (transverse) | stockage des PDF et URL signées : la génération PDF des bulletins sera branchée dessus |
-| **E-learning** (Roc) | contrat des compositions en ligne (phase 2) |
+| **E-learning** (Roc) | adapter `EvaluationsClient` à `POST /v1/interne/notes-elearning` (en-têtes, corps, réponse, uuid de matière d'Évaluations) ; contrat des compositions en ligne (phase 2) |
