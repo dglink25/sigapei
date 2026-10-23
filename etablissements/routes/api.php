@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccueilController;
+use App\Http\Controllers\ConfigurationAcademiqueController;
 use App\Http\Controllers\CorrectionController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\EtablissementController;
@@ -79,6 +80,52 @@ Route::prefix('v1')->group(function () {
             Route::get('/', [MonEtablissementController::class, 'afficher']);
             Route::patch('/', [MonEtablissementController::class, 'modifier']);
             Route::post('/logo', [MonEtablissementController::class, 'remplacerLogo']);
+
+            // ── Configuration académique (administrateur de l'établissement) ──
+            $cfg = 'configuration';
+
+            // Années académiques
+            Route::get("/{$cfg}/annees",                  [ConfigurationAcademiqueController::class, 'listerAnnees']);
+            Route::post("/{$cfg}/annees",                 [ConfigurationAcademiqueController::class, 'creerAnnee']);
+            Route::get("/{$cfg}/annees/{uuid}",           [ConfigurationAcademiqueController::class, 'afficherAnnee']);
+            Route::patch("/{$cfg}/annees/{uuid}",         [ConfigurationAcademiqueController::class, 'modifierAnnee']);
+            Route::post("/{$cfg}/annees/{uuid}/suspendre",[ConfigurationAcademiqueController::class, 'suspendreAnnee']);
+            Route::post("/{$cfg}/annees/{uuid}/reactiver",[ConfigurationAcademiqueController::class, 'reactiverAnnee']);
+
+            // Cycles actifs
+            Route::get("/{$cfg}/cycles",                  [ConfigurationAcademiqueController::class, 'listerCycles']);
+            Route::post("/{$cfg}/cycles",                 [ConfigurationAcademiqueController::class, 'creerOuMettreAJourCycle']);
+
+            // Subdivisions
+            Route::get("/{$cfg}/subdivisions",            [ConfigurationAcademiqueController::class, 'listerSubdivisions']);
+            Route::post("/{$cfg}/subdivisions",           [ConfigurationAcademiqueController::class, 'creerSubdivision']);
+            Route::patch("/{$cfg}/subdivisions/{uuid}",   [ConfigurationAcademiqueController::class, 'modifierSubdivision']);
+
+            // Niveaux
+            Route::get("/{$cfg}/niveaux",                 [ConfigurationAcademiqueController::class, 'listerNiveaux']);
+            Route::post("/{$cfg}/niveaux",                [ConfigurationAcademiqueController::class, 'creerNiveau']);
+            Route::patch("/{$cfg}/niveaux/{uuid}",        [ConfigurationAcademiqueController::class, 'modifierNiveau']);
+
+            // Séries / filières
+            Route::get("/{$cfg}/series",                  [ConfigurationAcademiqueController::class, 'listerSeries']);
+            Route::post("/{$cfg}/series",                 [ConfigurationAcademiqueController::class, 'creerSerie']);
+            Route::patch("/{$cfg}/series/{uuid}",         [ConfigurationAcademiqueController::class, 'modifierSerie']);
+
+            // Classes concrètes
+            Route::get("/{$cfg}/classes",                 [ConfigurationAcademiqueController::class, 'listerClasses']);
+            Route::post("/{$cfg}/classes",                [ConfigurationAcademiqueController::class, 'creerClasse']);
+            Route::patch("/{$cfg}/classes/{uuid}",        [ConfigurationAcademiqueController::class, 'modifierClasse']);
+
+            // Cohortes universitaires
+            Route::get("/{$cfg}/cohortes",                [ConfigurationAcademiqueController::class, 'listerCohortes']);
+            Route::post("/{$cfg}/cohortes",               [ConfigurationAcademiqueController::class, 'creerCohorte']);
+
+            // Matières avec coefficient
+            Route::get("/{$cfg}/matieres",                [ConfigurationAcademiqueController::class, 'listerMatieres']);
+            Route::post("/{$cfg}/matieres",               [ConfigurationAcademiqueController::class, 'creerMatiere']);
+            Route::patch("/{$cfg}/matieres/{uuid}",       [ConfigurationAcademiqueController::class, 'modifierMatiere']);
+            Route::get("/{$cfg}/matieres/{uuid}/propagation", [ConfigurationAcademiqueController::class, 'previewPropagation']);
+            Route::post("/{$cfg}/matieres/{uuid}/propager",   [ConfigurationAcademiqueController::class, 'propagerMatiere']);
         });
     });
 });

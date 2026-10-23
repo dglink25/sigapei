@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/identite/AuthContext'
 import { useNotify } from '../../context/commun/NotifyContext'
@@ -14,36 +14,48 @@ export const roleOf = (u) => u?.role?.code ?? u?.roleCode ?? (typeof u?.role ===
  * - Non connecté      → notification + redirect /login
  * - Rôle insuffisant  → notification + redirect vers l'accueil du rôle
  * - Session en cours  → Loader animé
+ *
+ * Les notifications sont déclenchées via useEffect pour éviter
+ * "Cannot update a component while rendering a different component".
  */
 export default function RequireAuth({ children, roles }) {
   const { status, user, logoutReason } = useAuth()
   const notify   = useNotify()
   const location = useLocation()
-  const [notifiedUnauth, setNotifiedUnauth] = useState(false)
-  const [notifiedForbid, setNotifiedForbid] = useState(false)
+  const notifiedUnauth = useRef(false)
+  const notifiedForbid = useRef(false)
 
-  if (status === 'loading') return <Loader label="Chargement de votre session…" />
+  const nonConnecte   = status !== 'loading' && status !== 'authenticated'
+  const roleInsuffisant = status === 'authenticated' && roles?.length && !roles.includes(roleOf(user))
 
-  /* ── Non connecté ── */
-  if (status !== 'authenticated') {
-    if (logoutReason) return <Loader label="Redirection en cours…" />
-    if (!notifiedUnauth) {
-      setNotifiedUnauth(true)
+  useEffect(() => {
+    if (nonConnecte && !logoutReason && !notifiedUnauth.current) {
+      notifiedUnauth.current = true
       notify.warning('Connexion requise', 'Vous devez être connecté pour accéder à cette page.')
     }
-    return <Navigate to={LOGIN_PATH} replace state={{ from: location }} />
-  }
+  }, [nonConnecte, logoutReason, notify])
 
-  /* ── Connecté mais rôle insuffisant ── */
-  if (roles?.length && !roles.includes(roleOf(user))) {
-    if (!notifiedForbid) {
-      setNotifiedForbid(true)
+  useEffect(() => {
+    if (roleInsuffisant && !notifiedForbid.current) {
+      notifiedForbid.current = true
       const roleCode = roleCodeOf(user)
       notify.error(
         'Accès refusé',
         `Votre rôle « ${roleCode.replace(/_/g, ' ')} » ne vous permet pas d'accéder à cette page.`,
       )
     }
+  }, [roleInsuffisant, user, notify])
+
+  if (status === 'loading') return <Loader label="Chargement de votre session…" />
+
+  /* ── Non connecté ── */
+  if (status !== 'authenticated') {
+    if (logoutReason) return <Loader label="Redirection en cours…" />
+    return <Navigate to={LOGIN_PATH} replace state={{ from: location }} />
+  }
+
+  /* ── Connecté mais rôle insuffisant ── */
+  if (roles?.length && !roles.includes(roleOf(user))) {
     return <Navigate to={redirectionPostLogin(roleCodeOf(user))} replace />
   }
 

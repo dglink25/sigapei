@@ -31,6 +31,7 @@ class OpenApiSpec
                 ['name' => 'Corrections', 'description' => 'Correction d\'un dossier via un lien signé à usage unique, sans authentification.'],
                 ['name' => 'Établissements', 'description' => 'Cycles autorisés, plans disponibles et abonnement d\'un établissement actif.'],
                 ['name' => 'Mon établissement', 'description' => "Profil de l'établissement, modifiable par son administrateur. Headers X-Internal-Secret + X-User-Role + X-Tenant-Uuid (posés par la Gateway après vérification du JWT)."],
+                ['name' => 'Configuration académique', 'description' => "Organisation pédagogique interne : années académiques, cycles actifs, subdivisions (groupes/sections/départements), niveaux scolaires, séries et filières, classes concrètes, cohortes universitaires, matières avec coefficient. Toutes ces routes sont sous `/interne/mon-etablissement/configuration/*` et exigent X-Internal-Secret + X-User-Role: administrateur + X-Tenant-Uuid. Une année académique ne peut jamais être supprimée."],
                 ['name' => 'Interne', 'description' => 'Back-office Super Administrateur et passerelle API (Gateway). Header X-Internal-Secret obligatoire.'],
                 ['name' => 'Santé', 'description' => 'Sonde de disponibilité.'],
             ],
@@ -601,6 +602,545 @@ MD;
                 ],
             ],
 
+            // ---------------- Configuration académique ----------------
+            '/interne/mon-etablissement/configuration/annees' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les années académiques',
+                    'description' => "Années de l'établissement connecté, triées par `date_debut` décroissante. Le champ `statut` est calculé dynamiquement (jamais stocké) : `en_cours`, `a_venir`, `termine` ou `suspendu` (prioritaire). `nb_cycles` = nombre de cycles activés pour cette année.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'responses' => [
+                        '200' => self::succes('Liste des années académiques', [
+                            'data' => ['type' => 'array', 'items' => self::ref('AnneeAcademique')],
+                        ]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une année académique',
+                    'description' => "**Action irréversible** : une année créée ne peut jamais être supprimée. Le libellé (ex. `2026-2027`) est généré automatiquement depuis les dates si absent. Les chevauchements de plages entre années du même établissement sont interdits (`422`). Une confirmation explicite doit être affichée côté client avant l'appel.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['date_debut', 'date_fin'],
+                            'properties' => [
+                                'date_debut' => ['type' => 'string', 'format' => 'date', 'example' => '2026-09-01'],
+                                'date_fin'   => ['type' => 'string', 'format' => 'date', 'example' => '2027-07-31'],
+                                'libelle'    => ['type' => 'string', 'maxLength' => 20, 'nullable' => true, 'description' => 'Généré automatiquement si absent (ex. 2026-2027).'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Année créée', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/annees/{uuid}' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Détail d\'une année académique',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de l\'année académique.')]),
+                    'responses' => [
+                        '200' => self::succes('Année académique', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+                'patch' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Modifie partiellement une année',
+                    'description' => "Seules les clés envoyées sont modifiées. **Restriction** : `date_debut` et `date_fin` ne peuvent plus être modifiées si l'année est au statut `termine`. La note de suspension est modifiable à tout moment.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de l\'année académique.')]),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => [
+                                'date_debut'      => ['type' => 'string', 'format' => 'date'],
+                                'date_fin'        => ['type' => 'string', 'format' => 'date'],
+                                'libelle'         => ['type' => 'string', 'maxLength' => 20],
+                                'note_suspension' => ['type' => 'string'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Année mise à jour', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/annees/{uuid}/suspendre' => [
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Suspend une année académique',
+                    'description' => "La suspension est prioritaire sur le calcul normal du statut. Une année suspendue reste `suspendu` jusqu'à réactivation explicite, même si sa période est en cours. L'action est journalisée dans `audit_config_academique`.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de l\'année académique.')]),
+                    'requestBody' => [
+                        'required' => false,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => ['note' => ['type' => 'string', 'description' => 'Motif de la suspension (facultatif).']],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Année suspendue', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/annees/{uuid}/reactiver' => [
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Réactive une année suspendue',
+                    'description' => "Efface le flag `suspendu`. Le statut est recalculé depuis les dates : `en_cours`, `a_venir` ou `termine`. L'action est journalisée.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de l\'année académique.')]),
+                    'responses' => [
+                        '200' => self::succes('Année réactivée', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+
+            // Cycles actifs
+            '/interne/mon-etablissement/configuration/cycles' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les cycles actifs',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [[
+                        'name' => 'annee_uuid', 'in' => 'query', 'required' => false,
+                        'description' => 'Filtre par année académique.',
+                        'schema' => ['type' => 'string', 'format' => 'uuid'],
+                    ]]),
+                    'responses' => [
+                        '200' => self::succes('Cycles actifs', ['data' => ['type' => 'array', 'items' => self::ref('CycleConfig')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Active ou désactive un cycle pour une année',
+                    'description' => "Crée la ligne si elle n'existe pas (`actif: true` par défaut), sinon met à jour `actif`. Contrainte unique `(etablissement_id, annee_id, cycle)`.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'cycle'],
+                            'properties' => [
+                                'annee_uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                'cycle'      => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                                'actif'      => ['type' => 'boolean', 'default' => true],
+                            ],
+                        ], ['annee_uuid' => '...', 'cycle' => 'primaire', 'actif' => true]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Cycle mis à jour', ['data' => self::ref('CycleConfig')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // Subdivisions
+            '/interne/mon-etablissement/configuration/subdivisions' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les subdivisions pédagogiques',
+                    'description' => 'Groupes (primaire/maternelle), sections (secondaire) ou départements (université) filtrables par `annee_uuid` et `cycle_uuid`.',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [
+                        ['name' => 'annee_uuid',  'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                        ['name' => 'cycle_uuid',  'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                    ]),
+                    'responses' => [
+                        '200' => self::succes('Subdivisions', ['data' => ['type' => 'array', 'items' => self::ref('SubdivisionPedagogique')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une subdivision pédagogique',
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'cycle_config_uuid', 'type', 'nom'],
+                            'properties' => [
+                                'annee_uuid'        => ['type' => 'string', 'format' => 'uuid'],
+                                'cycle_config_uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                'type'              => ['type' => 'string', 'enum' => ['groupe', 'section', 'departement']],
+                                'nom'               => ['type' => 'string', 'maxLength' => 100, 'example' => 'Groupe A'],
+                                'code'              => ['type' => 'string', 'maxLength' => 20, 'nullable' => true, 'example' => 'A'],
+                                'description'       => ['type' => 'string', 'nullable' => true],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Subdivision créée', ['data' => self::ref('SubdivisionPedagogique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/subdivisions/{uuid}' => [
+                'patch' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Modifie une subdivision',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de la subdivision.')]),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => [
+                                'nom'        => ['type' => 'string', 'maxLength' => 100],
+                                'code'       => ['type' => 'string', 'maxLength' => 20],
+                                'description'=> ['type' => 'string'],
+                                'actif'      => ['type' => 'boolean'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Subdivision mise à jour', ['data' => self::ref('SubdivisionPedagogique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+
+            // Niveaux
+            '/interne/mon-etablissement/configuration/niveaux' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les niveaux scolaires',
+                    'description' => "Référentiel des niveaux du tenant. Un même niveau (ex. CM2) est partagé par tous les groupes ; les classes concrètes font le lien avec une subdivision.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [[
+                        'name' => 'cycle', 'in' => 'query', 'required' => false,
+                        'schema' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                    ]]),
+                    'responses' => [
+                        '200' => self::succes('Niveaux scolaires', ['data' => ['type' => 'array', 'items' => self::ref('NiveauScolaire')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée un niveau scolaire',
+                    'description' => "L'abréviation est utilisée dans les sigles de classes (ex. `CM2` → `CM2 A`, `Tle` → `Tle D`). Contrainte unique `(etablissement_id, cycle, nom)`.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['cycle', 'nom'],
+                            'properties' => [
+                                'cycle'       => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                                'nom'         => ['type' => 'string', 'maxLength' => 100, 'example' => 'Cours moyen 2e année'],
+                                'abreviation' => ['type' => 'string', 'maxLength' => 20, 'nullable' => true, 'example' => 'CM2'],
+                                'ordre'       => ['type' => 'integer', 'minimum' => 0, 'description' => "Ordre d'affichage (0 = premier)."],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Niveau créé', ['data' => self::ref('NiveauScolaire')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/niveaux/{uuid}' => [
+                'patch' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Modifie un niveau scolaire',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid du niveau.')]),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => [
+                                'nom'         => ['type' => 'string', 'maxLength' => 100],
+                                'abreviation' => ['type' => 'string', 'maxLength' => 20],
+                                'ordre'       => ['type' => 'integer', 'minimum' => 0],
+                                'actif'       => ['type' => 'boolean'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Niveau mis à jour', ['data' => self::ref('NiveauScolaire')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+
+            // Séries / filières
+            '/interne/mon-etablissement/configuration/series' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les séries et filières',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [[
+                        'name' => 'cycle', 'in' => 'query', 'required' => false,
+                        'schema' => ['type' => 'string', 'enum' => ['secondaire', 'universitaire']],
+                    ]]),
+                    'responses' => [
+                        '200' => self::succes('Séries / filières', ['data' => ['type' => 'array', 'items' => self::ref('SerieFiliere')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une série ou une filière',
+                    'description' => "Secondaire : `A`, `C`, `D`, `F3`, `G2`… Université : `IT`, `EE`, `GC`… (filières rattachées à un département/`subdivision_uuid`). Contrainte unique `(etablissement_id, cycle, code)`.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['cycle', 'nom', 'code'],
+                            'properties' => [
+                                'cycle'            => ['type' => 'string', 'enum' => ['secondaire', 'universitaire']],
+                                'nom'              => ['type' => 'string', 'maxLength' => 100, 'example' => 'Sciences expérimentales'],
+                                'code'             => ['type' => 'string', 'maxLength' => 20, 'example' => 'D'],
+                                'description'      => ['type' => 'string', 'nullable' => true],
+                                'subdivision_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true, 'description' => 'Département universitaire auquel rattacher la filière (université uniquement).'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Série / filière créée', ['data' => self::ref('SerieFiliere')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // Classes concrètes
+            '/interne/mon-etablissement/configuration/classes' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les classes concrètes',
+                    'description' => "Une classe = niveau × subdivision × (série optionnelle). Le sigle est généré automatiquement (`CM2 A`, `Tle D`) mais reste modifiable.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [
+                        ['name' => 'annee_uuid', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                        ['name' => 'cycle',      'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']]],
+                    ]),
+                    'responses' => [
+                        '200' => self::succes('Classes concrètes', ['data' => ['type' => 'array', 'items' => self::ref('ClasseConfig')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une classe concrète',
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'niveau_uuid', 'subdivision_uuid'],
+                            'properties' => [
+                                'annee_uuid'             => ['type' => 'string', 'format' => 'uuid'],
+                                'niveau_uuid'            => ['type' => 'string', 'format' => 'uuid'],
+                                'subdivision_uuid'       => ['type' => 'string', 'format' => 'uuid'],
+                                'serie_uuid'             => ['type' => 'string', 'format' => 'uuid', 'nullable' => true, 'description' => 'Optionnel. Secondaire ou université.'],
+                                'sigle'                  => ['type' => 'string', 'maxLength' => 50, 'nullable' => true, 'description' => 'Laissez vide pour génération automatique.'],
+                                'effectif_previsionnel'  => ['type' => 'integer', 'minimum' => 1, 'nullable' => true],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Classe créée', ['data' => self::ref('ClasseConfig')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // Cohortes
+            '/interne/mon-etablissement/configuration/cohortes' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les cohortes universitaires',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [[
+                        'name' => 'annee_uuid', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid'],
+                    ]]),
+                    'responses' => [
+                        '200' => self::succes('Cohortes universitaires', ['data' => ['type' => 'array', 'items' => self::ref('CohorteUniversitaire')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une cohorte universitaire',
+                    'description' => "Le sigle est généré automatiquement (ex. `IT2A` = filière IT, niveau L2, lettre A) si absent.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'filiere_uuid', 'niveau_uuid', 'diplome'],
+                            'properties' => [
+                                'annee_uuid'   => ['type' => 'string', 'format' => 'uuid'],
+                                'filiere_uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                'niveau_uuid'  => ['type' => 'string', 'format' => 'uuid'],
+                                'diplome'      => ['type' => 'string', 'enum' => ['licence', 'master', 'doctorat', 'ingenieur', 'bts', 'dut', 'autre']],
+                                'lettre'       => ['type' => 'string', 'maxLength' => 5, 'nullable' => true, 'example' => 'A'],
+                                'sigle'        => ['type' => 'string', 'maxLength' => 30, 'nullable' => true],
+                                'semestres'    => ['type' => 'string', 'maxLength' => 50, 'nullable' => true, 'example' => '1,2'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Cohorte créée', ['data' => self::ref('CohorteUniversitaire')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // Matières
+            '/interne/mon-etablissement/configuration/matieres' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les configurations de matières',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [
+                        ['name' => 'annee_uuid',  'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                        ['name' => 'niveau_uuid', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                        ['name' => 'cycle',       'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']]],
+                    ]),
+                    'responses' => [
+                        '200' => self::succes('Configurations de matières', ['data' => ['type' => 'array', 'items' => self::ref('MatiereConfig')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Configure une matière avec son coefficient',
+                    'description' => "`coefficient` **NULL** = non défini (pas de coefficient, approprié maternelle/primaire). `coefficient = 0` est une valeur numérique différente. `matiere_uuid_externe` = UUID depuis `evaluations.matieres` (jamais de FK locale inter-microservice). Contrainte unique `(etablissement_id, annee_id, niveau_id, serie_id, matiere_uuid_externe)`. Après création, appeler `GET …/matieres/{uuid}/propagation` pour voir les classes homologues potentielles.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'cycle', 'niveau_uuid', 'matiere_uuid_externe', 'nom_matiere'],
+                            'properties' => [
+                                'annee_uuid'           => ['type' => 'string', 'format' => 'uuid'],
+                                'cycle'                => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                                'niveau_uuid'          => ['type' => 'string', 'format' => 'uuid'],
+                                'serie_uuid'           => ['type' => 'string', 'format' => 'uuid', 'nullable' => true],
+                                'matiere_uuid_externe' => ['type' => 'string', 'format' => 'uuid', 'description' => 'UUID de la matière dans evaluations.matieres.'],
+                                'nom_matiere'          => ['type' => 'string', 'maxLength' => 255, 'example' => 'Éducation scientifique et technologie'],
+                                'code_matiere'         => ['type' => 'string', 'maxLength' => 30, 'nullable' => true, 'example' => 'EST'],
+                                'coefficient'          => ['type' => 'number', 'nullable' => true, 'description' => 'NULL = non défini. 0 est une valeur numérique différente.'],
+                                'est_obligatoire'      => ['type' => 'boolean', 'default' => true],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Matière configurée', ['data' => self::ref('MatiereConfig')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/matieres/{uuid}/propagation' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Aperçu des classes homologues pour propagation',
+                    'description' => "Retourne les classes qui partagent le même niveau et la même année mais dans d'autres subdivisions, et pour lesquelles cette matière n'est pas encore configurée.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de la MatiereConfig.')]),
+                    'responses' => [
+                        '200' => self::succes('Classes homologues', [
+                            'data' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'classes' => ['type' => 'array', 'items' => ['type' => 'object', 'properties' => [
+                                        'uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                        'sigle' => ['type' => 'string'],
+                                        'niveau' => ['type' => 'string'],
+                                        'subdivision' => ['type' => 'string'],
+                                    ]]],
+                                    'count' => ['type' => 'integer'],
+                                ],
+                            ],
+                        ]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/matieres/{uuid}/propager' => [
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Propage une matière aux classes homologues',
+                    'description' => "Crée une `MatiereConfig` identique (même nom, code, coefficient, caractère obligatoire) pour chaque classe homologue (même niveau, même année, autre subdivision) qui n'en dispose pas encore. Les doublons sont évités par la contrainte d'unicité en base. L'action est journalisée dans `audit_config_academique`.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de la MatiereConfig source.')]),
+                    'responses' => [
+                        '200' => self::succes('Propagation effectuée', [
+                            'data' => ['type' => 'object', 'properties' => ['crees' => ['type' => 'integer', 'description' => 'Nombre de nouvelles configurations créées.']]],
+                        ]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+
             // ---------------- Interne ----------------
             '/interne/demandes' => [
                 'get' => [
@@ -1106,6 +1646,133 @@ MD;
                         'statut' => ['type' => 'string', 'enum' => ['actif', 'suspendu', 'archive']],
                         'degrade' => ['type' => 'boolean'],
                         'message' => ['type' => 'string', 'description' => 'Présent uniquement en contenu dégradé.'],
+                    ],
+                ],
+
+                // ── Configuration académique ────────────────────────────────────
+                'AnneeAcademique' => [
+                    'type' => 'object',
+                    'description' => "Année académique d'un établissement. Jamais supprimable. Statut calculé dynamiquement.",
+                    'properties' => [
+                        'uuid'             => ['type' => 'string', 'format' => 'uuid'],
+                        'libelle'          => ['type' => 'string', 'example' => '2026-2027'],
+                        'date_debut'       => ['type' => 'string', 'format' => 'date', 'example' => '2026-09-01'],
+                        'date_fin'         => ['type' => 'string', 'format' => 'date', 'example' => '2027-07-31'],
+                        'suspendu'         => ['type' => 'boolean', 'description' => 'Flag de suspension explicite, prioritaire sur le calcul des dates.'],
+                        'note_suspension'  => ['type' => 'string', 'description' => 'Motif de suspension.'],
+                        'statut'           => ['type' => 'string', 'enum' => ['en_cours', 'a_venir', 'termine', 'suspendu'], 'description' => 'Calculé dynamiquement : jamais stocké en base.'],
+                        'nb_cycles'        => ['type' => 'integer', 'description' => 'Nombre de cycles actifs pour cette année.'],
+                        'created_at'       => ['type' => 'string', 'format' => 'date-time'],
+                        'updated_at'       => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'CycleConfig' => [
+                    'type' => 'object',
+                    'description' => "Activation d'un cycle pédagogique pour une année académique.",
+                    'properties' => [
+                        'uuid'  => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                        'actif' => ['type' => 'boolean'],
+                        'annee' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'uuid'    => ['type' => 'string', 'format' => 'uuid'],
+                                'libelle' => ['type' => 'string', 'example' => '2026-2027'],
+                            ],
+                        ],
+                        'created_at' => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'SubdivisionPedagogique' => [
+                    'type' => 'object',
+                    'description' => "Groupe (primaire/maternelle), section (secondaire) ou département (université).",
+                    'properties' => [
+                        'uuid'        => ['type' => 'string', 'format' => 'uuid'],
+                        'type'        => ['type' => 'string', 'enum' => ['groupe', 'section', 'departement']],
+                        'nom'         => ['type' => 'string', 'example' => 'Groupe A'],
+                        'code'        => ['type' => 'string', 'example' => 'A'],
+                        'description' => ['type' => 'string'],
+                        'actif'       => ['type' => 'boolean'],
+                        'annee'       => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'libelle' => ['type' => 'string']]],
+                        'cycle_config'=> ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'cycle' => ['type' => 'string']]],
+                        'created_at'  => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'NiveauScolaire' => [
+                    'type' => 'object',
+                    'description' => "Niveau du référentiel du tenant (partagé entre tous les groupes).",
+                    'properties' => [
+                        'uuid'        => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle'       => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                        'nom'         => ['type' => 'string', 'example' => 'Cours moyen 2e année'],
+                        'abreviation' => ['type' => 'string', 'example' => 'CM2'],
+                        'ordre'       => ['type' => 'integer', 'description' => "Ordre d'affichage (0 = premier)."],
+                        'actif'       => ['type' => 'boolean'],
+                        'created_at'  => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'SerieFiliere' => [
+                    'type' => 'object',
+                    'description' => "Série (secondaire : A, C, D, F3…) ou filière universitaire (IT, EE, GC…).",
+                    'properties' => [
+                        'uuid'        => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle'       => ['type' => 'string', 'enum' => ['secondaire', 'universitaire']],
+                        'nom'         => ['type' => 'string', 'example' => 'Sciences expérimentales'],
+                        'code'        => ['type' => 'string', 'example' => 'D'],
+                        'description' => ['type' => 'string'],
+                        'actif'       => ['type' => 'boolean'],
+                        'subdivision' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                        'created_at'  => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'ClasseConfig' => [
+                    'type' => 'object',
+                    'description' => "Classe concrète = niveau × subdivision × (série optionnelle) pour une année. Sigle généré automatiquement.",
+                    'properties' => [
+                        'uuid'                   => ['type' => 'string', 'format' => 'uuid'],
+                        'sigle'                  => ['type' => 'string', 'example' => 'CM2 A'],
+                        'effectif_previsionnel'  => ['type' => 'integer', 'nullable' => true],
+                        'classe_uuid_externe'    => ['type' => 'string', 'format' => 'uuid', 'nullable' => true, 'description' => 'UUID de la classe dans scolarite.classes (pont optionnel).'],
+                        'actif'                  => ['type' => 'boolean'],
+                        'annee'                  => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'libelle' => ['type' => 'string']]],
+                        'niveau'                 => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'abreviation' => ['type' => 'string']]],
+                        'subdivision'            => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'code' => ['type' => 'string']]],
+                        'serie'                  => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'code' => ['type' => 'string']]],
+                        'created_at'             => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'CohorteUniversitaire' => [
+                    'type' => 'object',
+                    'description' => "Cohorte universitaire : filière × niveau × lettre. Sigle généré automatiquement (ex. IT2A).",
+                    'properties' => [
+                        'uuid'      => ['type' => 'string', 'format' => 'uuid'],
+                        'sigle'     => ['type' => 'string', 'example' => 'IT2A'],
+                        'diplome'   => ['type' => 'string', 'enum' => ['licence', 'master', 'doctorat', 'ingenieur', 'bts', 'dut', 'autre']],
+                        'lettre'    => ['type' => 'string', 'example' => 'A'],
+                        'semestres' => ['type' => 'string', 'example' => '1,2'],
+                        'actif'     => ['type' => 'boolean'],
+                        'annee'     => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'libelle' => ['type' => 'string']]],
+                        'filiere'   => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'code' => ['type' => 'string']]],
+                        'niveau'    => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                        'created_at'=> ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'MatiereConfig' => [
+                    'type' => 'object',
+                    'description' => "Configuration locale d'une matière externe (evaluations.matieres) dans un contexte pédagogique précis. `coefficient` NULL = non défini ≠ 0.",
+                    'properties' => [
+                        'uuid'                 => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle'                => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                        'matiere_uuid_externe' => ['type' => 'string', 'format' => 'uuid', 'description' => 'UUID de la matière dans evaluations.matieres.'],
+                        'nom_matiere'          => ['type' => 'string', 'example' => 'Éducation scientifique et technologie'],
+                        'code_matiere'         => ['type' => 'string', 'nullable' => true, 'example' => 'EST'],
+                        'coefficient'          => ['type' => 'string', 'nullable' => true, 'description' => 'Décimal sérialisé en chaîne. NULL = non défini.', 'example' => '2.00'],
+                        'est_obligatoire'      => ['type' => 'boolean'],
+                        'actif'                => ['type' => 'boolean'],
+                        'annee'                => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'libelle' => ['type' => 'string']]],
+                        'niveau'               => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'abreviation' => ['type' => 'string']]],
+                        'serie'                => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'code' => ['type' => 'string']]],
+                        'created_at'           => ['type' => 'string', 'format' => 'date-time'],
                     ],
                 ],
             ],

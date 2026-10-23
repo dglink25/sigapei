@@ -32,6 +32,7 @@ use RuntimeException;
  *
  *   php artisan geo:arbre chemin/arrondissements-benin.csv
  *   php artisan geo:arbre chemin/fichier.csv --source=insae
+ *   php artisan geo:arbre chemin/fichier.csv --simuler    # a lancer d'abord : n'enregistre rien
  *
  * Fichier a un autre format (export d'un tableau officiel, par exemple) : indiquez le
  * pays et le nom des colonnes, sans retoucher le fichier :
@@ -49,12 +50,22 @@ class ImporterArbreGeo extends Command
         {--col-pays=pays : Nom de la colonne du pays}
         {--col-departement=departement : Nom de la colonne du departement}
         {--col-commune=commune : Nom de la colonne de la commune}
-        {--col-arrondissement=arrondissement : Nom de la colonne de l arrondissement}';
+        {--col-arrondissement=arrondissement : Nom de la colonne de l arrondissement}
+        {--renommer : Quand un lieu existe deja sous une autre orthographe, adopte celle du fichier}
+        {--approximatif : Reconnait aussi les noms qui different d une ou deux lettres (ex. Pehonko / Pehunco)}
+        {--simuler : Simule l import : affiche ce qui serait cree, sans rien enregistrer}';
 
     protected $description = 'Importe une arborescence pays / departement / commune / arrondissement depuis un CSV.';
 
-    /** @var array<string, array<string, int>> noeuds deja connus : "type:parentId" => [cle de nom => id] */
+    /** @var array<string, array<string, array{id: int, nom: string}>> noeuds deja connus : "type:parentId" => [cle de nom => [id, nom]] */
     private array $connus = [];
+
+    private bool $renommer = false;
+
+    private bool $approximatif = false;
+
+    /** @var array<int, array{type: string, texte: string}> operations effectuees ou simulees, a afficher */
+    private array $journal = [];
 
     public function handle(): int
     {
@@ -66,6 +77,9 @@ class ImporterArbreGeo extends Command
         }
 
         $source = (string) $this->option('source');
+        $simuler = (bool) $this->option('simuler');
+        $this->renommer = (bool) $this->option('renommer');
+        $this->approximatif = (bool) $this->option('approximatif');
         $separateur = (string) $this->option('separateur');
         $paysIds = DB::table('pays')->pluck('id', 'code_iso')->all();
 
@@ -100,7 +114,7 @@ class ImporterArbreGeo extends Command
         $numero = 1;
 
         try {
-            DB::transaction(function () use ($poignee, $entetes, $separateur, $paysIds, $source, $isoFixe, $colPays, $colDepartement, $colCommune, $colArrondissement, &$crees, &$existants, &$ignorees, &$numero) {
+            DB::transaction(function () use ($poignee, $entetes, $separateur, $paysIds, $source, $isoFixe, $colPays, $colDepartement, $colCommune, $colArrondissement, $simuler, &$crees, &$existants, &$ignorees, &$numero) {
                 while (($ligne = fgetcsv($poignee, 0, $separateur, '"', '\\')) !== false) {
                     $numero++;
                     if ($ligne === [null] || count($ligne) !== count($entetes)) {
@@ -141,7 +155,14 @@ class ImporterArbreGeo extends Command
                     [, $nouveau] = $this->noeud('arrondissements', 'commune_id', $communeId, $l['arrondissement'], $source, "{$iso}|{$l['departement']}|{$l['commune']}|{$l['arrondissement']}");
                     $nouveau ? $crees['arrondissements']++ : $existants['arrondissements']++;
                 }
+
+                // Simulation : on annule la transaction (rien n'est enregistre), le bilan s'affiche quand meme.
+                if ($simuler) {
+                    throw new SimulationTerminee();
+                }
             });
+        } catch (SimulationTerminee) {
+            // Transaction annulee volontairement : le bilan est affiche plus bas.
         } catch (RuntimeException $e) {
             $this->error('Import annule (aucune ligne enregistree) : '.$e->getMessage());
 
@@ -150,17 +171,25 @@ class ImporterArbreGeo extends Command
             fclose($poignee);
         }
 
-        try {
-            Cache::increment('geo:version');
-        } catch (\Throwable) {
-            $this->warn('Cache indisponible : les listes se rafraichiront a expiration du TTL.');
+        if (! $simuler) {
+            try {
+                Cache::increment('geo:version');
+            } catch (\Throwable) {
+                $this->warn('Cache indisponible : les listes se rafraichiront a expiration du TTL.');
+            }
         }
 
-        $this->table(['', 'Crees', 'Deja presents'], [
+        if ($simuler) {
+            $this->warn('SIMULATION : rien n\'a ete enregistre. Si le nombre d\'arrondissements crees depasse largement ce que vous attendez, les noms du fichier different de ceux deja en base et creeraient des doublons.');
+        }
+
+        $this->table([$simuler ? 'Simulation' : '', 'Crees', 'Deja presents'], [
             ['Departements', $crees['departements'], $existants['departements']],
             ['Communes', $crees['communes'], $existants['communes']],
             ['Arrondissements', $crees['arrondissements'], $existants['arrondissements']],
         ]);
+        $this->afficherJournal($simuler);
+
         if ($ignorees) {
             $this->warn("{$ignorees} ligne(s) ignoree(s) (vides, mal formees ou sans departement).");
         }
@@ -170,8 +199,9 @@ class ImporterArbreGeo extends Command
     }
 
     /**
-     * Retourne [id, cree] du noeud nomme $nom sous le parent donne : l'existant est
-     * reutilise (reconnaissance par nom normalise), sinon le noeud est cree.
+     * Retourne [id, cree] du noeud nomme $nom sous le parent donne. L'existant est reutilise
+     * (reconnaissance par nom normalise, puis, avec --approximatif, par proximite d'orthographe) ;
+     * avec --renommer, il adopte l'orthographe du fichier. Sinon le noeud est cree.
      *
      * @return array{0: int, 1: bool}
      */
@@ -182,26 +212,97 @@ class ImporterArbreGeo extends Command
         if (! isset($this->connus[$cle])) {
             $this->connus[$cle] = [];
             foreach (DB::table($table)->where($colonneParent, $parentId)->get(['id', 'nom']) as $existant) {
-                $this->connus[$cle][NormalisationNom::cle($existant->nom)] ??= (int) $existant->id;
+                $this->connus[$cle][NormalisationNom::cle($existant->nom)] ??= ['id' => (int) $existant->id, 'nom' => $existant->nom];
             }
         }
 
+        $nomPropre = mb_substr(NormalisationNom::nettoyer($nom), 0, 128);
         $nomCle = NormalisationNom::cle($nom);
-        if (isset($this->connus[$cle][$nomCle])) {
-            return [$this->connus[$cle][$nomCle], false];
+
+        $trouve = $this->connus[$cle][$nomCle] ?? null;
+        if ($trouve === null && $this->approximatif) {
+            $trouve = $this->plusProche($this->connus[$cle], $nomCle);
+        }
+
+        if ($trouve !== null) {
+            if ($this->renommer && $trouve['nom'] !== $nomPropre) {
+                DB::table($table)->where('id', $trouve['id'])->update(['nom' => $nomPropre, 'updated_at' => now()]);
+                $this->journal[] = ['type' => 'renomme', 'texte' => "{$trouve['nom']}  ->  {$nomPropre}   ({$chemin})"];
+                $this->connus[$cle][$nomCle] = ['id' => $trouve['id'], 'nom' => $nomPropre];
+            }
+
+            return [$trouve['id'], false];
         }
 
         $id = (int) DB::table($table)->insertGetId([
             $colonneParent => $parentId,
-            'nom' => mb_substr(NormalisationNom::nettoyer($nom), 0, 128),
+            'nom' => $nomPropre,
             'source' => $source,
             'code_externe' => substr(sha1($chemin), 0, 40),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-
-        $this->connus[$cle][$nomCle] = $id;
+        $this->connus[$cle][$nomCle] = ['id' => $id, 'nom' => $nomPropre];
+        $this->journal[] = ['type' => 'cree', 'texte' => $chemin];
 
         return [$id, true];
     }
+
+    /**
+     * Frere le plus proche par l'orthographe (distance de Levenshtein sur les cles de nom), a
+     * condition qu'il soit unique et tres proche : 1 lettre d'ecart pour un nom de 5 a 7 lettres,
+     * 2 a partir de 8, aucune en dessous (trop risque).
+     *
+     * @param  array<string, array{id: int, nom: string}>  $freres
+     * @return array{id: int, nom: string}|null
+     */
+    private function plusProche(array $freres, string $cle): ?array
+    {
+        $meilleur = null;
+        $distanceMin = PHP_INT_MAX;
+        $egalite = false;
+
+        foreach ($freres as $cleFrere => $frere) {
+            $distance = levenshtein($cle, (string) $cleFrere);
+            if ($distance < $distanceMin) {
+                $distanceMin = $distance;
+                $meilleur = $frere;
+                $egalite = false;
+            } elseif ($distance === $distanceMin) {
+                $egalite = true;
+            }
+        }
+
+        $longueur = strlen($cle);
+        $seuil = $longueur >= 8 ? 2 : ($longueur >= 5 ? 1 : 0);
+
+        return ($meilleur !== null && ! $egalite && $distanceMin <= $seuil) ? $meilleur : null;
+    }
+
+    /** Affiche le detail des noeuds crees et renommes (tout en simulation, 150 lignes au plus sinon). */
+    private function afficherJournal(bool $simuler): void
+    {
+        $renommes = array_values(array_filter($this->journal, fn ($e) => $e['type'] === 'renomme'));
+        $crees = array_values(array_filter($this->journal, fn ($e) => $e['type'] === 'cree'));
+        $limite = $simuler ? 300 : 150;
+
+        foreach ([['renomme', 'Noms mis a jour', $renommes], ['cree', $simuler ? 'Noeuds qui seraient crees' : 'Noeuds crees', $crees]] as [, $titre, $lignes]) {
+            if (! $lignes) {
+                continue;
+            }
+            $this->newLine();
+            $this->line(sprintf('%s (%d) :', $titre, count($lignes)));
+            foreach (array_slice($lignes, 0, $limite) as $ligne) {
+                $this->line('  '.$ligne['texte']);
+            }
+            if (count($lignes) > $limite) {
+                $this->line(sprintf('  ... et %d autres', count($lignes) - $limite));
+            }
+        }
+    }
+}
+
+/** Interrompt volontairement la transaction d'une simulation (voir --simuler). */
+class SimulationTerminee extends RuntimeException
+{
 }
