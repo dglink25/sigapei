@@ -73,7 +73,7 @@ export class InterneRpcController {
           this.logger.log(`Compte deja existant pour ${dirigeantEmail}, evenement ignore (idempotence).`);
           // Même si le compte existe, on envoie quand même les notifications ci-dessous
         } else {
-          const roles    = await this.rolesService.lister();
+          const roles    = await this.rolesService.tous();
           const roleAdmin = roles.find((r) => r.code === 'administrateur');
           if (!roleAdmin) {
             this.logger.error("Role 'administrateur' introuvable.");

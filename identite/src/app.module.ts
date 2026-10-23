@@ -9,6 +9,7 @@ import { RabbitmqModule } from './rabbitmq/rabbitmq.module';
 import { RolesModule } from './roles/roles.module';
 import { ServicesModule } from './services/services.module';
 import { ServicesEtablissementsModule } from './services-etablissements/services-etablissements.module';
+import { PermissionsModule } from './permissions/permissions.module';
 import { AccesServicesModule } from './acces-services/acces-services.module';
 import { UtilisateursModule } from './utilisateurs/utilisateurs.module';
 import { OtpModule } from './otp/otp.module';
@@ -36,6 +37,7 @@ import { TentativeConnexion } from './audit/tentative-connexion.entity';
 import { Service } from './services/service.entity';
 import { EtablissementService } from './services-etablissements/etablissement-service.entity';
 import { UtilisateurServiceEtablissement } from './acces-services/utilisateur-service-etablissement.entity';
+import { PermissionRole } from './permissions/permission-role.entity';
 
 @Module({
   imports: [
@@ -53,7 +55,7 @@ import { UtilisateurServiceEtablissement } from './acces-services/utilisateur-se
         schema: config.get('db.schema'),
         synchronize: config.get('db.synchronize'),
         ssl: config.get('db.ssl') ? { rejectUnauthorized: false } : false,
-        entities: [Role, Utilisateur, IdentifiantRecuperation, QuestionSecurite, Appareil, EmpreinteBiometrique, TentativeConnexion, Service, EtablissementService, UtilisateurServiceEtablissement],
+        entities: [Role, Utilisateur, IdentifiantRecuperation, QuestionSecurite, Appareil, EmpreinteBiometrique, TentativeConnexion, Service, EtablissementService, UtilisateurServiceEtablissement, PermissionRole],
         migrations: ['dist/database/migrations/*.js'],
         migrationsRun: false,
         namingStrategy: undefined,
@@ -66,6 +68,7 @@ import { UtilisateurServiceEtablissement } from './acces-services/utilisateur-se
     RolesModule,
     ServicesModule,
     ServicesEtablissementsModule,
+    PermissionsModule,
     AccesServicesModule,
     UtilisateursModule,
     OtpModule,

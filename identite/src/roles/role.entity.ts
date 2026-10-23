@@ -5,6 +5,7 @@ import {
   Index,
   OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 
@@ -22,6 +23,13 @@ export const ROLES_SYSTEME = [
   'enseignant',
   'apprenant',
   'parent',
+  // Roles metier de la plateforme (references par scolarite, inscription,
+  // vie-scolaire, finances...) : memes regles que les roles systeme, codes reserves.
+  'directeur',
+  'secretaire',
+  'censeur',
+  'comptable',
+  'surveillant',
 ] as const;
 
 @Entity({ name: 'role', schema: 'identite' })
@@ -52,6 +60,9 @@ export class Role {
 
   @CreateDateColumn({ name: 'date_creation' })
   dateCreation: Date;
+
+  @UpdateDateColumn({ name: 'date_modification' })
+  dateModification: Date;
 
   @OneToMany(() => Utilisateur, (u) => u.role)
   utilisateurs: Utilisateur[];

@@ -14,6 +14,7 @@ import { TentativeConnexion } from '../audit/tentative-connexion.entity';
 import { Service } from '../services/service.entity';
 import { EtablissementService } from '../services-etablissements/etablissement-service.entity';
 import { UtilisateurServiceEtablissement } from '../acces-services/utilisateur-service-etablissement.entity';
+import { PermissionRole } from '../permissions/permission-role.entity';
 
 // Desactive l'algorithme "Happy Eyeballs" (actif par defaut depuis Node 18/20) :
 // celui-ci alterne les tentatives IPv6/IPv4 avec un timeout tres court par
@@ -39,7 +40,7 @@ export default new DataSource({
   synchronize: false,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   extra: { connectionTimeoutMillis: 20000 },
-  entities: [Role, Utilisateur, IdentifiantRecuperation, QuestionSecurite, Appareil, EmpreinteBiometrique, TentativeConnexion, Service, EtablissementService, UtilisateurServiceEtablissement],
+  entities: [Role, Utilisateur, IdentifiantRecuperation, QuestionSecurite, Appareil, EmpreinteBiometrique, TentativeConnexion, Service, EtablissementService, UtilisateurServiceEtablissement, PermissionRole],
   migrations: [__dirname + '/migrations/*.ts'],
   migrationsTableName: 'migrations_typeorm',
 });

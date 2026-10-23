@@ -24,9 +24,13 @@ docker compose up -d --build
 Le microservice demarre sur **http://localhost:4001**, avec PostgreSQL, Redis et
 RabbitMQ (interface d'administration RabbitMQ : http://localhost:15672).
 
-Au premier demarrage, le microservice charge automatiquement les 6 roles
+Au premier demarrage, le microservice charge automatiquement les 11 roles
 systeme (`super_admin`, `administrateur`, `personnel`, `enseignant`,
-`apprenant`, `parent`) dans la table `identite.role`.
+`apprenant`, `parent`, `directeur`, `secretaire`, `censeur`, `comptable`,
+`surveillant`) dans la table `identite.role`. Les 5 derniers sont les roles
+metier references par les autres microservices (scolarite, inscription,
+vie-scolaire, finances) : leurs codes sont reserves (un role personnalise ne
+peut pas les reprendre).
 
 ### Sans Docker (developpement local)
 
@@ -241,7 +245,8 @@ Deux canaux distincts, tous deux geres par ce microservice :
    sans latence bloquante ni panne en cascade). Evenements publies :
    `utilisateur.authentifie`, `utilisateur.deconnecte`, `otp.envoye`,
    `role.cree`, `role.modifie`, `role.supprime`, `appareil.revoque`,
-   `identifiant.recupere`.
+   `identifiant.recupere`, `permission.cree`, `permission.modifiee`,
+   `permission.supprimee`, `role.permissions.definies`.
 2. **Canal RPC** (requete/reponse asynchrone via la queue `identite.rpc`,
    pattern `identite.introspection`) : permet a n'importe quel autre
    microservice de verifier un JWT sans passer par la Gateway/HTTP. Voir
@@ -310,10 +315,13 @@ Resume des groupes de routes (prefixees par `/v1`) :
 | `POST /auth/webauthn/*` | Connexion et enregistrement matricule + empreinte |
 | `POST /auth/token/rafraichir`, `POST /auth/deconnexion` | Cycle de vie de session |
 | `GET/POST/PUT/DELETE /roles` | Gestion des roles dynamiques |
+| `GET/PUT /roles/{uuid}/permissions` | Matrice de permissions d'un role (remplacement en bloc) |
+| `GET/POST/PUT/DELETE /permissions` | Permissions fines role x service x action (CDC section 5.3) |
 | `GET /moi`, `POST /moi/identifiants-recuperation`, `PUT /moi/questions-securite` | Profil et securite du compte |
 | `GET/DELETE /moi/appareils` | Appareils et sessions actives |
 | `POST /recuperation/*` | Parcours d'identifiant oublie |
 | `GET /interne/introspection` (secret partage), `GET /interne/tentatives` (roles admin) | Endpoints internes (Gateway / back-office) |
+| `GET /interne/permissions-role/{roleUuid}` (secret partage) | Matrice d'un role pour les autres microservices |
 | `GET /sante` | Sonde de sante (hors prefixe `/v1`) |
 
 ---
@@ -325,6 +333,7 @@ api-identite/
 ├── src/
 │   ├── auth/            Orchestration de la connexion (toutes methodes)
 │   ├── roles/            Roles dynamiques (systeme + personnalises)
+│   ├── permissions/       Permissions fines role x service x action (CDC 5.3)
 │   ├── utilisateurs/     Comptes, profil, identifiants/questions de recuperation
 │   ├── otp/              Generation, hachage (argon2), verification des OTP
 │   ├── biometrie/         WebAuthn/FIDO2

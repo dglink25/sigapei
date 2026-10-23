@@ -19,6 +19,9 @@ services:
     environment:
       - DB_HOST=postgres
       - REDIS_HOST=redis
+      # Ecrase la valeur du .env (qui pointe en localhost pour le dev hors Docker) :
+      # dans le reseau Docker, Redis ecoute sur 6379, quel que soit le port publie sur l'hote.
+      - REDIS_PORT=6379
       - RABBITMQ_URL=amqp://${RABBITMQ_USER:-sigapei}:${RABBITMQ_PASSWORD:-change-me}@rabbitmq:5672
     depends_on:
       postgres:

@@ -22,6 +22,18 @@ export class OtpService {
     private readonly smtp: SmtpAppPasswordProvider,
   ) {}
 
+  /**
+   * En developpement, aucun canal reel n'est fiable (SMTP/WhatsApp/SMS peuvent
+   * etre indisponibles) : le code est journalise pour permettre la connexion
+   * depuis le navigateur. Desactive hors developpement.
+   */
+  private journaliserOtpDev(cible: string, code: string): void {
+    if (this.config.get<string>('nodeEnv') === 'production') {
+      return;
+    }
+    this.logger.warn(`[DEV] Code OTP pour ${cible} : ${code}`);
+  }
+
   private cleOtp(cible: string): string {
     return `otp:${cible}`;
   }
@@ -73,6 +85,7 @@ export class OtpService {
     await this.verifierQuotaRenvoi(email);
     const code = genererOtpEmail(12);
     await this.enregistrerOtp(email, code, CanalOtp.EMAIL, utilisateurId);
+    this.journaliserOtpDev(email, code);
     const dureeMinutes = Math.round(this.config.get<number>('otp.ttlSeconds')! / 60);
     const envoye = await this.smtp.envoyerCodeOtp(email, code, dureeMinutes);
     if (!envoye) {
@@ -88,6 +101,7 @@ export class OtpService {
     await this.verifierQuotaRenvoi(telephoneE164);
     const code = genererOtpTelephone();
     await this.enregistrerOtp(telephoneE164, code, 'sms+whatsapp' as any, utilisateurId);
+    this.journaliserOtpDev(telephoneE164, code);
     const dureeMinutes = Math.round(this.config.get<number>('otp.ttlSeconds')! / 60);
 
     const [sms, whatsapp] = await Promise.allSettled([

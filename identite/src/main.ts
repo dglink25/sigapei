@@ -55,6 +55,7 @@ async function bootstrap() {
       .addTag('Roles')
       .addTag('Services')
       .addTag('Services des établissements')
+      .addTag('Permissions')
       .addTag('Accès aux services')
       .addTag('Mon profil')
       .addTag('Appareils & sessions')
@@ -81,7 +82,7 @@ async function bootstrap() {
     logger.log('Microservice RabbitMQ (RPC) demarre');
   }
 
-  // --- Seed des 6 roles systeme au demarrage ---
+  // --- Seed des roles systeme au demarrage ---
   try {
     const dataSource = app.get(DataSource);
     await seedRolesSysteme(dataSource);
