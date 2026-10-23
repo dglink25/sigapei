@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, User, Settings, LogOut, Menu, X, Bell,
-  ChevronDown, CalendarDays, School, LayoutList,
-  Layers, GitBranch, Users, BookOpen,
+  ChevronDown, CalendarDays, School, BookOpen, GraduationCap, Building2,
 } from 'lucide-react'
 import { useAuth } from '../../context/identite/AuthContext'
 import ThemeToggle from './ThemeToggle'
@@ -11,43 +10,54 @@ import { ENV } from '../../config/commun/env'
 import { roleCodeOf } from '../../config/identite/routes'
 import { lienEtablissement } from '../../lib/etablissements/subdomain'
 import { portailService } from '../../services/identite/portail.service'
+import { anneesService, cyclesService } from '../../services/etablissements/configurationAcademique.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import './PortailLayout.css'
 
 const LIBELLES_ROLES = {
-  administrateur: 'Administrateur',
-  enseignant: 'Enseignant',
-  personnel: 'Personnel',
-  apprenant: 'Apprenant',
-  parent: 'Parent',
-  etudiant: 'Étudiant',
-  eleve: 'Élève',
+  administrateur: 'Administrateur', enseignant: 'Enseignant',
+  personnel: 'Personnel', apprenant: 'Apprenant',
+  parent: 'Parent', etudiant: 'Étudiant', eleve: 'Élève',
 }
 const libelleRole = (code = '') =>
   LIBELLES_ROLES[code] ?? (code ? code.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()) : '')
 
-/** Sous-liens du menu Configuration */
-const CONFIG_ITEMS = [
-  { id: 'vue-ensemble',  label: "Vue d'ensemble",         Icon: LayoutGrid,   section: '' },
-  { id: 'annees',        label: 'Années académiques',     Icon: CalendarDays, section: 'annees' },
-  { id: 'cycles',        label: 'Cycles actifs',          Icon: School,       section: 'cycles' },
-  { id: 'subdivisions',  label: 'Groupes & départements', Icon: LayoutList,   section: 'subdivisions' },
-  { id: 'niveaux',       label: 'Classes & niveaux',      Icon: Layers,       section: 'niveaux' },
-  { id: 'series',        label: 'Séries & filières',      Icon: GitBranch,    section: 'series' },
-  { id: 'cohortes',      label: 'Options & cohortes',     Icon: Users,        section: 'cohortes' },
-  { id: 'matieres',      label: 'Matières & coefficients',Icon: BookOpen,     section: 'matieres' },
-  { id: 'droits',        label: "Droits d'accès",         Icon: Settings,     section: 'droits' },
-  { id: 'etablissement', label: 'Infos établissement',    Icon: Settings,     section: 'etablissement' },
+const CYCLE_LABELS = {
+  maternelle: 'Maternelle', primaire: 'Primaire',
+  secondaire: 'Secondaire', universitaire: 'Université',
+}
+
+const CYCLE_ICONES = {
+  maternelle:    School,
+  primaire:      BookOpen,
+  secondaire:    GraduationCap,
+  universitaire: Building2,
+}
+
+// Liens fixes de configuration (hors cycles)
+const CFG_LIENS_FIXES = [
+  { id: 'vue-ensemble', label: "Vue d'ensemble",      section: '',        Icon: LayoutGrid },
+  { id: 'annees',       label: 'Années académiques',  section: 'annees',  Icon: CalendarDays },
 ]
+
+// Onglets par cycle (doit correspondre à PanneauCyclePage)
+const ONGLETS_CYCLE = {
+  maternelle:    [{ id:'groupes', label:'Groupes' }, { id:'niveaux', label:'Niveaux' }, { id:'classes', label:'Classes' }, { id:'matieres', label:'Matières' }],
+  primaire:      [{ id:'groupes', label:'Groupes' }, { id:'niveaux', label:'Niveaux' }, { id:'classes', label:'Classes' }, { id:'matieres', label:'Matières' }],
+  secondaire:    [{ id:'groupes', label:'Sections' }, { id:'niveaux', label:'Niveaux' }, { id:'classes', label:'Classes' }, { id:'series', label:'Séries' }, { id:'matieres', label:'Matières' }],
+  universitaire: [{ id:'groupes', label:'Départements' }, { id:'filieres', label:'Filières' }, { id:'niveaux', label:'Niveaux' }, { id:'cohortes', label:'Cohortes' }, { id:'matieres', label:'Matières' }],
+}
 
 export default function PortailLayout() {
   const { user, logout } = useAuth()
   const location = useLocation()
   const slug = useSlugEtablissement()
-  const [navOuvert,      setNavOuvert]      = useState(false)
-  const [configOuvert,   setConfigOuvert]   = useState(false)
+  const [navOuvert,        setNavOuvert]        = useState(false)
+  const [configOuvert,     setConfigOuvert]     = useState(false)
+  const [cycleOuvert,      setCycleOuvert]      = useState(null) // cycle slug ouvert
   const [etablissementNom, setEtablissementNom] = useState(null)
-  const [logoUrl,        setLogoUrl]        = useState(null)
+  const [logoUrl,          setLogoUrl]          = useState(null)
+  const [cyclesActifs,     setCyclesActifs]      = useState([])
 
   useEffect(() => {
     let annule = false
@@ -62,6 +72,25 @@ export default function PortailLayout() {
     return () => { annule = true }
   }, [])
 
+  // Charger l'année active puis les cycles
+  useEffect(() => {
+    let annule = false
+    anneesService.lister()
+      .then((r) => {
+        if (annule) return
+        const liste = r?.data ?? r ?? []
+        const active = liste.find((a) => a.statut === 'en_cours') ?? liste[0]
+        if (!active) return
+        cyclesService.lister(active.uuid)
+          .then((rc) => {
+            if (!annule) setCyclesActifs((rc?.data ?? rc ?? []).filter((c) => c.actif))
+          })
+          .catch(() => {})
+      })
+      .catch(() => {})
+    return () => { annule = true }
+  }, [])
+
   const nom      = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
   const initiales = nom.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()
   const role     = roleCodeOf(user)
@@ -69,11 +98,12 @@ export default function PortailLayout() {
 
   const configBase    = lienEtablissement(slug, '/configuration')
   const estDansConfig = location.pathname.startsWith(configBase)
+  const cycleActifURL = new URLSearchParams(location.search).get('cycle') ?? ''
 
-  // Ouvre automatiquement le sous-menu quand on entre dans la config
   useEffect(() => {
     if (estDansConfig) setConfigOuvert(true)
-  }, [estDansConfig])
+    if (cycleActifURL) setCycleOuvert(cycleActifURL)
+  }, [estDansConfig, cycleActifURL])
 
   const sectionActive = () => new URLSearchParams(location.search).get('section') ?? ''
 
@@ -81,9 +111,12 @@ export default function PortailLayout() {
 
   const titreTopbar = () => {
     if (estDansConfig) {
-      const sec  = sectionActive()
-      const item = CONFIG_ITEMS.find((i) => i.section === sec)
-      return item ? `Configuration · ${item.label}` : 'Configuration'
+      if (cycleActifURL) return `Configuration · ${CYCLE_LABELS[cycleActifURL] ?? cycleActifURL}`
+      const sec = sectionActive()
+      if (sec === 'annees') return 'Configuration · Années académiques'
+      if (sec === 'droits') return "Configuration · Droits d'accès"
+      if (sec === 'etablissement') return 'Configuration · Infos établissement'
+      return 'Configuration'
     }
     const fixes = [
       { to: lienEtablissement(slug, '/portail'), label: 'Portail' },
@@ -161,9 +194,11 @@ export default function PortailLayout() {
               {/* Sous-menu déroulant */}
               {configOuvert && (
                 <div className="pl-nav-submenu" role="group" aria-label="Sous-menu configuration">
-                  {CONFIG_ITEMS.map(({ id, label, Icon, section }) => {
-                    const href    = section ? `${configBase}?section=${section}` : configBase
-                    const estActif = estDansConfig && sectionActive() === section
+
+                  {/* Liens fixes : Vue d'ensemble + Années */}
+                  {CFG_LIENS_FIXES.map(({ id, label, section, Icon }) => {
+                    const href     = section ? `${configBase}?section=${section}` : configBase
+                    const estActif = estDansConfig && !cycleActifURL && sectionActive() === section
                     return (
                       <Link
                         key={id}
@@ -177,6 +212,54 @@ export default function PortailLayout() {
                       </Link>
                     )
                   })}
+
+                  {/* Cycles actifs */}
+                  {cyclesActifs.length > 0 && (
+                    <p style={{ padding:'8px 14px 3px', fontSize:'0.62rem', fontWeight:700, letterSpacing:'0.10em', textTransform:'uppercase', color:'rgba(255,246,221,0.32)', margin:0 }}>
+                      Par cycle
+                    </p>
+                  )}
+
+                  {cyclesActifs.map((c) => {
+                    const estCycleActif = estDansConfig && cycleActifURL === c.cycle
+                    const ouvert        = cycleOuvert === c.cycle
+                    const CycleIcon     = CYCLE_ICONES[c.cycle] ?? School
+                    return (
+                      <div key={c.uuid}>
+                        <button
+                          type="button"
+                          className={`pl-nav-subitem pl-nav-subitem--parent${estCycleActif ? ' is-active' : ''}`}
+                          onClick={() => setCycleOuvert((prev) => prev === c.cycle ? null : c.cycle)}
+                          aria-expanded={ouvert}
+                        >
+                          <CycleIcon size={13} aria-hidden="true" />
+                          <span>{CYCLE_LABELS[c.cycle]}</span>
+                          <ChevronDown size={12} className={`pl-nav-chevron${ouvert ? ' is-open' : ''}`} style={{ marginLeft:'auto' }} aria-hidden="true" />
+                        </button>
+
+                        {ouvert && (
+                          <div className="pl-nav-submenu-nested">
+                            {ONGLETS_CYCLE[c.cycle]?.map(({ id, label }) => {
+                              const href     = `${configBase}?cycle=${c.cycle}&onglet=${id}`
+                              const estActif = estCycleActif && new URLSearchParams(location.search).get('onglet') === id
+                              return (
+                                <Link
+                                  key={id}
+                                  to={href}
+                                  className={`pl-nav-deepitem${estActif ? ' is-active' : ''}`}
+                                  onClick={fermerNav}
+                                  aria-current={estActif ? 'page' : undefined}
+                                >
+                                  {label}
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+
                 </div>
               )}
             </div>

@@ -22,15 +22,18 @@ const NIVEAUX_SUGGESTION = {
   universitaire: ['Licence 1 (L1)', 'Licence 2 (L2)', 'Licence 3 (L3)', 'Master 1 (M1)', 'Master 2 (M2)', 'Doctorat'],
 }
 
-export default function PanneauNiveaux({ onTerminee }) {
+export default function PanneauNiveaux({ onTerminee, cycleFiltre }) {
   const notify = useNotify()
-  const [filtre,  setFiltre]  = useState('')
+  const [filtre,  setFiltre]  = useState(cycleFiltre || '')
   const [items,   setItems]   = useState([])
   const [charge,  setCharge]  = useState(true)
   const [modale,  setModale]  = useState(false)
   const [enCours, setEnCours] = useState(false)
   const [form,    setForm]    = useState({ cycle: 'primaire', nom: '', abreviation: '', ordre: '' })
   const [erreurs, setErreurs] = useState({})
+
+  // Si cycleFiltre est fourni (depuis PanneauCyclePage), masquer les filtres de cycle
+  const afficherFiltres = !cycleFiltre
 
   const charger = async (cycle = filtre) => {
     setCharge(true)
@@ -110,18 +113,20 @@ export default function PanneauNiveaux({ onTerminee }) {
         </button>
       </div>
 
-      <div className="ap-filters">
-        {CYCLES.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`ap-tab${filtre === c.id ? ' is-active' : ''}`}
-            onClick={() => changerFiltre(c.id)}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+      {!cycleFiltre && (
+        <div className="ap-filters">
+          {CYCLES.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`ap-tab${filtre === c.id ? ' is-active' : ''}`}
+              onClick={() => changerFiltre(c.id)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {charge ? (
         <div className="ap-card">

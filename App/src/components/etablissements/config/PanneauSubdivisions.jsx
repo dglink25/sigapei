@@ -18,7 +18,7 @@ const TYPES = [
 
 const TYPE_DEFAUT = { maternelle: 'groupe', primaire: 'groupe', secondaire: 'groupe', universitaire: 'departement' }
 
-export default function PanneauSubdivisions({ anneeActive, onTerminee }) {
+export default function PanneauSubdivisions({ anneeActive, onTerminee, cycleFiltre, cycleObj, labelTitre, labelType }) {
   const notify = useNotify()
   const [cycles,     setCycles]     = useState([])
   const [cycleId,    setCycleId]    = useState('')
@@ -29,11 +29,12 @@ export default function PanneauSubdivisions({ anneeActive, onTerminee }) {
   const [form, setForm] = useState({ nom: '', code: '', type: 'groupe', description: '' })
   const [erreurs,    setErreurs]    = useState({})
 
-  // Charger les cycles actifs de l'année
+  // Charger les cycles actifs de l'année - si cycleFiltre est fourni, filtrer directement
   useEffect(() => {
     if (!anneeActive) return
     cyclesService.lister(anneeActive.uuid).then((r) => {
-      const liste = (r?.data ?? r ?? []).filter((c) => c.actif)
+      let liste = (r?.data ?? r ?? []).filter((c) => c.actif)
+      if (cycleFiltre) liste = liste.filter((c) => c.cycle === cycleFiltre)
       setCycles(liste)
       if (liste.length > 0) setCycleId(liste[0].uuid)
     }).catch(notify.fromError)
@@ -55,8 +56,9 @@ export default function PanneauSubdivisions({ anneeActive, onTerminee }) {
 
   const cycleSelectionne = cycles.find((c) => c.uuid === cycleId)
 
+  // Type par défaut selon le contexte
   const ouvrirModale = () => {
-    const typeDefaut = TYPE_DEFAUT[cycleSelectionne?.cycle] ?? 'groupe'
+    const typeDefaut = labelType ?? TYPE_DEFAUT[cycleSelectionne?.cycle] ?? 'groupe'
     setForm({ nom: '', code: '', type: typeDefaut, description: '' })
     setErreurs({})
     setModale(true)
@@ -111,7 +113,7 @@ export default function PanneauSubdivisions({ anneeActive, onTerminee }) {
     <div className="cfg-tab">
       <div className="ap-page-head">
         <div>
-          <h2 className="ap-page-title">Groupes & départements</h2>
+          <h2 className="ap-page-title">{labelTitre ?? 'Groupes & départements'}</h2>
           <p className="ap-page-sub">Année : <strong>{anneeActive.libelle}</strong></p>
         </div>
         <div className="ap-page-actions">

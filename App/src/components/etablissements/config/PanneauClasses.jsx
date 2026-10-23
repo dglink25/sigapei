@@ -12,13 +12,13 @@ import {
   seriesService,
 } from '../../../services/etablissements/configurationAcademique.service'
 
-export default function PanneauClasses({ anneeActive, onTerminee }) {
+export default function PanneauClasses({ anneeActive, onTerminee, cycleFiltre }) {
   const notify = useNotify()
   const [classes,  setClasses]  = useState([])
   const [niveaux,  setNiveaux]  = useState([])
   const [subs,     setSubs]     = useState([])
   const [series,   setSeries]   = useState([])
-  const [filtreCycle, setFiltreCycle] = useState('')
+  const [filtreCycle, setFiltreCycle] = useState(cycleFiltre || '')
   const [charge,   setCharge]   = useState(false)
   const [modale,   setModale]   = useState(false)
   const [enCours,  setEnCours]  = useState(false)
@@ -116,14 +116,16 @@ export default function PanneauClasses({ anneeActive, onTerminee }) {
         </button>
       </div>
 
-      {/* Filtres cycles */}
-      <div className="ap-filters">
-        {cycles.map((c) => (
-          <button key={c} type="button" className={`ap-tab${filtreCycle === c ? ' is-active' : ''}`} onClick={() => setFiltreCycle(c)}>
-            {c ? CYCLE_LABEL[c] : 'Tous'}
-          </button>
-        ))}
-      </div>
+      {/* Filtres cycles - masqués si on est déjà dans un cycle */}
+      {!cycleFiltre && (
+        <div className="ap-filters">
+          {cycles.map((c) => (
+            <button key={c} type="button" className={`ap-tab${filtreCycle === c ? ' is-active' : ''}`} onClick={() => setFiltreCycle(c)}>
+              {c ? CYCLE_LABEL[c] : 'Tous'}
+            </button>
+          ))}
+        </div>
+      )}
 
       {charge ? (
         <div className="ap-card">

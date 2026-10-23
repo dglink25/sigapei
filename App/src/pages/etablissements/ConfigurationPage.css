@@ -179,3 +179,36 @@
   margin-bottom: 14px;
 }
 .cfg-confirm-resume strong { display: block; margin-bottom: 4px; color: #006B3C; }
+
+/* ── Onglets de cycle ── */
+.cfg-onglets {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--sg-border, #dde4df);
+  padding-bottom: 0;
+}
+.cfg-onglet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--sg-text-muted, #8a9e92);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+.cfg-onglet:hover { color: #006B3C; }
+.cfg-onglet.is-actif {
+  color: #006B3C;
+  border-bottom-color: #006B3C;
+}
+.cfg-onglet-contenu { min-height: 300px; }

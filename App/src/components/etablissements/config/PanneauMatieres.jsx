@@ -20,9 +20,9 @@ const CYCLES = [
   { id: 'universitaire',label: 'Université' },
 ]
 
-export default function PanneauMatieres({ anneeActive, onTerminee }) {
+export default function PanneauMatieres({ anneeActive, onTerminee, cycleFiltre }) {
   const notify = useNotify()
-  const [filtreCycle, setFiltreCycle] = useState('')
+  const [filtreCycle, setFiltreCycle] = useState(cycleFiltre || '')
   const [items,      setItems]      = useState([])
   const [niveaux,    setNiveaux]    = useState([])
   const [series,     setSeries]     = useState([])
@@ -162,13 +162,15 @@ export default function PanneauMatieres({ anneeActive, onTerminee }) {
         </button>
       </div>
 
-      <div className="ap-filters">
-        {CYCLES.map((c) => (
-          <button key={c.id} type="button" className={`ap-tab${filtreCycle === c.id ? ' is-active' : ''}`} onClick={() => setFiltreCycle(c.id)}>
-            {c.label}
-          </button>
-        ))}
-      </div>
+      {!cycleFiltre && (
+        <div className="ap-filters">
+          {CYCLES.map((c) => (
+            <button key={c.id} type="button" className={`ap-tab${filtreCycle === c.id ? ' is-active' : ''}`} onClick={() => setFiltreCycle(c.id)}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {charge ? (
         <div className="ap-card">

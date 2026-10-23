@@ -105,7 +105,7 @@ export default function PanneauCycles({ anneeActive, onTerminee }) {
                 </span>
                 <span className="cfg-cycle-nom">{label}</span>
                 <span className="cfg-cycle-etat">
-                  {busy ? 'Mise à jour…' : actif ? '✓ Activé' : 'Inactif'}
+                  {busy ? 'Mise à jour…' : actif ? 'Activé' : 'Inactif'}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'var(--sg-text-muted)', marginTop: 2 }}>{sous}</span>
               </button>

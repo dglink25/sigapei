@@ -22,6 +22,7 @@ export const ADMIN_PATHS = {
 export const ADMIN_ROLES = ['super_admin']
 
 export const TYPES = [
+  { id: 'maternelle', label: 'Maternelle' },
   { id: 'primaire', label: 'Primaire' },
   { id: 'secondaire', label: 'Secondaire' },
   { id: 'universite', label: 'Université' },

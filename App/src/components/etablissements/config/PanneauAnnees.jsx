@@ -260,7 +260,7 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
             </div>
             <div className="cfg-modale-pied">
               <button type="button" className="ap-btn ap-btn--ghost" onClick={() => setModale(null)}>Annuler</button>
-              <button type="button" className="ap-btn" onClick={allerAConfirmer}>Continuer →</button>
+              <button type="button" className="ap-btn" onClick={allerAConfirmer}>Continuer</button>
             </div>
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
               </div>
             </div>
             <div className="cfg-modale-pied">
-              <button type="button" className="ap-btn ap-btn--ghost" onClick={() => setModale('creer')}>← Modifier</button>
+              <button type="button" className="ap-btn ap-btn--ghost" onClick={() => setModale('creer')}>Modifier</button>
               <button type="button" className="ap-btn" onClick={confirmerCreation} disabled={enCours}>
                 {enCours ? 'Création…' : 'Confirmer la création'}
               </button>
