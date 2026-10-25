@@ -81,14 +81,27 @@ php artisan geo:geonames BJ --nettoyer
 
 `--nettoyer` supprime les subdivisions **obsolètes** du pays : celles d'autres sources non rapprochées, et celles de GeoNames que l'import courant n'a pas touchées (par exemple des lignes « promues » que vous ne voulez plus avec `--sans-promotion`). Il ne supprime **jamais** une subdivision utilisée par une demande ou un établissement, ni un niveau qui a encore des sous-niveaux. `php artisan geo:vider BJ` supprime à la main toutes les subdivisions d'un pays (mêmes protections : rien n'est supprimé si l'une est utilisée).
 
+> **Requêtes SQL dans la console Neon (ou via un pooler)** : chaque instruction peut s'exécuter sur une connexion différente, donc `SET search_path` est oublié d'une instruction à l'autre et `BEGIN ... COMMIT` n'enveloppe rien. Les requêtes de ce document écrivent donc le schéma explicitement (`etablissements.communes`) et tiennent **en une seule instruction** ; exécutez-les une par une.
+
 Pour voir ce qui reste d'autres sources après un import :
 
 ```sql
-SET search_path TO etablissements;
-
-SELECT 'departement' AS niveau, nom, source FROM departements d JOIN pays p ON p.id = d.pays_id WHERE p.code_iso = 'BJ' AND (d.source IS NULL OR d.source <> 'geonames')
+SELECT 'departement' AS niveau, d.nom, d.source
+FROM etablissements.departements d JOIN etablissements.pays p ON p.id = d.pays_id
+WHERE p.code_iso = 'BJ' AND (d.source IS NULL OR d.source <> 'geonames')
 UNION ALL
-SELECT 'commune', c.nom, c.source FROM communes c JOIN departements d ON d.id = c.departement_id JOIN pays p ON p.id = d.pays_id WHERE p.code_iso = 'BJ' AND (c.source IS NULL OR c.source <> 'geonames');
+SELECT 'commune', c.nom, c.source
+FROM etablissements.communes c
+JOIN etablissements.departements d ON d.id = c.departement_id
+JOIN etablissements.pays p ON p.id = d.pays_id
+WHERE p.code_iso = 'BJ' AND (c.source IS NULL OR c.source <> 'geonames')
+UNION ALL
+SELECT 'arrondissement', a.nom, a.source
+FROM etablissements.arrondissements a
+JOIN etablissements.communes c ON c.id = a.commune_id
+JOIN etablissements.departements d ON d.id = c.departement_id
+JOIN etablissements.pays p ON p.id = d.pays_id
+WHERE p.code_iso = 'BJ' AND (a.source IS NULL OR a.source <> 'geonames');
 ```
 
 ### Données de test qui bloquent le nettoyage
@@ -96,50 +109,45 @@ SELECT 'commune', c.nom, c.source FROM communes c JOIN departements d ON d.id = 
 Une ligne conservée après `--nettoyer` est **utilisée** par une demande ou un établissement (souvent des données de test créées avant l'import). Pour voir lesquels :
 
 ```sql
-SET search_path TO etablissements;
-
-WITH autres_dep AS (SELECT id FROM departements WHERE source IS NULL OR source <> 'geonames'),
-     autres_com AS (SELECT id FROM communes WHERE source IS NULL OR source <> 'geonames'),
-     autres_arr AS (SELECT id FROM arrondissements WHERE source IS NULL OR source <> 'geonames')
+WITH autres_dep AS (SELECT id FROM etablissements.departements WHERE source IS NULL OR source <> 'geonames'),
+     autres_com AS (SELECT id FROM etablissements.communes WHERE source IS NULL OR source <> 'geonames'),
+     autres_arr AS (SELECT id FROM etablissements.arrondissements WHERE source IS NULL OR source <> 'geonames')
 SELECT 'demande' AS type, uuid, statut::text AS statut, created_at
-FROM demandes_etablissement
+FROM etablissements.demandes_etablissement
 WHERE departement_id IN (SELECT id FROM autres_dep)
    OR commune_id IN (SELECT id FROM autres_com)
    OR arrondissement_id IN (SELECT id FROM autres_arr)
 UNION ALL
 SELECT 'etablissement', uuid, statut::text, created_at
-FROM etablissements
+FROM etablissements.etablissements
 WHERE departement_id IN (SELECT id FROM autres_dep)
    OR commune_id IN (SELECT id FROM autres_com)
    OR arrondissement_id IN (SELECT id FROM autres_arr);
 ```
 
-**Si ce sont uniquement des données de test**, ce script les supprime (avec leurs documents, cycles, abonnements) en une seule transaction ; ne le lancez jamais si l'une des lignes affichées est une vraie demande :
+**Si ce sont uniquement des données de test**, cette instruction les supprime (avec leurs documents, cycles et abonnements) de façon atomique : tout ou rien. Ne la lancez jamais si l'une des lignes affichées est une vraie demande ; elle affiche le nombre de lignes supprimées :
 
 ```sql
-BEGIN;
-SET LOCAL search_path TO etablissements;
-
-CREATE TEMP TABLE _autres_dep ON COMMIT DROP AS SELECT id FROM departements WHERE source IS NULL OR source <> 'geonames';
-CREATE TEMP TABLE _autres_com ON COMMIT DROP AS SELECT id FROM communes WHERE source IS NULL OR source <> 'geonames';
-CREATE TEMP TABLE _autres_arr ON COMMIT DROP AS SELECT id FROM arrondissements WHERE source IS NULL OR source <> 'geonames';
-
-DELETE FROM demandes_etablissement
-WHERE departement_id IN (SELECT id FROM _autres_dep)
-   OR commune_id IN (SELECT id FROM _autres_com)
-   OR arrondissement_id IN (SELECT id FROM _autres_arr)
-   OR etablissement_id IN (
-        SELECT id FROM etablissements
-        WHERE departement_id IN (SELECT id FROM _autres_dep)
-           OR commune_id IN (SELECT id FROM _autres_com)
-           OR arrondissement_id IN (SELECT id FROM _autres_arr));
-
-DELETE FROM etablissements
-WHERE departement_id IN (SELECT id FROM _autres_dep)
-   OR commune_id IN (SELECT id FROM _autres_com)
-   OR arrondissement_id IN (SELECT id FROM _autres_arr);
-
-COMMIT;
+WITH autres_dep AS (SELECT id FROM etablissements.departements WHERE source IS NULL OR source <> 'geonames'),
+     autres_com AS (SELECT id FROM etablissements.communes WHERE source IS NULL OR source <> 'geonames'),
+     autres_arr AS (SELECT id FROM etablissements.arrondissements WHERE source IS NULL OR source <> 'geonames'),
+     etabs AS (
+        SELECT id FROM etablissements.etablissements
+        WHERE departement_id IN (SELECT id FROM autres_dep)
+           OR commune_id IN (SELECT id FROM autres_com)
+           OR arrondissement_id IN (SELECT id FROM autres_arr)),
+     suppr_demandes AS (
+        DELETE FROM etablissements.demandes_etablissement
+        WHERE departement_id IN (SELECT id FROM autres_dep)
+           OR commune_id IN (SELECT id FROM autres_com)
+           OR arrondissement_id IN (SELECT id FROM autres_arr)
+           OR etablissement_id IN (SELECT id FROM etabs)
+        RETURNING id),
+     suppr_etabs AS (
+        DELETE FROM etablissements.etablissements WHERE id IN (SELECT id FROM etabs)
+        RETURNING id)
+SELECT (SELECT count(*) FROM suppr_demandes) AS demandes_supprimees,
+       (SELECT count(*) FROM suppr_etabs) AS etablissements_supprimes;
 ```
 
 Relancer ensuite `php artisan geo:geonames BJ --sans-telechargement --nettoyer` : les lignes devenues inutilisées sont supprimées.

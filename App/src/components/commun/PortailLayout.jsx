@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, User, Settings, LogOut, Menu, X, Bell,
   CalendarDays, School, BookOpen, GraduationCap, Building2, Plus,
-  ChevronRight, ChevronDown,
+  ChevronRight, ChevronDown, Users,
 } from 'lucide-react'
 import { useAuth }            from '../../context/identite/AuthContext'
 import ThemeToggle            from './ThemeToggle'
@@ -166,7 +166,9 @@ export default function PortailLayout() {
                   {/* Liens fixes */}
                   {[
                     { label:'Années académiques', section:'annees',          Icon:CalendarDays },
+                    { label:'Utilisateurs',       section:'utilisateurs',    Icon:Users },
                     { label:'Demande de cycle',   section:'demandes-cycle',  Icon:Plus },
+                    { label:'Demande de rôle',    section:'demandes-role',   Icon:Plus },
                   ].map(({label,section,Icon})=>{
                     const href    = `${configBase}?section=${section}`
                     const actif   = !cycleURL && sectionURL===section

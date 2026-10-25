@@ -146,10 +146,6 @@ export default function PanneauDemandesCycle() {
       <div className="ap-page-head">
         <div>
           <h2 className="ap-page-title">Demandes d'extension de cycle</h2>
-          <p className="ap-page-sub">
-            Votre établissement ne dispose que des cycles accordés par le Super Administrateur.
-            Soumettez une demande pour en obtenir un nouveau.
-          </p>
         </div>
         <div className="ap-page-actions">
           <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={charger} disabled={charge}>

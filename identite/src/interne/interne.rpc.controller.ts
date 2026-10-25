@@ -319,4 +319,79 @@ export class InterneRpcController {
   async surCorrectionRelance(@Payload() data: any) {
     return this.surCorrectionDemandee(data);
   }
+
+  /**
+   * utilisateur.cree → notifie le nouvel utilisateur par WhatsApp et e-mail.
+   * Lui communique son identifiant de connexion et l'URL du portail.
+   */
+  @EventPattern('utilisateur.cree')
+  async surUtilisateurCree(
+    @Payload()
+    data: {
+      data?: {
+        utilisateurUuid: string;
+        tenantId: string;
+        roleCode: string;
+      };
+    },
+  ) {
+    const d = (data as any)?.data ?? data;
+    if (!d?.utilisateurUuid) return;
+
+    // Recharger l'utilisateur complet depuis la base pour avoir ses coordonnées
+    const utilisateur = await this.utilisateursService.trouverParUuidOuEchouer(d.utilisateurUuid).catch(() => null);
+    if (!utilisateur) return;
+
+    const nom         = utilisateur.nomComplet;
+    const telephone   = utilisateur.telephone;
+    const emailAddr   = utilisateur.email;
+    const identifiant = emailAddr ?? telephone ?? 'votre identifiant enregistré';
+
+    const msgWa =
+      `*SIGAPEI - Bienvenue*\n\n` +
+      `Bonjour ${nom},\n\n` +
+      `Un compte a été créé pour vous sur la plateforme *SIGAPEI*.\n\n` +
+      `*Votre identifiant de connexion :*\n${identifiant}\n\n` +
+      `Connectez-vous sur SIGAPEI avec ce numéro ou cet e-mail pour accéder à vos services.\n\n` +
+      `SIGAPEI - Plateforme E-Académique`;
+
+    const promesses: Promise<any>[] = [];
+
+    if (telephone) {
+      try {
+        const tel = normaliserTelephoneE164(telephone).e164;
+        promesses.push(this.whatsapp.envoyerMessage(tel, msgWa));
+      } catch { /* numéro invalide */ }
+    }
+
+    if (emailAddr) {
+      promesses.push(
+        this.email.envoyerNotificationOnboarding(emailAddr.toLowerCase(), {
+          sujet: 'Votre compte SIGAPEI est prêt',
+          titreCourrier: 'Bienvenue sur SIGAPEI',
+          corps: `
+            <p style="margin:0 0 16px;color:#5a6b5f;font-size:14px">Bonjour <strong style="color:#1a2a1e">${nom}</strong>,</p>
+            <p style="margin:0 0 24px;color:#1a2a1e;font-size:15px;line-height:1.6">
+              Un compte vous a été créé sur la plateforme SIGAPEI.
+            </p>
+            <p style="margin:0 0 12px;color:#5a6b5f;font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600">Votre identifiant de connexion</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+              style="border:1px solid #dde4df;border-radius:8px;overflow:hidden;margin-bottom:24px">
+              <tr style="background:#f7faf8">
+                <td style="padding:12px 18px;color:#1a2a1e;font-size:15px;font-weight:700">
+                  ${identifiant}
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0;color:#5a6b5f;font-size:14px;line-height:1.6">
+              Connectez-vous avec cet identifiant pour accéder à vos services.
+            </p>
+          `,
+        }),
+      );
+    }
+
+    await Promise.allSettled(promesses);
+    this.logger.log(`Notification utilisateur.cree envoyée pour ${d.utilisateurUuid}`);
+  }
 }

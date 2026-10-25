@@ -6,6 +6,8 @@ import { RABBITMQ_CLIENT } from './rabbitmq.constants';
 export type EvenementIdentite =
   | 'utilisateur.authentifie'
   | 'utilisateur.deconnecte'
+  | 'utilisateur.cree'
+  | 'utilisateur.role_modifie'
   | 'otp.envoye'
   | 'otp.verifie'
   | 'otp.echec'

@@ -1,32 +1,47 @@
 /**
- * ConfigurationPage - Configuration académique.
- * ?section=annees|droits|etablissement|demandes-cycle
+ * ConfigurationPage — Configuration académique.
+ * ?section=annees|droits|etablissement|demandes-cycle|utilisateurs|demandes-role
  * ?cycle=primaire&onglet=groupes
  */
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CalendarDays, ChevronRight, School, BookOpen, GraduationCap, Building2, Plus } from 'lucide-react'
+import { CalendarDays, ChevronRight, School, BookOpen, GraduationCap, Building2 } from 'lucide-react'
 
-import { lienEtablissement }   from '../../lib/etablissements/subdomain'
-import { portailService }      from '../../services/identite/portail.service'
+import { lienEtablissement }    from '../../lib/etablissements/subdomain'
+import { portailService }       from '../../services/identite/portail.service'
 import { anneesService, cyclesService } from '../../services/etablissements/configurationAcademique.service'
-import useSlugEtablissement    from '../../hooks/etablissements/useSlugEtablissement'
-import usePageTitle            from '../../hooks/commun/usePageTitle'
+import useSlugEtablissement     from '../../hooks/etablissements/useSlugEtablissement'
+import usePageTitle             from '../../hooks/commun/usePageTitle'
 
-import AccesDroitsPanel        from '../../components/etablissements/AccesDroitsPanel'
-import InfosEtablissementPanel from '../../components/etablissements/InfosEtablissementPanel'
-import PanneauAnnees           from '../../components/etablissements/config/PanneauAnnees'
-import PanneauCyclePage        from '../../components/etablissements/config/PanneauCyclePage'
-import PanneauDemandesCycle    from '../../components/etablissements/config/PanneauDemandesCycle'
+import AccesDroitsPanel         from '../../components/etablissements/AccesDroitsPanel'
+import InfosEtablissementPanel  from '../../components/etablissements/InfosEtablissementPanel'
+import PanneauAnnees            from '../../components/etablissements/config/PanneauAnnees'
+import PanneauCyclePage         from '../../components/etablissements/config/PanneauCyclePage'
+import PanneauDemandesCycle     from '../../components/etablissements/config/PanneauDemandesCycle'
+import PanneauUtilisateurs      from '../../components/etablissements/config/PanneauUtilisateurs'
+import PanneauDemandesRole      from '../../components/etablissements/config/PanneauDemandesRole'
 
 import '../AdministrationPrincipale/admin.css'
 import '../../components/administration/admin-ui.css'
 import './ConfigurationPage.css'
 
-export const CYCLE_LABELS  = { maternelle:'Maternelle', primaire:'Primaire', secondaire:'Secondaire', universitaire:'Université' }
-const CYCLE_ICONES          = { maternelle:School, primaire:BookOpen, secondaire:GraduationCap, universitaire:Building2 }
-const LIBELLES_STATUT       = { en_cours:'En cours', a_venir:'À venir', termine:'Terminée', suspendu:'Suspendue' }
-const SECTION_LABELS        = { annees:'Années académiques', droits:"Droits d'accès", etablissement:'Infos établissement', 'demandes-cycle':'Demande de cycle' }
+export const CYCLE_LABELS = {
+  maternelle:'Maternelle', primaire:'Primaire', secondaire:'Secondaire', universitaire:'Université',
+}
+const CYCLE_ICONES = {
+  maternelle:School, primaire:BookOpen, secondaire:GraduationCap, universitaire:Building2,
+}
+const LIBELLES_STATUT = {
+  en_cours:'En cours', a_venir:'À venir', termine:'Terminée', suspendu:'Suspendue',
+}
+const SECTION_LABELS = {
+  annees:'Années académiques',
+  droits:"Droits d'accès",
+  etablissement:'Infos établissement',
+  'demandes-cycle':'Demande de cycle',
+  utilisateurs:'Utilisateurs',
+  'demandes-role':'Demande de rôle',
+}
 
 export default function ConfigurationPage() {
   usePageTitle('Configuration')
@@ -38,7 +53,6 @@ export default function ConfigurationPage() {
   const [etab,        setEtab]        = useState(null)
   const [anneeActive, setAnneeActive] = useState(null)
   const [cyclesActifs,setCyclesActifs]= useState([])
-  const [progres,     setProgres]     = useState({})
 
   useEffect(()=>{
     let c=false
@@ -53,7 +67,6 @@ export default function ConfigurationPage() {
       const liste=r?.data??r??[]
       const active=liste.find((a)=>a.statut==='en_cours')??liste[0]??null
       setAnneeActive(active)
-      if(liste.length>0) setProgres((p)=>({...p,annees:true}))
     }).catch(()=>{})
     return ()=>{ c=true }
   },[])
@@ -63,15 +76,13 @@ export default function ConfigurationPage() {
     let c=false
     cyclesService.lister(anneeActive.uuid).then((r)=>{
       if(c) return
-      const liste=(r?.data??r??[]).filter((x)=>x.actif)
-      setCyclesActifs(liste)
-      if(liste.length>0) setProgres((p)=>({...p,cycles:true}))
+      setCyclesActifs((r?.data??r??[]).filter((x)=>x.actif))
     }).catch(()=>{})
     return ()=>{ c=true }
   },[anneeActive?.uuid])
 
-  const allerA = useCallback((params)=>setSearchParams(params),[setSearchParams])
-  const marquer = useCallback((id)=>setProgres((p)=>({...p,[id]:true})),[])
+  const allerA   = useCallback((params)=>setSearchParams(params),[setSearchParams])
+  const marquer  = useCallback(()=>{}, [])
   const configBase = lienEtablissement(slug, '/configuration')
 
   function renduContenu() {
@@ -79,6 +90,8 @@ export default function ConfigurationPage() {
     if (section==='droits')         return <AccesDroitsPanel/>
     if (section==='etablissement')  return <InfosEtablissementPanel/>
     if (section==='demandes-cycle') return <PanneauDemandesCycle/>
+    if (section==='utilisateurs')   return <PanneauUtilisateurs/>
+    if (section==='demandes-role')  return <PanneauDemandesRole/>
     if (cycleParam) return (
       <PanneauCyclePage
         cycle={cycleParam}
@@ -116,7 +129,9 @@ export default function ConfigurationPage() {
           <CalendarDays size={14} aria-hidden="true"/>
           <span>Année active :</span>
           <strong>{anneeActive.libelle}</strong>
-          <span className={`cfg-statut-badge ${anneeActive.statut}`}>{LIBELLES_STATUT[anneeActive.statut]??anneeActive.statut}</span>
+          <span className={`cfg-statut-badge ${anneeActive.statut}`}>
+            {LIBELLES_STATUT[anneeActive.statut]??anneeActive.statut}
+          </span>
         </div>
       )}
       {renduContenu()}
@@ -124,7 +139,7 @@ export default function ConfigurationPage() {
   )
 }
 
-/* ── Vue d'ensemble - cycles en premier, accès direct ── */
+/* ── Vue d'ensemble ─────────────────────────────────────────────────── */
 function VueEnsemble({ etab, anneeActive, cyclesActifs, allerA }) {
   return (
     <>
@@ -133,13 +148,13 @@ function VueEnsemble({ etab, anneeActive, cyclesActifs, allerA }) {
           <h2 className="ap-page-title">Configuration{etab ? ` · ${etab.nom}` : ''}</h2>
           <p className="ap-page-sub">
             {anneeActive
-              ? `Année ${anneeActive.libelle} - Sélectionnez un cycle pour le configurer.`
-              : 'Créez d\'abord une année académique.'}
+              ? `Année ${anneeActive.libelle} — Sélectionnez un cycle ou une section.`
+              : "Créez d'abord une année académique."}
           </p>
         </div>
       </div>
 
-      {/* Cycles actifs - raccourcis directs, premier plan */}
+      {/* Cycles actifs — raccourcis directs */}
       {cyclesActifs.length > 0 && (
         <>
           <h3 style={{margin:'0 0 12px',fontSize:'0.82rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'var(--sg-text-muted)'}}>
@@ -161,7 +176,6 @@ function VueEnsemble({ etab, anneeActive, cyclesActifs, allerA }) {
         </>
       )}
 
-      {/* Invite si pas de cycles */}
       {cyclesActifs.length===0 && anneeActive && (
         <div className="ap-alert ap-alert--warning" style={{marginBottom:24}}>
           <span>Aucun cycle actif pour <strong>{anneeActive.libelle}</strong>.{' '}
@@ -174,22 +188,23 @@ function VueEnsemble({ etab, anneeActive, cyclesActifs, allerA }) {
         <div className="ap-alert ap-alert--warning" style={{marginBottom:24}}>
           <span>
             <button type="button" style={{border:0,background:'none',color:'inherit',fontWeight:700,cursor:'pointer',textDecoration:'underline',fontFamily:'inherit'}}
-              onClick={()=>allerA({section:'annees'})}>Créer une année académique</button>
-            {' '}pour commencer.
+              onClick={()=>allerA({section:'annees'})}>Créer une année académique</button>{' '}pour commencer.
           </span>
         </div>
       )}
 
-      {/* Autres sections en bas */}
+      {/* Autres paramètres */}
       <h3 style={{margin:'0 0 12px',fontSize:'0.82rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'var(--sg-text-muted)'}}>
         Autres paramètres
       </h3>
       <div className="cfg-etapes">
         {[
-          {label:'Années académiques', sous:'Gérer les années, les cycles autorisés',  section:'annees'},
-          {label:"Droits d'accès",     sous:'Gérer les accès des utilisateurs',         section:'droits'},
-          {label:'Infos établissement',sous:'Logo, types, adresse, localisation',        section:'etablissement'},
-          {label:'Demande de cycle',   sous:'Demander un nouveau cycle au Super Admin',  section:'demandes-cycle'},
+          { label:'Années académiques',   sous:'Gérer les années et les cycles autorisés',   section:'annees' },
+          { label:"Droits d'accès",        sous:'Gérer les accès aux services',               section:'droits' },
+          { label:'Utilisateurs',          sous:'Gérer les comptes et assigner des rôles',    section:'utilisateurs' },
+          { label:'Infos établissement',   sous:'Logo, types, adresse, localisation',          section:'etablissement' },
+          { label:'Demande de cycle',      sous:'Demander un nouveau cycle au Super Admin',    section:'demandes-cycle' },
+          { label:'Demande de rôle',       sous:'Demander un rôle personnalisé au Super Admin',section:'demandes-role' },
         ].map(({label,sous,section})=>(
           <button key={section} type="button" className="cfg-etape" onClick={()=>allerA({section})}>
             <span>

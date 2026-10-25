@@ -87,7 +87,7 @@ class DemandeCycleController extends Controller
     public function accepter(Request $request, string $uuid): JsonResponse
     {
         $demande = DemandeCycle::where('uuid', $uuid)->firstOrFail();
-        $note    = $request->input('note', '');
+        $note    = (string) ($request->input('note') ?? '');
 
         $demande = $this->service->accepter($demande, $note);
 
@@ -101,7 +101,7 @@ class DemandeCycleController extends Controller
             'note' => ['required', 'string', 'min:10'],
         ]);
 
-        $demande = $this->service->refuser($demande, $donnees['note']);
+        $demande = $this->service->refuser($demande, (string) $donnees['note']);
 
         return response()->json(['success' => true, 'data' => $demande]);
     }

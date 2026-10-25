@@ -57,8 +57,7 @@ class DemandeCycleService
      * Accepte une demande (Super Administrateur).
      * Crée ou réactive la ligne dans cycles_autorises.
      */
-    public function accepter(DemandeCycle $demande, string $note = '', ?string $instruitPar = null): DemandeCycle
-    {
+    public function accepter(DemandeCycle $demande, string $note = '', ?string $instruitPar = null): DemandeCycle    {
         if ($demande->statut !== 'en_attente') {
             throw ValidationException::withMessages([
                 'statut' => ['Seule une demande en attente peut être acceptée.'],

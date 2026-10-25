@@ -44,6 +44,9 @@ import ServicesPage           from './pages/AdministrationPrincipale/ServicesPag
 import ServiceDetailPage      from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
 import DemandesCyclePage      from './pages/AdministrationPrincipale/DemandesCyclePage'
+import RolesPage              from './pages/AdministrationPrincipale/RolesPage'
+import DemandesRolePage       from './pages/AdministrationPrincipale/DemandesRolePage'
+import UtilisateursPage       from './pages/AdministrationPrincipale/UtilisateursPage'
 
 /** Hôte d'un établissement (sous-domaine, production). */
 const SLUG_HOTE = MODE_SOUS_DOMAINE ? detecterSlugEtablissement() : null
@@ -139,6 +142,9 @@ export default function App() {
           <Route path={SERVICE_PATHS.liste}              element={<ServicesPage />} />
           <Route path={SERVICE_PATHS.detailRoute}        element={<ServiceDetailPage />} />
           <Route path="/admin/demandes-cycle"            element={<DemandesCyclePage />} />
+          <Route path="/admin/roles"                    element={<RolesPage />} />
+          <Route path="/admin/demandes-role"            element={<DemandesRolePage />} />
+          <Route path="/admin/utilisateurs"             element={<UtilisateursPage />} />
         </Route>
       </Route>
 
