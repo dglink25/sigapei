@@ -70,9 +70,14 @@ export default function RolesPage() {
   const chargerDetailRole = async (roleUuid) => {
     try {
       const r = await rolesEtablissementsService.etablissementsParRole(roleUuid)
-      const liste = r?.data ?? r ?? []
+      // Normaliser : peut être un tableau direct, { data: [...] }, ou { data: { data: [...] } }
+      let liste = r
+      if (!Array.isArray(liste)) liste = r?.data ?? r
+      if (!Array.isArray(liste)) liste = []
       setDetailData((d) => ({ ...d, [roleUuid]: liste }))
-    } catch { /* silencieux */ }
+    } catch {
+      setDetailData((d) => ({ ...d, [roleUuid]: [] }))
+    }
   }
 
   const toggleDetail = async (roleUuid) => {
