@@ -69,9 +69,18 @@ export default function Dashboard() {
 
       const demandesListe  = demandes.status === 'fulfilled'       ? (demandes.value ?? []).map(normaliserDemande) : []
       const nbUtilisateurs = utilisateurs.status === 'fulfilled'   ? (utilisateurs.value?.data?.pagination?.total ?? utilisateurs.value?.pagination?.total ?? 0) : null
-      const nbDemCycle     = demandesCycle.status === 'fulfilled'  ? (demandesCycle.value?.data ?? demandesCycle.value ?? []).length : null
-      const nbDemRole      = demandesRole.status === 'fulfilled'   ? (demandesRole.value?.data ?? demandesRole.value ?? []).length : null
 
+      // Normaliser : les deux services peuvent retourner un tableau direct ou { data: [...] }
+      const extraireListe = (r) => {
+        if (!r || r.status !== 'fulfilled') return null
+        const val = r.value
+        if (Array.isArray(val)) return val.length
+        if (Array.isArray(val?.data)) return val.data.length
+        if (Array.isArray(val?.data?.data)) return val.data.data.length
+        return 0
+      }
+      const nbDemCycle = extraireListe(demandesCycle)
+      const nbDemRole  = extraireListe(demandesRole)
       setData({ demandesListe, nbUtilisateurs, nbDemCycle, nbDemRole })
     } catch (err) {
       notify.fromError(err)

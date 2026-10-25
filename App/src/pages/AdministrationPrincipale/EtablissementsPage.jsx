@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { RefreshCw, Search, Power, RotateCcw, Layers } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { RefreshCw, Search, Power, RotateCcw, Layers, ShieldCheck, ChevronRight } from 'lucide-react'
 import { useNotify }    from '../../context/commun/NotifyContext'
 import ConfirmDialog    from '../../components/commun/ConfirmDialog'
 import Loader           from '../../components/commun/Loader'
@@ -30,7 +30,8 @@ function StatutBadge({ statut }) {
 }
 
 export default function EtablissementsPage() {
-  const notify = useNotify()
+  const notify   = useNotify()
+  const navigate = useNavigate()
   const [items,   setItems]   = useState(null)
   const [tab,     setTab]     = useState('tous')
   const [search,  setSearch]  = useState('')
@@ -171,8 +172,14 @@ export default function EtablissementsPage() {
               </thead>
               <tbody>
                 {rows.map(e => (
-                  <tr key={e.uuid}>
-                    <td><strong>{e.nom ?? '-'}</strong></td>
+                  <tr
+                    key={e.uuid}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(SERVICE_PATHS.etablissement(e.uuid))}
+                  >
+                    <td>
+                      <strong style={{ color: 'var(--ap-green)' }}>{e.nom ?? '-'}</strong>
+                    </td>
                     <td><span className="ap-code">{e.code ?? '-'}</span></td>
                     <td><span className="ap-code">{e.slug ?? '-'}</span></td>
                     <td>{Array.isArray(e.types) ? e.types.join(', ') : (e.types ?? '-')}</td>
@@ -189,31 +196,40 @@ export default function EtablissementsPage() {
                     </td>
                     <td><StatutBadge statut={e.statut} /></td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <Link className="ap-btn ap-btn--ghost ap-btn--sm" to={SERVICE_PATHS.etablissement(e.uuid)} style={{ marginRight: 8 }}>
-                        <Layers size={13} aria-hidden="true" />
-                        Services
+                      <Link
+                        className="ap-btn ap-btn--ghost ap-btn--sm"
+                        to={SERVICE_PATHS.etablissement(e.uuid)}
+                        style={{ marginRight: 6 }}
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <Layers size={13} aria-hidden="true" /> Services
+                      </Link>
+                      <Link
+                        className="ap-btn ap-btn--ghost ap-btn--sm"
+                        to={`/admin/etablissements/${e.uuid}/roles`}
+                        style={{ marginRight: 6 }}
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <ShieldCheck size={13} aria-hidden="true" /> Rôles
                       </Link>
                       {e.statut === 'actif' ? (
                         <button
                           type="button"
                           className="ap-btn ap-btn--danger ap-btn--sm"
-                          onClick={() => setAction({ type: 'suspendre', item: e })}
-                          title="Suspendre"
+                          onClick={(ev) => { ev.stopPropagation(); setAction({ type: 'suspendre', item: e }) }}
                         >
-                          <Power size={13} />
-                          Suspendre
+                          <Power size={13} /> Suspendre
                         </button>
                       ) : (
                         <button
                           type="button"
                           className="ap-btn ap-btn--sm"
-                          onClick={() => setAction({ type: 'reactiver', item: e })}
-                          title="Réactiver"
+                          onClick={(ev) => { ev.stopPropagation(); setAction({ type: 'reactiver', item: e }) }}
                         >
-                          <RotateCcw size={13} />
-                          Réactiver
+                          <RotateCcw size={13} /> Réactiver
                         </button>
                       )}
+                      <ChevronRight size={14} style={{ marginLeft: 6, color: 'var(--ap-muted)', opacity: 0.4, verticalAlign: 'middle' }} aria-hidden="true" />
                     </td>
                   </tr>
                 ))}

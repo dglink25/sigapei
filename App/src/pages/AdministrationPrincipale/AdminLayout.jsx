@@ -35,9 +35,10 @@ const NAV = [
       { id: 'demandes',       label: 'Demandes',             icon: FileText,        path: ADMIN_PATHS.demandes },
       { id: 'demandes-cycle', label: 'Extensions de cycle',  icon: Layers,          path: '/admin/demandes-cycle' },
       { id: 'etablissements', label: 'Établissements',       icon: Building2,       path: '/admin/etablissements' },
+      { id: 'services',       label: 'Services',             icon: Layers,          path: SERVICE_PATHS.liste },
       { id: 'utilisateurs',   label: 'Utilisateurs',         icon: Users,           path: '/admin/utilisateurs' },
       { id: 'roles',          label: 'Rôles',                icon: Layers,          path: '/admin/roles' },
-      { id: 'demandes-role',  label: 'Demandes de rôle',    icon: FileText,        path: '/admin/demandes-role' },
+      { id: 'demandes-role',  label: 'Demandes de rôle',     icon: FileText,        path: '/admin/demandes-role' },
     ],
   },
   {

@@ -239,10 +239,39 @@ export class DemandesRoleService {
 
   async retirerRoleDEtablissement(assignationUuid: string) {
     const rows = await this.dataSource.query(
-      `DELETE FROM "identite"."role_etablissements" WHERE uuid = $1 RETURNING id`,
+      `SELECT re.id, re.role_id AS "roleId", re.etablissement_id AS "etablissementId",
+              r.code AS "roleCode", e.uuid AS "etablissementUuid"
+         FROM "identite"."role_etablissements" re
+         JOIN "identite"."role" r ON r.id = re.role_id
+         JOIN "etablissements"."etablissements" e ON e.id = re.etablissement_id
+        WHERE re.uuid = $1`,
       [assignationUuid],
     );
     if (!rows.length) throw new NotFoundException({ code: 'ASSIGNATION_INTROUVABLE', message: 'Assignation introuvable.' });
-    return { code: 'ROLE_RETIRE' };
+
+    const { roleId, etablissementId, roleCode, etablissementUuid } = rows[0];
+
+    // Trouver le rôle "personnel" (rôle global de repli)
+    const repliRows = await this.dataSource.query(
+      `SELECT id FROM "identite"."role" WHERE code = 'personnel' LIMIT 1`,
+    );
+    const roleRepliId = repliRows[0]?.id;
+
+    await this.dataSource.transaction(async (m) => {
+      // Réattribuer le rôle par défaut (personnel) aux utilisateurs de cet établissement
+      // qui avaient ce rôle, pour ne pas les laisser sans rôle valide
+      if (roleRepliId && roleRepliId !== roleId) {
+        await m.query(
+          `UPDATE "identite"."utilisateur"
+              SET role_id = $1
+            WHERE "tenantId" = $2 AND role_id = $3`,
+          [roleRepliId, etablissementUuid, roleId],
+        );
+      }
+
+      await m.query(`DELETE FROM "identite"."role_etablissements" WHERE uuid = $1`, [assignationUuid]);
+    });
+
+    return { code: 'ROLE_RETIRE', etablissementUuid, roleCode };
   }
 }

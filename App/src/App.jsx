@@ -43,6 +43,7 @@ import EtablissementsPage     from './pages/AdministrationPrincipale/Etablisseme
 import ServicesPage           from './pages/AdministrationPrincipale/ServicesPage'
 import ServiceDetailPage      from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
+import EtablissementRolesPage    from './pages/AdministrationPrincipale/EtablissementRolesPage'
 import DemandesCyclePage      from './pages/AdministrationPrincipale/DemandesCyclePage'
 import RolesPage              from './pages/AdministrationPrincipale/RolesPage'
 import DemandesRolePage       from './pages/AdministrationPrincipale/DemandesRolePage'
@@ -139,6 +140,7 @@ export default function App() {
           <Route path={ADMIN_PATHS.detailRoute}          element={<DemandeDetailPage />} />
           <Route path={ADMIN_PATHS.etablissements}       element={<EtablissementsPage />} />
           <Route path={SERVICE_PATHS.etablissementRoute} element={<EtablissementServicesPage />} />
+          <Route path="/admin/etablissements/:uuid/roles"  element={<EtablissementRolesPage />} />
           <Route path={SERVICE_PATHS.liste}              element={<ServicesPage />} />
           <Route path={SERVICE_PATHS.detailRoute}        element={<ServiceDetailPage />} />
           <Route path="/admin/demandes-cycle"            element={<DemandesCyclePage />} />
