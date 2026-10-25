@@ -33,6 +33,7 @@ const NAV = [
     groupe: 'ESPACES MÉTIER',
     items: [
       { id: 'demandes',       label: 'Demandes',             icon: FileText,        path: ADMIN_PATHS.demandes },
+      { id: 'demandes-cycle', label: 'Extensions de cycle',  icon: Layers,          path: '/admin/demandes-cycle' },
       { id: 'etablissements', label: 'Établissements',       icon: Building2,       path: '/admin/etablissements' },
       { id: 'services',       label: 'Services',             icon: Layers,          path: SERVICE_PATHS.liste },
       { id: 'utilisateurs',   label: 'Utilisateurs',         icon: Users,           path: '/admin/utilisateurs' },

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, User, Settings, LogOut, Menu, X, Bell,
-  ChevronDown, CalendarDays, School, BookOpen, GraduationCap, Building2,
+  ChevronDown, CalendarDays, School, BookOpen, GraduationCap, Building2, Plus,
 } from 'lucide-react'
 import { useAuth } from '../../context/identite/AuthContext'
 import ThemeToggle from './ThemeToggle'
@@ -36,8 +36,9 @@ const CYCLE_ICONES = {
 
 // Liens fixes de configuration (hors cycles)
 const CFG_LIENS_FIXES = [
-  { id: 'vue-ensemble', label: "Vue d'ensemble",      section: '',        Icon: LayoutGrid },
-  { id: 'annees',       label: 'Années académiques',  section: 'annees',  Icon: CalendarDays },
+  { id: 'vue-ensemble',  label: "Vue d'ensemble",       section: '',               Icon: LayoutGrid },
+  { id: 'annees',        label: 'Années académiques',   section: 'annees',         Icon: CalendarDays },
+  { id: 'demandes-cycle',label: 'Demande de cycle',     section: 'demandes-cycle', Icon: Plus },
 ]
 
 // Onglets par cycle (doit correspondre à PanneauCyclePage)

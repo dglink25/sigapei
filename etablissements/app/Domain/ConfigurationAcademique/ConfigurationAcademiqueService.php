@@ -4,6 +4,7 @@ namespace App\Domain\ConfigurationAcademique;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Domain\ConfigurationAcademique\CycleConfig;
 
 /**
  * Service métier de la configuration académique.
@@ -43,9 +44,30 @@ class ConfigurationAcademiqueService
             ]);
         }
 
-        return AnneeAcademique::create(array_merge($donnees, [
-            'etablissement_id' => $etablissementId,
-        ]));
+        return DB::transaction(function () use ($etablissementId, $donnees) {
+            $annee = AnneeAcademique::create(array_merge($donnees, [
+                'etablissement_id' => $etablissementId,
+            ]));
+
+            // Auto-peupler cycles_config depuis cycles_autorises (statut actif dans cycles_autorises)
+            // Les cycles sont créés avec actif = false : l'admin les active manuellement.
+            $cyclesAutorises = \App\Domain\Etablissement\CycleAutorise::where('etablissement_id', $etablissementId)
+                ->where('statut', 'actif')
+                ->pluck('cycle');
+
+            foreach ($cyclesAutorises as $cycle) {
+                CycleConfig::firstOrCreate(
+                    [
+                        'etablissement_id' => $etablissementId,
+                        'annee_id'         => $annee->id,
+                        'cycle'            => $cycle,
+                    ],
+                    ['actif' => false],
+                );
+            }
+
+            return $annee;
+        });
     }
 
     public function modifierAnnee(AnneeAcademique $annee, array $donnees): AnneeAcademique

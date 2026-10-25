@@ -23,6 +23,7 @@ import AccesDroitsPanel         from '../../components/etablissements/AccesDroit
 import InfosEtablissementPanel  from '../../components/etablissements/InfosEtablissementPanel'
 import PanneauAnnees            from '../../components/etablissements/config/PanneauAnnees'
 import PanneauCyclePage         from '../../components/etablissements/config/PanneauCyclePage'
+import PanneauDemandesCycle     from '../../components/etablissements/config/PanneauDemandesCycle'
 
 import '../AdministrationPrincipale/admin.css'
 import '../../components/administration/admin-ui.css'
@@ -110,8 +111,9 @@ export default function ConfigurationPage() {
         />
       )
     }
-    if (section === 'droits')        return <AccesDroitsPanel />
-    if (section === 'etablissement') return <InfosEtablissementPanel />
+    if (section === 'droits')           return <AccesDroitsPanel />
+    if (section === 'etablissement')    return <InfosEtablissementPanel />
+    if (section === 'demandes-cycle')   return <PanneauDemandesCycle />
 
     // Navigation par cycle
     if (cycleParam) {

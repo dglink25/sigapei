@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccueilController;
 use App\Http\Controllers\ConfigurationAcademiqueController;
 use App\Http\Controllers\CorrectionController;
+use App\Http\Controllers\DemandeCycleController;
 use App\Http\Controllers\DocsController;
 use App\Http\Controllers\EtablissementController;
 use App\Http\Controllers\GeoController;
@@ -11,12 +12,6 @@ use App\Http\Controllers\MonEtablissementController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
 
-/*
- * Le prefixe "api" de Laravel est desactive dans bootstrap/app.php
- * (apiPrefix: ''), pour que les routes soient bien exposees sous /v1/...
- * conformement a api-etablissements.sigapei.com/v1/... (section 14 du
- * cahier des charges).
- */
 
 // Tout parametre {uuid} doit etre un uuid valide : sinon la route repond 404
 // au lieu de laisser PostgreSQL lever une erreur de syntaxe (500).
@@ -75,6 +70,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/etablissements/{uuid}/reactiver', [InterneController::class, 'reactiver']);
         Route::get('/resolution-slug/{slug}', [InterneController::class, 'resolutionSlug']);
 
+        // ── Demandes d'extension de cycle (Super Administrateur) ──
+        Route::get('/demandes-cycle',                   [DemandeCycleController::class, 'listerToutesDemandes']);
+        Route::post('/demandes-cycle/{uuid}/accepter',  [DemandeCycleController::class, 'accepter']);
+        Route::post('/demandes-cycle/{uuid}/refuser',   [DemandeCycleController::class, 'refuser']);
+
         // --- Profil de l'etablissement, modifie par SON administrateur (contexte pose par la Gateway) ---
         Route::middleware('contexte.tenant')->prefix('mon-etablissement')->group(function () {
             Route::get('/', [MonEtablissementController::class, 'afficher']);
@@ -126,6 +126,11 @@ Route::prefix('v1')->group(function () {
             Route::patch("/{$cfg}/matieres/{uuid}",       [ConfigurationAcademiqueController::class, 'modifierMatiere']);
             Route::get("/{$cfg}/matieres/{uuid}/propagation", [ConfigurationAcademiqueController::class, 'previewPropagation']);
             Route::post("/{$cfg}/matieres/{uuid}/propager",   [ConfigurationAcademiqueController::class, 'propagerMatiere']);
+
+            // ── Demandes d'extension de cycle (administrateur de l'établissement) ──
+            Route::get('/demandes-cycle',                   [DemandeCycleController::class, 'listerMesDemandes']);
+            Route::post('/demandes-cycle',                  [DemandeCycleController::class, 'soumettre']);
+            Route::delete('/demandes-cycle/{uuid}',         [DemandeCycleController::class, 'annuler']);
         });
     });
 });

@@ -25,8 +25,8 @@ class MonEtablissementController extends Controller {
         $this->profil->exigerChampsAutorises($request->all());
 
         $donnees = $request->validate([
-            'types' => ['sometimes', 'array', 'min:1', 'max:3'],
-            'types.*' => ['string', 'distinct', Rule::in(['primaire', 'secondaire', 'universite'])],
+            'types' => ['sometimes', 'array', 'min:1', 'max:4'],
+            'types.*' => ['string', 'distinct', Rule::in(['maternelle', 'primaire', 'secondaire', 'universite'])],
             'adresse_complete' => ['sometimes', 'string', 'min:5', 'max:1000'],
             'localisation' => ['sometimes', 'array'],
             'localisation.pays_uuid' => ['required_with:localisation', 'uuid'],

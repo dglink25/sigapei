@@ -211,7 +211,15 @@ class ImporterArbreGeo extends Command
 
         if (! isset($this->connus[$cle])) {
             $this->connus[$cle] = [];
-            foreach (DB::table($table)->where($colonneParent, $parentId)->get(['id', 'nom']) as $existant) {
+            // Quand deux lignes soeurs portent le meme nom (doublon : donnee de test, ancien import...),
+            // celle de GeoNames est retenue en priorite : c'est elle qui porte les sous-niveaux.
+            $existants = DB::table($table)
+                ->where($colonneParent, $parentId)
+                ->orderByRaw("CASE WHEN source = 'geonames' THEN 0 ELSE 1 END")
+                ->orderBy('id')
+                ->get(['id', 'nom']);
+
+            foreach ($existants as $existant) {
                 $this->connus[$cle][NormalisationNom::cle($existant->nom)] ??= ['id' => (int) $existant->id, 'nom' => $existant->nom];
             }
         }

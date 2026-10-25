@@ -43,6 +43,7 @@ import EtablissementsPage     from './pages/AdministrationPrincipale/Etablisseme
 import ServicesPage           from './pages/AdministrationPrincipale/ServicesPage'
 import ServiceDetailPage      from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
+import DemandesCyclePage      from './pages/AdministrationPrincipale/DemandesCyclePage'
 
 /** Hôte d'un établissement (sous-domaine, production). */
 const SLUG_HOTE = MODE_SOUS_DOMAINE ? detecterSlugEtablissement() : null
@@ -137,6 +138,7 @@ export default function App() {
           <Route path={SERVICE_PATHS.etablissementRoute} element={<EtablissementServicesPage />} />
           <Route path={SERVICE_PATHS.liste}              element={<ServicesPage />} />
           <Route path={SERVICE_PATHS.detailRoute}        element={<ServiceDetailPage />} />
+          <Route path="/admin/demandes-cycle"            element={<DemandesCyclePage />} />
         </Route>
       </Route>
 
