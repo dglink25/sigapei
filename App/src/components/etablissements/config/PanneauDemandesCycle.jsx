@@ -12,6 +12,7 @@ import { Plus, X, RefreshCw, AlertTriangle } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { tokenStore, decodeJwt } from '../../../lib/identite/tokenStore'
 import { demandesCycleEtabService } from '../../../services/etablissements/demandesCycle.service'
+import { monEtablissementService }  from '../../../services/etablissements/monEtablissement.service'
 
 // Clé localStorage : une par tenant pour que chaque établissement ait son propre état
 const cleAlerte = () => {
@@ -49,13 +50,14 @@ const STATUT_LABEL = {
 
 export default function PanneauDemandesCycle() {
   const notify = useNotify()
-  const [demandes,  setDemandes]  = useState([])
-  const [charge,    setCharge]    = useState(true)
-  const [modale,    setModale]    = useState(false)
-  const [enCours,   setEnCours]   = useState(false)
-  const [form,      setForm]      = useState({ cycle: '', motif: '' })
-  const [erreurs,   setErreurs]   = useState({})
-  const [showAlert, setShowAlert] = useState(() => !lireAlerteFermee())
+  const [demandes,       setDemandes]       = useState([])
+  const [cyclesAutorises,setCyclesAutorises]= useState([]) // cycles déjà accordés
+  const [charge,         setCharge]         = useState(true)
+  const [modale,         setModale]         = useState(false)
+  const [enCours,        setEnCours]        = useState(false)
+  const [form,           setForm]           = useState({ cycle: '', motif: '' })
+  const [erreurs,        setErreurs]        = useState({})
+  const [showAlert,      setShowAlert]      = useState(() => !lireAlerteFermee())
 
   const fermerAlerte = () => {
     persisterAlerteFermee()
@@ -65,8 +67,17 @@ export default function PanneauDemandesCycle() {
   const charger = async () => {
     setCharge(true)
     try {
-      const r = await demandesCycleEtabService.lister()
-      setDemandes(r?.data ?? r ?? [])
+      const [rDemandes, rProfil] = await Promise.all([
+        demandesCycleEtabService.lister(),
+        monEtablissementService.lire(),
+      ])
+      setDemandes(rDemandes?.data ?? rDemandes ?? [])
+      // cyclesAutorises : [{ cycle: 'primaire', statut: 'actif' }, …]
+      setCyclesAutorises(
+        (rProfil?.cyclesAutorises ?? [])
+          .filter((c) => c.statut === 'actif')
+          .map((c) => c.cycle)
+      )
     } catch (err) {
       notify.fromError(err)
     } finally {
@@ -80,6 +91,16 @@ export default function PanneauDemandesCycle() {
   const cyclesEnAttente = demandes
     .filter((d) => d.statut === 'en_attente')
     .map((d) => d.cycle)
+
+  // Un cycle est indisponible s'il est déjà autorisé OU en attente de validation
+  const cycleIndisponible = (id) =>
+    cyclesAutorises.includes(id) || cyclesEnAttente.includes(id)
+
+  const raisonIndisponible = (id) => {
+    if (cyclesAutorises.includes(id)) return 'Déjà autorisé pour votre établissement'
+    if (cyclesEnAttente.includes(id)) return 'Demande déjà en cours d\'instruction'
+    return null
+  }
 
   const valider = () => {
     const e = {}
@@ -235,21 +256,27 @@ export default function PanneauDemandesCycle() {
                   <label className="ap-label">Cycle souhaité <em>*</em></label>
                   <div style={{ display:'flex', flexDirection:'column', gap: 8 }}>
                     {CYCLES_DISPO.map(({ id, label, desc }) => {
-                      const desactive = cyclesEnAttente.includes(id)
+                      const indisponible = cycleIndisponible(id)
+                      const raison       = raisonIndisponible(id)
                       return (
-                        <label key={id} className={`ap-check-row${form.cycle === id ? ' is-on' : ''}${desactive ? ' is-disabled' : ''}`}
-                          style={{ cursor: desactive ? 'not-allowed' : 'pointer' }}>
+                        <label key={id} className={`ap-check-row${form.cycle === id ? ' is-on' : ''}${indisponible ? ' is-disabled' : ''}`}
+                          style={{ cursor: indisponible ? 'not-allowed' : 'pointer' }}>
                           <input
                             type="radio" name="cycle" value={id}
                             checked={form.cycle === id}
-                            disabled={desactive}
+                            disabled={indisponible}
                             onChange={() => setForm((f) => ({ ...f, cycle: id }))}
                             style={{ position:'absolute', opacity:0 }}
                           />
                           <div className="ap-check-info">
                             <strong>{label}</strong>
-                            <small>{desactive ? 'Demande déjà en cours' : desc}</small>
+                            <small>{raison ?? desc}</small>
                           </div>
+                          {cyclesAutorises.includes(id) && (
+                            <span className="ap-badge ap-badge--success" style={{ marginLeft:'auto', flexShrink:0 }}>
+                              Autorisé
+                            </span>
+                          )}
                         </label>
                       )
                     })}
