@@ -1,5 +1,5 @@
 /**
- * ConfigurationPage — Configuration académique.
+ * ConfigurationPage - Configuration académique.
  * ?section=annees|droits|etablissement|demandes-cycle|utilisateurs|demandes-role
  * ?cycle=primaire&onglet=groupes
  */
@@ -20,6 +20,7 @@ import PanneauCyclePage         from '../../components/etablissements/config/Pan
 import PanneauDemandesCycle     from '../../components/etablissements/config/PanneauDemandesCycle'
 import PanneauUtilisateurs      from '../../components/etablissements/config/PanneauUtilisateurs'
 import PanneauDemandesRole      from '../../components/etablissements/config/PanneauDemandesRole'
+import PanneauPermissionsRole   from '../../components/etablissements/config/PanneauPermissionsRole'
 
 import '../AdministrationPrincipale/admin.css'
 import '../../components/administration/admin-ui.css'
@@ -41,6 +42,7 @@ const SECTION_LABELS = {
   'demandes-cycle':'Demande de cycle',
   utilisateurs:'Utilisateurs',
   'demandes-role':'Demande de rôle',
+  'permissions-roles':'Permissions des rôles',
 }
 
 export default function ConfigurationPage() {
@@ -92,6 +94,7 @@ export default function ConfigurationPage() {
     if (section==='demandes-cycle') return <PanneauDemandesCycle/>
     if (section==='utilisateurs')   return <PanneauUtilisateurs/>
     if (section==='demandes-role')  return <PanneauDemandesRole/>
+    if (section==='permissions-roles') return <PanneauPermissionsRole/>
     if (cycleParam) return (
       <PanneauCyclePage
         cycle={cycleParam}
@@ -148,13 +151,13 @@ function VueEnsemble({ etab, anneeActive, cyclesActifs, allerA }) {
           <h2 className="ap-page-title">Configuration{etab ? ` · ${etab.nom}` : ''}</h2>
           <p className="ap-page-sub">
             {anneeActive
-              ? `Année ${anneeActive.libelle} — Sélectionnez un cycle ou une section.`
+              ? `Année ${anneeActive.libelle} - Sélectionnez un cycle ou une section.`
               : "Créez d'abord une année académique."}
           </p>
         </div>
       </div>
 
-      {/* Cycles actifs — raccourcis directs */}
+      {/* Cycles actifs - raccourcis directs */}
       {cyclesActifs.length > 0 && (
         <>
           <h3 style={{margin:'0 0 12px',fontSize:'0.82rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'var(--sg-text-muted)'}}>
@@ -205,6 +208,7 @@ function VueEnsemble({ etab, anneeActive, cyclesActifs, allerA }) {
           { label:'Infos établissement',   sous:'Logo, types, adresse, localisation',          section:'etablissement' },
           { label:'Demande de cycle',      sous:'Demander un nouveau cycle au Super Admin',    section:'demandes-cycle' },
           { label:'Demande de rôle',       sous:'Demander un rôle personnalisé au Super Admin',section:'demandes-role' },
+          { label:'Permissions des rôles', sous:'Configurer services et portail par rôle',     section:'permissions-roles' },
         ].map(({label,sous,section})=>(
           <button key={section} type="button" className="cfg-etape" onClick={()=>allerA({section})}>
             <span>

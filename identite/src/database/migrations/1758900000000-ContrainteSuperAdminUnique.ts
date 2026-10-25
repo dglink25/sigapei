@@ -5,11 +5,34 @@ export class ContrainteSuperAdminUnique1758900000000 implements MigrationInterfa
   name = 'ContrainteSuperAdminUnique1758900000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1. Index unique partiel : un seul utilisateur peut avoir le rôle super_admin
+    // 1. Contrainte super_admin unique via trigger (PostgreSQL n'accepte pas
+    //    de sous-requête dans un prédicat d'index partiel)
     await queryRunner.query(`
-      CREATE UNIQUE INDEX IF NOT EXISTS "UQ_un_seul_super_admin"
-        ON "identite"."utilisateur" ("role_id")
-        WHERE "role_id" = (SELECT id FROM "identite"."role" WHERE code = 'super_admin' LIMIT 1)
+      CREATE OR REPLACE FUNCTION "identite"."verifier_super_admin_unique"()
+      RETURNS trigger LANGUAGE plpgsql AS $$
+      DECLARE
+        role_code varchar;
+        nb_super_admin int;
+      BEGIN
+        SELECT code INTO role_code FROM "identite"."role" WHERE id = NEW.role_id;
+        IF role_code = 'super_admin' THEN
+          SELECT COUNT(*) INTO nb_super_admin
+            FROM "identite"."utilisateur"
+           WHERE role_id = NEW.role_id
+             AND id <> COALESCE(NEW.id, -1);
+          IF nb_super_admin > 0 THEN
+            RAISE EXCEPTION 'SUPER_ADMIN_UNIQUE: Il ne peut exister qu''un seul super administrateur.';
+          END IF;
+        END IF;
+        RETURN NEW;
+      END;
+      $$
+    `);
+
+    await queryRunner.query(`
+      CREATE TRIGGER "trg_super_admin_unique"
+        BEFORE INSERT OR UPDATE ON "identite"."utilisateur"
+        FOR EACH ROW EXECUTE FUNCTION "identite"."verifier_super_admin_unique"()
     `);
 
     // 2. Fonction trigger : tout utilisateur non super_admin doit appartenir à un établissement
@@ -36,8 +59,9 @@ export class ContrainteSuperAdminUnique1758900000000 implements MigrationInterfa
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP TRIGGER IF EXISTS "trg_super_admin_unique" ON "identite"."utilisateur"`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS "identite"."verifier_super_admin_unique"()`);
     await queryRunner.query(`DROP TRIGGER IF EXISTS "trg_tenant_obligatoire" ON "identite"."utilisateur"`);
     await queryRunner.query(`DROP FUNCTION IF EXISTS "identite"."verifier_tenant_obligatoire"()`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "identite"."UQ_un_seul_super_admin"`);
   }
 }

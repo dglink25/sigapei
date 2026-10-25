@@ -1,5 +1,5 @@
 /**
- * RolesPage — Gestion des rôles par le Super Administrateur.
+ * RolesPage - Gestion des rôles par le Super Administrateur.
  *
  * - Lister les rôles systèmes (non modifiables, non supprimables)
  * - Créer des rôles personnalisés globaux ou pour un établissement

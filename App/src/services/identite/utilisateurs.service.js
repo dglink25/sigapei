@@ -1,5 +1,5 @@
 /**
- * Service — Gestion des utilisateurs et des rôles.
+ * Service - Gestion des utilisateurs et des rôles.
  * Routes : /v1/utilisateurs et /v1/roles (NestJS api-identite via authApi)
  */
 import { authApi as api } from '../../lib/commun/http'

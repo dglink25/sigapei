@@ -1,5 +1,5 @@
 /**
- * DemandesRolePage — Super Admin instruite les demandes de rôle personnalisé.
+ * DemandesRolePage - Super Admin instruite les demandes de rôle personnalisé.
  *
  * Accepter = créer le rôle avec :
  *   - Libellé (pré-rempli avec nomSouhaite, modifiable)
@@ -119,7 +119,7 @@ export default function DemandesRolePage() {
     !rechercheEtab || e.nom?.toLowerCase().includes(rechercheEtab.toLowerCase()),
   )
 
-  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '—'
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '-'
 
   return (
     <div className="ap">
@@ -170,7 +170,7 @@ export default function DemandesRolePage() {
               <tbody>
                 {demandes.map((d) => (
                   <tr key={d.uuid}>
-                    <td><strong>{d.etablissementNom ?? '—'}</strong><small>{d.etablissementSlug ?? ''}</small></td>
+                    <td><strong>{d.etablissementNom ?? '-'}</strong><small>{d.etablissementSlug ?? ''}</small></td>
                     <td><strong>{d.nomSouhaite}</strong></td>
                     <td style={{ maxWidth:260 }}>
                       <small style={{ color:'var(--ap-muted)', display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>

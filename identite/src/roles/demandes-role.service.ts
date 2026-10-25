@@ -1,5 +1,5 @@
 /**
- * DemandesRoleService — Flux demande de rôle personnalisé.
+ * DemandesRoleService - Flux demande de rôle personnalisé.
  *
  * Côté admin établissement :
  *   - Soumettre une demande (nom souhaité + description obligatoire)
@@ -100,7 +100,7 @@ export class DemandesRoleService {
 
   async accepter(
     demandeUuid: string,
-    opts: { libelle: string; familleAuth: string; etablissementIds: string[]; note?: string },
+    opts: { libelle: string; familleAuth?: string; etablissementIds: string[]; note?: string },
   ) {
     const rows = await this.dataSource.query(
       `SELECT d.id, d.statut, d.etablissement_id AS "etablissementId", d.nom_souhaite AS "nomSouhaite",

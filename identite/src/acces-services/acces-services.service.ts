@@ -67,19 +67,50 @@ export class AccesServicesService {
   private async calculerServices(utilisateurId: string, tenantId: string, estAdmin: boolean): Promise<AccesUtilisateur> {
     const etab = await this.ref.trouverParUuid(tenantId);
     if (!etab || etab.statut !== 'actif') return { services: [], motif: 'ETABLISSEMENT_INACTIF' };
-    const lignes: Array<Omit<ServiceAccessible, 'origine'>> = await this.dataSource.query(
-      `SELECT s.uuid, s.code, s.nom, s.description
+
+    // Récupérer le role_id de l'utilisateur pour les droits par rôle
+    const userRows = await this.dataSource.query(
+      `SELECT role_id FROM "identite"."utilisateur" WHERE id = $1`, [utilisateurId],
+    );
+    const roleId = userRows[0]?.role_id;
+
+    const lignes: Array<Omit<ServiceAccessible, 'origine'> & { origineRaw: string }> = await this.dataSource.query(
+      `SELECT s.uuid, s.code, s.nom, s.description,
+              CASE
+                WHEN $2::boolean THEN 'role_administrateur'
+                WHEN EXISTS (
+                  SELECT 1 FROM "identite"."users_services_etablissement" a
+                   WHERE a.etablissement_services_id = es.id AND a.user_id = $3 AND a.autorised = true
+                ) THEN 'accord_explicite'
+                WHEN EXISTS (
+                  SELECT 1 FROM "identite"."role_services_etablissement" rse
+                   WHERE rse.etablissement_services_id = es.id AND rse.role_id = $4
+                ) THEN 'accord_role'
+                ELSE NULL
+              END AS "origineRaw"
          FROM "identite"."etablissement_services" es
          JOIN "identite"."services" s ON s.id = es.service_id
         WHERE es.etablissement_id = $1 AND es.status = 'active' AND s.status = 'active'
-          AND ($2::boolean OR EXISTS (
-                SELECT 1 FROM "identite"."users_services_etablissement" a
-                 WHERE a.etablissement_services_id = es.id AND a.user_id = $3 AND a.autorised = true))
+          AND (
+            $2::boolean
+            OR EXISTS (
+              SELECT 1 FROM "identite"."users_services_etablissement" a
+               WHERE a.etablissement_services_id = es.id AND a.user_id = $3 AND a.autorised = true
+            )
+            OR EXISTS (
+              SELECT 1 FROM "identite"."role_services_etablissement" rse
+               WHERE rse.etablissement_services_id = es.id AND rse.role_id = $4
+            )
+          )
         ORDER BY s.nom`,
-      [etab.id, estAdmin, utilisateurId],
+      [etab.id, estAdmin, utilisateurId, roleId],
     );
-    const origine = estAdmin ? 'role_administrateur' : 'accord_explicite';
-    return { services: lignes.map((l) => ({ ...l, origine })) };
+    return {
+      services: lignes.map(({ origineRaw, ...l }) => ({
+        ...l,
+        origine: (origineRaw ?? 'accord_explicite') as ServiceAccessible['origine'],
+      })),
+    };
   }
 
   /** Verification par code de service (utilisee par la passerelle et les autres microservices). */
@@ -119,6 +150,11 @@ export class AccesServicesService {
 
     const estAdmin = u.role.code === ROLE_ADMIN;
     const etabActif = etab.statut === 'actif';
+
+    // Si le rôle n'autorise pas l'accès au portail (et pas admin), retourner vide
+    if (!estAdmin && u.role && !(u.role as any).peutVoirPortail) {
+      return { etablissement: { uuid: etab.uuid, nom: etab.nom, slug: etab.slug, statut: etab.statut, logoDocumentId: etab.logoDocumentId ?? null }, estAdmin: false, services: [], motif: 'PORTAIL_INACCESSIBLE' };
+    }
     const lignes: Array<{ uuid: string; code: string; nom: string; description: string | null; assignationActive: boolean; droit: boolean }> =
       await this.dataSource.query(
         `SELECT s.uuid, s.code, s.nom, s.description,

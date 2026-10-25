@@ -1,5 +1,5 @@
 /**
- * ChampTelephone — Champ téléphone avec sélecteur de pays.
+ * ChampTelephone - Champ téléphone avec sélecteur de pays.
  * Même pattern qu'AuthPage.jsx : react-phone-number-input + libphonenumber-js.
  */
 import { useState, useMemo } from 'react'

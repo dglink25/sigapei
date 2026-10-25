@@ -1,5 +1,5 @@
 /**
- * Service — Demandes de rôle et assignations rôle ↔ établissements.
+ * Service - Demandes de rôle et assignations rôle ↔ établissements.
  */
 import { authApi as api } from '../../lib/commun/http'
 

@@ -58,7 +58,7 @@ export default function UtilisateursPage() {
   // Rechargement sur changement de filtre (reset page)
   useEffect(() => { charger(true) }, [q, nomEtablissement, roleCode, annee]) // eslint-disable-line
 
-  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '—'
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '-'
 
   return (
     <div className="ap">
@@ -67,7 +67,7 @@ export default function UtilisateursPage() {
           <h2 className="ap-page-title">Utilisateurs</h2>
           <p className="ap-page-sub">
             Vue complète de tous les utilisateurs de la plateforme.
-            <strong> Lecture seule</strong> — la gestion des rôles se fait par l'administrateur de chaque établissement.
+            <strong> Lecture seule</strong> - la gestion des rôles se fait par l'administrateur de chaque établissement.
           </p>
         </div>
         <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => charger(true)} disabled={charge}>
@@ -115,7 +115,7 @@ export default function UtilisateursPage() {
       {/* Compteur */}
       {pagination && (
         <p style={{ marginBottom:10, fontSize:'0.82rem', color:'var(--ap-muted)' }}>
-          {pagination.total} utilisateur{pagination.total > 1 ? 's' : ''} —
+          {pagination.total} utilisateur{pagination.total > 1 ? 's' : ''} -
           page {pagination.page} / {pagination.pages}
         </p>
       )}
@@ -159,7 +159,7 @@ export default function UtilisateursPage() {
                               {u.etablissementSlug && <small>{u.etablissementSlug}</small>}
                             </>
                           : <span style={{ color:'var(--ap-muted)', fontStyle:'italic', fontSize:'0.82rem' }}>
-                              {u.roleCode === 'super_admin' ? 'Plateforme' : '—'}
+                              {u.roleCode === 'super_admin' ? 'Plateforme' : '-'}
                             </span>
                         }
                       </td>
@@ -173,7 +173,7 @@ export default function UtilisateursPage() {
                       <td>
                         {u.matricule
                           ? <span className="ap-code">{u.matricule}</span>
-                          : <span style={{ color:'var(--ap-muted)' }}>—</span>}
+                          : <span style={{ color:'var(--ap-muted)' }}>-</span>}
                       </td>
                       <td>
                         <span className={`ap-badge ${STATUT_BADGE[u.statut] ?? 'ap-badge--neutral'}`}>

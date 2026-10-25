@@ -11,11 +11,19 @@ import { AccesRpcController } from './acces-rpc.controller';
 import { InternalSecretSafeGuard } from './internal-secret-safe.guard';
 import { AccesCacheModule } from './acces-cache.module';
 import { EtablissementsRefModule } from '../etablissements-ref/etablissements-ref.module';
+import { PermissionsRoleService } from './permissions-role.service';
+import { PermissionsRoleController } from './permissions-role.controller';
+import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Utilisateur, UtilisateurServiceEtablissement]), EtablissementsRefModule, AccesCacheModule],
-  controllers: [AccesServicesController, MoiServicesController, MoiPortailController, InterneAccesController, AccesRpcController],
-  providers: [AccesServicesService, InternalSecretSafeGuard],
-  exports: [AccesServicesService],
+  imports: [
+    TypeOrmModule.forFeature([Utilisateur, UtilisateurServiceEtablissement]),
+    EtablissementsRefModule,
+    AccesCacheModule,
+    RabbitmqModule,
+  ],
+  controllers: [AccesServicesController, MoiServicesController, MoiPortailController, InterneAccesController, AccesRpcController, PermissionsRoleController],
+  providers: [AccesServicesService, InternalSecretSafeGuard, PermissionsRoleService],
+  exports: [AccesServicesService, PermissionsRoleService],
 })
 export class AccesServicesModule {}

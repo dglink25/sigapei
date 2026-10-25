@@ -1,5 +1,5 @@
 /**
- * PanneauUtilisateurs — Gestion des utilisateurs de l'établissement.
+ * PanneauUtilisateurs - Gestion des utilisateurs de l'établissement.
  * Accessible depuis Configuration > section "utilisateurs" (admin établissement).
  *
  * L'admin peut :

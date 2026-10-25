@@ -1,5 +1,5 @@
 /**
- * PanneauDemandesRole — Demandes de rôle personnalisé (admin établissement).
+ * PanneauDemandesRole - Demandes de rôle personnalisé (admin établissement).
  * L'admin écrit le nom et la description. Le super admin instruit la demande.
  */
 import { useEffect, useState } from 'react'
@@ -70,7 +70,7 @@ export default function PanneauDemandesRole() {
     }
   }
 
-  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '—'
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '-'
 
   return (
     <div className="cfg-tab">
@@ -124,7 +124,7 @@ export default function PanneauDemandesRole() {
                   <td>
                     {d.noteInstruction
                       ? <small style={{ color:'var(--sg-text-secondary)' }}>{d.noteInstruction}</small>
-                      : <span style={{ color:'var(--sg-text-muted)' }}>—</span>}
+                      : <span style={{ color:'var(--sg-text-muted)' }}>-</span>}
                   </td>
                   <td>
                     {d.statut === 'en_attente' && (

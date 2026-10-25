@@ -1,5 +1,5 @@
 /**
- * GestionUtilisateursService — CRUD utilisateurs et assignation des rôles.
+ * GestionUtilisateursService - CRUD utilisateurs et assignation des rôles.
  *
  * Règles métier :
  *   - super_admin unique : aucun second super_admin ne peut être créé
