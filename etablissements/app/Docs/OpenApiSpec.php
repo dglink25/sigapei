@@ -32,6 +32,7 @@ class OpenApiSpec
                 ['name' => 'Établissements', 'description' => 'Cycles autorisés, plans disponibles et abonnement d\'un établissement actif.'],
                 ['name' => 'Mon établissement', 'description' => "Profil de l'établissement, modifiable par son administrateur. Headers X-Internal-Secret + X-User-Role + X-Tenant-Uuid (posés par la Gateway après vérification du JWT)."],
                 ['name' => 'Configuration académique', 'description' => "Organisation pédagogique interne : années académiques, cycles actifs, subdivisions (groupes/sections/départements), niveaux scolaires, séries et filières, classes concrètes, cohortes universitaires, matières avec coefficient. Toutes ces routes sont sous `/interne/mon-etablissement/configuration/*` et exigent X-Internal-Secret + X-User-Role: administrateur + X-Tenant-Uuid. Une année académique ne peut jamais être supprimée."],
+                ['name' => 'Demandes de cycle', 'description' => "Flux de demande d'extension de cycle. Un établissement ne dispose que des cycles accordés lors de sa validation. S'il souhaite un nouveau cycle, il soumet une demande que le Super Administrateur instruit. Routes établissement : `/interne/mon-etablissement/demandes-cycle`. Routes Super Admin : `/interne/demandes-cycle`."],
                 ['name' => 'Interne', 'description' => 'Back-office Super Administrateur et passerelle API (Gateway). Header X-Internal-Secret obligatoire.'],
                 ['name' => 'Santé', 'description' => 'Sonde de disponibilité.'],
             ],
@@ -488,7 +489,7 @@ MD;
                 'get' => [
                     'tags' => ['Établissements'],
                     'summary' => "Cycles que l'établissement peut activer",
-                    'description' => "Dérivés des types de l'établissement : `primaire` → maternelle + primaire ; `secondaire` → secondaire ; `universite` → universitaire. Quand l'administrateur retire un type, ses cycles passent à `inactif` (sans suppression). Consommé par le microservice Scolarité.",
+                    'description' => "Dérivés des types de l'établissement : `maternelle` → maternelle seul ; `primaire` → maternelle + primaire ; `secondaire` → secondaire ; `universite` → universitaire. Quand l'administrateur retire un type, ses cycles passent à `inactif` (sans suppression). Consommé par le microservice Scolarité.",
                     'parameters' => [self::paramSlug()],
                     'responses' => [
                         '200' => self::succes('Cycles autorisés', [
@@ -1409,8 +1410,8 @@ MD;
                                 'types' => [
                                     'type' => 'array',
                                     'minItems' => 1,
-                                    'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']],
-                                    'description' => 'Un établissement peut cumuler plusieurs types ; au moins un est obligatoire.',
+                                    'items' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universite']],
+                                    'description' => 'Un établissement peut cumuler plusieurs types ; au moins un est obligatoire. `maternelle` peut être demandé seul.',
                                 ],
                                 'annee_ouverture' => ['type' => 'integer', 'description' => 'Inférieure ou égale à l\'année en cours.', 'example' => 2015],
                                 'email' => ['type' => 'string', 'format' => 'email'],
@@ -1506,7 +1507,7 @@ MD;
                         'code' => ['type' => 'string', 'example' => 'K7QP'],
                         'slug' => ['type' => 'string', 'example' => 'complexe-scolaire-kisito'],
                         'nom' => ['type' => 'string', 'example' => 'Complexe Scolaire Kisito'],
-                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']]],
+                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universite']]],
                         'anneeOuverture' => ['type' => 'integer', 'example' => 2015],
                         'logoDocumentId' => ['type' => 'string', 'nullable' => true],
                         'adresseComplete' => ['type' => 'string'],
@@ -1546,7 +1547,7 @@ MD;
                         'types' => [
                             'type' => 'array',
                             'minItems' => 1,
-                            'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']],
+                            'items' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universite']],
                             'description' => 'Remplace la liste des types. Un type retiré passe ses cycles à `inactif`.',
                         ],
                         'adresse_complete' => ['type' => 'string', 'minLength' => 5, 'maxLength' => 1000],
@@ -1580,7 +1581,7 @@ MD;
                         'slug' => ['type' => 'string', 'example' => 'complexe-scolaire-kisito'],
                         'matricule' => ['type' => 'string', 'example' => 'kisito8945'],
                         'nom' => ['type' => 'string'],
-                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']]],
+                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universite']]],
                         'anneeOuverture' => ['type' => 'integer', 'example' => 2015],
                         'logoDocumentId' => ['type' => 'string', 'nullable' => true],
                         'adresseComplete' => ['type' => 'string'],
@@ -1649,7 +1650,125 @@ MD;
                     ],
                 ],
 
-                // ── Configuration académique ────────────────────────────────────
+                // ── Demandes de cycle (établissement) ──────────────────────
+            '/interne/mon-etablissement/demandes-cycle' => [
+                'get' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Liste mes demandes de cycle',
+                    'description' => "Retourne toutes les demandes de cycle de l'établissement connecté, triées par date décroissante.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'responses' => [
+                        '200' => self::succes('Demandes de cycle', ['data' => ['type' => 'array', 'items' => self::ref('DemandeCycle')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Soumettre une demande de cycle',
+                    'description' => "L'établissement demande l'accès à un cycle qu'il ne possède pas encore. Une seule demande en attente par cycle par établissement. Le motif est obligatoire (min. 20 caractères) et doit justifier le besoin.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['cycle', 'motif'],
+                            'properties' => [
+                                'cycle' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                                'motif' => ['type' => 'string', 'minLength' => 20, 'maxLength' => 1000, 'description' => 'Justification du besoin.'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Demande créée', ['data' => self::ref('DemandeCycle')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/demandes-cycle/{uuid}' => [
+                'delete' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Annuler une demande en attente',
+                    'description' => "Seule une demande au statut `en_attente` peut être annulée. La suppression est physique.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de la demande.')]),
+                    'responses' => [
+                        '200' => ['description' => 'Demande annulée.', 'content' => self::json(['type' => 'object', 'properties' => ['success' => ['type' => 'boolean']]])],
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '409' => self::reponseRef('ConflitStatut'),
+                    ],
+                ],
+            ],
+
+            // ── Demandes de cycle (Super Administrateur) ────────────────
+            '/interne/demandes-cycle' => [
+                'get' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Lister toutes les demandes de cycle',
+                    'security' => $secret,
+                    'parameters' => [[
+                        'name' => 'statut', 'in' => 'query', 'required' => false,
+                        'description' => 'Filtre par statut. `tous` retourne toutes les demandes.',
+                        'schema' => ['type' => 'string', 'enum' => ['en_attente', 'acceptee', 'refusee', 'tous'], 'default' => 'en_attente'],
+                    ]],
+                    'responses' => [
+                        '200' => self::succes('Demandes de cycle', ['data' => ['type' => 'array', 'items' => self::ref('DemandeCycle')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                    ],
+                ],
+            ],
+            '/interne/demandes-cycle/{uuid}/accepter' => [
+                'post' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Accepter une demande',
+                    'description' => "Crée ou réactive la ligne dans `cycles_autorises`. L'établissement peut ensuite activer ce cycle dans sa configuration académique annuelle.",
+                    'security' => $secret,
+                    'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
+                    'requestBody' => [
+                        'required' => false,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => ['note' => ['type' => 'string', 'description' => 'Note optionnelle pour l\'établissement.']],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Demande acceptée', ['data' => self::ref('DemandeCycle')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/demandes-cycle/{uuid}/refuser' => [
+                'post' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Refuser une demande',
+                    'description' => "Le refus est définitif pour cette demande. L'établissement peut re-soumettre. La note est obligatoire pour expliquer le refus.",
+                    'security' => $secret,
+                    'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['note'],
+                            'properties' => ['note' => ['type' => 'string', 'minLength' => 10, 'description' => 'Motif du refus (obligatoire).']],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Demande refusée', ['data' => self::ref('DemandeCycle')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // ── Configuration académique ────────────────────────────────────
                 'AnneeAcademique' => [
                     'type' => 'object',
                     'description' => "Année académique d'un établissement. Jamais supprimable. Statut calculé dynamiquement.",
@@ -1757,8 +1876,23 @@ MD;
                         'created_at'=> ['type' => 'string', 'format' => 'date-time'],
                     ],
                 ],
-                'MatiereConfig' => [
+                'DemandeCycle' => [
                     'type' => 'object',
+                    'description' => "Demande d'extension de cycle soumise par un établissement. Cycle de vie : `en_attente` → `acceptee` | `refusee`.",
+                    'properties' => [
+                        'uuid'              => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle'             => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                        'statut'            => ['type' => 'string', 'enum' => ['en_attente', 'acceptee', 'refusee']],
+                        'motif'             => ['type' => 'string', 'description' => 'Justification fournie par l\'établissement.'],
+                        'note_instruction'  => ['type' => 'string', 'description' => 'Note du Super Administrateur.'],
+                        'date_instruction'  => ['type' => 'string', 'format' => 'date-time', 'nullable' => true],
+                        'etablissement_nom' => ['type' => 'string', 'description' => 'Présent dans les réponses Super Admin.', 'nullable' => true],
+                        'etablissement_slug'=> ['type' => 'string', 'nullable' => true],
+                        'created_at'        => ['type' => 'string', 'format' => 'date-time'],
+                        'updated_at'        => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'MatiereConfig' => [                    'type' => 'object',
                     'description' => "Configuration locale d'une matière externe (evaluations.matieres) dans un contexte pédagogique précis. `coefficient` NULL = non défini ≠ 0.",
                     'properties' => [
                         'uuid'                 => ['type' => 'string', 'format' => 'uuid'],

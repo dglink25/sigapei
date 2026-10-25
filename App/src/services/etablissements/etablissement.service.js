@@ -39,7 +39,6 @@ export const geoService = {
 }
 
 export const accueilService = {
-  /** GET /v1/etablissements/{slug}/accueil - public, sans auth */
   lire: async (slug) => {
     const r = await api.get(`/etablissements/${slug}/accueil`, PUBLIC)
     const data = r?.accueil ?? r

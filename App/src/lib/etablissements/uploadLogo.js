@@ -12,13 +12,7 @@ function headersContexte() {
   }
 }
 
-/**
- * Remplace le logo de l'établissement (POST multipart, avec progression).
- * Authentifié par le JWT ; envoie aussi X-User-Role et X-Tenant-Uuid pour le
- * middleware ContexteTenant (rôle de la Gateway en production, simulé en dev).
- * Un 401 déclenche un rafraîchissement du jeton puis un seul nouvel essai.
- * → { success: true, logoDocumentId }
- */
+
 export function uploadLogo({ file, onProgress }) {
   const envoyer = (token) =>
     new Promise((resolve, reject) => {

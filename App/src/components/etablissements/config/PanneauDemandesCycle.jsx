@@ -1,5 +1,5 @@
 /**
- * PanneauDemandesCycle — Demandes d'extension de cycle.
+ * PanneauDemandesCycle - Demandes d'extension de cycle.
  *
  * Accessible depuis Configuration > section "demandes-cycle".
  * L'administrateur peut :
@@ -10,9 +10,24 @@
 import { useEffect, useState } from 'react'
 import { Plus, X, RefreshCw, AlertTriangle } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
-import {
-  demandesCycleEtabService,
-} from '../../../services/etablissements/demandesCycle.service'
+import { tokenStore, decodeJwt } from '../../../lib/identite/tokenStore'
+import { demandesCycleEtabService } from '../../../services/etablissements/demandesCycle.service'
+
+// Clé localStorage : une par tenant pour que chaque établissement ait son propre état
+const cleAlerte = () => {
+  const payload  = decodeJwt(tokenStore.getAccess() ?? '')
+  const tenantId = payload?.tenantId ?? payload?.tenant_id ?? 'default'
+  return `sigapei.alerte_cycles_ferme.${tenantId}`
+}
+
+const lireAlerteFermee = () => {
+  try { return localStorage.getItem(cleAlerte()) === '1' }
+  catch { return false }
+}
+
+const persisterAlerteFermee = () => {
+  try { localStorage.setItem(cleAlerte(), '1') } catch { /* ignore */ }
+}
 
 const CYCLES_DISPO = [
   { id: 'maternelle',    label: 'Maternelle',   desc: 'Petite, moyenne et grande section' },
@@ -40,6 +55,12 @@ export default function PanneauDemandesCycle() {
   const [enCours,   setEnCours]   = useState(false)
   const [form,      setForm]      = useState({ cycle: '', motif: '' })
   const [erreurs,   setErreurs]   = useState({})
+  const [showAlert, setShowAlert] = useState(() => !lireAlerteFermee())
+
+  const fermerAlerte = () => {
+    persisterAlerteFermee()
+    setShowAlert(false)
+  }
 
   const charger = async () => {
     setCharge(true)
@@ -97,7 +118,7 @@ export default function PanneauDemandesCycle() {
     }
   }
 
-  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '—'
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '-'
 
   return (
     <div className="cfg-tab">
@@ -119,13 +140,43 @@ export default function PanneauDemandesCycle() {
         </div>
       </div>
 
-      <div className="ap-alert ap-alert--warning" style={{ marginBottom: 20 }}>
-        <AlertTriangle size={16} aria-hidden="true" />
-        <div>
-          <strong>Cycles autorisés uniquement</strong>
-          Seuls les cycles accordés lors de la validation de votre établissement ou suite à une demande acceptée sont disponibles dans la configuration académique.
+      {showAlert && (
+        <div
+          className="ap-alert ap-alert--warning"
+          style={{
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+          }}
+        >
+          <AlertTriangle size={16} aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
+          <div style={{ flex: 1 }}>
+            <strong>Cycles autorisés uniquement</strong>
+            <div>
+              Seuls les cycles accordés lors de la validation de votre établissement ou suite à une
+              demande acceptée sont disponibles dans la configuration académique.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={fermerAlerte}
+            aria-label="Fermer l'alerte"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 4,
+              display: 'flex',
+              alignItems: 'center',
+              color: 'inherit',
+              flexShrink: 0,
+            }}
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
         </div>
-      </div>
+      )}
 
       {charge ? (
         <div className="ap-card">
@@ -151,7 +202,7 @@ export default function PanneauDemandesCycle() {
                   <td>
                     {d.note_instruction
                       ? <small style={{ color: 'var(--sg-text-secondary)' }}>{d.note_instruction}</small>
-                      : <span style={{ color: 'var(--sg-text-muted)' }}>—</span>
+                      : <span style={{ color: 'var(--sg-text-muted)' }}>-</span>
                     }
                   </td>
                   <td>

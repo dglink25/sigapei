@@ -3,20 +3,13 @@ import { API_BASE } from '../../config/etablissements/config'
 import { ENV } from '../../config/commun/env'
 import { sauvegarderSlugEtablissement } from '../../lib/etablissements/subdomain'
 
-/**
- * Construit l'URL publique du logo depuis son UUID de document.
- * Route publique GET /v1/documents/:uuid servie par le microservice établissements.
- */
+
 function logoDocumentUrl(logoDocumentId) {
   if (!logoDocumentId) return null
   return `${API_BASE}${ENV.apiPrefix}/documents/${logoDocumentId}`
 }
 
-/**
- * Portail de l'utilisateur : établissement (slug, nom, logoUrl), indicateur administrateur,
- * services et état d'accès.
- * logoUrl est construit localement depuis logoDocumentId pour éviter un second appel réseau.
- */
+
 export const portailService = {
   lire: async () => {
     const r = await api.get('/moi/portail')

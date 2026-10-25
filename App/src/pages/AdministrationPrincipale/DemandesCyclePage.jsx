@@ -1,5 +1,5 @@
 /**
- * DemandesCyclePage — Gestion des demandes d'extension de cycle.
+ * DemandesCyclePage - Gestion des demandes d'extension de cycle.
  * Réservée au Super Administrateur.
  *
  * Permet d'instruire les demandes soumises par les établissements :
@@ -88,7 +88,7 @@ export default function DemandesCyclePage() {
     }
   }
 
-  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '—'
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) : '-'
 
   return (
     <div className="ap">
@@ -138,14 +138,14 @@ export default function DemandesCyclePage() {
                 {demandes.map((d) => (
                   <tr key={d.uuid}>
                     <td>
-                      <strong>{d.etablissement_nom ?? d.etablissement?.nom ?? '—'}</strong>
+                      <strong>{d.etablissement_nom ?? d.etablissement?.nom ?? '-'}</strong>
                       <small>{d.etablissement_slug ?? d.etablissement?.slug ?? ''}</small>
                     </td>
                     <td><span className="ap-badge ap-badge--neutral">{CYCLE_LABELS[d.cycle] ?? d.cycle}</span></td>
                     <td>{fmt(d.created_at)}</td>
                     <td style={{ maxWidth: 260 }}>
                       <small style={{ color: 'var(--ap-muted)', display: 'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {d.motif || '—'}
+                        {d.motif || '-'}
                       </small>
                     </td>
                     <td>

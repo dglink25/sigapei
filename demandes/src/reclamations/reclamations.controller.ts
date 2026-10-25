@@ -1,21 +1,10 @@
 import { Controller, Post, Put, Param, Body, HttpCode } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-/**
- * Reclamations bidirectionnelles.
- * CDC section 17 : POST /reclamations, POST /reclamations/{uuid}/messages,
- *                  PUT /reclamations/{uuid}/statut
- *
- * CDC section 10.1 : ouvert a tout utilisateur (parent, apprenant,
- * enseignant, personnel) ou par l'etablissement lui-meme.
- */
 @ApiTags('Reclamations')
 @Controller('reclamations')
 export class ReclamationsController {
-  /**
-   * POST /v1/reclamations
-   * Ouvre une nouvelle reclamation (tout profil).
-   */
+ 
   @Post()
   @HttpCode(201)
   async ouvrir(@Body() body: Record<string, unknown>) {

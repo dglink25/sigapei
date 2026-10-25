@@ -1,11 +1,4 @@
-/**
- * Client API - Configuration académique.
- *
- * Routes sous /interne/mon-etablissement/configuration/* protégées par :
- *   1. secret.interne  → X-Internal-Secret, injecté par le proxy Vite
- *   2. contexte.tenant → X-User-Role + X-Tenant-Uuid, lus du JWT local
- *      (même pattern que monEtablissement.service.js)
- */
+
 import { createHttp } from '../../lib/commun/http'
 import { tokenStore, decodeJwt } from '../../lib/identite/tokenStore'
 import { ADMIN_BASE } from '../../config/etablissements/config'

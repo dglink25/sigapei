@@ -3,7 +3,7 @@
  * Création (confirmation obligatoire), suspension, réactivation.
  * Jamais de suppression : protégé côté UI et backend.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { CalendarDays, Plus, Pause, Play, AlertTriangle, X, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { anneesService } from '../../../services/etablissements/configurationAcademique.service'
@@ -22,16 +22,29 @@ const STATUT_CLASSE = {
   suspendu: 'ap-badge--warning',
 }
 
+// Ajoute 1 jour à une date "YYYY-MM-DD" → "YYYY-MM-DD"
+// (utilisé pour le min de la date de fin : le lendemain du début)
+const jourSuivant = (isoDate) => {
+  if (!isoDate) return undefined
+  const d = new Date(`${isoDate}T00:00:00`)
+  if (isNaN(d)) return undefined
+  d.setDate(d.getDate() + 1)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
 export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee }) {
   const notify = useNotify()
-  const [annees,       setAnnees]       = useState([])
-  const [chargement,   setChargement]   = useState(true)
-  const [modale,       setModale]       = useState(null)   // null | 'creer' | 'suspendre' | 'confirmer'
-  const [enCours,      setEnCours]      = useState(false)
-  const [form,         setForm]         = useState({ date_debut: '', date_fin: '' })
-  const [libelle,      setLibelle]      = useState('')
-  const [noteSupension,setNoteSuspension] = useState('')
-  const [cible,        setCible]        = useState(null)   // annee ciblée pour action
+  const [annees,        setAnnees]        = useState([])
+  const [chargement,    setChargement]    = useState(true)
+  const [modale,        setModale]        = useState(null)   // null | 'creer' | 'suspendre' | 'confirmer'
+  const [enCours,       setEnCours]       = useState(false)
+  const [form,          setForm]          = useState({ date_debut: '', date_fin: '' })
+  const [libelle,       setLibelle]       = useState('')
+  const [noteSuspension, setNoteSuspension] = useState('')
+  const [cible,         setCible]         = useState(null)
 
   const charger = async () => {
     setChargement(true)
@@ -40,7 +53,6 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
       const liste = r?.data ?? r ?? []
       setAnnees(liste)
       if (liste.length > 0) onTerminee('annees')
-      // Sélectionner l'année en cours si aucune sélectionnée
       if (!anneeActive) {
         const active = liste.find((a) => a.statut === 'en_cours') ?? liste[0]
         if (active) setAnneeActive(active)
@@ -54,16 +66,23 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
 
   useEffect(() => { charger() }, []) // eslint-disable-line
 
-  // Génère le libellé automatiquement à partir des dates
+  // Libellé auto à partir des dates
   useEffect(() => {
     if (form.date_debut && form.date_fin) {
       const debut = new Date(form.date_debut)
       const fin   = new Date(form.date_fin)
       if (!isNaN(debut) && !isNaN(fin) && fin > debut) {
         setLibelle(`${debut.getFullYear()}-${fin.getFullYear()}`)
+      } else {
+        setLibelle('')
       }
+    } else {
+      setLibelle('')
     }
   }, [form.date_debut, form.date_fin])
+
+  // 🔑 Min de la date de fin = lendemain de la date de début
+  const minDateFin = useMemo(() => jourSuivant(form.date_debut), [form.date_debut])
 
   const ouvrirCreer = () => {
     setForm({ date_debut: '', date_fin: '' })
@@ -71,9 +90,18 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
     setModale('creer')
   }
 
+  // Quand on change la date de début, si la date de fin est devenue invalide,
+  // on la vide automatiquement pour forcer un choix correct.
+  const onChangeDebut = (valeur) => {
+    setForm((f) => {
+      const fin = f.date_fin && valeur && f.date_fin <= valeur ? '' : f.date_fin
+      return { ...f, date_debut: valeur, date_fin: fin }
+    })
+  }
+
   const validerForm = () => {
     if (!form.date_debut || !form.date_fin) return 'Les deux dates sont requises.'
-    if (new Date(form.date_fin) <= new Date(form.date_debut)) return 'La date de fin doit être après la date de début.'
+    if (form.date_fin <= form.date_debut) return 'La date de fin doit être après la date de début.'
     return null
   }
 
@@ -110,7 +138,7 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
     if (!cible) return
     setEnCours(true)
     try {
-      await anneesService.suspendre(cible.uuid, noteSupension)
+      await anneesService.suspendre(cible.uuid, noteSuspension)
       await charger()
       notify.success('Année suspendue', `${cible.libelle} est maintenant suspendue.`)
       setModale(null)
@@ -244,13 +272,44 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
               </div>
               <div className="ap-field">
                 <label className="ap-label" htmlFor="aa-debut">Date de début <em>*</em></label>
-                <input id="aa-debut" type="date" className="ap-input" value={form.date_debut}
-                  onChange={(e) => setForm((f) => ({ ...f, date_debut: e.target.value }))} />
+                <input
+                  id="aa-debut"
+                  type="date"
+                  className="ap-input"
+                  value={form.date_debut}
+                  max={form.date_fin || undefined}
+                  onChange={(e) => onChangeDebut(e.target.value)}
+                  // Astuce mobile : cliquer sur tout le champ ouvre le sélecteur natif
+                  onClick={(e) => e.currentTarget.showPicker?.()}
+                  style={{ cursor: 'pointer' }}
+                />
               </div>
               <div className="ap-field">
                 <label className="ap-label" htmlFor="aa-fin">Date de fin <em>*</em></label>
-                <input id="aa-fin" type="date" className="ap-input" value={form.date_fin}
-                  onChange={(e) => setForm((f) => ({ ...f, date_fin: e.target.value }))} />
+                <input
+                  id="aa-fin"
+                  type="date"
+                  className="ap-input"
+                  value={form.date_fin}
+                  min={minDateFin}                    // 🔑 bloque les dates ≤ début
+                  disabled={!form.date_debut}         // 🔑 oblige à choisir le début d'abord
+                  onChange={(e) => setForm((f) => ({ ...f, date_fin: e.target.value }))}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
+                  style={{ cursor: form.date_debut ? 'pointer' : 'not-allowed' }}
+                />
+                {!form.date_debut && (
+                  <p className="ap-hint">Choisissez d'abord la date de début.</p>
+                )}
+                {form.date_debut && minDateFin && (
+                  <p className="ap-hint">
+                    La date de fin doit être à partir du{' '}
+                    <strong>
+                      {new Date(`${minDateFin}T00:00:00`).toLocaleDateString('fr-FR', {
+                        day: '2-digit', month: 'long', year: 'numeric',
+                      })}
+                    </strong>.
+                  </p>
+                )}
               </div>
               {libelle && (
                 <p style={{ margin: '0 0 8px', fontSize: '0.85rem', color: 'var(--sg-text-secondary)' }}>
@@ -311,7 +370,7 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
                 <label className="ap-label" htmlFor="susp-note">Note (optionnel)</label>
                 <textarea id="susp-note" className="ap-textarea" rows={3}
                   placeholder="Motif de la suspension…"
-                  value={noteSupension} onChange={(e) => setNoteSuspension(e.target.value)} />
+                  value={noteSuspension} onChange={(e) => setNoteSuspension(e.target.value)} />
               </div>
             </div>
             <div className="cfg-modale-pied">

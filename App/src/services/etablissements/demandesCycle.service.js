@@ -1,5 +1,5 @@
 /**
- * Service — Demandes d'extension de cycle.
+ * Service - Demandes d'extension de cycle.
  *
  * Côté établissement  : via /etab-interne (proxy Vite → secret.interne + contexte.tenant)
  * Côté super admin    : via /etab-interne (proxy Vite → secret.interne uniquement)
@@ -26,23 +26,23 @@ const adminApi = () => base  // secret.interne injecté par le proxy
 // ── Côté établissement ─────────────────────────────────────────────
 export const demandesCycleEtabService = {
   lister:   () =>
-    etabApi().get('/v1/interne/mon-etablissement/demandes-cycle'),
+    etabApi().get('/interne/mon-etablissement/demandes-cycle'),
 
   soumettre: (body) =>
-    etabApi().post('/v1/interne/mon-etablissement/demandes-cycle', body),
+    etabApi().post('/interne/mon-etablissement/demandes-cycle', body),
 
   annuler:  (uuid) =>
-    etabApi().delete(`/v1/interne/mon-etablissement/demandes-cycle/${uuid}`),
+    etabApi().delete(`/interne/mon-etablissement/demandes-cycle/${uuid}`),
 }
 
 // ── Côté Super Administrateur ──────────────────────────────────────
 export const demandesCycleAdminService = {
   lister:   (statut = 'en_attente') =>
-    adminApi().get(`/v1/interne/demandes-cycle?statut=${statut}`),
+    adminApi().get(`/interne/demandes-cycle?statut=${statut}`),
 
   accepter: (uuid, note = '') =>
-    adminApi().post(`/v1/interne/demandes-cycle/${uuid}/accepter`, { note }),
+    adminApi().post(`/interne/demandes-cycle/${uuid}/accepter`, { note }),
 
   refuser:  (uuid, note) =>
-    adminApi().post(`/v1/interne/demandes-cycle/${uuid}/refuser`, { note }),
+    adminApi().post(`/interne/demandes-cycle/${uuid}/refuser`, { note }),
 }
