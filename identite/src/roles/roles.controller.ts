@@ -13,10 +13,17 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Get()
-  @ApiOperation({ summary: "Liste les roles disponibles (systeme + personnalises de votre etablissement). Le super_admin peut cibler un etablissement via tenantId." })
+  @ApiOperation({ summary: "Liste les roles disponibles. Super admin : tous les rôles (filtrables par tenantId). Admin établissement : uniquement les rôles assignés à son établissement." })
   async lister(@CurrentUser() acteur: ActeurRole, @Query('tenantId', new ParseUUIDPipe({ optional: true })) tenantId?: string) {
-    const tenant = acteur.roleCode === 'super_admin' ? tenantId : (acteur.tenantId ?? undefined);
-    return { roles: await this.rolesService.lister(tenant) };
+    if (acteur.roleCode === 'super_admin') {
+      // Super admin : tous les rôles, optionnellement filtrés par tenant
+      return { roles: await this.rolesService.lister(tenantId) };
+    }
+    if (acteur.tenantId) {
+      // Admin établissement : uniquement les rôles assignés à son établissement
+      return { roles: await this.rolesService.listerPourEtablissement(acteur.tenantId) };
+    }
+    return { roles: [] };
   }
 
   @Post()

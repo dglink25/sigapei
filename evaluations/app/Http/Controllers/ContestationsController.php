@@ -16,7 +16,7 @@ class ContestationsController extends Controller
 {
     public function __construct(private readonly ContestationService $contestations) {}
 
-    /** POST /v1/contestations — apprenant ou parent rattaché. */
+    /** POST /v1/contestations - apprenant ou parent rattaché. */
     public function ouvrir(Request $request): JsonResponse
     {
         $d = $request->validate([
@@ -27,7 +27,7 @@ class ContestationsController extends Controller
         return $this->ok($this->contestations->ouvrir($d['note_uuid'], $d['motif']), 'Contestation enregistrée.', 201);
     }
 
-    /** GET /v1/contestations — enseignant : celles de ses évaluations ; administrateur : toutes ; demandeur : les siennes. */
+    /** GET /v1/contestations - enseignant : celles de ses évaluations ; administrateur : toutes ; demandeur : les siennes. */
     public function index(Request $request): JsonResponse
     {
         $request->validate(['statut' => ['nullable', Rule::in(['ouverte', 'en_examen', 'resolue', 'rejetee'])]]);
@@ -48,7 +48,7 @@ class ContestationsController extends Controller
         return $this->page($requete->paginate($this->parPage($request)));
     }
 
-    /** PUT /v1/contestations/{uuid}/traiter — enseignant de l'évaluation ou administrateur. */
+    /** PUT /v1/contestations/{uuid}/traiter - enseignant de l'évaluation ou administrateur. */
     public function traiter(Request $request, ContestationNote $contestation): JsonResponse
     {
         $d = $request->validate([

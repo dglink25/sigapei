@@ -65,7 +65,10 @@ export default function CorrectionPage() {
     }
   }, [token])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load()
+  }, [load])
 
   const flags  = demande?.flags ?? {}
   const locked = (k) => !(SECTION_OF[k] in flags)

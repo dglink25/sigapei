@@ -16,7 +16,7 @@ import { ApiTags } from '@nestjs/swagger';
 @Controller('demandes')
 export class DemandesController {
   /**
-   * POST /v1/demandes
+   * POST /demandes
    * Soumet une nouvelle demande de document (tout profil).
    * Declenche la verification d'eligibilite adaptee au type de document.
    */
@@ -29,7 +29,7 @@ export class DemandesController {
   }
 
   /**
-   * GET /v1/demandes/{uuid}
+   * GET /demandes/{uuid}
    * Consulte le statut et l'historique d'une demande.
    */
   @Get(':uuid')
@@ -39,7 +39,7 @@ export class DemandesController {
   }
 
   /**
-   * PUT /v1/demandes/{uuid}/traiter
+   * PUT /demandes/{uuid}/traiter
    * Passe une demande en traitement / genere le document.
    * Necessite la permission "traiter une demande" (CDC section 5.3).
    */
@@ -51,7 +51,7 @@ export class DemandesController {
   }
 
   /**
-   * PUT /v1/demandes/{uuid}/rejeter
+   * PUT /demandes/{uuid}/rejeter
    * Rejette une demande avec motif obligatoire (CDC section 3.1).
    */
   @Put(':uuid/rejeter')

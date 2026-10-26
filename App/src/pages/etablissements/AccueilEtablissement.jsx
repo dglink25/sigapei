@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import {
   MapPin, Mail, Phone, GraduationCap,
-  BookOpen, Building2, LogIn, ExternalLink
+  BookOpen, Building2, LogIn, ExternalLink, LayoutGrid
 } from 'lucide-react'
 import { accueilService } from '../../services/etablissements/etablissement.service'
-import { LOGIN_PATH } from '../../config/identite/routes'
+import { detecterSlugEtablissement, urlPlateforme, lienEtablissement } from '../../lib/etablissements/subdomain'
+import { tokenStore } from '../../lib/identite/tokenStore'
+import LienConnexion from '../../components/etablissements/LienConnexion'
 import { ENV } from '../../config/commun/env'
 import Loader from '../../components/commun/Loader'
 import './AccueilEtablissement.css'
@@ -19,10 +21,21 @@ const TYPE_LABELS = {
 }
 
 export default function AccueilEtablissement() {
-  const { slug } = useParams()
-  const [data,    setData]    = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [erreur,  setErreur]  = useState(null)
+  const { slug: slugParam } = useParams()
+  const slug = slugParam ?? detecterSlugEtablissement()
+  const [data,       setData]       = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [erreur,     setErreur]     = useState(null)
+  const [connecte,   setConnecte]   = useState(false)
+
+  useEffect(() => {
+    // Vérifier si un token valide existe en localStorage (sans appel réseau)
+    const payload = tokenStore.getAccess()
+    setConnecte(!!payload)
+  }, [])
+
+  // Lien "Mon espace" : portail de cet établissement
+  const lienMonEspace = lienEtablissement(slug, '/portail')
 
   useEffect(() => {
     if (!slug) return
@@ -45,7 +58,7 @@ export default function AccueilEtablissement() {
           <Building2 size={48} className="ae-error-icon" />
           <h1>Établissement introuvable</h1>
           <p>{erreur ?? "Cet établissement n'existe pas ou n'est plus actif."}</p>
-          <Link to="/" className="ae-btn">Retour à l'accueil SIGAPEI</Link>
+          <a href={urlPlateforme('/')} className="ae-btn">Retour à l'accueil SIGAPEI</a>
         </div>
       </div>
     )
@@ -56,11 +69,14 @@ export default function AccueilEtablissement() {
     return (
       <div className="ae-error">
         <div className="ae-error-card">
-          <img src="/sigapei.png" alt={ENV.appName} className="ae-error-logo" />
+          {data.logoUrl
+            ? <img src={data.logoUrl} alt={data.nom ?? ''} className="ae-error-logo" />
+            : <img src="/sigapei.png" alt={ENV.appName} className="ae-error-logo" />
+          }
           <Building2 size={48} className="ae-error-icon ae-error-icon--warn" />
           <h1>{data.nom ?? 'Établissement'}</h1>
           <p>{data.message ?? "Cet établissement n'est pas accessible pour le moment."}</p>
-          <Link to="/" className="ae-btn ae-btn--ghost">Retour à l'accueil SIGAPEI</Link>
+          <a href={urlPlateforme('/')} className="ae-btn ae-btn--ghost">Retour à l'accueil SIGAPEI</a>
         </div>
       </div>
     )
@@ -92,9 +108,14 @@ export default function AccueilEtablissement() {
               )}
             </div>
           </div>
-          <Link to={LOGIN_PATH} className="ae-btn ae-btn--login">
-            <LogIn size={16} /> Se connecter
-          </Link>
+          {connecte
+            ? <a href={lienMonEspace} className="ae-btn ae-btn--login">
+                <LayoutGrid size={16} /> Mon espace
+              </a>
+            : <LienConnexion slug={slug} className="ae-btn ae-btn--login">
+                <LogIn size={16} /> Se connecter
+              </LienConnexion>
+          }
         </div>
       </header>
 
@@ -111,12 +132,17 @@ export default function AccueilEtablissement() {
             d'Administration des Établissements Privés d'Enseignement Intégrés
           </p>
           <div className="ae-hero-actions">
-            <Link to={LOGIN_PATH} className="ae-btn">
-              <LogIn size={16} /> Connexion espace établissement
-            </Link>
-            <Link to="/" className="ae-btn ae-btn--ghost">
+            {connecte
+              ? <a href={lienMonEspace} className="ae-btn">
+                  <LayoutGrid size={16} /> Mon espace établissement
+                </a>
+              : <LienConnexion slug={slug} className="ae-btn">
+                  <LogIn size={16} /> Connexion espace établissement
+                </LienConnexion>
+            }
+            <a href={urlPlateforme('/')} className="ae-btn ae-btn--ghost">
               <ExternalLink size={15} /> SIGAPEI
-            </Link>
+            </a>
           </div>
         </div>
       </section>
@@ -163,9 +189,14 @@ export default function AccueilEtablissement() {
           <BookOpen size={32} className="ae-cta-icon" />
           <h3>Accédez à votre espace</h3>
           <p>Élèves, enseignants, parents et administration - connectez-vous pour accéder aux services de l'établissement.</p>
-          <Link to={LOGIN_PATH} className="ae-btn ae-btn--gold">
-            <LogIn size={16} /> Se connecter
-          </Link>
+          {connecte
+            ? <a href={lienMonEspace} className="ae-btn ae-btn--gold">
+                <LayoutGrid size={16} /> Mon espace
+              </a>
+            : <LienConnexion slug={slug} className="ae-btn ae-btn--gold">
+                <LogIn size={16} /> Se connecter
+              </LienConnexion>
+          }
         </div>
       </section>
 
@@ -173,7 +204,7 @@ export default function AccueilEtablissement() {
       <footer className="ae-footer">
         <p>
           {data.nom} · Propulsé par{' '}
-          <a href="/" target="_blank" rel="noreferrer">{ENV.appName}</a>
+          <a href={urlPlateforme('/')} target="_blank" rel="noreferrer">{ENV.appName}</a>
         </p>
       </footer>
     </div>

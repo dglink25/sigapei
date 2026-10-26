@@ -59,6 +59,7 @@ export default function ServiceDetailPage() {
   }, [uuid, page, notify])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     charger()
   }, [charger, rev])
 

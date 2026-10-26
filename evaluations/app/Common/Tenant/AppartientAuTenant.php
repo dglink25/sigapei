@@ -9,7 +9,7 @@ use RuntimeException;
  * Isolation multi-tenant au niveau du modèle (CDC §16 : "accès strictement filtré par tenant_id").
  *
  *  - toute requête est filtrée sur le tenant du contexte ;
- *  - sans contexte tenant, AUCUNE ligne n'est renvoyée (fail closed) — sauf en console
+ *  - sans contexte tenant, AUCUNE ligne n'est renvoyée (fail closed) - sauf en console
  *    (migrations, seeders) où le code doit passer explicitement par Contexte::executerPour() ;
  *  - à la création, tenant_id est imposé par le contexte : impossible d'écrire chez un autre tenant.
  */

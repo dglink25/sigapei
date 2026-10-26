@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Phase 2 (compositions en ligne, bloquée par le contrat E-learning) — table créée pour figer le modèle.
+ * Phase 2 (compositions en ligne, bloquée par le contrat E-learning) - table créée pour figer le modèle.
  * Jamais de donnée biométrique (CDC §10.4) : type d'anomalie et horodatage uniquement. Journal immuable.
  */
 return new class extends Migration

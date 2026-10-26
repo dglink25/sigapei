@@ -43,7 +43,7 @@ export class SmsGatewayMaisonProvider {
   }
 
   formaterMessageOtp(code: string, dureeMinutes: number): string {
-    return `sigapei: votre code est ${code} (valable ${dureeMinutes} min). Ne le partagez jamais.`;
+    return `SIGAPEI: votre code de vérification est ${code}. Valable ${dureeMinutes} min, usage unique. Ne le partagez jamais.`;
   }
 
   async envoyerCodeOtp(telephoneE164: string, code: string, dureeMinutes: number): Promise<EnvoiSmsResultat> {

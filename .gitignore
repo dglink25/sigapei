@@ -12,9 +12,18 @@ storage/*.key
 .env
 .env.*
 !.env.example
+env_secrets/
+
 
 *.log
 logs/
+
+# Python / Django
+__pycache__/
+*.py[cod]
+/elearning/elearningenv/
+venv/
+.venv/
 
 .cache/
 .nest/
@@ -48,3 +57,7 @@ pdf_*.txt
 
 /etablissements/storage/app/private
 /etablissements/storage/app/geonames/
+
+*.sqlite3
+db.sqlite3
+*AGENTS.md

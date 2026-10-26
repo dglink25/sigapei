@@ -9,8 +9,8 @@ use App\Domain\Geo\Pays;
 use App\Support\GenereUuid;
 use Illuminate\Database\Eloquent\Model;
 
-class Etablissement extends Model
-{
+class Etablissement extends Model{
+
     use GenereUuid;
 
     protected $table = 'etablissements';
@@ -27,8 +27,7 @@ class Etablissement extends Model
         'date_validation' => 'datetime',
     ];
 
-    public function pays()
-    {
+    public function pays()    {
         return $this->belongsTo(Pays::class);
     }
 
@@ -60,5 +59,11 @@ class Etablissement extends Model
     public function modulesActifs()
     {
         return $this->hasMany(\App\Domain\Abonnement\EtablissementModule::class);
+    }
+
+    /** Demande d'origine : porte les documents (dont le logo) et les infos du dirigeant. */
+    public function demande()
+    {
+        return $this->hasOne(\App\Domain\Onboarding\DemandeEtablissement::class, 'etablissement_id');
     }
 }

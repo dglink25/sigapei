@@ -1,0 +1,30 @@
+# Contexte de build minimal : on n'embarque ni dépendances locales,
+# ni secrets, ni caches générés (sinon ils écrasent le vendor --no-dev
+# et font échouer la découverte des paquets).
+.git
+.gitignore
+.gitattributes
+
+.env
+.env.*
+!.env.example
+
+vendor/
+node_modules/
+
+# Caches Laravel générés (référencent les paquets de dev)
+bootstrap/cache/*.php
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+
+# Tests et outillage
+tests/
+phpunit.xml
+.phpunit.result.cache
+pint.json
+
+docs/
+docker-compose.yml
+README.md

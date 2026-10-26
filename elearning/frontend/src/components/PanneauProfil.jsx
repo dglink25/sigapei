@@ -5,7 +5,7 @@ import { api, messageErreur } from '../api/client.js'
 import { Icone } from './Icone.jsx'
 import { Interrupteur } from './Interrupteur.jsx'
 import { notifierInfo, notifierSucces } from '../stores/toasts.js'
-import { ROLES, useProfilStore } from '../stores/profil.js'
+import { ROLES, peutPublier, useProfilStore } from '../stores/profil.js'
 import { formaterNombre } from '../utils/format.js'
 
 /** Champ texte UUID avec bouton « Générer » (démonstration sans SSO). */
@@ -75,10 +75,14 @@ const EFFET_ROLE = {
     'Vue administration : statistiques consolidées et paramètres du module.',
 }
 
-/** Préférences de notification (singleton ParametresModule du tenant). */
+/** Préférences de notification (singleton ParametresModule du tenant).
+ * Le PUT est réservé à l'administrateur (bilan RBAC) : les autres rôles
+ * voient les interrupteurs en lecture seule. */
 function CartePreferences() {
   const parametres = useParametres()
   const majParametres = useMajParametres()
+  const role = useProfilStore((etat) => etat.role)
+  const modifiable = role === 'administrateur'
 
   function bascule(cle, coche) {
     majParametres.mutate({ ...parametres.data, [cle]: coche })
@@ -116,11 +120,19 @@ function CartePreferences() {
           libelle={preference.libelle}
           coche={Boolean(parametres.data?.[preference.cle])}
           onChange={(coche) => bascule(preference.cle, coche)}
+          desactive={!modifiable}
         />
       ))}
-      {majParametres.isError && (
-        <p className="erreur-champ" role="alert">
-          {messageErreur(majParametres.error)}
+      {modifiable ? (
+        majParametres.isError && (
+          <p className="erreur-champ" role="alert">
+            {messageErreur(majParametres.error)}
+          </p>
+        )
+      ) : (
+        <p className="aide">
+          Lecture seule : le paramétrage du tenant est réservé à
+          l'administrateur.
         </p>
       )}
       <p className="aide">
@@ -147,7 +159,10 @@ export function PanneauProfil() {
     apprenantId: profil.apprenantId,
   })
 
-  const statistiques = useStatistiques({ enabled: Boolean(profil.tenantId) })
+  // Statistiques du tenant : réservées enseignant/administrateur (RBAC).
+  const statistiques = useStatistiques({
+    enabled: Boolean(profil.tenantId) && peutPublier(profil.role),
+  })
 
   // Santé du backend : une requête légère mesure la latence au chargement.
   const [latence, setLatence] = useState(null)
@@ -163,7 +178,9 @@ export function PanneauProfil() {
     async function mesurer() {
       const debut = performance.now()
       try {
-        await api.get('/statistiques/')
+        // GET /v1/parametres/ : ouvert à tous les rôles (la route
+        // /statistiques/ est réservée enseignant/administrateur).
+        await api.get('/parametres/')
         if (annule) return
         setLatence(Math.round(performance.now() - debut))
         setStatutBackend('en ligne')
@@ -250,7 +267,7 @@ export function PanneauProfil() {
           modifier={modifier}
         />
 
-        {profil.tenantId && (
+        {profil.tenantId && peutPublier(profil.role) && (
           <div className="stats-3-colonnes">
             <div className="carte-interieure" style={{ marginTop: 0 }}>
               <span className="stat-valeur">

@@ -1,9 +1,16 @@
 import { createHttp } from '../../lib/commun/http'
 import { ADMIN_BASE, API_BASE } from '../../config/etablissements/config'
+import { ENV } from '../../config/commun/env'
 
 const api = createHttp(API_BASE)
 const adminApi = createHttp(ADMIN_BASE)
 const PUBLIC = { auth: false }
+
+/** Construit l'URL publique d'un document logo depuis son UUID. */
+function logoUrl(logoDocumentId) {
+  if (!logoDocumentId) return null
+  return `${API_BASE}${ENV.apiPrefix}/documents/${logoDocumentId}`
+}
 
 /** Les listes sont enveloppees : { success, pays: [...] } / { departements: [...] } / { demandes: [...] } */
 function listFrom(r, ...keys) {
@@ -32,10 +39,14 @@ export const geoService = {
 }
 
 export const accueilService = {
-  /** GET /v1/etablissements/{slug}/accueil - public, sans auth */
   lire: async (slug) => {
     const r = await api.get(`/etablissements/${slug}/accueil`, PUBLIC)
-    return r?.accueil ?? r
+    const data = r?.accueil ?? r
+    // Normaliser logoDocumentId en logoUrl pour tous les consommateurs
+    if (data && data.logoDocumentId && !data.logoUrl) {
+      data.logoUrl = logoUrl(data.logoDocumentId)
+    }
+    return data
   },
 }
 

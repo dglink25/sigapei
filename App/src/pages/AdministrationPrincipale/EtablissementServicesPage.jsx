@@ -10,10 +10,9 @@ import ServiceIcon from '../../components/administration/ServiceIcon'
 import Switch from '../../components/administration/Switch'
 import { EtabBadge, EtatBadge } from '../../components/administration/Badges'
 import { Flash, useFlash } from '../../components/administration/Flash'
-import { SkeletonCards } from '../../components/administration/Skeleton'
 import { servicesAcces } from '../../services/identite/servicesAcces.service'
 import { ADMIN_PATHS } from '../../config/etablissements/config'
-import { MAX_SERVICES_PAR_ASSIGNATION, SERVICE_PATHS } from '../../config/services/config'
+import { MAX_SERVICES_PAR_ASSIGNATION } from '../../config/services/config'
 import { dateFr } from './DemandesPage'
 import './admin.css'
 import '../../components/administration/admin-ui.css'
@@ -47,6 +46,7 @@ export default function EtablissementServicesPage() {
   }, [uuid, notify])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     charger()
   }, [charger, rev])
 

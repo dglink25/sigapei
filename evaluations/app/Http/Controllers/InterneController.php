@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 class InterneController extends Controller
 {
     /**
-     * GET /v1/interne/eligibilite-document/{apprenant_uuid} — consommé par Demandes administratives (CDC §17.5).
+     * GET /v1/interne/eligibilite-document/{apprenant_uuid} - consommé par Demandes administratives (CDC §17.5).
      * En-tête X-Tenant-Id obligatoire. Renvoie les bulletins archivés disponibles (dernière version par période).
      */
     public function eligibiliteDocument(Request $request, string $apprenantUuid): JsonResponse
@@ -53,7 +53,7 @@ class InterneController extends Controller
     }
 
     /**
-     * POST /v1/interne/notes-elearning — report d'une note E-learning (devoir noté, tentative de quiz).
+     * POST /v1/interne/notes-elearning - report d'une note E-learning (devoir noté, tentative de quiz).
      * 201 : note créée · 200 : note existante (mise à jour si la valeur a changé, sinon inchangée).
      */
     public function reporterNoteElearning(Request $request, ReportElearningService $service): JsonResponse

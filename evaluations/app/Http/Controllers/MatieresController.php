@@ -55,7 +55,7 @@ class MatieresController extends Controller
         return $this->ok($matiere->fresh('coefficients'), 'Matière mise à jour.');
     }
 
-    /** PUT /v1/matieres/{uuid}/coefficients — remplace les coefficients par niveau. */
+    /** PUT /v1/matieres/{uuid}/coefficients - remplace les coefficients par niveau. */
     public function coefficients(Request $request, Matiere $matiere): JsonResponse
     {
         $d = $request->validate([

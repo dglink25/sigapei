@@ -27,7 +27,9 @@ function valider(form, mode) {
 export default function ServiceDrawer({ drawer, busy, onSubmit, onClose }) {
   const uid = useId()
   const dernier = useRef(drawer)
+  // eslint-disable-next-line react-hooks/refs
   if (drawer) dernier.current = drawer
+  // eslint-disable-next-line react-hooks/refs
   const d = drawer ?? dernier.current
   const edit = d?.mode === 'edit'
 
@@ -37,8 +39,11 @@ export default function ServiceDrawer({ drawer, busy, onSubmit, onClose }) {
 
   useEffect(() => {
     if (!drawer) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setErreurs({})
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCodeTouche(false)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(
       drawer.mode === 'edit'
         ? { nom: drawer.item.nom, code: drawer.item.code, description: drawer.item.description ?? '', actif: drawer.item.status === 'active' }

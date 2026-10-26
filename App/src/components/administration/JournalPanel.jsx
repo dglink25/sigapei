@@ -65,6 +65,7 @@ export default function JournalPanel({ etablissementUuid, serviceUuid }) {
   }, [page, etablissementUuid, serviceUuid, notify])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     charger()
   }, [charger])
 

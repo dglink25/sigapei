@@ -8,7 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Moteur de calcul — priorité absolue (CDC §21 : 100 % des règles de barème).
+ * Moteur de calcul - priorité absolue (CDC §21 : 100 % des règles de barème).
  */
 class CalculServiceTest extends TestCase
 {

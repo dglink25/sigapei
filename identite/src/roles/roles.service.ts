@@ -30,6 +30,25 @@ export class RolesService {
       .getMany();
   }
 
+  /**
+   * Rôles disponibles pour un établissement = ceux assignés via role_etablissements.
+   * Utilisé par les admins établissement pour remplir le dropdown lors de la création/
+   * changement de rôle d'un utilisateur. Exclut super_admin.
+   */
+  async listerPourEtablissement(etablissementUuid: string): Promise<Role[]> {
+    const lignes = await this.roleRepo.manager.query(
+      `SELECT r.uuid, r.code, r.libelle, r."familleAuth", r."estPersonnalise",
+              r."tenantId", r.date_creation AS "dateCreation"
+         FROM "identite"."role_etablissements" re
+         JOIN "identite"."role" r ON r.id = re.role_id
+         JOIN "etablissements"."etablissements" e ON e.id = re.etablissement_id
+        WHERE e.uuid = $1 AND r.code <> 'super_admin'
+        ORDER BY r."estPersonnalise" ASC, r.libelle ASC`,
+      [etablissementUuid],
+    );
+    return lignes;
+  }
+
   async creer(dto: CreerRoleDto, acteur: ActeurRole): Promise<Role> {
     const estSuperAdmin = acteur.roleCode === 'super_admin';
     if (!estSuperAdmin) {

@@ -1,4 +1,4 @@
-# api-finances — Microservice Finances — SIGAPEI
+# api-finances - Microservice Finances - SIGAPEI
 
 Double flux entrant/sortant, abonnement plateforme, hibernation sur impayé.
 

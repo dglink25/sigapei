@@ -1,5 +1,6 @@
 """Vues de l'application Parcours."""
 from django.db import transaction
+from django.db.models import Max
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -7,7 +8,10 @@ from rest_framework.response import Response
 
 from apps.core.choices import StatutContenu
 from apps.core.mixins import TenantViewSetMixin
-from apps.core.permissions import EnseignantAffectePermission
+from apps.core.permissions import (
+    EnseignantAffectePermission,
+    LectureTousEcritureEnseignant,
+)
 from apps.parcours.models import Parcours
 from apps.parcours.serializers import (
     EtapeSerializer,
@@ -28,7 +32,8 @@ class ParcoursViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Parcours.objects.all()
     lookup_field = 'uuid'
-    permission_classes = [EnseignantAffectePermission]
+    permission_classes = [LectureTousEcritureEnseignant,
+                          EnseignantAffectePermission]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -106,6 +111,7 @@ class ParcoursViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
                                '[{"uuid": "...", "ordre": N}, ...].'}
             )
         with transaction.atomic():
+            cibles = []
             for element in reordonnements:
                 etape = parcours.etapes.filter(
                     uuid=element.get('uuid'),
@@ -115,7 +121,20 @@ class ParcoursViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
                         {'reordonner': f"Entrée invalide : {element} "
                                        "(uuid d'étape et ordre requis)."}
                     )
-                etape.ordre = element['ordre']
+                cibles.append((etape, element['ordre']))
+            # Phase 1 : décale temporairement les étapes au-delà du plus
+            # grand ordre du parcours pour libérer les valeurs cibles sans
+            # violer la contrainte UNIQUE(parcours, ordre) pendant la
+            # permutation (ordre reste un entier positif).
+            max_ordre = parcours.etapes.aggregate(
+                maximum=Max('ordre'),
+            )['maximum'] or 0
+            for index, (etape, _) in enumerate(cibles, start=1):
+                etape.ordre = max_ordre + index
+                etape.save(update_fields=['ordre', 'updated_at'])
+            # Phase 2 : applique les ordres finaux.
+            for etape, ordre in cibles:
+                etape.ordre = ordre
                 etape.save(update_fields=['ordre', 'updated_at'])
         etapes = parcours.etapes.all()
         return Response(EtapeSerializer(etapes, many=True).data)

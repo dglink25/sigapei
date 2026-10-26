@@ -5,7 +5,7 @@ namespace App\Domain\Validation;
 use App\Domain\Etablissement\CodeEtablissementService;
 use App\Domain\Etablissement\CyclesAutorisesService;
 use App\Domain\Etablissement\Etablissement;
-use App\Domain\Etablissement\InfoEtablissementService;
+use App\Domain\Etablissement\EtablissementCacheService;
 use App\Domain\Etablissement\MatriculeService;
 use App\Domain\Etablissement\SlugService;
 use App\Domain\Geo\LocalisationService;
@@ -32,6 +32,7 @@ class ValidationService{
         private CodeEtablissementService $codeService,
         private LocalisationService $localisation,
         private OnboardingService $onboarding,
+        private EtablissementCacheService $cache,
     ) {}
 
     public function listerDemandesAInstruire()    {
@@ -99,7 +100,7 @@ class ValidationService{
 
         if (! $demande) {
             throw ValidationException::withMessages([
-                'token' => ['Ce lien de correction est invalide ou a expire.'],
+                'token' => ['Ce lien de correction est invalide ou a expiré.'],
             ]);
         }
 
@@ -167,12 +168,18 @@ class ValidationService{
         // etablissement : le Super Administrateur demande alors une correction.
         $this->localisation->exigerComplete($demande);
 
-        $etablissement = DB::transaction(function () use ($demande, $etablissementForm, $types, $nom) {
+        // Logo de la demande, rattache a l'etablissement. Obligatoire pour les
+        // nouvelles soumissions (OnboardingService::soumettre) ; les demandes
+        // anterieures sans logo restent validables (logo_document_id = null).
+        $logo = $demande->documents()->where('type', 'logo')->latest('id')->first();
+
+        $etablissement = DB::transaction(function () use ($demande, $etablissementForm, $types, $nom, $logo) {
             $etablissement = Etablissement::create([
                 'code' => $this->codeService->generer(),
                 'slug' => $this->slugService->genererDepuisNom($nom),
                 'matricule' => $this->matriculeService->genererDepuisNom($nom),
                 'nom' => $nom,
+                'logo_document_id' => $logo?->uuid,
                 'types' => $types,
                 'annee_ouverture' => $etablissementForm['annee_ouverture'] ?? now()->year,
                 'pays_id' => $demande->pays_id,
@@ -223,7 +230,8 @@ class ValidationService{
         $etablissement->statut = 'suspendu';
         $etablissement->save();
 
-        $this->invaliderCaches($etablissement);
+        // Chaque changement de statut invalide immediatement tous les caches publics de l'etablissement.
+        $this->cache->invalider($etablissement);
         $this->rabbitmq->publier('etablissement.suspendu', ['tenantUuid' => $etablissement->uuid]);
 
         return $etablissement;
@@ -235,18 +243,10 @@ class ValidationService{
         $etablissement->statut = 'actif';
         $etablissement->save();
 
-        $this->invaliderCaches($etablissement);
+        $this->cache->invalider($etablissement);
         $this->rabbitmq->publier('etablissement.reactive', ['tenantUuid' => $etablissement->uuid]);
 
         return $etablissement;
-    }
-
-    /** Chaque changement de statut invalide immediatement tous les caches publics de l'etablissement. */
-    private function invaliderCaches(Etablissement $etablissement): void
-    {
-        Cache::forget("slug:resolution:{$etablissement->slug}");
-        Cache::forget("accueil:etablissement:{$etablissement->slug}");
-        Cache::forget(InfoEtablissementService::cleCache($etablissement->code));
     }
 
     public function resoudreSlug(string $slug): ?array

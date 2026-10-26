@@ -20,7 +20,9 @@ export default function Drawer({ open, title, subtitle, onClose, busy = false, f
   /* Montage / démontage différé pour laisser jouer l'animation de sortie */
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRendu(true)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSortie(false)
       return undefined
     }

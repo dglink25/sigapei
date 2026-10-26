@@ -8,7 +8,7 @@ use App\Integrations\RhClient;
 use App\Integrations\ScolariteClient;
 
 /**
- * Contrôle fin des droits (CDC Tableau 1, §16) — après le contrôle de rôle des routes :
+ * Contrôle fin des droits (CDC Tableau 1, §16) - après le contrôle de rôle des routes :
  *  - administrateur : tout son établissement (le filtre tenant est appliqué partout) ;
  *  - enseignant     : uniquement les classes/matières où il est affecté ;
  *  - apprenant      : uniquement son propre dossier ;

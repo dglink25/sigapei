@@ -4,8 +4,11 @@ import { useStatistiques } from '../api/admin.js'
 import { CarteKpi } from '../components/CarteKpi.jsx'
 import { Icone } from '../components/Icone.jsx'
 import { SqueletteCarte } from '../components/Squelette.jsx'
-import { useProfilStore } from '../stores/profil.js'
+import { peutPublier, useProfilStore } from '../stores/profil.js'
 import { formaterNombre } from '../utils/format.js'
+
+// Le raccourci Quiz est masqué au parent (pas de passage de quiz).
+const SANS_PARENT = ['apprenant', 'enseignant', 'administrateur']
 
 const RACCOURCIS = [
   {
@@ -28,6 +31,7 @@ const RACCOURCIS = [
     texte: 'Composer des QCM et questions ouvertes, suivre les tentatives et la validation.',
     icone: 'quiz',
     bandeau: 'vert',
+    roles: SANS_PARENT,
   },
   {
     vers: '/bibliotheque',
@@ -40,7 +44,12 @@ const RACCOURCIS = [
 
 export function Accueil() {
   const tenantId = useProfilStore((etat) => etat.tenantId)
-  const statistiques = useStatistiques({ enabled: Boolean(tenantId) })
+  const role = useProfilStore((etat) => etat.role)
+  // Indicateurs du tenant : réservés enseignant/administrateur (RBAC).
+  const indicateurs = peutPublier(role)
+  const statistiques = useStatistiques({
+    enabled: Boolean(tenantId) && indicateurs,
+  })
 
   return (
     <>
@@ -56,7 +65,8 @@ export function Accueil() {
       </p>
 
       <div className="grille-cartes">
-        {RACCOURCIS.map((raccourci) => (
+        {RACCOURCIS.filter((r) => !r.roles || r.roles.includes(role)).map(
+          (raccourci) => (
           <Link
             key={raccourci.vers}
             to={raccourci.vers}
@@ -71,6 +81,7 @@ export function Accueil() {
         ))}
       </div>
 
+      {indicateurs && (
       <section className="section">
         <div className="element-tete">
           <h2>Indicateurs du module</h2>
@@ -120,6 +131,7 @@ export function Accueil() {
           </div>
         )}
       </section>
+      )}
     </>
   )
 }

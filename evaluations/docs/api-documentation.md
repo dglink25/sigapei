@@ -1,4 +1,4 @@
-# Documentation de l'API — evaluations (Notes, barèmes, bulletins)
+# Documentation de l'API - evaluations (Notes, barèmes, bulletins)
 
 Microservice de la plateforme **SIGAPEI** : notes, barèmes, coefficients, moyennes, classements, bulletins et contestations.
 
@@ -6,7 +6,7 @@ Microservice de la plateforme **SIGAPEI** : notes, barèmes, coefficients, moyen
 - **Préfixe** : `/v1`
 - **Santé** : `GET /health` (et `GET /sante`)
 - **Documentation interactive (Swagger UI)** : `GET /docs`
-- **Contrat OpenAPI 3 (JSON)** : `GET /docs-json` — fichier source : [`docs/openapi.json`](openapi.json), importable dans Postman, Insomnia ou Swagger Editor
+- **Contrat OpenAPI 3 (JSON)** : `GET /docs-json` - fichier source : [`docs/openapi.json`](openapi.json), importable dans Postman, Insomnia ou Swagger Editor
 - **Base** : PostgreSQL (Neon), schéma `evaluations`
 
 ---
@@ -97,23 +97,23 @@ Erreur :
 
 ### 3.1 Barèmes et règles
 
-#### `GET /v1/grilles?cycle=secondaire` — administrateur, enseignant
+#### `GET /v1/grilles?cycle=secondaire` - administrateur, enseignant
 Barèmes de la plateforme (`origine: plateforme`) et ceux de l'établissement.
 ```json
 { "success": true, "data": [ {
   "uuid": "31398e42-9cd0-427b-b341-ea8a2275dd6e", "code": "beninois_secondaire",
-  "nom": "Programme béninois — Secondaire (sur 20)", "cycle": "secondaire", "programme": "beninois",
+  "nom": "Programme béninois - Secondaire (sur 20)", "cycle": "secondaire", "programme": "beninois",
   "type_notation": "chiffree", "note_min": "0.00", "note_max": "20.00",
   "avec_coefficients": true, "avec_classement": true, "origine": "plateforme" } ] }
 ```
 
-#### `POST /v1/grilles` — administrateur
+#### `POST /v1/grilles` - administrateur
 Barème propre à l'établissement. Champs : `code` (a-z, 0-9, _), `nom`, `cycle`, `programme` (`beninois` | `francais` | `autre`), `type_notation` (`chiffree` | `competences`), `note_min`, `note_max`, `avec_coefficients`, `avec_classement`, `niveaux_competence` (obligatoire pour `competences` : `[{"code":"A","libelle":"Acquis"}, …]`), `description`.
 
-#### `GET /v1/parametres-notation/{cycle}` — administrateur, enseignant
+#### `GET /v1/parametres-notation/{cycle}` - administrateur, enseignant
 Renvoie **409 `PARAMETRES_NON_CONFIGURES`** tant que l'établissement n'a pas configuré le cycle. Aucun calcul n'est possible avant.
 
-#### `PUT /v1/parametres-notation/{cycle}` — administrateur
+#### `PUT /v1/parametres-notation/{cycle}` - administrateur
 ```json
 {
   "grille_uuid": "31398e42-9cd0-427b-b341-ea8a2275dd6e",
@@ -152,7 +152,7 @@ Erreur d'échelle (422) :
   "error": { "code": "DONNEES_INVALIDES", "details": { "echelle_appreciation": ["Tranche 2 : …"] } } }
 ```
 
-#### `POST /v1/modeles-bulletin` — administrateur
+#### `POST /v1/modeles-bulletin` - administrateur
 Mise en page du bulletin d'un cycle (aucune règle de calcul). Renvoie 201 à la création, 200 à la mise à jour.
 ```json
 { "cycle": "secondaire",
@@ -165,7 +165,7 @@ Mise en page du bulletin d'un cycle (aucune règle de calcul). Renvoie 201 à la
 
 | Méthode | Route | Rôles | Corps |
 |---|---|---|---|
-| `GET` | `/v1/matieres?actives=true` | admin, enseignant | — (paginé) |
+| `GET` | `/v1/matieres?actives=true` | admin, enseignant | - (paginé) |
 | `POST` | `/v1/matieres` | admin | `{"code":"MATH","nom":"Mathématiques","coefficient_defaut":"4"}` |
 | `PUT` | `/v1/matieres/{uuid}` | admin | `nom`, `coefficient_defaut`, `active` (tous optionnels) |
 | `PUT` | `/v1/matieres/{uuid}/coefficients` | admin | `{"coefficients":[{"cycle":"secondaire","niveau":"Tle","coefficient":"5"}]}` (remplace tout) |
@@ -180,16 +180,16 @@ Le `niveau` doit correspondre exactement au `niveau` de la classe chez Scolarit�
 
 ### 3.3 Périodes
 
-#### `POST /v1/periodes` — administrateur
+#### `POST /v1/periodes` - administrateur
 ```json
 { "annee_scolaire": "2026-2027", "cycle": "secondaire", "type": "trimestre", "numero": 1,
   "libelle": "1er trimestre", "date_debut": "2026-10-01", "date_fin": "2026-12-20" }
 ```
 Réponse 201 : la période avec `uuid` et `statut: "ouverte"`. Refus 409 si les dates chevauchent une autre période du même cycle.
 
-#### `GET /v1/periodes?annee_scolaire=2026-2027&cycle=secondaire` — tous les rôles de l'établissement (paginé)
+#### `GET /v1/periodes?annee_scolaire=2026-2027&cycle=secondaire` - tous les rôles de l'établissement (paginé)
 
-#### `POST /v1/periodes/{uuid}/cloturer` — administrateur
+#### `POST /v1/periodes/{uuid}/cloturer` - administrateur
 Réponse **202** : la clôture tourne en tâche de fond. Elle calcule toutes les classes, archive un bulletin par apprenant, puis passe la période en `cloturee`. C'est tout ou rien : en cas d'échec, la période redevient `ouverte`.
 ```json
 { "success": true, "message": "Clôture lancée : les bulletins sont en cours d'archivage.",
@@ -199,7 +199,7 @@ Une deuxième demande renvoie 409 `PERIODE_NON_OUVERTE`.
 
 ### 3.4 Évaluations
 
-#### `POST /v1/evaluations` — enseignant affecté, administrateur
+#### `POST /v1/evaluations` - enseignant affecté, administrateur
 ```json
 { "periode_uuid": "01a1372e-25fd-726e-9ffa-df5004030b6b",
   "matiere_uuid": "01a1372e-2602-7080-9c18-d25037ea394d",
@@ -214,14 +214,14 @@ Une deuxième demande renvoie 409 `PERIODE_NON_OUVERTE`.
 - `enseignant_uuid` : obligatoire si c'est l'administrateur qui crée l'évaluation.
 - La date doit être dans la période, et la période doit être ouverte.
 
-#### `GET /v1/evaluations?classe_uuid=…&periode_uuid=…&matiere_uuid=…` — paginé (l'enseignant ne voit que les siennes)
+#### `GET /v1/evaluations?classe_uuid=…&periode_uuid=…&matiere_uuid=…` - paginé (l'enseignant ne voit que les siennes)
 
-#### `POST /v1/evaluations/{uuid}/verrouiller` — enseignant de l'évaluation
+#### `POST /v1/evaluations/{uuid}/verrouiller` - enseignant de l'évaluation
 L'enseignant ferme sa saisie. Ensuite, seule l'administration peut corriger.
 
 ### 3.5 Notes
 
-#### `POST /v1/notes` — enseignant de l'évaluation
+#### `POST /v1/notes` - enseignant de l'évaluation
 Saisie en lot (1 à 200 notes), adaptée à une grille façon tableur avec sauvegarde à chaque cellule.
 ```json
 { "evaluation_uuid": "01a1372e-261c-73b4-ac4c-ff5964c32c41",
@@ -249,10 +249,10 @@ Réponse 200 :
   - enseignant non affecté : 403.
 - Chaque modification est inscrite dans un journal que personne ne peut modifier.
 
-#### `GET /v1/notes/classe/{classe_uuid}?periode_uuid=…&matiere_uuid=…` — administrateur, enseignant affecté
+#### `GET /v1/notes/classe/{classe_uuid}?periode_uuid=…&matiere_uuid=…` - administrateur, enseignant affecté
 `matiere_uuid` est obligatoire pour l'enseignant. La réponse contient les évaluations de la classe et, pour chacune, `saisie_verrouillee` et ses `notes` avec leur `version`.
 
-#### `PUT /v1/notes/{note_uuid}/corriger` — administrateur
+#### `PUT /v1/notes/{note_uuid}/corriger` - administrateur
 ```json
 { "statut": "saisie", "valeur": "16", "version": 1, "motif": "Erreur de report constatée sur la copie." }
 ```
@@ -292,7 +292,7 @@ Lecture de l'exemple : l'interro vaut 8/10, soit 16/20. La moyenne de maths est 
 #### `GET /v1/bulletins/apprenant/{apprenant_uuid}/pdf?periode_uuid=…`
 Renvoie `document_uuid` (service Documents). **Tant que le service Documents n'existe pas, la réponse est 409 `PDF_EN_ATTENTE`.**
 
-#### `GET /v1/classements/classe/{classe_uuid}?periode_uuid=…` — administrateur, enseignant de la classe
+#### `GET /v1/classements/classe/{classe_uuid}?periode_uuid=…` - administrateur, enseignant de la classe
 ```json
 { "data": {
   "classement_actif": true, "moyenne_classe": "13.25", "effectif_classe": 2,
@@ -308,7 +308,7 @@ Si le classement est désactivé, `rang` et `ex_aequo` ne sont pas renvoyés.
 | Méthode | Route | Rôles | Corps |
 |---|---|---|---|
 | `POST` | `/v1/contestations` | apprenant (sa note), parent (enfant rattaché) | `{"note_uuid":"…","motif":"Une question n'a pas été comptée dans le barème."}` |
-| `GET` | `/v1/contestations?statut=ouverte` | admin (toutes), enseignant (ses évaluations), demandeur (les siennes) | — |
+| `GET` | `/v1/contestations?statut=ouverte` | admin (toutes), enseignant (ses évaluations), demandeur (les siennes) | - |
 | `PUT` | `/v1/contestations/{uuid}/traiter` | enseignant de l'évaluation, admin | `{"statut":"resolue","reponse":"Barème revu : correction demandée à l'administration."}` |
 
 - Statuts : `ouverte` → `en_examen` → `resolue` ou `rejetee`.
@@ -319,7 +319,7 @@ Si le classement est désactivé, `rang` et `ex_aequo` ne sont pas renvoyés.
 
 ### 3.8 Interne (Demandes administratives, E-learning)
 
-#### `GET /v1/interne/eligibilite-document/{apprenant_uuid}` — `X-Internal-Secret` + `X-Tenant-Id`
+#### `GET /v1/interne/eligibilite-document/{apprenant_uuid}` - `X-Internal-Secret` + `X-Tenant-Id`
 ```json
 { "data": { "apprenant_uuid": "d48d11b1-…", "eligible": true,
   "bulletins": [ { "bulletin_uuid": "01a1372e-2697-…", "periode_uuid": "01a1372e-25fd-…",
@@ -328,7 +328,7 @@ Si le classement est désactivé, `rang` et `ex_aequo` ne sont pas renvoyés.
 
 ---
 
-#### `POST /v1/interne/notes-elearning` — `X-Internal-Secret` + `X-Tenant-Id` (E-learning)
+#### `POST /v1/interne/notes-elearning` - `X-Internal-Secret` + `X-Tenant-Id` (E-learning)
 
 Report de la note d'un devoir noté ou d'une tentative de quiz. La note compte **directement** dans la moyenne.
 
@@ -379,6 +379,6 @@ Réponse `201` (créée) ou `200` (déjà reportée) : `{"success": true, "data"
 | Service | Endpoint appelé | Champs exigés |
 |---|---|---|
 | Scolarité | `GET /v1/interne/apprenants?uuid=` et `?classe_uuid=&statut=actif` | `uuid`, `statut`, `classe{uuid,cycle,niveau}`, **`utilisateur_uuid`**, **`parents[].parent_uuid`** |
-| Scolarité | `GET /v1/interne/emplois-du-temps?classe_uuid=&enseignant_uuid=` | **`enseignant_uuid`**, **`matiere_uuid`**, `classe_uuid`, `statut` |
+| RH | `GET /v1/interne/affectations/verifier?enseignant_uuid=&matiere_uuid=&classe_uuid=` et `GET /v1/interne/affectations?enseignant_uuid=&classe_uuid=` | `affecte` + écho des 3 uuids ; liste `enseignant_uuid`, `matiere_uuid`, `classe_uuid`, `statut` |
 
 Les champs en gras sont demandés à Scolarité. Tant qu'ils manquent, les actions qui en dépendent répondent **503** au lieu d'autoriser au hasard.

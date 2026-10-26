@@ -1,0 +1,143 @@
+/**
+ * PanneauCyclePage - Vue principale d'un cycle.
+ *
+ * Affiche les onglets adaptés au cycle sélectionné :
+ *   Maternelle  : Groupes | Niveaux & Classes | Matières
+ *   Primaire    : Groupes | Niveaux & Classes | Matières
+ *   Secondaire  : Groupes/Sections | Niveaux & Classes | Séries | Matières
+ *   Université  : Départements | Filières | Niveaux | Cohortes | Matières
+ *
+ * L'onglet actif est piloté par ?onglet= dans l'URL.
+ */
+import { AlertTriangle } from 'lucide-react'
+
+import PanneauSubdivisions from './PanneauSubdivisions'
+import PanneauNiveaux      from './PanneauNiveaux'
+import PanneauClasses      from './PanneauClasses'
+import PanneauSeries       from './PanneauSeries'
+import PanneauCohortes     from './PanneauCohortes'
+import PanneauMatieres     from './PanneauMatieres'
+
+// Onglets par cycle
+const ONGLETS_CYCLE = {
+  maternelle: [
+    { id: 'groupes',  label: 'Groupes' },
+    { id: 'niveaux',  label: 'Niveaux' },
+    { id: 'classes',  label: 'Classes' },
+    { id: 'matieres', label: 'Matières' },
+  ],
+  primaire: [
+    { id: 'groupes',  label: 'Groupes' },
+    { id: 'niveaux',  label: 'Niveaux' },
+    { id: 'classes',  label: 'Classes' },
+    { id: 'matieres', label: 'Matières' },
+  ],
+  secondaire: [
+    { id: 'groupes',  label: 'Groupes / Sections' },
+    { id: 'niveaux',  label: 'Niveaux' },
+    { id: 'classes',  label: 'Classes' },
+    { id: 'series',   label: 'Séries' },
+    { id: 'matieres', label: 'Matières' },
+  ],
+  universitaire: [
+    { id: 'groupes',  label: 'Départements' },
+    { id: 'filieres', label: 'Filières' },
+    { id: 'niveaux',  label: "Niveaux d'études" },
+    { id: 'cohortes', label: 'Cohortes' },
+    { id: 'matieres', label: 'Matières / UE' },
+  ],
+}
+
+const CYCLE_LABELS = {
+  maternelle: 'Maternelle', primaire: 'Primaire',
+  secondaire: 'Secondaire', universitaire: 'Université',
+}
+
+export default function PanneauCyclePage({
+  cycle, cycleObj, anneeActive, onTerminee, searchParams, setSearchParams,
+}) {
+  const onglets   = ONGLETS_CYCLE[cycle] ?? []
+  const ongletActif = searchParams.get('onglet') ?? onglets[0]?.id ?? ''
+
+  const allerOnglet = (id) =>
+    setSearchParams({ cycle, onglet: id })
+
+  const propsCommuns = {
+    anneeActive,
+    onTerminee,
+    cycleFiltre: cycle,
+    cycleObj,
+  }
+
+  if (!anneeActive) {
+    return (
+      <div className="ap-card ap-empty">
+        <AlertTriangle size={32} aria-hidden="true" />
+        <p>Sélectionnez d'abord une année académique dans <strong>Années académiques</strong>.</p>
+      </div>
+    )
+  }
+
+  function renduOnglet() {
+    switch (ongletActif) {
+      case 'groupes':
+        return (
+          <PanneauSubdivisions
+            {...propsCommuns}
+            labelTitre={cycle === 'universitaire' ? 'Départements' : 'Groupes'}
+            labelType={cycle === 'universitaire' ? 'departement' : 'groupe'}
+          />
+        )
+      case 'filieres':
+        return <PanneauSeries {...propsCommuns} cycleForce="universitaire" labelTitre="Filières" />
+      case 'niveaux':
+        return <PanneauNiveaux {...propsCommuns} />
+      case 'classes':
+        return <PanneauClasses {...propsCommuns} />
+      case 'series':
+        return <PanneauSeries {...propsCommuns} cycleForce="secondaire" labelTitre="Séries" />
+      case 'cohortes':
+        return <PanneauCohortes {...propsCommuns} />
+      case 'matieres':
+        return <PanneauMatieres {...propsCommuns} />
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="cfg-tab">
+      {/* En-tête du cycle */}
+      <div className="ap-page-head">
+        <div>
+          <h2 className="ap-page-title">{CYCLE_LABELS[cycle] ?? cycle}</h2>
+          <p className="ap-page-sub">
+            Configurez l'organisation pédagogique du cycle {CYCLE_LABELS[cycle]?.toLowerCase()}
+            {anneeActive ? ` pour l'année ${anneeActive.libelle}` : ''}.
+          </p>
+        </div>
+      </div>
+
+      {/* Onglets contextuels */}
+      <div className="cfg-onglets" role="tablist" aria-label={`Onglets ${CYCLE_LABELS[cycle]}`}>
+        {onglets.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={ongletActif === id}
+            className={`cfg-onglet${ongletActif === id ? ' is-actif' : ''}`}
+            onClick={() => allerOnglet(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Contenu de l'onglet */}
+      <div className="cfg-onglet-contenu">
+        {renduOnglet()}
+      </div>
+    </div>
+  )
+}

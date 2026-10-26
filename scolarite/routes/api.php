@@ -17,8 +17,9 @@ Route::get('/sante', function () {
     ]);
 });
 
-// Documentation interactive - catalogue complet des endpoints (public, pas de JWT requis)
-Route::get('/docs', [DocsController::class, 'catalogue']);
+// Documentation interactive Swagger UI (hors prefixe v1, comme sur api-identite et api-etablissements)
+Route::get('/docs', [DocsController::class, 'interfaceSwagger']);
+Route::get('/docs-json', [DocsController::class, 'specification']);
 
 // Routes metier sous le prefixe v1, protegees par VerifyTenantAndJwt
 // Roles identite utilisables : super_admin | administrateur | personnel | enseignant | apprenant | parent

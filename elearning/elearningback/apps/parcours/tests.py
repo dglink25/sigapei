@@ -15,7 +15,10 @@ class ParcoursAPITests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.tenant = uuid4()
-        self.client.credentials(HTTP_X_TENANT_ID=str(self.tenant))
+        # Toute requête /v1/ exige aussi l'en-tête X-Role (middleware).
+        self.client.credentials(
+            HTTP_X_TENANT_ID=str(self.tenant), HTTP_X_ROLE='enseignant',
+        )
         self.matiere_id = uuid4()
         self.enseignant_id = uuid4()
         self.classe_id = uuid4()
@@ -40,7 +43,27 @@ class ParcoursAPITests(TestCase):
         """Sans X-Tenant-ID, TenantMiddleware refuse (400)."""
         reponse = APIClient().get('/v1/parcours/')
         self.assertEqual(reponse.status_code, 400)
-        self.assertIn('X-Tenant-ID', reponse.data['detail'])
+        self.assertIn('X-Tenant-ID', reponse.json()['detail'])
+
+    def test_en_tete_x_role_exige(self):
+        """Sans X-Role, le middleware refuse la requête (403)."""
+        client = APIClient()
+        client.credentials(HTTP_X_TENANT_ID=str(self.tenant))
+        reponse = client.get('/v1/parcours/')
+        self.assertEqual(reponse.status_code, 403)
+        self.assertIn('X-Role', reponse.data['detail'])
+
+    def test_apprenant_ne_peut_pas_ecrire(self):
+        """Rôle apprenant : lecture autorisée, création refusée."""
+        self.client.credentials(
+            HTTP_X_TENANT_ID=str(self.tenant), HTTP_X_ROLE='apprenant',
+        )
+        reponse = self.client.post(
+            '/v1/parcours/', {'titre': 'Interdit'}, format='json',
+        )
+        self.assertEqual(reponse.status_code, 403)
+        reponse = self.client.get('/v1/parcours/')
+        self.assertEqual(reponse.status_code, 200)
 
     def test_creation_puis_listing(self):
         donnees = {

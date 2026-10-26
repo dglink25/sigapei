@@ -5,11 +5,11 @@ namespace App\Integrations;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Seul client HTTP du module — appels vers E-learning.
+ * Seul client HTTP du module - appels vers E-learning.
  * Guide suprême design §2 compositions + §02 §5 :
  * Authentification par jeton de service (jamais JWT utilisateur).
  *
- * PHASE 2 — bloqué tant que le correctif Roc n'est pas validé.
+ * PHASE 2 - bloqué tant que le correctif Roc n'est pas validé.
  * Guide tasks C0 : ne démarrer aucune tâche composition avant C0.1 + C0.2.
  */
 class ElearningClient
@@ -35,6 +35,6 @@ class ElearningClient
      */
     public function creerQuizComposition(array $payload): string
     {
-        throw new \RuntimeException('PHASE 2 — bloqué : TODO(C0.2) contrat E-learning non validé.');
+        throw new \RuntimeException('PHASE 2 - bloqué : TODO(C0.2) contrat E-learning non validé.');
     }
 }

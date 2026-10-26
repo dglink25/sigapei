@@ -1,5 +1,5 @@
 # ============================================================
-# api-evaluations — image de production en deux étapes
+# api-evaluations - image de production en deux étapes
 # PHP 8.4 (le composer.lock est résolu pour PHP >= 8.4.1), extensions pdo_pgsql, redis, amqp, bcmath
 # Serveur : nginx + php-fpm (supervisord). Port interne 4006 (non publié, voir docker-compose.yml)
 # La même image sert l'API, le worker de file et le planificateur (commande différente).

@@ -1,10 +1,14 @@
 """Vues de l'application Bibliothèque."""
-from rest_framework import viewsets
+from rest_framework import status, viewsets
+from rest_framework.response import Response
 
 from apps.bibliotheque.models import RessourcesBibliotheque
 from apps.bibliotheque.serializers import RessourcesBibliothequeSerializer
 from apps.core.mixins import TenantViewSetMixin
-from apps.core.permissions import EnseignantAffectePermission
+from apps.core.permissions import (
+    EnseignantAffectePermission,
+    LectureTousEcritureEnseignant,
+)
 
 
 class RessourcesViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
@@ -16,7 +20,16 @@ class RessourcesViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
     queryset = RessourcesBibliotheque.objects.select_related('media')
     serializer_class = RessourcesBibliothequeSerializer
     lookup_field = 'uuid'
-    permission_classes = [EnseignantAffectePermission]
+    permission_classes = [LectureTousEcritureEnseignant,
+                          EnseignantAffectePermission]
+
+    def destroy(self, request, *args, **kwargs):
+        """Règle 3 : aucune ressource n'est supprimée physiquement."""
+        return Response(
+            {'detail': 'Suppression physique interdite : utiliser le '
+                       "statut 'archive'."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def get_queryset(self):
         queryset = super().get_queryset()

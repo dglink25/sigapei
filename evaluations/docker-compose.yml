@@ -1,5 +1,5 @@
 # ============================================================
-# api-evaluations — orchestration (CDC §19.1)
+# api-evaluations - orchestration (CDC §19.1)
 # PostgreSQL (Neon), Redis et RabbitMQ partagés : réseau externe `sigapei`.
 # Pré-requis : docker network create sigapei
 # Trois processus, une seule image : API HTTP, worker de file (clôtures), planificateur (escalades).

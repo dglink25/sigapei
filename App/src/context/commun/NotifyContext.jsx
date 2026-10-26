@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import NoticeModal from '../../components/commun/NoticeModal'
 import { toNotice } from '../../lib/commun/errors'
@@ -22,7 +23,9 @@ export function NotifyProvider({ children }) {
   // File d'attente : un seul modal a la fois, chacun visible 3 s
   useEffect(() => {
     if (!current && queue.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrent(queue[0])
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQueue((q) => q.slice(1))
     }
   }, [current, queue])

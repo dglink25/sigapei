@@ -4,36 +4,64 @@ import { Link, NavLink, Outlet } from 'react-router'
 import { Icone } from './Icone.jsx'
 import { ROLES, useProfilStore } from '../stores/profil.js'
 
+// Rôles autorisés par entrée (bilan RBAC validé) : pas de `roles` =
+// tous les rôles. L'apprenant et le parent ne voient ni Médias, ni
+// Statistiques & Admin, ni Paramètres ; le parent n'a pas les quiz.
+const GESTION = ['enseignant', 'administrateur']
+const SANS_PARENT = ['apprenant', 'enseignant', 'administrateur']
+const ADMINISTRATION = ['administrateur']
+const ELEVES = ['apprenant', 'parent']
+
+function estAutorise(entree, role) {
+  return !entree.roles || entree.roles.includes(role)
+}
+
 // Navigation latérale PC & administration (icônes Material Symbols).
 const NAVIGATION = [
-  { vers: '/', libelle: 'Tableau de Bord', exact: true, icone: 'dashboard' },
+  {
+    vers: '/',
+    libelle: 'Tableau de Bord',
+    exact: true,
+    icone: 'dashboard',
+  },
   { vers: '/cours', libelle: 'Cours & Syllabus', icone: 'menu_book' },
   { vers: '/devoirs', libelle: 'Devoirs & Évaluations', icone: 'assignment' },
-  { vers: '/quiz', libelle: 'Quiz & QCM', icone: 'quiz' },
+  { vers: '/quiz', libelle: 'Quiz & QCM', icone: 'quiz', roles: SANS_PARENT },
   {
     vers: '/administration/statistiques',
     libelle: 'Statistiques & Admin',
     icone: 'monitoring',
+    roles: GESTION,
   },
   { vers: '/bibliotheque', libelle: 'Bibliothèque', icone: 'local_library' },
-  { vers: '/medias', libelle: 'Médias', icone: 'video_library' },
+  { vers: '/medias', libelle: 'Médias', icone: 'video_library', roles: GESTION },
   {
     vers: '/administration/parametres',
     libelle: 'Paramètres',
     icone: 'settings',
+    roles: ADMINISTRATION,
   },
 ]
 
-// Onglets de la navigation basse mobile (5 entrées, actif = or).
+// Onglets de la navigation basse mobile (5 entrées, actif = or). La
+// Bibliothèque remplace l'onglet Admin pour les rôles apprenant/parent,
+// qui n'ont pas accès aux pages d'administration.
 const NAVIGATION_MOBILE = [
   { vers: '/', libelle: 'Accueil', exact: true, icone: 'home' },
   { vers: '/cours', libelle: 'Cours', icone: 'menu_book' },
   { vers: '/devoirs', libelle: 'Devoirs', icone: 'assignment' },
-  { vers: '/quiz', libelle: 'Quiz', icone: 'quiz' },
+  { vers: '/quiz', libelle: 'Quiz', icone: 'quiz', roles: SANS_PARENT },
   {
     vers: '/administration/statistiques',
     libelle: 'Admin',
     icone: 'admin_panel_settings',
+    roles: GESTION,
+  },
+  {
+    vers: '/bibliotheque',
+    libelle: 'Bibliothèque',
+    icone: 'local_library',
+    roles: ELEVES,
   },
 ]
 
@@ -76,7 +104,8 @@ export function Layout() {
         </div>
 
         <nav aria-label="Navigation principale">
-          {NAVIGATION.map(({ vers, libelle, exact, icone }) => (
+          {NAVIGATION.filter((entree) => estAutorise(entree, role)).map(
+            ({ vers, libelle, exact, icone }) => (
             <NavLink key={vers} to={vers} end={exact}>
               <Icone nom={icone} />
               {libelle}
@@ -185,7 +214,8 @@ export function Layout() {
 
         {/* Navigation basse mobile (5 onglets) */}
         <nav className="bottom-nav" aria-label="Navigation mobile">
-          {NAVIGATION_MOBILE.map(({ vers, libelle, exact, icone }) => (
+          {NAVIGATION_MOBILE.filter((entree) => estAutorise(entree, role)).map(
+            ({ vers, libelle, exact, icone }) => (
             <NavLink
               key={vers}
               to={vers}

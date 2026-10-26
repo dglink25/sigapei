@@ -3,7 +3,9 @@ import { map, Observable } from 'rxjs';
 
 /**
  * Enveloppe toute reponse 2xx sous la forme { success: true, ...data }
- * sauf si le controleur a deja renvoye un champ "success" (evite le double-wrap).
+ * - Si data est un tableau : { success: true, data: [...] }
+ * - Si data est un objet avec "success" : pas de double-wrap
+ * - Sinon : { success: true, ...data }
  */
 @Injectable()
 export class ResponseInterceptor implements NestInterceptor {
@@ -12,6 +14,10 @@ export class ResponseInterceptor implements NestInterceptor {
       map((data) => {
         if (data && typeof data === 'object' && 'success' in data) {
           return data;
+        }
+        // Tableau : envelopper dans { success: true, data: [...] }
+        if (Array.isArray(data)) {
+          return { success: true, data };
         }
         return { success: true, ...(data ?? {}) };
       }),

@@ -65,7 +65,10 @@ const RULES = {
   dirigeant_telephone: (f) => (f.dirigeant_telephone && isValidPhoneNumber(f.dirigeant_telephone) ? '' : 'Numéro de téléphone invalide.'),
   doc_autorisation: (_f, d) => (d.autorisation?.status === 'done' ? '' : 'Ce document est obligatoire.'),
   doc_piece_identite: (_f, d) => (d.piece_identite?.status === 'done' ? '' : 'Ce document est obligatoire.'),
-  doc_logo: (_f, d) => (d.logo?.status === 'uploading' ? 'Téléversement en cours…' : ''),
+  doc_logo: (_f, d) => {
+    if (d.logo?.status === 'uploading') return 'Téléversement en cours…'
+    return d.logo?.status === 'done' ? '' : "Le logo de l'établissement est obligatoire."
+  },
   confirm_authenticite: (f) => (f.confirm_authenticite ? '' : "Vous devez confirmer l'authenticité des informations."),
   confirm_conditions: (f) => (f.confirm_conditions ? '' : "Vous devez accepter les conditions d'utilisation."),
 }

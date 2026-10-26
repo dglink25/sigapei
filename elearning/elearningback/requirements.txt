@@ -5,3 +5,7 @@ djangorestframework
 django-cors-headers
 # S3/MinIO : URLs pré-signées (import paresseux dans apps/medias/services.py).
 boto3
+# PostgreSQL : même base que le microservice Identite (Neon).
+psycopg2-binary
+# Chargement du fichier .env (mêmes credentials DB qu'identite).
+python-dotenv

@@ -91,9 +91,14 @@ class OnboardingController extends Controller{
     }
 
     public function televerserDocument(Request $request, string $uuid): JsonResponse    {
+        // Logo : image uniquement (SVG refuse : il peut contenir du script), 2 Mo maximum.
+        $regleFichier = $request->input('type') === 'logo'
+            ? ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'mimetypes:image/jpeg,image/png,image/webp', 'max:2048']
+            : ['required', 'file', 'max:10240'];
+
         $donnees = $request->validate([
             'type' => ['required', Rule::in(['autorisation', 'piece_identite', 'logo'])],
-            'fichier' => ['required', 'file', 'max:10240'],
+            'fichier' => $regleFichier,
         ]);
 
         $document = $this->onboardingService->televerserDocument($uuid, $donnees['type'], $donnees['fichier']);

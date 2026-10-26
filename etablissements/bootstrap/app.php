@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ContexteTenant;
 use App\Http\Middleware\ForcerReponseJson;
 use App\Http\Middleware\VerifierSecretInterne;
 use Illuminate\Auth\AuthenticationException;
@@ -25,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'secret.interne' => VerifierSecretInterne::class,
+            'contexte.tenant' => ContexteTenant::class,
         ]);
 
         $middleware->trustProxies(at: '*');

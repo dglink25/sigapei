@@ -140,7 +140,7 @@ export function QuizListe() {
                         : ''}
                     </span>
                   </div>
-                  {element.statut === 'publie' && (
+                  {role === 'apprenant' && element.statut === 'publie' && (
                     <Link
                       to={`/quiz/${element.uuid}/passer`}
                       className="bouton bouton-primaire"

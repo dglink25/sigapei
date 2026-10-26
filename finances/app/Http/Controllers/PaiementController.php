@@ -17,7 +17,7 @@ class PaiementController extends Controller
         return response()->json(['message' => 'Non implémenté'], 501);
     }
 
-    /** POST /v1/webhooks/fedapay — vérifier signature + idempotence */
+    /** POST /v1/webhooks/fedapay - vérifier signature + idempotence */
     public function webhookFedapay(Request $request): JsonResponse
     {
         return response()->json(['message' => 'Non implémenté'], 501);

@@ -14,6 +14,9 @@ class CyclesAutorisesService
     {
         $cycles = [];
 
+        if (in_array('maternelle', $types, true)) {
+            $cycles[] = 'maternelle';
+        }
         if (in_array('primaire', $types, true)) {
             $cycles[] = 'maternelle';
             $cycles[] = 'primaire';

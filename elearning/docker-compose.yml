@@ -4,6 +4,14 @@ services:
     container_name: elearning-backend
     ports:
       - "8000:8000"
+    environment:
+      # Passerelles internes (règle 1/4) : l'API RH est joignable via le réseau externe « sigapei ».
+      - RH_API_URL=http://api-rh:4009
+      - INTERNAL_API_SECRET=${INTERNAL_API_SECRET:-}
+      - DROITS_STRICTS=${DROITS_STRICTS:-False}
+    networks:
+      - default
+      - sigapei
     volumes:
       # Montage du code : hot-reload Django + db.sqlite3 persistée côté hôte
       - ./elearningback:/code
@@ -30,3 +38,8 @@ services:
 
 volumes:
   frontend_node_modules:
+
+# Réseau partagé par tous les microservices SIGAPEI (créé par la plateforme).
+networks:
+  sigapei:
+    external: true

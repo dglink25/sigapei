@@ -46,6 +46,9 @@ export class Role {
   @Column({ type: 'boolean', default: false })
   estPersonnalise: boolean;
 
+  @Column({ name: 'peut_voir_portail', type: 'boolean', default: true })
+  peutVoirPortail: boolean;
+
   /** Nul pour les roles globaux (crees par le super administrateur). */
   @Column({ type: 'uuid', nullable: true })
   tenantId: string | null;

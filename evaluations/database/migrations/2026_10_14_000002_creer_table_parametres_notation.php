@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Règles de calcul par établissement et par cycle (CDC §5, §7) — jamais codées en dur.
+ * Règles de calcul par établissement et par cycle (CDC §5, §7) - jamais codées en dur.
  * Séparé de modele_bulletin (mise en page) : le CDC §4.1 interdit de mélanger mise en forme
  * et logique de calcul.
  *

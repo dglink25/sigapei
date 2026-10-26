@@ -24,7 +24,7 @@ return [
         'urls' => [
             'identite' => env('IDENTITE_URL', 'http://identite:4001'),
             'scolarite' => env('SCOLARITE_URL', 'http://scolarite:4000'),
-            'rh' => env('RH_URL', 'http://rh:4000'),
+            'rh' => env('RH_URL', 'http://api-rh:4009'),
         ],
 
         // Delai d'attente des appels inter-microservices (secondes).

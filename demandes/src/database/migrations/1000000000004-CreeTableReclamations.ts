@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 /**
  * Table demandes.reclamations
  * CDC section 15.1 + section 10 : fil de reclamation ouvert par tout utilisateur
- * ou par l'etablissement (caractere bidirectionnel — CDC section 10.1).
+ * ou par l'etablissement (caractere bidirectionnel - CDC section 10.1).
  *
  * Categories (CDC section 10.1) : pedagogique | discipline | finances | ressources_humaines | autre
  * Statuts : ouverte | en_cours | resolue | cloturee
@@ -21,7 +21,7 @@ export class CreeTableReclamations1000000000004 implements MigrationInterface {
           { name: 'tenant_id', type: 'varchar', isNullable: false },
           // demandeur_uuid reference identite.utilisateurs (tout profil)
           { name: 'demandeur_uuid', type: 'varchar', isNullable: false },
-          // nullable — concerne un apprenant seulement si pertinent (CDC section 4.1)
+          // nullable - concerne un apprenant seulement si pertinent (CDC section 4.1)
           { name: 'beneficiaire_apprenant_uuid', type: 'varchar', isNullable: true },
           { name: 'categorie', type: 'varchar', isNullable: false },
           { name: 'statut', type: 'varchar', default: "'ouverte'" },

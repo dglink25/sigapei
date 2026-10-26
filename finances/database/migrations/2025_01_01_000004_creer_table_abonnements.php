@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * CDC §4.1 : trois états — actif | grace | hibernation
+ * CDC §4.1 : trois états - actif | grace | hibernation
  * Finances détecte l'impayé, Établissements applique le blocage (RabbitMQ).
  */
 return new class extends Migration

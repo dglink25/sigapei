@@ -61,7 +61,7 @@ class PeriodesController extends Controller
         return $this->ok(Periode::create($d)->fresh(), 'Période créée.', 201);
     }
 
-    /** POST /v1/periodes/{uuid}/cloturer — 202 : calcul et archivage en tâche de fond. */
+    /** POST /v1/periodes/{uuid}/cloturer - 202 : calcul et archivage en tâche de fond. */
     public function cloturer(Periode $periode): JsonResponse
     {
         $this->bulletins->demanderCloture($periode);

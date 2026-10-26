@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * evaluations.notes — SOURCE UNIQUE de tout calcul (CDC §3).
+ * evaluations.notes - SOURCE UNIQUE de tout calcul (CDC §3).
  *  - statut : saisie | absent_justifie | absent_non_justifie | dispense
  *    valeur obligatoire si statut = saisie, interdite sinon (contrainte en base)
  *  - niveau_competence : grille "competences" (primaire), à la place d'une valeur chiffrée

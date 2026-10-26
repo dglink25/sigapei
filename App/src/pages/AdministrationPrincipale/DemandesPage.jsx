@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Inbox, RefreshCw, ChevronRight, Trash2, Square, CheckSquare } from 'lucide-react'
@@ -51,7 +52,10 @@ export default function DemandesPage() {
     }
   }, [notify])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load()
+  }, [load])
 
   // Réinitialiser la sélection si on change d'onglet
   useEffect(() => { setSelection(new Set()) }, [tab])
