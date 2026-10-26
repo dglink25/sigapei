@@ -23,7 +23,11 @@ export default function PanneauDemandesRole() {
     setCharge(true)
     try {
       const r = await demandesRoleEtabService.listerMesDemandes()
-      setDemandes(r?.data ?? r ?? [])
+      // L'intercepteur wrappe les tableaux : { success: true, data: [...] }
+      const liste = Array.isArray(r?.data) ? r.data
+        : Array.isArray(r) ? r
+        : []
+      setDemandes(liste)
     } catch (err) {
       notify.fromError(err)
     } finally {

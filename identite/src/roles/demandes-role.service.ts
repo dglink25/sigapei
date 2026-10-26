@@ -1,22 +1,3 @@
-/**
- * DemandesRoleService - Flux demande de rôle personnalisé.
- *
- * Côté admin établissement :
- *   - Soumettre une demande (nom souhaité + description obligatoire)
- *   - Annuler une demande en attente
- *   - Consulter ses demandes
- *
- * Côté super admin :
- *   - Lister toutes les demandes (filtrables par statut)
- *   - Accepter : crée le rôle + l'assigne à l'établissement demandeur + établissements optionnels
- *   - Refuser : clôt la demande avec note obligatoire
- *
- * Assignations (comme les services) :
- *   - Assigner un rôle à des établissements (multi-sélection visuelle)
- *   - Lister les établissements qui ont accès à un rôle
- *   - Retirer un rôle d'un établissement
- *   - Lister les rôles d'un établissement
- */
 import {
   BadRequestException,
   ConflictException,
@@ -219,8 +200,8 @@ export class DemandesRoleService {
         ORDER BY e.nom ASC`,
       [roleUuid],
     );
-    // Envelopper dans un objet pour que ResponseInterceptor ne casse pas le tableau
-    return { etablissements };
+    // Tableau géré par l'intercepteur : { success: true, data: [...] }
+    return etablissements;
   }
 
   async listerRolesParEtablissement(etablissementUuid: string) {

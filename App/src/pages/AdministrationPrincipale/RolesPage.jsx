@@ -129,10 +129,10 @@ export default function RolesPage() {
     setDetailCharge((d) => ({ ...d, [roleUuid]: true }))
     try {
       const r = await rolesEtablissementsService.etablissementsParRole(roleUuid)
-      // Le backend retourne { etablissements: [...] } (enveloppé pour éviter le spread de l'intercepteur)
-      const liste = Array.isArray(r?.etablissements) ? r.etablissements
+      // L'intercepteur wrappe les tableaux : { success: true, data: [...] }
+      const liste = Array.isArray(r?.data) ? r.data
         : Array.isArray(r) ? r
-        : Array.isArray(r?.data) ? r.data
+        : Array.isArray(r?.etablissements) ? r.etablissements
         : []
       setDetailData((d) => ({ ...d, [roleUuid]: liste }))
       return liste

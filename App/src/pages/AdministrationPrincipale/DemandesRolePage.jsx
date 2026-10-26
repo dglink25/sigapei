@@ -53,7 +53,7 @@ export default function DemandesRolePage() {
         demandesRoleAdminService.listerToutesDemandes(onglet),
         adminService.listerEtablissements(),
       ])
-      setDemandes(rD?.data ?? rD ?? [])
+      setDemandes(Array.isArray(rD?.data) ? rD.data : Array.isArray(rD) ? rD : [])
       setEtabs((Array.isArray(rE) ? rE : []).filter((e) => e.statut === 'actif'))
     } catch (err) {
       notify.fromError(err)
