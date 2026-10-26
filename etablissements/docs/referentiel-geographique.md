@@ -65,7 +65,7 @@ GeoNames fournit souvent des noms **en anglais et sans accents** (« Commune of 
 Deux garanties :
 
 - **Un nom corrigé n'est jamais écrasé.** Un nouvel import GeoNames ne remplace un nom que s'il est encore tel que GeoNames l'a fourni. Un nom modifié à la main ou par `geo:arbre --renommer` survit à tous les imports suivants.
-- **Les variantes sont reconnues.** La comparaison ignore la casse, les accents, les tirets et les préfixes, et traite `k` et `c` comme équivalents (« Atakora » = « Atacora », « Kouffo » = « Couffo »). Avec `--approximatif`, un écart d'une ou deux lettres est aussi toléré (« Pehonko » / « Péhunco »).
+- **Les variantes sont reconnues.** La comparaison ignore la casse, les accents, les tirets et les préfixes, et traite `k` et `c` comme équivalents (« Atakora » = « Atacora », « Kouffo » = « Couffo »). Avec `--approximatif`, un écart d'une ou deux lettres est aussi toléré (« Pehonko » / « Péhunco »), de même qu'un nom contenu dans l'autre quand la correspondance est unique (« Dogbo » / « Dogbo Tota »).
 
 ### Données déjà présentes (test, import précédent) : fusion, pas de suppression
 

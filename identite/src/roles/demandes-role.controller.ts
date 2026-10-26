@@ -95,7 +95,7 @@ export class DemandesRoleController {
   @Roles('super_admin')
   @ApiOperation({ summary: 'Assigne ce rôle à des établissements (sélection visuelle).' })
   assigner(@Param('uuid', ParseUUIDPipe) uuid: string, @Body() dto: AssignerRoleEtablissementsDto) {
-    return this.service.assignerRoleAuxEtablissements(uuid, dto.etablissementUuids);
+    return this.service.assignerRoleAuxEtablissements(uuid, dto.etablissementUuids ?? []);
   }
 
   @Delete('etablissements/:assignationUuid')

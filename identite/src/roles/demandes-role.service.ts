@@ -185,8 +185,30 @@ export class DemandesRoleService {
 
   // ── Assignations rôle ↔ établissements ──────────────────────────────
 
+  async resumeRolesParEtablissement() {
+    const lignes: Array<{ etablissementId: string; nbRoles: number }> = await this.dataSource.query(
+      `SELECT etablissement_id::text AS "etablissementId", COUNT(*)::int AS "nbRoles"
+         FROM "identite"."role_etablissements"
+        GROUP BY etablissement_id`,
+    );
+    const etabIds = lignes.map((l) => l.etablissementId);
+    if (etabIds.length === 0) return { resume: [] };
+    const etabs = await this.etablissementsRef.trouverParIds(etabIds);
+    const parId = new Map(etabs.map((e) => [e.id, e.uuid]));
+    return {
+      resume: lignes
+        .filter((l) => parId.has(l.etablissementId))
+        .map((l) => ({ etablissementUuid: parId.get(l.etablissementId)!, nbRoles: l.nbRoles })),
+    };
+  }
+
   async listerEtablissementsParRole(roleUuid: string) {
-    return this.dataSource.query(
+    const roleRows = await this.dataSource.query(
+      `SELECT id, code, "estPersonnalise" FROM "identite"."role" WHERE uuid = $1`, [roleUuid],
+    );
+    if (!roleRows[0]) throw new NotFoundException({ code: 'ROLE_INTROUVABLE', message: 'Rôle introuvable.' });
+
+    const etablissements = await this.dataSource.query(
       `SELECT re.uuid, e.uuid AS "etablissementUuid", e.nom AS "etablissementNom",
               e.slug AS "etablissementSlug", e.statut AS "etablissementStatut",
               re.created_at AS "createdAt"
@@ -197,44 +219,79 @@ export class DemandesRoleService {
         ORDER BY e.nom ASC`,
       [roleUuid],
     );
+    // Envelopper dans un objet pour que ResponseInterceptor ne casse pas le tableau
+    return { etablissements };
   }
 
   async listerRolesParEtablissement(etablissementUuid: string) {
     const etab = await this.etablissementsRef.trouverParUuid(etablissementUuid);
     if (!etab) throw new NotFoundException({ code: 'ETABLISSEMENT_INTROUVABLE', message: 'Établissement introuvable.' });
 
-    return this.dataSource.query(
+    // Tous les rôles assignés explicitement (système ET personnalisés) via role_etablissements
+    const roles = await this.dataSource.query(
       `SELECT r.uuid, r.code, r.libelle, r."familleAuth", r."estPersonnalise",
               r.date_creation AS "dateCreation",
-              COUNT(DISTINCT u.id)::int AS "nbUtilisateurs"
+              COUNT(DISTINCT u.id)::int AS "nbUtilisateurs",
+              re.uuid AS "assignationUuid"
          FROM "identite"."role_etablissements" re
          JOIN "identite"."role" r ON r.id = re.role_id
          LEFT JOIN "identite"."utilisateur" u ON u.role_id = r.id AND u."tenantId" = $1
         WHERE re.etablissement_id = $2
-        GROUP BY r.uuid, r.code, r.libelle, r."familleAuth", r."estPersonnalise", r.date_creation
+        GROUP BY r.uuid, r.code, r.libelle, r."familleAuth", r."estPersonnalise", r.date_creation, re.uuid
         ORDER BY r."estPersonnalise" ASC, r.libelle ASC`,
       [etablissementUuid, etab.id],
     );
+
+    return {
+      etablissement: { uuid: etab.uuid, nom: etab.nom, statut: etab.statut },
+      roles,
+    };
   }
 
   async assignerRoleAuxEtablissements(roleUuid: string, etablissementUuids: string[]) {
+    // Validation entrée
+    if (!etablissementUuids || etablissementUuids.length === 0) {
+      throw new BadRequestException({ code: 'ETABLISSEMENTS_REQUIS', message: 'Au moins un établissement est requis.' });
+    }
+
     const roleRows = await this.dataSource.query(
-      `SELECT id FROM "identite"."role" WHERE uuid = $1`, [roleUuid],
+      `SELECT id, code FROM "identite"."role" WHERE uuid = $1`, [roleUuid],
     );
     if (!roleRows[0]) throw new NotFoundException({ code: 'ROLE_INTROUVABLE', message: 'Rôle introuvable.' });
     const roleId = roleRows[0].id;
+    if (roleRows[0].code === 'super_admin') {
+      throw new BadRequestException({ code: 'SUPER_ADMIN_NON_ASSIGNABLE', message: 'Le rôle super_admin ne peut pas être assigné à un établissement.' });
+    }
 
-    const etabs = await this.etablissementsRef.trouverParUuids(etablissementUuids);
+    // Chercher les établissements directement par UUID sans passer par le service de référence
+    // pour éviter les problèmes de cast ou de connexion cross-schéma
+    const placeholders = etablissementUuids.map((_, i) => `$${i + 1}::uuid`).join(',');
+    const etabRows: { id: string }[] = await this.dataSource.query(
+      `SELECT id::text AS id, uuid::text AS uuid, nom
+         FROM "etablissements"."etablissements"
+        WHERE uuid IN (${placeholders})`,
+      etablissementUuids,
+    );
+
+    if (etabRows.length === 0) {
+      throw new NotFoundException({
+        code: 'ETABLISSEMENTS_INTROUVABLES',
+        message: `Aucun établissement trouvé pour les UUIDs fournis.`,
+      });
+    }
+
     let assignes = 0;
-    for (const etab of etabs) {
+    let dejaPresentCount = 0;
+    for (const etab of etabRows) {
       const r = await this.dataSource.query(
         `INSERT INTO "identite"."role_etablissements" ("role_id","etablissement_id")
          VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING id`,
         [roleId, etab.id],
       );
       if (r.length > 0) assignes++;
+      else dejaPresentCount++;
     }
-    return { assignes, total: etabs.length };
+    return { assignes, dejaPresents: dejaPresentCount, total: etabRows.length };
   }
 
   async retirerRoleDEtablissement(assignationUuid: string) {

@@ -52,11 +52,14 @@ export class EtablissementsRefService {
 
   async trouverParUuids(uuids: string[]): Promise<EtablissementRef[]> {
     if (uuids.length === 0) return [];
+    // Passage explicite via unnest pour éviter les problèmes de cast uuid[]
+    const placeholders = uuids.map((_, i) => `$${i + 1}::uuid`).join(',');
     return this.dataSource.query(
       `SELECT id::text AS id, uuid::text AS uuid, nom, slug, statut,
               logo_document_id AS "logoDocumentId"
-         FROM "etablissements"."etablissements" WHERE uuid = ANY($1::uuid[])`,
-      [uuids],
+         FROM "etablissements"."etablissements"
+        WHERE uuid IN (${placeholders})`,
+      uuids,
     );
   }
 

@@ -1,83 +1,93 @@
 /**
- * EtablissementRolesPage - Rôles personnalisés assignés à un établissement.
- * Miroir de EtablissementServicesPage mais pour les rôles.
- * Le super admin peut voir, assigner et retirer des rôles personnalisés.
+ * EtablissementRolesPage - Rôles d'un établissement.
+ * Structure et comportement identiques à EtablissementServicesPage.
+ *
+ * data = undefined  → chargement
+ * data = null       → établissement introuvable
+ * data = { etablissement, roles } → données
  */
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { Plus, Trash2, TriangleAlert } from 'lucide-react'
+import { Lock, Plus, ShieldCheck, Trash2, TriangleAlert } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import ConfirmDialog from '../../components/commun/ConfirmDialog'
 import Loader from '../../components/commun/Loader'
 import ChecklistDrawer from '../../components/administration/ChecklistDrawer'
+import { EtabBadge } from '../../components/administration/Badges'
 import { rolesEtablissementsService } from '../../services/identite/rolesEtablissements.service'
 import { utilisateursService } from '../../services/identite/utilisateurs.service'
-import { adminService } from '../../services/etablissements/etablissement.service'
 import { ADMIN_PATHS } from '../../config/etablissements/config'
 import { dateFr } from './DemandesPage'
 import './admin.css'
 import '../../components/administration/admin-ui.css'
 
+const FAMILLE_LABELS = {
+  super_admin:      'Super Admin',
+  personnel_admin:  'Personnel / Admin',
+  parent_apprenant: 'Parent / Apprenant',
+}
+
 export default function EtablissementRolesPage() {
   const { uuid } = useParams()
-  const notify = useNotify()
+  const notify   = useNotify()
 
-  const [etab,         setEtab]         = useState(undefined)
-  const [roles,        setRoles]        = useState([])
-  const [tousRoles,    setTousRoles]    = useState([])  // catalogue pour l'assignation
-  const [chargement,   setChargement]   = useState(false)
-  const [tiroir,       setTiroir]       = useState(false)
-  const [dejaAssignes, setDejaAssignes] = useState(new Set())
+  const [data,         setData]         = useState(undefined) // undefined | null | { etablissement, roles }
+  const [rev,          setRev]          = useState(0)
+  const [assignOuvert, setAssignOuvert] = useState(false)
+  const [catalogue,    setCatalogue]    = useState([])
+  const [chargeCat,    setChargeCat]    = useState(false)
   const [confirm,      setConfirm]      = useState(null)
   const [busy,         setBusy]         = useState(false)
-  const [rev,          setRev]          = useState(0)
 
   const recharger = () => setRev((r) => r + 1)
 
-  // Charger l'établissement depuis la liste
-  useEffect(() => {
-    let annule = false
-    adminService.listerEtablissements().then((liste) => {
-      if (annule) return
-      const data = Array.isArray(liste) ? liste : liste?.etablissements ?? []
-      setEtab(data.find((e) => e.uuid === uuid) ?? null)
-    }).catch(() => setEtab(null))
-    return () => { annule = true }
-  }, [uuid])
-
-  // Charger les rôles assignés
+  /* Charger les rôles de l'établissement */
   const charger = useCallback(async () => {
-    setChargement(true)
     try {
-      const r = await rolesEtablissementsService.rolesParEtablissement(uuid)
-      const liste = r?.data ?? r ?? []
-      setRoles(liste)
-      setDejaAssignes(new Set(liste.map((x) => x.uuid)))
+      setData(await rolesEtablissementsService.rolesParEtablissement(uuid))
     } catch (err) {
-      notify.fromError(err)
-    } finally {
-      setChargement(false)
+      if (err?.status !== 404) notify.fromError(err)
+      setData((p) => (p === undefined ? null : p))
     }
   }, [uuid, notify])
 
   useEffect(() => { charger() }, [charger, rev])
 
-  // Charger le catalogue de rôles à l'ouverture du tiroir
+  /* Catalogue rôles personnalisés à l'ouverture du tiroir */
   useEffect(() => {
-    if (!tiroir) return
+    if (!assignOuvert) return undefined
     let annule = false
-    utilisateursService.listerRoles().then((r) => {
-      if (!annule) setTousRoles((r?.data?.roles ?? r?.roles ?? []).filter((role) => role.estPersonnalise))
-    }).catch(() => {})
+    setChargeCat(true)
+    utilisateursService.listerRoles()
+      .then((r) => {
+        if (annule) return
+        const tous = Array.isArray(r?.data?.roles) ? r.data.roles
+          : Array.isArray(r?.roles) ? r.roles
+          : Array.isArray(r) ? r : []
+        // Tous les rôles SAUF super_admin, non encore assignés à cet établissement
+        const dejaUuids = new Set(
+          (data?.roles ?? []).map((x) => x.uuid),
+        )
+        setCatalogue(tous.filter((role) => role.code !== 'super_admin' && !dejaUuids.has(role.uuid)))
+      })
+      .catch((err) => !annule && notify.fromError(err))
+      .finally(() => !annule && setChargeCat(false))
     return () => { annule = true }
-  }, [tiroir])
+  }, [assignOuvert, data, notify])
 
-  const assigner = async (uuids) => {
+  /* Assigner un rôle */
+  const assigner = async (roleUuids) => {
     setBusy(true)
     try {
-      await rolesEtablissementsService.assigner(uuids[0], [uuid])
-      notify.success('Rôle assigné')
-      setTiroir(false)
+      const r = await rolesEtablissementsService.assigner(roleUuids[0], [uuid])
+      const assignes = r?.assignes ?? r?.data?.assignes ?? 0
+      notify.success(
+        assignes > 0 ? 'Rôle assigné' : 'Déjà assigné',
+        assignes > 0
+          ? `Rôle ajouté à ${data?.etablissement?.nom ?? 'l\'établissement'}.`
+          : 'Ce rôle était déjà assigné.',
+      )
+      setAssignOuvert(false)
       recharger()
     } catch (err) {
       notify.fromError(err)
@@ -86,12 +96,13 @@ export default function EtablissementRolesPage() {
     }
   }
 
+  /* Retirer un rôle */
   const retirer = async () => {
     if (!confirm) return
     setBusy(true)
     try {
       await rolesEtablissementsService.retirer(confirm.assignationUuid)
-      notify.success('Rôle retiré')
+      notify.success('Rôle retiré', 'Les utilisateurs concernés ont été réattribués au rôle Personnel.')
       setConfirm(null)
       recharger()
     } catch (err) {
@@ -101,68 +112,147 @@ export default function EtablissementRolesPage() {
     }
   }
 
-  if (etab === undefined) return <div className="ap"><Loader mode="inline" label="Chargement…" /></div>
-  if (etab === null) return (
-    <div className="ap">
-      <div className="ap-page-head"><Link to={ADMIN_PATHS.etablissements} className="ap-btn ap-btn--ghost ap-btn--sm">Retour</Link></div>
-      <div className="ap-card ap-empty"><TriangleAlert size={32} /><p>Établissement introuvable.</p></div>
-    </div>
-  )
+  /* ── États ── */
+  if (data === undefined) return <div className="ap"><Loader mode="inline" label="Chargement des rôles…" /></div>
 
-  const itemsCatalogue = tousRoles.map((r) => ({
+  if (data === null) {
+    return (
+      <div className="ap">
+        <div className="ap-page-head">
+          <Link to={ADMIN_PATHS.etablissements} className="ap-btn ap-btn--ghost ap-btn--sm">
+            Retour aux établissements
+          </Link>
+        </div>
+        <div className="ap-card ap-empty">
+          <TriangleAlert size={32} aria-hidden="true" />
+          <p>Cet établissement n'existe pas ou n'est pas accessible.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const { etablissement, roles } = data
+  // Tous les rôles viennent de role_etablissements - ils ont tous un assignationUuid
+  const rolesPerso  = roles.filter((r) => r.estPersonnalise)
+  const rolesSystem = roles.filter((r) => !r.estPersonnalise)
+  const dejaUuids   = new Set(roles.map((r) => r.uuid))
+
+  const itemsCatalogue = catalogue.map((r) => ({
     id:       r.uuid,
     title:    r.libelle,
     subtitle: r.code,
-    note:     dejaAssignes.has(r.uuid) ? 'Déjà assigné' : undefined,
-    disabled: dejaAssignes.has(r.uuid),
+    note:     dejaUuids.has(r.uuid) ? 'Déjà assigné' : undefined,
+    disabled: dejaUuids.has(r.uuid),
   }))
 
   return (
     <div className="ap">
       <nav className="ap-bread" aria-label="Fil d'ariane">
         <Link to={ADMIN_PATHS.etablissements}>Établissements</Link>
-        <span className="ap-bread-sep">/</span>
-        <span>{etab.nom}</span>
-        <span className="ap-bread-sep">/</span>
+        <span className="ap-bread-sep" aria-hidden="true">/</span>
+        <span>{etablissement.nom}</span>
+        <span className="ap-bread-sep" aria-hidden="true">/</span>
         <span>Rôles</span>
       </nav>
 
-      <div className="ap-page-head">
+      <div className="ap-page-head sv-rise">
         <div>
-          <h2 className="ap-page-title">Rôles de {etab.nom}</h2>
-          <p className="ap-page-sub">Rôles personnalisés assignés à cet établissement.</p>
+          <h2 className="ap-page-title">
+            Rôles de {etablissement.nom} <EtabBadge statut={etablissement.statut} />
+          </h2>
+          <p className="ap-page-sub">
+            Rôles personnalisés assignés et rôles système utilisés par cet établissement
+          </p>
         </div>
-        <button type="button" className="ap-btn" onClick={() => setTiroir(true)}>
-          <Plus size={16} /> Assigner un rôle
-        </button>
+        <div className="ap-page-actions">
+          <button
+            type="button"
+            className="ap-btn"
+            onClick={() => setAssignOuvert(true)}
+            disabled={etablissement.statut === 'archive'}
+          >
+            <Plus size={16} aria-hidden="true" /> Assigner un rôle
+          </button>
+        </div>
       </div>
 
-      {chargement ? (
-        <div className="ap-card"><Loader mode="inline" label="Chargement…" /></div>
-      ) : roles.length === 0 ? (
-        <div className="ap-card ap-empty">
+      {etablissement.statut !== 'actif' && (
+        <div className="ap-alert ap-alert--danger" role="status">
+          <TriangleAlert size={18} aria-hidden="true" />
+          <div>
+            <strong>Établissement {etablissement.statut === 'suspendu' ? 'suspendu' : 'archivé'}</strong>
+            {' '}Les rôles sont conservés mais aucun utilisateur ne peut se connecter.
+          </div>
+        </div>
+      )}
+
+      {/* Statistiques */}
+      <div className="sv-stats">
+        <div className="ap-card sv-stat sv-rise" style={{ '--i': 1 }}>
+          <p className="sv-stat-lbl">Rôles personnalisés</p>
+          <p className="sv-stat-val">{rolesPerso.length}</p>
+        </div>
+        <div className="ap-card sv-stat sv-rise" style={{ '--i': 2 }}>
+          <p className="sv-stat-lbl">Rôles système actifs</p>
+          <p className="sv-stat-val">{rolesSystem.length}</p>
+        </div>
+        <div className="ap-card sv-stat sv-rise" style={{ '--i': 3 }}>
+          <p className="sv-stat-lbl">Total utilisateurs</p>
+          <p className="sv-stat-val">{roles.reduce((s, r) => s + (r.nbUtilisateurs ?? 0), 0)}</p>
+        </div>
+      </div>
+
+      {/* Rôles personnalisés */}
+      <h3 style={{ marginTop:24, marginBottom:10, fontSize:'0.82rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--ap-muted)' }}>
+        Rôles personnalisés
+      </h3>
+      {rolesPerso.length === 0 ? (
+        <div className="ap-card ap-empty" style={{ marginBottom:24 }}>
+          <ShieldCheck size={36} aria-hidden="true" />
           <p>Aucun rôle personnalisé assigné à cet établissement.</p>
-          <button type="button" className="ap-btn" onClick={() => setTiroir(true)}><Plus size={16} /> Assigner</button>
+          <button
+            type="button"
+            className="ap-btn"
+            onClick={() => setAssignOuvert(true)}
+            disabled={etablissement.statut === 'archive'}
+          >
+            <Plus size={16} aria-hidden="true" /> Assigner un rôle
+          </button>
         </div>
       ) : (
-        <div className="ap-card ap-card--flush">
+        <div className="ap-card ap-card--flush" style={{ marginBottom:24 }}>
           <table className="ap-table">
             <thead>
-              <tr><th>Rôle</th><th>Code</th><th>Famille</th><th>Utilisateurs</th><th>Assigné le</th><th></th></tr>
+              <tr>
+                <th>Rôle</th>
+                <th>Code</th>
+                <th>Famille</th>
+                <th>Utilisateurs</th>
+                <th>Assigné le</th>
+                <th></th>
+              </tr>
             </thead>
             <tbody>
-              {roles.map((r) => (
+              {rolesPerso.map((r) => (
                 <tr key={r.uuid}>
                   <td><strong>{r.libelle}</strong></td>
                   <td><span className="ap-code">{r.code}</span></td>
-                  <td><span className="ap-badge ap-badge--neutral">{r.familleAuth}</span></td>
+                  <td>
+                    <span className="ap-badge ap-badge--neutral">
+                      {FAMILLE_LABELS[r.familleAuth] ?? r.familleAuth}
+                    </span>
+                  </td>
                   <td>{r.nbUtilisateurs ?? 0}</td>
                   <td>{dateFr(r.dateCreation)}</td>
                   <td>
-                    <button type="button" className="ap-btn ap-btn--ghost ap-btn--icon ap-btn--icon-danger"
-                      onClick={() => setConfirm({ assignationUuid: r.assignationUuid ?? r.uuid, libelle: r.libelle })}
-                      aria-label="Retirer">
-                      <Trash2 size={15} />
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn--ghost ap-btn--icon ap-btn--icon-danger"
+                      aria-label={`Retirer ${r.libelle}`}
+                      title="Retirer le rôle"
+                      onClick={() => setConfirm({ assignationUuid: r.assignationUuid, libelle: r.libelle })}
+                    >
+                      <Trash2 size={15} aria-hidden="true" />
                     </button>
                   </td>
                 </tr>
@@ -172,26 +262,77 @@ export default function EtablissementRolesPage() {
         </div>
       )}
 
+      {/* Rôles système utilisés */}
+      {rolesSystem.length > 0 && (
+        <>
+          <h3 style={{ marginBottom:10, fontSize:'0.82rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--ap-muted)' }}>
+            Rôles système utilisés
+          </h3>
+          <div className="ap-card ap-card--flush">
+            <table className="ap-table">
+              <thead>
+                <tr>
+                  <th>Rôle</th>
+                  <th>Code</th>
+                  <th>Famille</th>
+                  <th>Utilisateurs</th>
+                  <th>Portée</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rolesSystem.map((r) => (
+                  <tr key={r.uuid}>
+                    <td><strong>{r.libelle}</strong></td>
+                    <td><span className="ap-code">{r.code}</span></td>
+                    <td>
+                      <span className="ap-badge ap-badge--neutral">
+                        {FAMILLE_LABELS[r.familleAuth] ?? r.familleAuth}
+                      </span>
+                    </td>
+                    <td>{r.nbUtilisateurs ?? 0}</td>
+                    <td style={{ display:'flex', alignItems:'center', gap:5, color:'var(--ap-muted)', fontSize:'0.82rem' }}>
+                      <Lock size={12} aria-hidden="true" /> Système
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="ap-btn ap-btn--ghost ap-btn--icon ap-btn--icon-danger"
+                        aria-label={`Retirer ${r.libelle}`}
+                        title="Retirer ce rôle de l'établissement"
+                        onClick={() => setConfirm({ assignationUuid: r.assignationUuid, libelle: r.libelle })}
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
       <ChecklistDrawer
-        open={tiroir}
+        open={assignOuvert}
         title="Assigner un rôle"
-        subtitle={`Choisissez un rôle personnalisé à ouvrir à ${etab.nom}.`}
+        subtitle={`Choisissez les rôles à ouvrir à ${etablissement.nom}.`}
         items={itemsCatalogue}
-        loading={false}
-        max={1}
+        loading={chargeCat}
+        max={50}
         busy={busy}
         submitLabel="Assigner"
         searchPlaceholder="Rechercher un rôle…"
-        emptyLabel="Aucun rôle personnalisé disponible."
+        emptyLabel="Tous les rôles disponibles sont déjà assignés à cet établissement."
         onSubmit={assigner}
-        onClose={() => setTiroir(false)}
+        onClose={() => setAssignOuvert(false)}
       />
 
       <ConfirmDialog
         open={!!confirm}
         tone="danger"
         title="Retirer ce rôle ?"
-        message={`Le rôle « ${confirm?.libelle ?? ''} » sera retiré de ${etab.nom}.`}
+        message={`Le rôle « ${confirm?.libelle ?? ''} » sera retiré de ${etablissement.nom}. Les utilisateurs qui avaient ce rôle seront réattribués au rôle Personnel.`}
         confirmLabel="Retirer"
         loading={busy}
         onConfirm={retirer}

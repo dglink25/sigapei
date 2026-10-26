@@ -1,13 +1,15 @@
 /**
- * RolesPage - Gestion des rôles par le Super Administrateur.
+ * RolesPage - Gestion des rôles.
  *
- * - Tableau des rôles système (non modifiables)
- * - CRUD rôles personnalisés avec sélecteur d'établissements visuel
- * - Pour chaque rôle personnalisé : voir les établissements assignés,
- *   assigner de nouveaux établissements, retirer (cascade utilisateurs)
+ * Rôles système et personnalisés :
+ *   - Voir les établissements assignés à chaque rôle
+ *   - Assigner / retirer un rôle à des établissements
+ *
+ * Rôles système uniquement : non supprimables, libellé non modifiable.
+ * Rôles personnalisés : CRUD complet.
  */
-import { useCallback, useEffect, useState } from 'react'
-import { Plus, X, RefreshCw, Lock, Trash2, Building2, Search, ChevronDown, ChevronUp } from 'lucide-react'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Building2, ChevronDown, ChevronUp, Lock, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import ConfirmDialog from '../../components/commun/ConfirmDialog'
 import Loader from '../../components/commun/Loader'
@@ -28,25 +30,80 @@ const FAMILLE_OPTIONS = [
   { id: 'parent_apprenant', label: 'Parent / Apprenant' },
 ]
 
+/**
+ * Ligne dépliable commune : liste des établissements d'un rôle + boutons assigner/retirer.
+ */
+function DetailEtablissements({ role, detailData, detailCharge, etabs, onOuvrirTiroir, onConfirmRetrait }) {
+  const data   = detailData[role.uuid]
+  const charge = detailCharge[role.uuid]
+  const assignes = new Set((data ?? []).map((x) => x.etablissementUuid))
+
+  return (
+    <div style={{ padding: '12px 18px' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+        <strong style={{ fontSize:'0.88rem' }}>
+          Établissements ayant accès à « {role.libelle} »
+        </strong>
+        <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm"
+          onClick={() => onOuvrirTiroir(role)}>
+          <Plus size={13} /> Assigner à des établissements
+        </button>
+      </div>
+      {charge ? (
+        <Loader mode="inline" label="Chargement…" />
+      ) : !data || data.length === 0 ? (
+        <p style={{ color:'var(--ap-muted)', fontSize:'0.85rem', margin:0 }}>
+          Aucun établissement assigné à ce rôle.
+          {' '}<button type="button" style={{ background:'none', border:0, color:'var(--ap-green)', cursor:'pointer', fontFamily:'inherit', fontSize:'0.85rem', fontWeight:600, padding:0 }}
+            onClick={() => onOuvrirTiroir(role)}>Assigner maintenant</button>
+        </p>
+      ) : (
+        <table className="ap-table" style={{ marginBottom:0 }}>
+          <thead><tr><th>Établissement</th><th>Slug</th><th></th></tr></thead>
+          <tbody>
+            {data.map((a) => (
+              <tr key={a.uuid}>
+                <td><strong>{a.etablissementNom}</strong></td>
+                <td><span className="ap-code">{a.etablissementSlug}</span></td>
+                <td>
+                  <button type="button" className="ap-btn ap-btn--ghost ap-btn--icon ap-btn--icon-danger"
+                    onClick={() => onConfirmRetrait({ assignationUuid: a.uuid, roleUuid: role.uuid, roleLibelle: role.libelle, etabNom: a.etablissementNom })}
+                    aria-label="Retirer">
+                    <Trash2 size={14} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
 export default function RolesPage() {
   const notify = useNotify()
 
-  const [roles,       setRoles]       = useState(null)
-  const [etabs,       setEtabs]       = useState([])       // tous les établissements actifs
-  const [charge,      setCharge]      = useState(false)
-  const [modale,      setModale]      = useState(null)     // null | 'creer' | { role }
-  const [supprimer,   setSupprimer]   = useState(null)
-  const [busy,        setBusy]        = useState(false)
-  const [form,        setForm]        = useState({ code:'', libelle:'', familleAuth:'personnel_admin', etabsChoisis:[] })
+  const [roles,         setRoles]         = useState(null)
+  const [etabs,         setEtabs]         = useState([])
+  const [charge,        setCharge]        = useState(false)
+  const [modale,        setModale]        = useState(null)     // null | 'creer' | { role }
+  const [supprimer,     setSupprimer]     = useState(null)
+  const [busy,          setBusy]          = useState(false)
+  const [form,          setForm]          = useState({ code:'', libelle:'', familleAuth:'personnel_admin', etabsChoisis:[] })
   const [rechercheEtab, setRechercheEtab] = useState('')
-  const [erreurs,     setErreurs]     = useState({})
+  const [erreurs,       setErreurs]       = useState({})
 
-  // Détail d'un rôle déplié (établissements assignés)
-  const [detailRole,  setDetailRole]  = useState(null)     // uuid du rôle déplié
-  const [detailData,  setDetailData]  = useState({})       // { [roleUuid]: [...] }
-  const [tiroir,      setTiroir]      = useState(null)     // { roleUuid, roleLibelle }
-  const [confirmRetrait, setConfirmRetrait] = useState(null) // { assignationUuid, roleLibelle, etabNom }
+  // Détail déplié - commun système + personnalisé
+  const [detailRole,   setDetailRole]   = useState(null)   // uuid du rôle déplié
+  const [detailData,   setDetailData]   = useState({})     // { [roleUuid]: EtabAssigne[] }
+  const [detailCharge, setDetailCharge] = useState({})     // { [roleUuid]: bool }
 
+  // Tiroir assignation
+  const [tiroir,        setTiroir]        = useState(null) // { roleUuid, roleLibelle }
+  const [confirmRetrait, setConfirmRetrait] = useState(null)
+
+  /* Charger rôles + établissements */
   const charger = useCallback(async () => {
     setCharge(true)
     try {
@@ -55,7 +112,8 @@ export default function RolesPage() {
         adminService.listerEtablissements(),
       ])
       setRoles(rRoles?.data?.roles ?? rRoles?.roles ?? [])
-      setEtabs((Array.isArray(rEtabs) ? rEtabs : rEtabs?.etablissements ?? []).filter((e) => e.statut === 'actif'))
+      const tousEtabs = Array.isArray(rEtabs) ? rEtabs : rEtabs?.etablissements ?? []
+      setEtabs(tousEtabs.filter((e) => e.statut === 'actif'))
     } catch (err) {
       notify.fromError(err)
       setRoles([])
@@ -66,27 +124,80 @@ export default function RolesPage() {
 
   useEffect(() => { charger() }, [charger])
 
-  // Charger les établissements d'un rôle à la demande
-  const chargerDetailRole = async (roleUuid) => {
+  /* Charger les établissements d'un rôle */
+  const chargerDetail = useCallback(async (roleUuid) => {
+    setDetailCharge((d) => ({ ...d, [roleUuid]: true }))
     try {
       const r = await rolesEtablissementsService.etablissementsParRole(roleUuid)
-      // Normaliser : peut être un tableau direct, { data: [...] }, ou { data: { data: [...] } }
-      let liste = r
-      if (!Array.isArray(liste)) liste = r?.data ?? r
-      if (!Array.isArray(liste)) liste = []
+      // Le backend retourne { etablissements: [...] } (enveloppé pour éviter le spread de l'intercepteur)
+      const liste = Array.isArray(r?.etablissements) ? r.etablissements
+        : Array.isArray(r) ? r
+        : Array.isArray(r?.data) ? r.data
+        : []
       setDetailData((d) => ({ ...d, [roleUuid]: liste }))
-    } catch {
+      return liste
+    } catch (err) {
+      notify.fromError(err)
       setDetailData((d) => ({ ...d, [roleUuid]: [] }))
+      return []
+    } finally {
+      setDetailCharge((d) => ({ ...d, [roleUuid]: false }))
     }
-  }
+  }, [notify])
 
   const toggleDetail = async (roleUuid) => {
     if (detailRole === roleUuid) { setDetailRole(null); return }
     setDetailRole(roleUuid)
-    if (!detailData[roleUuid]) await chargerDetailRole(roleUuid)
+    await chargerDetail(roleUuid)
   }
 
-  // Créer / modifier un rôle
+  /* Ouvrir le tiroir - charge les assignations existantes pour filtrer */
+  const ouvrirTiroir = async (role) => {
+    await chargerDetail(role.uuid)
+    setTiroir({ roleUuid: role.uuid, roleLibelle: role.libelle })
+  }
+
+  /* Assigner */
+  const assignerEtablissements = async (etabUuids) => {
+    if (!tiroir) return
+    const { roleUuid, roleLibelle } = tiroir
+    setBusy(true)
+    try {
+      const r = await rolesEtablissementsService.assigner(roleUuid, etabUuids)
+      const assignes = r?.assignes ?? r?.data?.assignes ?? 0
+      setTiroir(null)
+      await chargerDetail(roleUuid)
+      setDetailRole(roleUuid)
+      if (assignes > 0) {
+        notify.success('Rôle assigné', `${roleLibelle} assigné à ${assignes} établissement(s).`)
+      } else {
+        notify.success('Déjà assigné', `Ces établissements ont déjà accès à ${roleLibelle}.`)
+      }
+    } catch (err) {
+      notify.fromError(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /* Retirer */
+  const retirerRole = async () => {
+    if (!confirmRetrait) return
+    const { roleUuid } = confirmRetrait
+    setBusy(true)
+    try {
+      await rolesEtablissementsService.retirer(confirmRetrait.assignationUuid)
+      notify.success('Rôle retiré', 'Les utilisateurs concernés ont été réattribués au rôle Personnel.')
+      setConfirmRetrait(null)
+      await chargerDetail(roleUuid)
+    } catch (err) {
+      notify.fromError(err)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /* CRUD rôles personnalisés */
   const ouvrirCreer = () => {
     setForm({ code:'', libelle:'', familleAuth:'personnel_admin', etabsChoisis:[] })
     setRechercheEtab('')
@@ -98,7 +209,6 @@ export default function RolesPage() {
     setErreurs({})
     setModale({ role })
   }
-
   const valider = () => {
     const e = {}
     if (!form.code.trim()) e.code = 'Le code est requis.'
@@ -107,7 +217,6 @@ export default function RolesPage() {
     setErreurs(e)
     return Object.keys(e).length === 0
   }
-
   const soumettre = async (ev) => {
     ev.preventDefault()
     if (!valider()) return
@@ -116,22 +225,16 @@ export default function RolesPage() {
       let roleUuid
       if (modale === 'creer') {
         const r = await utilisateursService.creerRole({
-          code: form.code.trim(),
-          libelle: form.libelle.trim(),
-          familleAuth: form.familleAuth,
-          // pas de tenantId : rôle global assignable à plusieurs établissements
+          code: form.code.trim(), libelle: form.libelle.trim(), familleAuth: form.familleAuth,
         })
         roleUuid = r?.data?.uuid ?? r?.uuid
         notify.success('Rôle créé', form.code)
-
-        // Assigner aux établissements sélectionnés
         if (form.etabsChoisis.length > 0 && roleUuid) {
           await rolesEtablissementsService.assigner(roleUuid, form.etabsChoisis)
         }
       } else {
         await utilisateursService.modifierRole(modale.role.uuid, {
-          libelle: form.libelle.trim(),
-          familleAuth: form.familleAuth,
+          libelle: form.libelle.trim(), familleAuth: form.familleAuth,
         })
         notify.success('Rôle mis à jour')
       }
@@ -143,7 +246,6 @@ export default function RolesPage() {
       setBusy(false)
     }
   }
-
   const confirmerSuppression = async () => {
     if (!supprimer) return
     setBusy(true)
@@ -159,58 +261,28 @@ export default function RolesPage() {
     }
   }
 
-  // Assigner un rôle à de nouveaux établissements
-  const assignerEtablissements = async (etabUuids) => {
-    if (!tiroir) return
-    setBusy(true)
-    try {
-      await rolesEtablissementsService.assigner(tiroir.roleUuid, etabUuids)
-      notify.success('Rôle assigné', `${tiroir.roleLibelle} assigné à ${etabUuids.length} établissement(s).`)
-      setTiroir(null)
-      await chargerDetailRole(tiroir.roleUuid)
-    } catch (err) {
-      notify.fromError(err)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  // Retirer un rôle d'un établissement (avec cascade utilisateurs)
-  const retirerRole = async () => {
-    if (!confirmRetrait) return
-    setBusy(true)
-    try {
-      await rolesEtablissementsService.retirer(confirmRetrait.assignationUuid)
-      notify.success('Rôle retiré', `Les utilisateurs concernés ont été réattribués au rôle Personnel.`)
-      setConfirmRetrait(null)
-      await chargerDetailRole(confirmRetrait.roleUuid)
-    } catch (err) {
-      notify.fromError(err)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const systemes  = roles?.filter((r) => !r.estPersonnalise) ?? []
-  const perso     = roles?.filter((r) => r.estPersonnalise)  ?? []
+  /* Calculs */
+  const systemes = roles?.filter((r) => !r.estPersonnalise) ?? []
+  const perso    = roles?.filter((r) => r.estPersonnalise)  ?? []
 
   const etabsFiltres = etabs.filter((e) =>
     !rechercheEtab || e.nom?.toLowerCase().includes(rechercheEtab.toLowerCase()),
   )
-  const dejaAssignesRole = new Set(
-    detailRole ? (detailData[detailRole] ?? []).map((x) => x.etablissementUuid) : [],
+  const dejaAssignesSet = new Set(
+    tiroir ? (detailData[tiroir.roleUuid] ?? []).map((x) => x.etablissementUuid) : [],
   )
   const itemsTiroir = etabs
-    .filter((e) => !dejaAssignesRole.has(e.uuid))
+    .filter((e) => !dejaAssignesSet.has(e.uuid))
     .map((e) => ({ id: e.uuid, title: e.nom, subtitle: e.slug ?? e.code }))
 
+  /* ── Rendu ── */
   return (
     <div className="ap">
       <div className="ap-page-head">
         <div>
           <h2 className="ap-page-title">Rôles</h2>
           <p className="ap-page-sub">
-            Rôles système (non modifiables) et rôles personnalisés assignables aux établissements.
+            Gérez les rôles système et personnalisés et leur accès aux établissements.
           </p>
         </div>
         <div className="ap-page-actions">
@@ -227,47 +299,92 @@ export default function RolesPage() {
         <Loader mode="inline" label="Chargement des rôles…" />
       ) : (
         <>
-          {/* Rôles système */}
+          {/* ── Rôles système ── */}
           <h3 style={{ marginBottom:10, fontSize:'0.82rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--ap-muted)' }}>
             Rôles système
           </h3>
           <div className="ap-card ap-card--flush" style={{ marginBottom:28 }}>
             <table className="ap-table">
-              <thead><tr><th>Code</th><th>Libellé</th><th>Famille</th><th>Portée</th></tr></thead>
+              <thead>
+                <tr><th>Code</th><th>Libellé</th><th>Famille</th><th>Établissements</th><th></th></tr>
+              </thead>
               <tbody>
                 {systemes.map((r) => (
-                  <tr key={r.uuid} style={{ cursor:'default' }}>
-                    <td><span className="ap-code">{r.code}</span></td>
-                    <td>{r.libelle}</td>
-                    <td><span className="ap-badge ap-badge--neutral">{FAMILLE_LABELS[r.familleAuth] ?? r.familleAuth}</span></td>
-                    <td style={{ display:'flex', alignItems:'center', gap:5, color:'var(--ap-muted)', fontSize:'0.82rem' }}>
-                      <Lock size={12} /> Système
-                    </td>
-                  </tr>
+                  <React.Fragment key={r.uuid}>
+                    <tr>
+                      <td><span className="ap-code">{r.code}</span></td>
+                      <td>{r.libelle}</td>
+                      <td><span className="ap-badge ap-badge--neutral">{FAMILLE_LABELS[r.familleAuth] ?? r.familleAuth}</span></td>
+                      <td>
+                        {r.code === 'super_admin' ? (
+                          <span style={{ color:'var(--ap-muted)', fontSize:'0.85rem' }}>-</span>
+                        ) : (
+                          <button type="button"
+                            style={{ background:'none', border:0, cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:'var(--ap-green)', fontFamily:'inherit', fontSize:'0.85rem', fontWeight:600, padding:'2px 0' }}
+                            onClick={() => toggleDetail(r.uuid)}>
+                            <Building2 size={14} aria-hidden="true" />
+                            {detailData[r.uuid] != null
+                              ? `${detailData[r.uuid].length} établissement${detailData[r.uuid].length > 1 ? 's' : ''}`
+                              : 'Voir les établissements'}
+                            {detailRole === r.uuid ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
+                          {r.code !== 'super_admin' && (
+                            <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm"
+                              onClick={() => ouvrirTiroir(r)}>
+                              <Building2 size={13} /> Assigner
+                            </button>
+                          )}
+                          <span style={{ display:'flex', alignItems:'center', gap:4, color:'var(--ap-muted)', fontSize:'0.82rem' }}>
+                            <Lock size={12} /> Système
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    {detailRole === r.uuid && r.code !== 'super_admin' && (
+                      <tr key={`${r.uuid}-detail`}>
+                        <td colSpan={5} style={{ padding:0, background:'rgba(0,107,60,0.03)' }}>
+                          <DetailEtablissements
+                            role={r}
+                            detailData={detailData}
+                            detailCharge={detailCharge}
+                            etabs={etabs}
+                            onOuvrirTiroir={ouvrirTiroir}
+                            onConfirmRetrait={setConfirmRetrait}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Rôles personnalisés */}
+          {/* ── Rôles personnalisés ── */}
           <h3 style={{ marginBottom:10, fontSize:'0.82rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--ap-muted)' }}>
             Rôles personnalisés
           </h3>
           {perso.length === 0 ? (
             <div className="ap-card ap-empty">
               <p>Aucun rôle personnalisé.</p>
-              <button type="button" className="ap-btn ap-btn--sm" onClick={ouvrirCreer}><Plus size={14} /> Créer</button>
+              <button type="button" className="ap-btn ap-btn--sm" onClick={ouvrirCreer}>
+                <Plus size={14} /> Créer
+              </button>
             </div>
           ) : (
             <div className="ap-card ap-card--flush">
               <table className="ap-table">
                 <thead>
-                  <tr><th>Code</th><th>Libellé</th><th>Famille</th><th>Établissements</th><th></th></tr>
+                  <tr><th>Code</th><th>Libellé</th><th>Famille</th><th>Établissements</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                   {perso.map((r) => (
-                    <>
-                      <tr key={r.uuid}>
+                    <React.Fragment key={r.uuid}>
+                      <tr>
                         <td><span className="ap-code">{r.code}</span></td>
                         <td>{r.libelle}</td>
                         <td><span className="ap-badge ap-badge--neutral">{FAMILLE_LABELS[r.familleAuth] ?? r.familleAuth}</span></td>
@@ -276,61 +393,44 @@ export default function RolesPage() {
                             style={{ background:'none', border:0, cursor:'pointer', display:'flex', alignItems:'center', gap:6, color:'var(--ap-green)', fontFamily:'inherit', fontSize:'0.85rem', fontWeight:600, padding:'2px 0' }}
                             onClick={() => toggleDetail(r.uuid)}>
                             <Building2 size={14} aria-hidden="true" />
-                            Voir les établissements
+                            {detailData[r.uuid] != null
+                              ? `${detailData[r.uuid].length} établissement${detailData[r.uuid].length > 1 ? 's' : ''}`
+                              : 'Voir les établissements'}
                             {detailRole === r.uuid ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                           </button>
                         </td>
                         <td>
                           <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-                            <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => ouvrirModifier(r)}>Modifier</button>
-                            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm" onClick={() => setSupprimer(r)}><Trash2 size={13} /></button>
+                            <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm"
+                              onClick={() => ouvrirTiroir(r)}>
+                              <Building2 size={13} /> Assigner
+                            </button>
+                            <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm"
+                              onClick={() => ouvrirModifier(r)}>
+                              Modifier
+                            </button>
+                            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm"
+                              onClick={() => setSupprimer(r)}>
+                              <Trash2 size={13} />
+                            </button>
                           </div>
                         </td>
                       </tr>
-
-                      {/* Ligne dépliable : établissements du rôle */}
                       {detailRole === r.uuid && (
                         <tr key={`${r.uuid}-detail`}>
                           <td colSpan={5} style={{ padding:0, background:'rgba(0,107,60,0.03)' }}>
-                            <div style={{ padding:'12px 18px' }}>
-                              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-                                <strong style={{ fontSize:'0.88rem' }}>Établissements ayant accès à « {r.libelle} »</strong>
-                                <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm"
-                                  onClick={() => setTiroir({ roleUuid: r.uuid, roleLibelle: r.libelle })}>
-                                  <Plus size={13} /> Assigner à des établissements
-                                </button>
-                              </div>
-                              {!detailData[r.uuid] ? (
-                                <Loader mode="inline" label="Chargement…" />
-                              ) : detailData[r.uuid].length === 0 ? (
-                                <p style={{ color:'var(--ap-muted)', fontSize:'0.85rem', margin:0 }}>
-                                  Aucun établissement pour ce rôle.
-                                </p>
-                              ) : (
-                                <table className="ap-table" style={{ marginBottom:0 }}>
-                                  <thead><tr><th>Établissement</th><th>Slug</th><th></th></tr></thead>
-                                  <tbody>
-                                    {detailData[r.uuid].map((a) => (
-                                      <tr key={a.uuid}>
-                                        <td><strong>{a.etablissementNom}</strong></td>
-                                        <td><span className="ap-code">{a.etablissementSlug}</span></td>
-                                        <td>
-                                          <button type="button" className="ap-btn ap-btn--ghost ap-btn--icon ap-btn--icon-danger"
-                                            onClick={() => setConfirmRetrait({ assignationUuid: a.uuid, roleUuid: r.uuid, roleLibelle: r.libelle, etabNom: a.etablissementNom })}
-                                            aria-label="Retirer">
-                                            <Trash2 size={14} />
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              )}
-                            </div>
+                            <DetailEtablissements
+                              role={r}
+                              detailData={detailData}
+                              detailCharge={detailCharge}
+                              etabs={etabs}
+                              onOuvrirTiroir={ouvrirTiroir}
+                              onConfirmRetrait={setConfirmRetrait}
+                            />
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
@@ -342,7 +442,7 @@ export default function RolesPage() {
       {/* Modale création / modification */}
       {modale && (
         <div className="cfg-modale-fond" role="dialog" aria-modal="true" aria-labelledby="m-role">
-          <div className="cfg-modale" style={{ maxWidth: 580 }}>
+          <div className="cfg-modale" style={{ maxWidth:580 }}>
             <div className="cfg-modale-tete">
               <h3 id="m-role">{modale === 'creer' ? 'Nouveau rôle personnalisé' : `Modifier · ${modale.role.code}`}</h3>
               <button type="button" className="ap-drawer-close" onClick={() => setModale(null)} aria-label="Fermer"><X size={16}/></button>
@@ -353,8 +453,9 @@ export default function RolesPage() {
                   <div className={`ap-field${erreurs.code ? ' has-error':''}`}>
                     <label className="ap-label" htmlFor="r-code">Code <em>*</em></label>
                     <input id="r-code" className="ap-input ap-input--mono"
-                      value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g,'') }))}
-                      placeholder="ex. secretaire" />
+                      value={form.code}
+                      onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g,'') }))}
+                      placeholder="ex. comptable" />
                     <p className="ap-hint">Minuscules, chiffres, tirets. Immuable après création.</p>
                     {erreurs.code && <p className="ap-error">{erreurs.code}</p>}
                   </div>
@@ -362,7 +463,8 @@ export default function RolesPage() {
                 <div className={`ap-field${erreurs.libelle ? ' has-error':''}`}>
                   <label className="ap-label" htmlFor="r-libelle">Libellé <em>*</em></label>
                   <input id="r-libelle" className="ap-input" value={form.libelle}
-                    onChange={(e) => setForm((f) => ({ ...f, libelle: e.target.value }))} placeholder="Ex. Secrétaire" />
+                    onChange={(e) => setForm((f) => ({ ...f, libelle: e.target.value }))}
+                    placeholder="Ex. Comptable" />
                   {erreurs.libelle && <p className="ap-error">{erreurs.libelle}</p>}
                 </div>
                 <div className="ap-field">
@@ -370,18 +472,17 @@ export default function RolesPage() {
                   <div style={{ display:'flex', gap:12 }}>
                     {FAMILLE_OPTIONS.map((o) => (
                       <label key={o.id} style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', fontSize:'0.88rem', fontWeight: form.familleAuth === o.id ? 700 : 400 }}>
-                        <input type="radio" name="fa" value={o.id} checked={form.familleAuth === o.id} onChange={() => setForm((f) => ({ ...f, familleAuth: o.id }))} />
+                        <input type="radio" name="fa" value={o.id} checked={form.familleAuth === o.id}
+                          onChange={() => setForm((f) => ({ ...f, familleAuth: o.id }))} />
                         {o.label}
                       </label>
                     ))}
                   </div>
                 </div>
-
-                {/* Sélection des établissements (création uniquement) */}
                 {modale === 'creer' && (
                   <div className="ap-field">
                     <label className="ap-label">Établissements (optionnel)</label>
-                    <p className="ap-hint" style={{ marginBottom:8 }}>Sélectionnez les établissements qui auront accès à ce rôle.</p>
+                    <p className="ap-hint" style={{ marginBottom:8 }}>Sélectionnez les établissements qui auront accès à ce rôle dès la création.</p>
                     <div className="ap-search" style={{ marginBottom:8 }}>
                       <Search size={15} />
                       <input className="ap-input" placeholder="Rechercher…" value={rechercheEtab}
@@ -444,7 +545,7 @@ export default function RolesPage() {
         onClose={() => setTiroir(null)}
       />
 
-      {/* Confirmation suppression rôle */}
+      {/* Confirmation suppression rôle personnalisé */}
       <ConfirmDialog
         open={!!supprimer}
         tone="danger"

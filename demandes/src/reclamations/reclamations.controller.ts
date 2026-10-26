@@ -13,10 +13,7 @@ export class ReclamationsController {
     return { message: 'Non implemente' };
   }
 
-  /**
-   * POST /v1/reclamations/{uuid}/messages
-   * Ajoute un message au fil de la reclamation.
-   */
+ 
   @Post(':uuid/messages')
   @HttpCode(201)
   async ajouterMessage(@Param('uuid') uuid: string, @Body() body: Record<string, unknown>) {
@@ -24,11 +21,6 @@ export class ReclamationsController {
     return { message: 'Non implemente' };
   }
 
-  /**
-   * PUT /v1/reclamations/{uuid}/statut
-   * Met a jour le statut d'une reclamation.
-   * Necessite la permission "repondre a une reclamation" (CDC section 5.3).
-   */
   @Put(':uuid/statut')
   async mettreAJourStatut(@Param('uuid') uuid: string, @Body() body: Record<string, unknown>) {
     // TODO : valider statut (en_cours|resolue|cloturee), notifier via RabbitMQ

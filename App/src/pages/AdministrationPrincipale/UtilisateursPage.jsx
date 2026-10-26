@@ -64,11 +64,7 @@ export default function UtilisateursPage() {
     <div className="ap">
       <div className="ap-page-head">
         <div>
-          <h2 className="ap-page-title">Utilisateurs</h2>
-          <p className="ap-page-sub">
-            Vue complète de tous les utilisateurs de la plateforme.
-            <strong> Lecture seule</strong> - la gestion des rôles se fait par l'administrateur de chaque établissement.
-          </p>
+          <h2 className="ap-page-title">Utilisateurs</h2>          
         </div>
         <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => charger(true)} disabled={charge}>
           <RefreshCw size={14} className={charge ? 'ap-spin' : ''} /> Actualiser

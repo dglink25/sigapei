@@ -1,9 +1,34 @@
 /**
- * Service - Demandes de rôle et assignations rôle ↔ établissements.
+ * Service - Assignations rôle ↔ établissements.
+ * Miroir de servicesAcces.service.js - préfixe /roles-etablissements.
  */
 import { authApi as api } from '../../lib/commun/http'
 
-// ── Côté admin établissement ──────────────────────────────────────────
+const A = '/roles-etablissements'
+
+// ── Assignations rôle ↔ établissements (super admin) ─────────────────
+export const rolesEtablissementsService = {
+  /** Résumé : nb rôles personnalisés par établissement. */
+  resume: () => api.get(`${A}/resume`),
+
+  /** Établissements ayant accès à un rôle. */
+  etablissementsParRole: (roleUuid) =>
+    api.get(`${A}/roles/${roleUuid}`),
+
+  /** Assigner un rôle à des établissements. */
+  assigner: (roleUuid, etablissementUuids) =>
+    api.post(A, { roleUuid, etablissementUuids }),
+
+  /** Retirer un rôle d'un établissement (par uuid de l'assignation). */
+  retirer: (assignationUuid) =>
+    api.delete(`${A}/${assignationUuid}`),
+
+  /** Rôles d'un établissement (personnalisés + système utilisés). */
+  rolesParEtablissement: (etablissementUuid) =>
+    api.get(`${A}/etablissements/${etablissementUuid}`),
+}
+
+// ── Demandes de rôle - côté admin établissement ───────────────────────
 export const demandesRoleEtabService = {
   listerMesDemandes: () =>
     api.get('/roles/mes-demandes'),
@@ -15,7 +40,7 @@ export const demandesRoleEtabService = {
     api.delete(`/roles/demandes/${uuid}`),
 }
 
-// ── Côté super admin ──────────────────────────────────────────────────
+// ── Demandes de rôle - côté super admin ──────────────────────────────
 export const demandesRoleAdminService = {
   listerToutesDemandes: (statut = 'en_attente') =>
     api.get(`/roles/demandes?statut=${statut}`),
@@ -25,19 +50,4 @@ export const demandesRoleAdminService = {
 
   refuser: (uuid, note) =>
     api.post(`/roles/demandes/${uuid}/refuser`, { note }),
-}
-
-// ── Assignations rôle ↔ établissements ────────────────────────────────
-export const rolesEtablissementsService = {
-  etablissementsParRole: (roleUuid) =>
-    api.get(`/roles/${roleUuid}/etablissements`),
-
-  assigner: (roleUuid, etablissementUuids) =>
-    api.post(`/roles/${roleUuid}/etablissements`, { etablissementUuids }),
-
-  retirer: (assignationUuid) =>
-    api.delete(`/roles/etablissements/${assignationUuid}`),
-
-  rolesParEtablissement: (etablissementUuid) =>
-    api.get(`/roles/etablissements/${etablissementUuid}/roles`),
 }

@@ -6,6 +6,7 @@ import ConfirmDialog    from '../../components/commun/ConfirmDialog'
 import Loader           from '../../components/commun/Loader'
 import { adminService } from '../../services/etablissements/etablissement.service'
 import { servicesAcces } from '../../services/identite/servicesAcces.service'
+import { rolesEtablissementsService } from '../../services/identite/rolesEtablissements.service'
 import { SERVICE_PATHS } from '../../config/services/config'
 import './admin.css'
 import './services.css'
@@ -39,15 +40,20 @@ export default function EtablissementsPage() {
   const [action,  setAction]  = useState(null) // { type: 'suspendre'|'reactiver', item }
   const [busy,    setBusy]    = useState(false)
   const [resume,  setResume]  = useState({}) // { [etablissementUuid]: { actifs, bloques } }
+  const [resumeRoles, setResumeRoles] = useState({}) // { [etablissementUuid]: { nbRoles } }
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const data = await etabService.lister()
       setItems(Array.isArray(data) ? data : data?.etablissements ?? data?.items ?? [])
-      // Résumé des services (Identité) : non bloquant, la page reste utilisable s'il échoue.
+      // Résumé des services (Identité) : non bloquant
       servicesAcces.resume()
         .then((r) => setResume(Object.fromEntries((r?.resume ?? []).map((x) => [x.etablissementUuid, x]))))
+        .catch(() => {})
+      // Résumé des rôles personnalisés : non bloquant
+      rolesEtablissementsService.resume()
+        .then((r) => setResumeRoles(Object.fromEntries((r?.resume ?? []).map((x) => [x.etablissementUuid, x]))))
         .catch(() => {})
     } catch (err) {
       notify.fromError(err)
@@ -166,6 +172,7 @@ export default function EtablissementsPage() {
                   <th>Types</th>
                   <th>Validé le</th>
                   <th>Services</th>
+                  <th>Rôles</th>
                   <th>Statut</th>
                   <th></th>
                 </tr>
@@ -192,6 +199,11 @@ export default function EtablissementsPage() {
                             {resume[e.uuid].bloques > 0 && <span className="ap-badge ap-badge--danger">{resume[e.uuid].bloques} bloqué{resume[e.uuid].bloques > 1 ? 's' : ''}</span>}
                           </span>
                         )
+                        : <span className="ap-badge ap-badge--neutral">Aucun</span>}
+                    </td>
+                    <td>
+                      {resumeRoles[e.uuid]
+                        ? <span className="ap-badge ap-badge--neutral">{resumeRoles[e.uuid].nbRoles} rôle{resumeRoles[e.uuid].nbRoles > 1 ? 's' : ''}</span>
                         : <span className="ap-badge ap-badge--neutral">Aucun</span>}
                     </td>
                     <td><StatutBadge statut={e.statut} /></td>

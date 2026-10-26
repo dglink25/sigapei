@@ -52,7 +52,7 @@ class ImporterArbreGeo extends Command
         {--col-commune=commune : Nom de la colonne de la commune}
         {--col-arrondissement=arrondissement : Nom de la colonne de l arrondissement}
         {--renommer : Quand un lieu existe deja sous une autre orthographe, adopte celle du fichier}
-        {--approximatif : Reconnait aussi les noms qui different d une ou deux lettres (ex. Pehonko / Pehunco)}
+        {--approximatif : Reconnait aussi les noms qui different d une ou deux lettres (Pehonko / Pehunco) ou dont l un contient l autre (Dogbo / Dogbo Tota)}
         {--simuler : Simule l import : affiche ce qui serait cree, sans rien enregistrer}';
 
     protected $description = 'Importe une arborescence pays / departement / commune / arrondissement depuis un CSV.';
@@ -257,15 +257,30 @@ class ImporterArbreGeo extends Command
     }
 
     /**
-     * Frere le plus proche par l'orthographe (distance de Levenshtein sur les cles de nom), a
-     * condition qu'il soit unique et tres proche : 1 lettre d'ecart pour un nom de 5 a 7 lettres,
-     * 2 a partir de 8, aucune en dessous (trop risque).
+     * Frere qui designe vraisemblablement le meme lieu, a condition que la correspondance soit unique :
+     *  1. inclusion de nom : l'un des deux noms commence par l'autre, d'au moins 4 lettres
+     *     ("Dogbo" et "Dogbo Tota") ;
+     *  2. sinon orthographe tres proche (distance de Levenshtein sur les cles de nom) : 1 lettre d'ecart
+     *     pour un nom de 5 a 7 lettres, 2 a partir de 8, aucune en dessous (trop risque).
      *
      * @param  array<string, array{id: int, nom: string}>  $freres
      * @return array{id: int, nom: string}|null
      */
     private function plusProche(array $freres, string $cle): ?array
     {
+        $inclusions = [];
+        foreach ($freres as $cleFrere => $frere) {
+            $cleFrere = (string) $cleFrere;
+            if ($cleFrere !== $cle
+                && min(strlen($cle), strlen($cleFrere)) >= 4
+                && (str_starts_with($cleFrere, $cle) || str_starts_with($cle, $cleFrere))) {
+                $inclusions[] = $frere;
+            }
+        }
+        if (count($inclusions) === 1) {
+            return $inclusions[0];
+        }
+
         $meilleur = null;
         $distanceMin = PHP_INT_MAX;
         $egalite = false;

@@ -6,6 +6,7 @@ import { RolesService } from './roles.service';
 import { RolesController } from './roles.controller';
 import { DemandesRoleService } from './demandes-role.service';
 import { DemandesRoleController } from './demandes-role.controller';
+import { RolesEtablissementsController } from './roles-etablissements.controller';
 import { EtablissementsRefModule } from '../etablissements-ref/etablissements-ref.module';
 import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
 
@@ -15,7 +16,7 @@ import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
     EtablissementsRefModule,
     RabbitmqModule,
   ],
-  controllers: [RolesController, DemandesRoleController],
+  controllers: [RolesController, DemandesRoleController, RolesEtablissementsController],
   providers: [RolesService, DemandesRoleService],
   exports: [RolesService, DemandesRoleService],
 })
