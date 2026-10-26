@@ -21,7 +21,9 @@ const FILTRES = [
 function DroitsUtilisateurDrawer({ user, onClose, onChanged }) {
   const notify = useNotify()
   const dernier = useRef(user)
+  // eslint-disable-next-line react-hooks/refs
   if (user) dernier.current = user
+  // eslint-disable-next-line react-hooks/refs
   const u = user ?? dernier.current
   const [data, setData] = useState(null)
   const [busy, setBusy] = useState(null)
@@ -29,6 +31,7 @@ function DroitsUtilisateurDrawer({ user, onClose, onChanged }) {
   useEffect(() => {
     if (!user) return undefined
     let annule = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setData(null)
     accesAdmin
       .droitsUtilisateur(user.uuid)

@@ -287,15 +287,38 @@ class ImporterGeoNames extends Command
         }
 
         // 2) Insertion / mise a jour du reste.
+        //    Les noms deja en base ne sont JAMAIS ecrases, sauf s'ils sont encore tels que GeoNames
+        //    les fournit (nom brut) : ils sont alors remplaces par la version nettoyee. Un nom
+        //    corrige a la main, ou par geo:arbre --renommer, survit donc a tout nouvel import.
+        $dejaImportes = [];
+        foreach (array_chunk(array_keys($noeuds), 5000) as $paquet) {
+            $lus = DB::table($table)
+                ->where('source', self::SOURCE)
+                ->whereIn('code_externe', array_map('strval', $paquet))
+                ->get(['id', 'code_externe', 'nom']);
+            foreach ($lus as $lu) {
+                $dejaImportes[(string) $lu->code_externe] = ['id' => (int) $lu->id, 'nom' => $lu->nom];
+            }
+        }
+
         $lignes = [];
+        $nomsAMettreAJour = []; // identifiant => nom nettoye
         foreach ($noeuds as $geoId => $noeud) {
             if (isset($candidats[$geoId])) {
                 continue; // garde le nom deja en base
             }
-            $nom = $nettoyerNoms ? NormalisationNom::nettoyer($noeud['nom']) : trim($noeud['nom']);
+
+            $propre = mb_substr($nettoyerNoms ? NormalisationNom::nettoyer($noeud['nom']) : trim($noeud['nom']), 0, 128);
+            $brut = mb_substr(trim($noeud['nom']), 0, 128);
+            $existant = $dejaImportes[(string) $geoId] ?? null;
+
+            if ($existant !== null && $existant['nom'] === $brut && $brut !== $propre) {
+                $nomsAMettreAJour[$existant['id']] = $propre;
+            }
+
             $lignes[] = [
                 $colonneParent => $noeud['parent'],
-                'nom' => mb_substr($nom, 0, 128),
+                'nom' => $propre,
                 'source' => self::SOURCE,
                 'code_externe' => (string) $geoId,
                 'created_at' => $maintenant,
@@ -303,7 +326,11 @@ class ImporterGeoNames extends Command
             ];
         }
         foreach (array_chunk($lignes, $lot) as $paquet) {
-            DB::table($table)->upsert($paquet, ['source', 'code_externe'], [$colonneParent, 'nom', 'updated_at']);
+            // 'nom' n'est volontairement pas dans les colonnes mises a jour (voir ci-dessus).
+            DB::table($table)->upsert($paquet, ['source', 'code_externe'], [$colonneParent, 'updated_at']);
+        }
+        foreach ($nomsAMettreAJour as $id => $nom) {
+            DB::table($table)->where('id', $id)->update(['nom' => $nom]);
         }
 
         // 3) Correspondance geonameid -> identifiant interne (lignes rattachees comprises).

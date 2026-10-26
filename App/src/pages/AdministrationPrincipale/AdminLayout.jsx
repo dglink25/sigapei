@@ -5,7 +5,6 @@ import {
   BarChart3, Settings, LogOut, Bell, Menu, X, Layers
 } from 'lucide-react'
 import { useAuth } from '../../context/identite/AuthContext'
-import { useNotify } from '../../context/commun/NotifyContext'
 import { withAuth } from '../../components/identite/RequireAuth'
 import ThemeToggle from '../../components/commun/ThemeToggle'
 import { ENV } from '../../config/commun/env'
@@ -34,15 +33,18 @@ const NAV = [
     groupe: 'ESPACES MÉTIER',
     items: [
       { id: 'demandes',       label: 'Demandes',             icon: FileText,        path: ADMIN_PATHS.demandes },
+      { id: 'demandes-cycle', label: 'Extensions de cycle',  icon: Layers,          path: '/admin/demandes-cycle' },
       { id: 'etablissements', label: 'Établissements',       icon: Building2,       path: '/admin/etablissements' },
       { id: 'services',       label: 'Services',             icon: Layers,          path: SERVICE_PATHS.liste },
       { id: 'utilisateurs',   label: 'Utilisateurs',         icon: Users,           path: '/admin/utilisateurs' },
+      { id: 'roles',          label: 'Rôles',                icon: Layers,          path: '/admin/roles' },
+      { id: 'demandes-role',  label: 'Demandes de rôle',     icon: FileText,        path: '/admin/demandes-role' },
     ],
   },
   {
     groupe: 'ADMINISTRATION',
     items: [
-      { id: 'parametres',     label: 'Sécurité & Compte',    icon: Settings,        path: COMPTE_PATH },
+      { id: 'parametres',     label: 'Paramètre',    icon: Settings,        path: COMPTE_PATH },
     ],
   },
 ]
@@ -60,7 +62,6 @@ function titreDepuisRoute(pathname, defaut) {
 
 function AdminLayoutInner({ pageTitle }) {
   const { user, logout } = useAuth()
-  const notify = useNotify()
   const location = useLocation()
   const [navOuvert, setNavOuvert] = useState(false)
 

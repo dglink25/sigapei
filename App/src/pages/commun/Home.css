@@ -1,19 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════
-   SIGAPEI — FEUILLE DE STYLE PRINCIPALE
-   Direction Artistique Sur-Mesure & Design Produit Épuré
-   Charte Officielle :
-     Vert Principal   : #006B3C (structure, boutons, accents identitaires)
-     Vert Profond     : #004D2B (survols, footer institutionnel)
-     Vert Clair       : rgba(0, 107, 60, 0.07) (fonds d’icônes, badges)
-     Or Institutionnel: #D99414 (actions clés, focus)
-     Or Foncé         : #BA7C0B (survols or)
-     Crème Délicat    : #FFF6DD (accents chauds)
-     Fond Page        : #FFFFFF (blanc pur, aéré et lumineux)
-     Textes           : #0D1522 (titres profonds), #475569 (corps de texte)
-     Filets / Bordures: #E5E9EB (finesse géométrique 1px)
-═══════════════════════════════════════════════════════════════════ */
 
-/* ── Reset & Variables Globales ── */
 .sg-page {
   --sg-green:        #006B3C;
   --sg-green-dark:   #004D2B;
@@ -92,6 +77,11 @@
 
 html {
   scroll-behavior: smooth;
+
+}
+
+/* ── Pleine Largeur Réelle - Zéro Conteneur / Fluidité 100% Écran ── */
+.sg-container {
   overflow-x: hidden;
   width: 100%;
 }

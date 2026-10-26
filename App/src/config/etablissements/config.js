@@ -22,6 +22,7 @@ export const ADMIN_PATHS = {
 export const ADMIN_ROLES = ['super_admin']
 
 export const TYPES = [
+  { id: 'maternelle', label: 'Maternelle' },
   { id: 'primaire', label: 'Primaire' },
   { id: 'secondaire', label: 'Secondaire' },
   { id: 'universite', label: 'Université' },
@@ -57,7 +58,7 @@ export const STEP_CHAMPS = {
   1: ['nom', 'types', 'annee_ouverture', 'email', 'telephone_1', 'telephone_2'],
   2: ['localisation', 'adresse_complete'],
   3: ['dirigeant_nom', 'dirigeant_titre', 'dirigeant_email', 'dirigeant_telephone'],
-  4: ['doc_autorisation', 'doc_piece_identite'],
+  4: ['doc_autorisation', 'doc_piece_identite', 'doc_logo'], // le logo est obligatoire
   5: ['confirm_authenticite', 'confirm_conditions'],
 }
 
@@ -76,7 +77,10 @@ export const SECTIONS_CORRIGEABLES = SECTIONS.map((s) => s.id)
 export const SECTION_OF = Object.fromEntries(SECTIONS.flatMap((s) => s.champs.map((c) => [c, s.id])))
 export const SECTION_TITLES = Object.fromEntries(SECTIONS.map((s) => [s.id, s.titre]))
 
-/** Types de documents = valeurs attendues par POST /demandes/{uuid}/documents */
+/**
+ * Types de documents = valeurs attendues par POST /demandes/{uuid}/documents.
+ * Logo : memes regles que le serveur (jpg, png, webp, 2 Mo, SVG refuse car il peut contenir du script).
+ */
 export const DOC_TYPES = {
   autorisation: {
     label: "Fiche / autorisation d'enseignement",
@@ -100,12 +104,12 @@ export const DOC_TYPES = {
   },
   logo: {
     label: "Logo de l'établissement",
-    help: 'Facultatif à la soumission',
+    help: 'Obligatoire · image PNG, JPG ou WebP, 2 Mo maximum',
     champ: 'doc_logo',
-    required: false,
-    maxMo: 5,
-    formats: 'PNG, JPG, SVG',
-    mimes: ['image/png', 'image/jpeg', 'image/svg+xml'],
-    exts: ['png', 'jpg', 'jpeg', 'svg'],
+    required: true,
+    maxMo: 2,
+    formats: 'PNG, JPG, WebP',
+    mimes: ['image/png', 'image/jpeg', 'image/webp'],
+    exts: ['png', 'jpg', 'jpeg', 'webp'],
   },
 }

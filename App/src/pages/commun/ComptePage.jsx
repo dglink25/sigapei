@@ -115,7 +115,10 @@ function OngletSessions() {
     }
   }, [notify])
 
-  useEffect(() => { charger() }, [charger])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    charger()
+  }, [charger])
 
   async function revoquer(uuid, estActuel) {
     try {

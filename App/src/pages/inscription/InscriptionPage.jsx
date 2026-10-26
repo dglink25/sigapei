@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCheck, Clock, CheckCircle, XCircle, Search, ArrowLeft, RefreshCw } from 'lucide-react'
+import { UserCheck, CheckCircle, XCircle, Search, ArrowLeft, RefreshCw } from 'lucide-react'
 import { inscriptionService } from '../../services/inscription/inscription.service'
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import './inscription.css'
@@ -28,6 +28,7 @@ export default function InscriptionPage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     chargerCandidatures()
   }, [])
 
@@ -135,8 +136,8 @@ export default function InscriptionPage() {
                     </td>
                     <td>{c.classe_visee?.nom ?? c.classe_nom ?? c.classe_visee_id ?? 'Non assignée'}</td>
                     <td>
-                      <div>{c.parent_nom ?? c.nom_parent ?? '—'}</div>
-                      <div className="text-xs text-muted">{c.parent_telephone ?? c.telephone_parent ?? '—'}</div>
+                      <div>{c.parent_nom ?? c.nom_parent ?? '-'}</div>
+                      <div className="text-xs text-muted">{c.parent_telephone ?? c.telephone_parent ?? '-'}</div>
                     </td>
                     <td>
                       <span className={`status-pill status-pill--${c.statut}`}>

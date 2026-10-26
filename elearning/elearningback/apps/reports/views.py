@@ -7,18 +7,34 @@ Vues en lecture seule, transverses aux applications du module :
 - GET /v1/statistiques/consolidees/ : indicateurs regroupés par matière.
 """
 from django.db.models import Avg, Count
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.permissions import (
+    ROLES_ENSEIGNANT_ADMIN,
+    EstEnseignantOuAdmin,
+)
 from apps.cours.models import Cours, Lecons
 from apps.devoirs.models import Devoirs, Soumissions
 from apps.quiz.models import Quiz, TentativesQuiz
 
 
 class ApprenantActiviteView(APIView):
-    """Activité E-learning d'un apprenant (soumissions + tentatives)."""
+    """Activité E-learning d'un apprenant (soumissions + tentatives).
+
+    Ouverte aux enseignants et administrateurs ; un apprenant (ou son
+    parent) ne consulte que sa propre activité (X-Apprenant-ID)."""
 
     def get(self, request, apprenant_uuid):
+        role = getattr(request, 'role', None)
+        if role not in ROLES_ENSEIGNANT_ADMIN:
+            if (not request.apprenant_id
+                    or str(request.apprenant_id) != str(apprenant_uuid)):
+                raise PermissionDenied(
+                    "Accès limité à l'activité de l'apprenant concerné "
+                    '(lui-même ou son enfant).'
+                )
         tenant_id = request.tenant_id
         soumissions = (
             Soumissions.objects.filter(
@@ -60,7 +76,9 @@ class ApprenantActiviteView(APIView):
 
 
 class StatistiquesView(APIView):
-    """GET /v1/statistiques/ : indicateurs globaux du tenant courant."""
+    """GET /v1/statistiques/ : indicateurs globaux du tenant courant
+    (enseignants et administrateurs)."""
+    permission_classes = [EstEnseignantOuAdmin]
 
     def get(self, request):
         tenant_id = request.tenant_id
@@ -100,7 +118,9 @@ class StatistiquesView(APIView):
 
 
 class StatistiquesConsolideesView(APIView):
-    """GET /v1/statistiques/consolidees/ : regroupement par matière."""
+    """GET /v1/statistiques/consolidees/ : regroupement par matière
+    (enseignants et administrateurs)."""
+    permission_classes = [EstEnseignantOuAdmin]
 
     def get(self, request):
         tenant_id = request.tenant_id

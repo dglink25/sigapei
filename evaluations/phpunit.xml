@@ -27,6 +27,7 @@
         <env name="RABBITMQ_PUBLICATION" value="false" force="true"/>
         <env name="INTERNAL_API_SECRET" value="secret-de-test-interne-0123456789abcdef" force="true"/>
         <env name="SCOLARITE_URL" value="http://scolarite.test" force="true"/>
+        <env name="RH_URL" value="http://rh.test" force="true"/>
         <!-- Base PostgreSQL de test : surchargeable par l'environnement (CI) -->
         <env name="DB_CONNECTION" value="pgsql"/>
         <env name="DB_HOST" value="127.0.0.1"/>

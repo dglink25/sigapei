@@ -56,7 +56,6 @@ export default function AuthPage() {
   // L'URL /login#recuperer ouvre directement le parcours de recuperation
   const mode = location.hash === '#recuperer' ? 'recover' : 'login'
   const from = location.state?.from
-  const redirectTo = from ? from.pathname + (from.search ?? '') + (from.hash ?? '') : HOME_PATH
 
   const [step, setStep] = useState('identifier') // identifier | confirm | otp | done
   const [method, setMethod] = useState('phone')
@@ -75,9 +74,13 @@ export default function AuthPage() {
   const [cooldown, setCooldown] = useState(0)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStep('identifier')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOtp('')
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAccount(null)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRevealed('')
   }, [mode])
 

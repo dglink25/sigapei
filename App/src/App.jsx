@@ -35,20 +35,28 @@ import { VersConnexion, VersEtablissement } from './pages/commun/Redirections'
 import PortailLayout from './components/commun/PortailLayout'
 
 /* Administration principale */
-import AdminLayout            from './pages/AdministrationPrincipale/AdminLayout'
-import Dashboard              from './pages/AdministrationPrincipale/Dashboard'
-import DemandesPage           from './pages/AdministrationPrincipale/DemandesPage'
-import DemandeDetailPage      from './pages/AdministrationPrincipale/DemandeDetailPage'
-import EtablissementsPage     from './pages/AdministrationPrincipale/EtablissementsPage'
-import ServicesPage           from './pages/AdministrationPrincipale/ServicesPage'
-import ServiceDetailPage      from './pages/AdministrationPrincipale/ServiceDetailPage'
+import AdminLayout               from './pages/AdministrationPrincipale/AdminLayout'
+import Dashboard                 from './pages/AdministrationPrincipale/Dashboard'
+import DemandesPage              from './pages/AdministrationPrincipale/DemandesPage'
+import DemandeDetailPage         from './pages/AdministrationPrincipale/DemandeDetailPage'
+import EtablissementsPage        from './pages/AdministrationPrincipale/EtablissementsPage'
+import ServicesPage              from './pages/AdministrationPrincipale/ServicesPage'
+import ServiceDetailPage         from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
+import EtablissementRolesPage    from './pages/AdministrationPrincipale/EtablissementRolesPage'
+import DemandesCyclePage         from './pages/AdministrationPrincipale/DemandesCyclePage'
+import RolesPage                 from './pages/AdministrationPrincipale/RolesPage'
+import DemandesRolePage          from './pages/AdministrationPrincipale/DemandesRolePage'
+import UtilisateursPage          from './pages/AdministrationPrincipale/UtilisateursPage'
 
-/** Hôte d'un établissement (sous-domaine, production). */
+/* E-Learning (ajouté par fusion) */
+import ElearningApp from './pages/elearning/ElearningApp'
+
+/** Hôte d'un établissement (sous-domaine en production). */
 const SLUG_HOTE = MODE_SOUS_DOMAINE ? detecterSlugEtablissement() : null
 
 /**
- * Routes d'un établissement enveloppées dans PortailLayout (sidebar institutionnelle).
+ * Routes d'un établissement enveloppées dans PortailLayout.
  * base = '' sur un sous-domaine ; '/etablissements/:slug' en local.
  */
 function routesEtablissement(base) {
@@ -129,16 +137,24 @@ export default function App() {
       {/* ── Administration : super_admin ── */}
       <Route element={<RequireAuth roles={['super_admin']} />}>
         <Route element={<AdminLayout />}>
-          <Route path={ADMIN_DASHBOARD_PATH}            element={<Dashboard />} />
-          <Route path={COMPTE_PATH}                      element={<ComptePage />} />
-          <Route path={ADMIN_PATHS.demandes}             element={<DemandesPage />} />
-          <Route path={ADMIN_PATHS.detailRoute}          element={<DemandeDetailPage />} />
-          <Route path={ADMIN_PATHS.etablissements}       element={<EtablissementsPage />} />
-          <Route path={SERVICE_PATHS.etablissementRoute} element={<EtablissementServicesPage />} />
-          <Route path={SERVICE_PATHS.liste}              element={<ServicesPage />} />
-          <Route path={SERVICE_PATHS.detailRoute}        element={<ServiceDetailPage />} />
+          <Route path={ADMIN_DASHBOARD_PATH}               element={<Dashboard />} />
+          <Route path={COMPTE_PATH}                        element={<ComptePage />} />
+          <Route path={ADMIN_PATHS.demandes}               element={<DemandesPage />} />
+          <Route path={ADMIN_PATHS.detailRoute}            element={<DemandeDetailPage />} />
+          <Route path={ADMIN_PATHS.etablissements}         element={<EtablissementsPage />} />
+          <Route path={SERVICE_PATHS.etablissementRoute}   element={<EtablissementServicesPage />} />
+          <Route path="/admin/etablissements/:uuid/roles"  element={<EtablissementRolesPage />} />
+          <Route path={SERVICE_PATHS.liste}                element={<ServicesPage />} />
+          <Route path={SERVICE_PATHS.detailRoute}          element={<ServiceDetailPage />} />
+          <Route path="/admin/demandes-cycle"              element={<DemandesCyclePage />} />
+          <Route path="/admin/roles"                       element={<RolesPage />} />
+          <Route path="/admin/demandes-role"               element={<DemandesRolePage />} />
+          <Route path="/admin/utilisateurs"                element={<UtilisateursPage />} />
         </Route>
       </Route>
+
+      {/* ── E-Learning (module ajouté par fusion) ── */}
+      <Route path="/elearning/*" element={<ElearningApp />} />
 
       {/* ── Erreurs ── */}
       <Route path={FORBIDDEN_PATH} element={<ForbiddenPage />} />

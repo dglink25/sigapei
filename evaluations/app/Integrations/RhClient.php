@@ -7,34 +7,63 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Affectation enseignant ↔ matière ↔ classe (CDC §17.2) : la vérification de sécurité la plus
- * importante du module. Aucun microservice RH n'existe encore : la source retenue est l'emploi du
- * temps de Scolarité (un enseignant est affecté s'il a un créneau actif pour cette matière dans
- * cette classe), via GET {SCOLARITE_URL}/v1/interne/emplois-du-temps?classe_uuid=&enseignant_uuid=.
+ * Affectation enseignant ↔ matière ↔ classe (CDC §17.2) : la vérification de
+ * sécurité la plus importante du module.
  *
- * CONTRAT DEMANDÉ À SCOLARITÉ : chaque créneau doit exposer enseignant_uuid et matiere_uuid
- * (uuid de la matière d'Évaluations), et accepter le filtre enseignant_uuid. Aujourd'hui seuls
- * enseignant_id / matiere_id (identifiants internes) sont renvoyés : la vérification échoue donc
- * (fail closed) et aucune note ne peut être saisie tant que le contrat n'est pas livré.
- * Quand le microservice RH existera, seule cette classe changera.
+ * Source de vérité : le microservice RH, seul propriétaire du schéma `rh`
+ * (table `affectations`). Règle n°1 : aucune jointure SQL inter-schémas, donc
+ * lecture par son API interne ; règle n°3 : en-tête `X-Internal-Secret`.
+ *
+ *   GET {RH_URL}/v1/interne/affectations/verifier  → data.affecte (booléen)
+ *   GET {RH_URL}/v1/interne/affectations           → data (liste, toujours actif)
+ *
+ * Service ou contrat indisponible ⇒ exception ⇒ HTTP 503 : une note n'est
+ * jamais saisie si l'affectation n'a pas pu être vérifiée (fail closed).
+ * Le filtrage distant n'est jamais pris pour argent comptant : l'écho des
+ * uuids renvoyé par RH est recontrôlé côté Évaluations.
  */
 class RhClient
 {
     public function estAffecte(string $enseignantUuid, string $matiereUuid, string $classeUuid): bool
     {
-        foreach ($this->creneaux($enseignantUuid, $classeUuid) as $c) {
-            if (($c['statut'] ?? 'actif') === 'actif' && hash_equals((string) $c['matiere_uuid'], $matiereUuid)) {
-                return true;
+        $donnees = $this->interroger('/v1/interne/affectations/verifier', [
+            'enseignant_uuid' => $enseignantUuid,
+            'matiere_uuid' => $matiereUuid,
+            'classe_uuid' => $classeUuid,
+        ]);
+
+        if (! is_array($donnees) || ! array_key_exists('affecte', $donnees)) {
+            throw new ContratIncompletException('RH ne fournit pas `data.affecte` sur /interne/affectations/verifier.');
+        }
+
+        foreach (['enseignant_uuid' => $enseignantUuid, 'matiere_uuid' => $matiereUuid, 'classe_uuid' => $classeUuid] as $champ => $attendu) {
+            if (! array_key_exists($champ, $donnees) || ! hash_equals((string) $donnees[$champ], $attendu)) {
+                throw new ContratIncompletException("RH ne renvoie pas un écho cohérent de `{$champ}`.");
             }
         }
 
-        return false;
+        return $donnees['affecte'] === true;
     }
 
     public function enseigneDansClasse(string $enseignantUuid, string $classeUuid): bool
     {
-        foreach ($this->creneaux($enseignantUuid, $classeUuid) as $c) {
-            if (($c['statut'] ?? 'actif') === 'actif') {
+        $affectations = $this->interroger('/v1/interne/affectations', [
+            'enseignant_uuid' => $enseignantUuid,
+            'classe_uuid' => $classeUuid,
+        ]);
+
+        if (! is_array($affectations) || ! array_is_list($affectations)) {
+            throw new ContratIncompletException('RH ne fournit pas `data` sous forme de liste sur /interne/affectations.');
+        }
+
+        foreach ($affectations as $a) {
+            if (! is_array($a) || ! array_key_exists('enseignant_uuid', $a) || ! array_key_exists('classe_uuid', $a)) {
+                throw new ContratIncompletException('RH ne fournit pas enseignant_uuid / classe_uuid dans ses affectations.');
+            }
+
+            if (($a['statut'] ?? 'actif') === 'actif'
+                && hash_equals((string) $a['classe_uuid'], $classeUuid)
+                && hash_equals((string) $a['enseignant_uuid'], $enseignantUuid)) {
                 return true;
             }
         }
@@ -42,10 +71,10 @@ class RhClient
         return false;
     }
 
-    /** @return list<array<string, mixed>> créneaux de CET enseignant dans CETTE classe */
-    private function creneaux(string $enseignantUuid, string $classeUuid): array
+    /** @param  array<string, mixed>  $filtres  @return mixed valeur de `data` */
+    private function interroger(string $chemin, array $filtres): mixed
     {
-        $url = rtrim((string) config('services.scolarite.url'), '/');
+        $url = rtrim((string) config('services.rh.url'), '/');
         $secret = (string) config('services.interne.secret', '');
 
         try {
@@ -54,36 +83,17 @@ class RhClient
                 'X-Tenant-Id' => (string) Contexte::tenantId(),
                 'Accept' => 'application/json',
             ])
-                ->timeout((int) config('services.scolarite.timeout', 5))
+                ->timeout((int) config('services.rh.timeout', 5))
                 ->retry(2, 200, throw: false)
-                ->get($url.'/v1/interne/emplois-du-temps', [
-                    'classe_uuid' => $classeUuid,
-                    'enseignant_uuid' => $enseignantUuid,
-                ]);
+                ->get($url.$chemin, ['tenant_id' => (string) Contexte::tenantId()] + $filtres);
         } catch (ConnectionException $e) {
-            throw new ServiceIndisponibleException('Scolarité (emplois du temps) injoignable.', previous: $e);
+            throw new ServiceIndisponibleException('RH (affectations) injoignable.', previous: $e);
         }
 
         if (! $reponse->successful()) {
-            throw new ServiceIndisponibleException('Scolarité (emplois du temps) a répondu HTTP '.$reponse->status().'.');
+            throw new ServiceIndisponibleException('RH (affectations) a répondu HTTP '.$reponse->status().'.');
         }
 
-        $creneaux = $reponse->json('donnees', $reponse->json('data'));
-        if (! is_array($creneaux) || ! array_is_list($creneaux)) {
-            throw new ServiceIndisponibleException('Réponse Scolarité inattendue (emplois du temps).');
-        }
-
-        $retenus = [];
-        foreach ($creneaux as $c) {
-            if (! array_key_exists('enseignant_uuid', $c) || ! array_key_exists('matiere_uuid', $c)) {
-                throw new ContratIncompletException('Scolarité ne fournit pas encore enseignant_uuid / matiere_uuid dans les emplois du temps.');
-            }
-            // Double contrôle côté Évaluations : on ne fait pas confiance au seul filtrage distant.
-            if ($c['classe_uuid'] === $classeUuid && is_string($c['enseignant_uuid']) && hash_equals($c['enseignant_uuid'], $enseignantUuid)) {
-                $retenus[] = $c;
-            }
-        }
-
-        return $retenus;
+        return $reponse->json('data');
     }
 }

@@ -17,6 +17,12 @@ return [
         'timeout' => (int) env('SCOLARITE_TIMEOUT', 5),
     ],
 
+    // Microservice RH : source de vérité de `rh.affectations` (règle 5), son unique propriétaire.
+    'rh' => [
+        'url' => env('RH_URL', 'http://api-rh:4009'),
+        'timeout' => (int) env('RH_TIMEOUT', 5),
+    ],
+
     // Microservice E-learning (phase 2) : appel API explicite avec jeton de service.
     'elearning' => [
         'url' => env('ELEARNING_URL', ''),

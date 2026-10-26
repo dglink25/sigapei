@@ -781,13 +781,13 @@ export default function Home() {
               <ul>
                 <li><a href="/login">Espace Connexion</a></li>
                 <li><a href="/demande">Inscrire un établissement</a></li>
-                <li><a href="/securite">Sécurité & Confidentialité</a></li>
+                <li><a href="/securite">Paramètre</a></li>
               </ul>
             </div>
           </div>
 
           <div className="sg-footer-bottom">
-            <p>© {new Date().getFullYear()} SIGAPEI — Tous droits réservés.</p>
+            <p>© {new Date().getFullYear()} SIGAPEI - Tous droits réservés.</p>
             <div className="sg-footer-chips">
               <span>Primaire</span>
               <span>Secondaire</span>

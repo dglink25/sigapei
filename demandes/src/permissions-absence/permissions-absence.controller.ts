@@ -12,10 +12,7 @@ import { ApiTags } from '@nestjs/swagger';
 @ApiTags('Permissions d\'absence')
 @Controller('permissions-absence')
 export class PermissionsAbsenceController {
-  /**
-   * POST /v1/permissions-absence
-   * Soumet une demande de permission d'absence (parent ou apprenant autonome).
-   */
+ 
   @Post()
   @HttpCode(201)
   async soumettre(@Body() body: Record<string, unknown>) {
@@ -24,11 +21,7 @@ export class PermissionsAbsenceController {
     return { message: 'Non implemente' };
   }
 
-  /**
-   * PUT /v1/permissions-absence/{uuid}/decision
-   * Valide ou rejette une permission d'absence.
-   * Necessite la permission "valider une permission d'absence" (CDC section 5.3).
-   */
+
   @Put(':uuid/decision')
   async decision(@Param('uuid') uuid: string, @Body() body: Record<string, unknown>) {
     // TODO : valider decision (validee|rejetee) + motif si rejet,

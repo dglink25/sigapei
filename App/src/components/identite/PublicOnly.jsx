@@ -15,12 +15,9 @@ export default function PublicOnly({ children }) {
   const location = useLocation()
   const notified = useRef(false)
 
-  useEffect(() => { notified.current = false }, [location.pathname])
-
-  if (status === 'loading') return <Loader label="Chargement de votre session…" />
-
-  if (status === 'authenticated') {
-    if (!notified.current) {
+  // La notification doit être déclenchée en dehors du rendu (useEffect)
+  useEffect(() => {
+    if (status === 'authenticated' && !notified.current) {
       notified.current = true
       const nom = user?.nomComplet ?? user?.nom_complet ?? ''
       notify.info(
@@ -28,6 +25,11 @@ export default function PublicOnly({ children }) {
         nom ? `Vous êtes connecté en tant que ${nom}.` : 'Vous êtes déjà connecté.',
       )
     }
+  }, [status, user, notify])
+
+  if (status === 'loading') return <Loader label="Chargement de votre session…" />
+
+  if (status === 'authenticated') {
     const from = location.state?.from
     const destination = from
       ? from.pathname + (from.search ?? '') + (from.hash ?? '')

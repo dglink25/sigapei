@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-/** Bulletins et classements (CDC Tableau 7) — lecture seule. */
+/** Bulletins et classements (CDC Tableau 7) - lecture seule. */
 class BulletinsController extends Controller
 {
     public function __construct(
@@ -37,7 +37,7 @@ class BulletinsController extends Controller
     }
 
     /**
-     * GET /v1/bulletins/apprenant/{uuid}/pdf?periode_uuid= — URL signée et expirante (CDC §8.2).
+     * GET /v1/bulletins/apprenant/{uuid}/pdf?periode_uuid= - URL signée et expirante (CDC §8.2).
      * Le PDF est produit après la clôture et stocké par le service Documents de la plateforme.
      */
     public function pdf(Request $request, string $apprenantUuid): JsonResponse

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { RefreshCw, Search, Power, RotateCcw, Layers } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { RefreshCw, Search, Power, RotateCcw, Layers, ShieldCheck, ChevronRight } from 'lucide-react'
 import { useNotify }    from '../../context/commun/NotifyContext'
 import ConfirmDialog    from '../../components/commun/ConfirmDialog'
 import Loader           from '../../components/commun/Loader'
 import { adminService } from '../../services/etablissements/etablissement.service'
 import { servicesAcces } from '../../services/identite/servicesAcces.service'
+import { rolesEtablissementsService } from '../../services/identite/rolesEtablissements.service'
 import { SERVICE_PATHS } from '../../config/services/config'
 import './admin.css'
 import './services.css'
@@ -30,7 +31,8 @@ function StatutBadge({ statut }) {
 }
 
 export default function EtablissementsPage() {
-  const notify = useNotify()
+  const notify   = useNotify()
+  const navigate = useNavigate()
   const [items,   setItems]   = useState(null)
   const [tab,     setTab]     = useState('tous')
   const [search,  setSearch]  = useState('')
@@ -38,15 +40,20 @@ export default function EtablissementsPage() {
   const [action,  setAction]  = useState(null) // { type: 'suspendre'|'reactiver', item }
   const [busy,    setBusy]    = useState(false)
   const [resume,  setResume]  = useState({}) // { [etablissementUuid]: { actifs, bloques } }
+  const [resumeRoles, setResumeRoles] = useState({}) // { [etablissementUuid]: { nbRoles } }
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const data = await etabService.lister()
       setItems(Array.isArray(data) ? data : data?.etablissements ?? data?.items ?? [])
-      // Résumé des services (Identité) : non bloquant, la page reste utilisable s'il échoue.
+      // Résumé des services (Identité) : non bloquant
       servicesAcces.resume()
         .then((r) => setResume(Object.fromEntries((r?.resume ?? []).map((x) => [x.etablissementUuid, x]))))
+        .catch(() => {})
+      // Résumé des rôles personnalisés : non bloquant
+      rolesEtablissementsService.resume()
+        .then((r) => setResumeRoles(Object.fromEntries((r?.resume ?? []).map((x) => [x.etablissementUuid, x]))))
         .catch(() => {})
     } catch (err) {
       notify.fromError(err)
@@ -56,7 +63,10 @@ export default function EtablissementsPage() {
     }
   }, [notify])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load()
+  }, [load])
 
   const counts = useMemo(() => {
     if (!items) return { tous: 0, actif: 0, suspendu: 0 }
@@ -162,14 +172,21 @@ export default function EtablissementsPage() {
                   <th>Types</th>
                   <th>Validé le</th>
                   <th>Services</th>
+                  <th>Rôles</th>
                   <th>Statut</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map(e => (
-                  <tr key={e.uuid}>
-                    <td><strong>{e.nom ?? '-'}</strong></td>
+                  <tr
+                    key={e.uuid}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(SERVICE_PATHS.etablissement(e.uuid))}
+                  >
+                    <td>
+                      <strong style={{ color: 'var(--ap-green)' }}>{e.nom ?? '-'}</strong>
+                    </td>
                     <td><span className="ap-code">{e.code ?? '-'}</span></td>
                     <td><span className="ap-code">{e.slug ?? '-'}</span></td>
                     <td>{Array.isArray(e.types) ? e.types.join(', ') : (e.types ?? '-')}</td>
@@ -184,33 +201,47 @@ export default function EtablissementsPage() {
                         )
                         : <span className="ap-badge ap-badge--neutral">Aucun</span>}
                     </td>
+                    <td>
+                      {resumeRoles[e.uuid]
+                        ? <span className="ap-badge ap-badge--neutral">{resumeRoles[e.uuid].nbRoles} rôle{resumeRoles[e.uuid].nbRoles > 1 ? 's' : ''}</span>
+                        : <span className="ap-badge ap-badge--neutral">Aucun</span>}
+                    </td>
                     <td><StatutBadge statut={e.statut} /></td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <Link className="ap-btn ap-btn--ghost ap-btn--sm" to={SERVICE_PATHS.etablissement(e.uuid)} style={{ marginRight: 8 }}>
-                        <Layers size={13} aria-hidden="true" />
-                        Services
+                      <Link
+                        className="ap-btn ap-btn--ghost ap-btn--sm"
+                        to={SERVICE_PATHS.etablissement(e.uuid)}
+                        style={{ marginRight: 6 }}
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <Layers size={13} aria-hidden="true" /> Services
+                      </Link>
+                      <Link
+                        className="ap-btn ap-btn--ghost ap-btn--sm"
+                        to={`/admin/etablissements/${e.uuid}/roles`}
+                        style={{ marginRight: 6 }}
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <ShieldCheck size={13} aria-hidden="true" /> Rôles
                       </Link>
                       {e.statut === 'actif' ? (
                         <button
                           type="button"
                           className="ap-btn ap-btn--danger ap-btn--sm"
-                          onClick={() => setAction({ type: 'suspendre', item: e })}
-                          title="Suspendre"
+                          onClick={(ev) => { ev.stopPropagation(); setAction({ type: 'suspendre', item: e }) }}
                         >
-                          <Power size={13} />
-                          Suspendre
+                          <Power size={13} /> Suspendre
                         </button>
                       ) : (
                         <button
                           type="button"
                           className="ap-btn ap-btn--sm"
-                          onClick={() => setAction({ type: 'reactiver', item: e })}
-                          title="Réactiver"
+                          onClick={(ev) => { ev.stopPropagation(); setAction({ type: 'reactiver', item: e }) }}
                         >
-                          <RotateCcw size={13} />
-                          Réactiver
+                          <RotateCcw size={13} /> Réactiver
                         </button>
                       )}
+                      <ChevronRight size={14} style={{ marginLeft: 6, color: 'var(--ap-muted)', opacity: 0.4, verticalAlign: 'middle' }} aria-hidden="true" />
                     </td>
                   </tr>
                 ))}

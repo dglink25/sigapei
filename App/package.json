@@ -14,12 +14,18 @@
     "@firebase/app": "^0.16.3",
     "@firebase/auth": "^1.13.7",
     "@simplewebauthn/browser": "^14.0.0",
+    "@tanstack/react-query": "^5.90.2",
+    "axios": "^1.13.1",
+    "hls.js": "^1.6.2",
     "libphonenumber-js": "^1.13.15",
     "lucide-react": "^1.55.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-markdown": "^10.1.0",
     "react-phone-number-input": "^3.4.18",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "remark-gfm": "^4.0.0",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

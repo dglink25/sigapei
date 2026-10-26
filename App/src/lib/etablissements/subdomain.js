@@ -2,6 +2,18 @@ import { LOGIN_PATH } from '../../config/identite/routes'
 
 const BASE_DOMAIN = (import.meta.env.VITE_BASE_DOMAIN || '').trim()
 
+/* ── Cache local du slug établissement ── */
+const SLUG_KEY = 'sigapei.etab_slug'
+export const sauvegarderSlugEtablissement = (slug) => {
+  try { if (slug) localStorage.setItem(SLUG_KEY, slug) } catch { /* ignore */ }
+}
+export const lireSlugEtablissementCache = () => {
+  try { return localStorage.getItem(SLUG_KEY) ?? null } catch { return null }
+}
+export const effacerSlugEtablissementCache = () => {
+  try { localStorage.removeItem(SLUG_KEY) } catch { /* ignore */ }
+}
+
 /** Construit l'URL publique d'un établissement à partir de son slug. */
 export function urlEtablissement(slug) {
   if (!slug) return '/'

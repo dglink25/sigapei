@@ -17,7 +17,9 @@ export default function ChecklistDrawer({
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQ('')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSel(new Set())
     }
   }, [open])

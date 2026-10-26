@@ -2,9 +2,11 @@
 
 namespace App\Domain\Onboarding;
 
+use App\Domain\Etablissement\LogoService;
 use App\Domain\Geo\LocalisationService;
 use App\Services\RabbitMQService;
 use App\Support\FusionFormulaire;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
@@ -17,6 +19,7 @@ class OnboardingService
     public function __construct(
         private RabbitMQService $rabbitmq,
         private LocalisationService $localisation,
+        private LogoService $logos,
     ) {}
 
     /**
@@ -88,13 +91,16 @@ class OnboardingService
     {
         $demande = DemandeEtablissement::where('uuid', $demandeUuid)->firstOrFail();
 
-        // Documents acceptes tant que le dossier est en cours ; apres validation,
-        // seul le logo peut encore etre ajoute (section 4.4).
-        $autorise = in_array($demande->statut, ['brouillon', 'correction_demandee'], true)
-            || ($demande->statut === 'validee' && $type === 'logo');
-
-        if (! $autorise) {
+        // Documents acceptes tant que le dossier est en cours. Apres validation,
+        // plus aucun upload non authentifie : le logo se change via
+        // POST /interne/mon-etablissement/logo (administrateur de l'etablissement).
+        if (! in_array($demande->statut, ['brouillon', 'correction_demandee'], true)) {
             abort(409, "Cette demande n'accepte plus de nouveau document.");
+        }
+
+        // Un seul logo par demande : un nouvel envoi remplace l'ancien.
+        if ($type === 'logo') {
+            return $this->logos->remplacer($demande, $fichier);
         }
 
         $disk   = config('filesystems.default', 'local');
@@ -119,6 +125,13 @@ class OnboardingService
         // Une demande deja soumise, en correction ou validee ne repasse jamais par ici.
         if ($demande->statut !== 'brouillon') {
             abort(409, 'Cette demande a déjà été soumise.');
+        }
+
+        // Le logo est obligatoire pour soumettre.
+        if (! $demande->documents()->where('type', 'logo')->exists()) {
+            throw ValidationException::withMessages([
+                'documents.logo' => ['Le logo est obligatoire.'],
+            ]);
         }
 
         // Localisation exploitable exigee des la soumission (pays, departement,

@@ -63,7 +63,7 @@ class EvaluationsController extends Controller
         return $this->ok($this->evaluations->creer($d), 'Évaluation créée.', 201);
     }
 
-    /** POST /v1/evaluations/{uuid}/verrouiller — l'enseignant verrouille sa saisie (CDC §8.1). */
+    /** POST /v1/evaluations/{uuid}/verrouiller - l'enseignant verrouille sa saisie (CDC §8.1). */
     public function verrouiller(Evaluation $evaluation): JsonResponse
     {
         return $this->ok($this->evaluations->verrouillerSaisie($evaluation), 'Saisie verrouillée.');

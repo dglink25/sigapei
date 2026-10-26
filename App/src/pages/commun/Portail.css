@@ -15,7 +15,7 @@
 .portail-shell *::after { box-sizing: border-box; }
 
 /* ════════════════════════════════════════
-   HEADER — sticky en haut
+   HEADER - sticky en haut
 ════════════════════════════════════════ */
 .portail-header {
   position: sticky;
@@ -25,7 +25,7 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-/* Bande or pleine largeur — EN BAS du header */
+/* Bande or pleine largeur - EN BAS du header */
 .portail-header-band {
   height: 5px;
   background: #E9AA20;
@@ -199,7 +199,7 @@
 .portail-etat p   { margin: 0; max-width: 420px; font-size: 0.9rem; line-height: 1.55; }
 
 /* ════════════════════════════════════════
-   FOOTER — FIXE en bas de l'écran
+   FOOTER - FIXE en bas de l'écran
 ════════════════════════════════════════ */
 .portail-footer {
   position: fixed;

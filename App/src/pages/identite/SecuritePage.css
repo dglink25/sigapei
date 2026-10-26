@@ -1,0 +1,29 @@
+.sec { min-height: 100dvh; background: #fff6dd; color: #14281e; font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif; }
+.sec-header { display: flex; align-items: center; gap: 16px; padding: 14px 24px; background: #006b3c; color: #fff6dd; }
+.sec-header h1 { margin: 0; font-size: 1.2rem; font-weight: 600; }
+.sec-back { display: inline-flex; align-items: center; gap: 6px; color: #e9aa20; text-decoration: none; font-weight: 600; }
+.sec-main { display: grid; gap: 18px; max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+.sec-card { padding: 22px; background: #fff; border: 1px solid rgba(0, 107, 60, 0.18); border-radius: 18px; box-shadow: 0 6px 20px rgba(0, 107, 60, 0.08); }
+.sec-card h2 { margin: 0 0 6px; font-size: 1.15rem; color: #006b3c; }
+.sec-card p { margin: 0 0 14px; color: #4a5c52; }
+.sec-btn { display: inline-flex; align-items: center; gap: 10px; height: 46px; padding: 0 20px; border: 0; border-radius: 12px; background: #006b3c; color: #fff6dd; font: inherit; font-weight: 600; cursor: pointer; }
+.sec-btn:disabled { opacity: 0.6; cursor: wait; }
+.sec-devices { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sec-devices li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #fff6dd; }
+.sec-devices li div { flex: 1; display: flex; flex-direction: column; }
+.sec-devices small { color: #5b6b62; }
+.sec-devices button { border: 0; background: transparent; color: #b3261e; cursor: pointer; }
+
+/* ── Thème sombre ── */
+[data-theme='dark'] .sec              { background: var(--sg-page-bg); color: var(--sg-text); }
+[data-theme='dark'] .sec-header       { background: #004d2b; }
+[data-theme='dark'] .sec-card         { background: var(--sg-surface); border-color: var(--sg-border); box-shadow: var(--sg-shadow-sm); }
+[data-theme='dark'] .sec-card h2      { color: #4ade80; }
+[data-theme='dark'] .sec-card p       { color: var(--sg-text-secondary); }
+[data-theme='dark'] .sec-devices li   { background: var(--sg-surface-2); }
+[data-theme='dark'] .sec-devices small { color: var(--sg-text-muted); }
+
+/* Alignement du bouton thème dans la topbar sécurité */
+.sec-header { flex-wrap: wrap; }
+.sec-header .tt-icon { color: rgba(255,246,221,0.8); --sg-theme-hover: rgba(255,246,221,0.12); }
+.sec-header .tt-icon:hover { color: #FFF6DD; }

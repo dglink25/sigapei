@@ -12,11 +12,22 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Le backend exige un X-Tenant-ID UUID valide sur toutes les routes /v1/.
+// Le backend exige sur toutes les routes /v1/ :
+// - un X-Tenant-ID UUID valide ;
+// - un X-Role (stand-in du futur claim JWT fourni par la gateway) ;
+// - un X-Apprenant-ID pour les rôles apprenant/parent (l'élève
+//   lui-même, ou son enfant) : le backend y restreint les soumissions,
+//   tentatives et réponses.
 api.interceptors.request.use((config) => {
-  const tenantId = useProfilStore.getState().tenantId
+  const { tenantId, role, apprenantId } = useProfilStore.getState()
   if (tenantId) {
     config.headers['X-Tenant-ID'] = tenantId
+  }
+  if (role) {
+    config.headers['X-Role'] = role
+  }
+  if ((role === 'apprenant' || role === 'parent') && apprenantId) {
+    config.headers['X-Apprenant-ID'] = apprenantId
   }
   return config
 })

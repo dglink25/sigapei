@@ -4,11 +4,20 @@ import { Role } from './role.entity';
 import { Utilisateur } from '../utilisateurs/utilisateur.entity';
 import { RolesService } from './roles.service';
 import { RolesController } from './roles.controller';
+import { DemandesRoleService } from './demandes-role.service';
+import { DemandesRoleController } from './demandes-role.controller';
+import { RolesEtablissementsController } from './roles-etablissements.controller';
+import { EtablissementsRefModule } from '../etablissements-ref/etablissements-ref.module';
+import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Role, Utilisateur])],
-  controllers: [RolesController],
-  providers: [RolesService],
-  exports: [RolesService],
+  imports: [
+    TypeOrmModule.forFeature([Role, Utilisateur]),
+    EtablissementsRefModule,
+    RabbitmqModule,
+  ],
+  controllers: [RolesController, DemandesRoleController, RolesEtablissementsController],
+  providers: [RolesService, DemandesRoleService],
+  exports: [RolesService, DemandesRoleService],
 })
 export class RolesModule {}

@@ -29,10 +29,15 @@ export function decodeJwt(token) {
 export function extractSession(raw) {
   const d = raw?.data ?? raw ?? {}
   const t = d.tokens ?? d
+  const u = d.utilisateur ?? d.user ?? d.profil ?? {}
   return {
     accessToken: t.accessToken ?? t.access_token ?? t.token ?? null,
     refreshToken: t.refreshToken ?? t.refresh_token ?? null,
-    user: d.utilisateur ?? d.user ?? d.profil ?? null,
+    user: {
+      ...u,
+      tenant_id: u.tenant_id ?? u.tenantId ?? d.tenant_id ?? d.tenantId ?? u.etablissement_id ?? d.etablissement_id ?? null,
+      role: u.role ?? d.role ?? null,
+    },
   }
 }
 

@@ -26,7 +26,7 @@ class ParametresController extends Controller
         private readonly CalculService $calcul,
     ) {}
 
-    /** GET /v1/grilles — barèmes plateforme + barèmes de l'établissement. */
+    /** GET /v1/grilles - barèmes plateforme + barèmes de l'établissement. */
     public function grilles(Request $request): JsonResponse
     {
         $request->validate(['cycle' => ['nullable', Rule::in(self::CYCLES)]]);
@@ -41,7 +41,7 @@ class ParametresController extends Controller
         return $this->ok($grilles);
     }
 
-    /** POST /v1/grilles — barème propre à l'établissement (administrateur). */
+    /** POST /v1/grilles - barème propre à l'établissement (administrateur). */
     public function creerGrille(Request $request): JsonResponse
     {
         $d = $request->validate([
@@ -111,7 +111,7 @@ class ParametresController extends Controller
         return $this->ok($p->toArray() + ['grille' => $p->grille], 'Règles de notation enregistrées.');
     }
 
-    /** POST /v1/modeles-bulletin — création ou mise à jour du modèle d'un cycle (CDC Tableau 7). */
+    /** POST /v1/modeles-bulletin - création ou mise à jour du modèle d'un cycle (CDC Tableau 7). */
     public function modele(Request $request): JsonResponse
     {
         $d = $request->validate([

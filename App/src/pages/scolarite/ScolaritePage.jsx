@@ -35,6 +35,7 @@ export default function ScolaritePage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     chargerDonnees()
   }, [])
 
@@ -155,8 +156,8 @@ export default function ScolaritePage() {
                       <td>
                         <div className="font-semibold">{a.nom} {a.prenom}</div>
                       </td>
-                      <td><code>{a.matricule ?? '—'}</code></td>
-                      <td>{a.classe?.nom ?? a.classe_nom ?? '—'}</td>
+                      <td><code>{a.matricule ?? '-'}</code></td>
+                      <td>{a.classe?.nom ?? a.classe_nom ?? '-'}</td>
                       <td>
                         <span className="status-pill status-pill--validee">{a.statut ?? 'actif'}</span>
                       </td>

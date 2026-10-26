@@ -30,6 +30,9 @@ class OpenApiSpec
                 ['name' => 'Onboarding', 'description' => "Demande d'inscription d'un établissement en 5 étapes, sans authentification."],
                 ['name' => 'Corrections', 'description' => 'Correction d\'un dossier via un lien signé à usage unique, sans authentification.'],
                 ['name' => 'Établissements', 'description' => 'Cycles autorisés, plans disponibles et abonnement d\'un établissement actif.'],
+                ['name' => 'Mon établissement', 'description' => "Profil de l'établissement, modifiable par son administrateur. Headers X-Internal-Secret + X-User-Role + X-Tenant-Uuid (posés par la Gateway après vérification du JWT)."],
+                ['name' => 'Configuration académique', 'description' => "Organisation pédagogique interne : années académiques, cycles actifs, subdivisions (groupes/sections/départements), niveaux scolaires, séries et filières, classes concrètes, cohortes universitaires, matières avec coefficient. Toutes ces routes sont sous `/interne/mon-etablissement/configuration/*` et exigent X-Internal-Secret + X-User-Role: administrateur + X-Tenant-Uuid. Une année académique ne peut jamais être supprimée."],
+                ['name' => 'Demandes de cycle', 'description' => "Flux de demande d'extension de cycle. Un établissement ne dispose que des cycles accordés lors de sa validation. S'il souhaite un nouveau cycle, il soumet une demande que le Super Administrateur instruit. Routes établissement : `/interne/mon-etablissement/demandes-cycle`. Routes Super Admin : `/interne/demandes-cycle`."],
                 ['name' => 'Interne', 'description' => 'Back-office Super Administrateur et passerelle API (Gateway). Header X-Internal-Secret obligatoire.'],
                 ['name' => 'Santé', 'description' => 'Sonde de disponibilité.'],
             ],
@@ -49,6 +52,7 @@ Documentation du microservice **Établissements** de la plateforme SIGAPEI : onb
 - Les routes **publiques** (accueil, géographie, informations d'un établissement par son code, onboarding, corrections) n'exigent aucune authentification.
 - Chaque établissement a un **code public unique de 4 caractères** (`XXXX`, lettres majuscules et chiffres sans I, L, O, 0, 1), distinct du `slug` (URL) et du `matricule` (identifiant de connexion du dirigeant, jamais exposé publiquement).
 - Les routes **`/interne/*`** exigent le header `X-Internal-Secret` (bouton **Authorize**). Elles ne sont jamais appelées par un client final.
+- Les routes **`/interne/mon-etablissement*`** exigent en plus `X-User-Role: administrateur` et `X-Tenant-Uuid` (uuid de l'établissement de l'utilisateur), posés par la Gateway après vérification du JWT d'api-identite. L'établissement visé n'est jamais lu dans l'URL.
 - Réponse en succès : `{ "success": true, ... }`.
 - Réponse en erreur : `{ "success": false, "error": { "code", "message", "details" }, "path", "timestamp" }`. Les erreurs levées directement par un contrôleur peuvent omettre `path` et `timestamp`.
 
@@ -130,6 +134,15 @@ MD;
         ];
     }
 
+    /** Headers de contexte utilisateur posés par la Gateway pour /interne/mon-etablissement*. */
+    private static function paramsContexteTenant(): array
+    {
+        return [
+            ['name' => 'X-User-Role', 'in' => 'header', 'required' => true, 'description' => 'Doit valoir `administrateur`.', 'schema' => ['type' => 'string', 'example' => 'administrateur']],
+            ['name' => 'X-Tenant-Uuid', 'in' => 'header', 'required' => true, 'description' => "Uuid de l'établissement de l'utilisateur, tiré du JWT par la Gateway.", 'schema' => ['type' => 'string', 'format' => 'uuid']],
+        ];
+    }
+
     /** Parametres de recherche communs aux listes de departements, communes et arrondissements. */
     private static function paramsRecherche(): array
     {
@@ -177,7 +190,7 @@ MD;
                 'get' => [
                     'tags' => ['Accueil'],
                     'summary' => "Page d'accueil publique d'un établissement",
-                    'description' => "Contenu public d'un établissement, retrouvé par son slug. Si l'établissement est suspendu ou archivé, un contenu dégradé est retourné (`degrade: true`) à la place du contenu normal. Mis en cache Redis, invalidé à chaque changement de statut.",
+                    'description' => "Contenu public d'un établissement, retrouvé par son slug. Si l'établissement est suspendu ou archivé, un contenu dégradé est retourné (`degrade: true`) à la place du contenu normal. Mis en cache Redis, invalidé à chaque changement de statut et à chaque modification du profil.",
                     'parameters' => [self::paramSlug()],
                     'responses' => [
                         '200' => self::succes("Contenu de l'établissement (normal ou dégradé)", [
@@ -308,7 +321,7 @@ MD;
                 'post' => [
                     'tags' => ['Onboarding'],
                     'summary' => 'Téléverse un document (étape 4)',
-                    'description' => "Envoie un fichier vers le stockage objet (S3/MinIO). Seule la référence (chemin, type MIME, taille) est écrite en base. Taille maximale : 10 Mo. Formats attendus : PDF, JPG, PNG (SVG accepté pour le logo).",
+                    'description' => "Envoie un fichier vers le stockage objet (S3/MinIO). Seule la référence (chemin, type MIME, taille) est écrite en base. Documents `autorisation` et `piece_identite` : 10 Mo maximum, formats PDF, JPG, PNG.\n\n**Logo** : jpg, png ou webp, 2 Mo maximum, SVG refusé. Une demande n'a qu'un seul logo : un nouvel envoi remplace l'ancien. Le logo est **obligatoire** pour pouvoir soumettre la demande.\n\nUn document n'est accepté que pour un brouillon ou un dossier en `correction_demandee` ; après validation, le logo se change via `POST /interne/mon-etablissement/logo`.",
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande (brouillon).')],
                     'requestBody' => [
                         'required' => true,
@@ -321,7 +334,7 @@ MD;
                                         'type' => [
                                             'type' => 'string',
                                             'enum' => ['autorisation', 'piece_identite', 'logo'],
-                                            'description' => "`autorisation` : fiche d'autorisation d'enseignement délivrée par l'État. `piece_identite` : pièce d'identité du fondateur/dirigeant. `logo` : facultatif à la soumission.",
+                                            'description' => "`autorisation` : fiche d'autorisation d'enseignement délivrée par l'État. `piece_identite` : pièce d'identité du fondateur/dirigeant. `logo` : obligatoire pour soumettre.",
                                         ],
                                         'fichier' => ['type' => 'string', 'format' => 'binary'],
                                     ],
@@ -343,7 +356,7 @@ MD;
                 'post' => [
                     'tags' => ['Onboarding'],
                     'summary' => 'Soumet la demande finalisée (étape 5)',
-                    'description' => "La localisation doit être complète : le pays est obligatoire, puis chaque niveau (département, commune, arrondissement) l'est tant que le référentiel en propose pour le niveau choisi ; l'adresse est obligatoire. Sinon `422` avec le détail par champ. Seul un brouillon peut être soumis (`409` sinon). Passe la demande au statut `soumise`, horodate la soumission et publie l'événement `demande.soumise` (notifications WhatsApp + e-mail à l'établissement, au dirigeant et au Super Administrateur, envoyées par le microservice Communication).\n\nLe jeton CAPTCHA est vérifié côté serveur avant tout traitement.",
+                    'description' => "Le **logo est obligatoire** : sans document de type `logo`, `422` (champ `documents.logo`). La localisation doit être complète : le pays est obligatoire, puis chaque niveau (département, commune, arrondissement) l'est tant que le référentiel en propose pour le niveau choisi ; l'adresse est obligatoire. Sinon `422` avec le détail par champ. Seul un brouillon peut être soumis (`409` sinon). Passe la demande au statut `soumise`, horodate la soumission et publie l'événement `demande.soumise` (notifications WhatsApp + e-mail à l'établissement, au dirigeant et au Super Administrateur, envoyées par le microservice Communication).\n\nLe jeton CAPTCHA est vérifié côté serveur avant tout traitement.",
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
                     'requestBody' => [
                         'required' => true,
@@ -450,7 +463,7 @@ MD;
                 'get' => [
                     'tags' => ['Établissements'],
                     'summary' => "Informations publiques d'un établissement par son code",
-                    'description' => "Retrouve un établissement à partir de son **code public à 4 caractères** (`XXXX`), sans authentification. La casse n'a pas d'importance (`ab3k` = `AB3K`).\n\nNe contient que des informations déjà publiques : jamais le matricule, ni les coordonnées GPS, ni les identifiants internes. Un établissement suspendu ou archivé retourne un contenu dégradé (`degrade: true`). Mis en cache Redis, invalidé à chaque changement de statut.\n\nUn code qui n'a pas exactement 4 caractères alphanumériques répond directement `404`.",
+                    'description' => "Retrouve un établissement à partir de son **code public à 4 caractères** (`XXXX`), sans authentification. La casse n'a pas d'importance (`ab3k` = `AB3K`).\n\nNe contient que des informations déjà publiques : jamais le matricule, ni les coordonnées GPS, ni les identifiants internes. Un établissement suspendu ou archivé retourne un contenu dégradé (`degrade: true`). Mis en cache Redis, invalidé à chaque changement de statut et à chaque modification du profil.\n\nUn code qui n'a pas exactement 4 caractères alphanumériques répond directement `404`.",
                     'parameters' => [[
                         'name' => 'code',
                         'in' => 'path',
@@ -476,7 +489,7 @@ MD;
                 'get' => [
                     'tags' => ['Établissements'],
                     'summary' => "Cycles que l'établissement peut activer",
-                    'description' => "Dérivés des types choisis à l'étape 1 : `primaire` → maternelle + primaire ; `secondaire` → secondaire ; `universite` → universitaire. Consommé par le microservice Scolarité.",
+                    'description' => "Dérivés des types de l'établissement : `maternelle` → maternelle seul ; `primaire` → maternelle + primaire ; `secondaire` → secondaire ; `universite` → universitaire. Quand l'administrateur retire un type, ses cycles passent à `inactif` (sans suppression). Consommé par le microservice Scolarité.",
                     'parameters' => [self::paramSlug()],
                     'responses' => [
                         '200' => self::succes('Cycles autorisés', [
@@ -520,6 +533,611 @@ MD;
                         ]),
                         '404' => self::reponseRef('RessourceIntrouvable'),
                         '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // ---------------- Mon établissement (administrateur de l'établissement) ----------------
+            '/interne/mon-etablissement' => [
+                'get' => [
+                    'tags' => ['Mon établissement'],
+                    'summary' => "Profil de l'établissement de l'administrateur connecté",
+                    'description' => "Inclut le matricule (jamais exposé publiquement) et la liste `champsModifiables`. L'établissement est déduit du header `X-Tenant-Uuid`, jamais de l'URL.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'responses' => [
+                        '200' => self::succes('Profil', ['etablissement' => self::ref('ProfilEtablissement')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+                'patch' => [
+                    'tags' => ['Mon établissement'],
+                    'summary' => 'Modifie partiellement le profil',
+                    'description' => "Seules les clés envoyées sont modifiées. **Modifiables** : `types`, `adresse_complete`, `localisation` (hiérarchie complète, remplace l'ancienne, validée comme à l'onboarding), `geolocalisation`. Le logo se change via `POST /interne/mon-etablissement/logo`.\n\nTout autre champ (nom, slug, code, matricule, statut, email, téléphones, année d'ouverture, dirigeant...) est refusé : `422` listant les champs refusés dans `details`, rien n'est modifié. Un corps vide répond aussi `422`.\n\n`types` : au moins un. Un type ajouté crée ou réactive ses cycles autorisés ; un type retiré passe ses cycles à `inactif` (sans suppression). Les abonnements ne sont pas modifiés. Établissement non `actif` : `409`. Les caches publics sont invalidés.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json(self::ref('ModificationEtablissement'), [
+                            'adresse_complete' => 'Rue 45, face à la pharmacie',
+                            'geolocalisation' => ['latitude' => 6.3702930, 'longitude' => 2.3912360],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Profil mis à jour', ['etablissement' => self::ref('ProfilEtablissement')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '409' => self::reponseRef('ConflitStatut'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/logo' => [
+                'post' => [
+                    'tags' => ['Mon établissement'],
+                    'summary' => 'Remplace le logo',
+                    'description' => "Formats jpg, png, webp ; 2 Mo maximum ; SVG refusé. L'ancien logo (fichier et ligne) est supprimé et `logoDocumentId` est mis à jour. Établissement non `actif` : `409`. Les caches publics sont invalidés.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => [
+                            'multipart/form-data' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'required' => ['fichier'],
+                                    'properties' => ['fichier' => ['type' => 'string', 'format' => 'binary']],
+                                ],
+                            ],
+                        ],
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Logo remplacé', ['logoDocumentId' => ['type' => 'string', 'format' => 'uuid']]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '409' => self::reponseRef('ConflitStatut'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // ---------------- Configuration académique ----------------
+            '/interne/mon-etablissement/configuration/annees' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les années académiques',
+                    'description' => "Années de l'établissement connecté, triées par `date_debut` décroissante. Le champ `statut` est calculé dynamiquement (jamais stocké) : `en_cours`, `a_venir`, `termine` ou `suspendu` (prioritaire). `nb_cycles` = nombre de cycles activés pour cette année.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'responses' => [
+                        '200' => self::succes('Liste des années académiques', [
+                            'data' => ['type' => 'array', 'items' => self::ref('AnneeAcademique')],
+                        ]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une année académique',
+                    'description' => "**Action irréversible** : une année créée ne peut jamais être supprimée. Le libellé (ex. `2026-2027`) est généré automatiquement depuis les dates si absent. Les chevauchements de plages entre années du même établissement sont interdits (`422`). Une confirmation explicite doit être affichée côté client avant l'appel.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['date_debut', 'date_fin'],
+                            'properties' => [
+                                'date_debut' => ['type' => 'string', 'format' => 'date', 'example' => '2026-09-01'],
+                                'date_fin'   => ['type' => 'string', 'format' => 'date', 'example' => '2027-07-31'],
+                                'libelle'    => ['type' => 'string', 'maxLength' => 20, 'nullable' => true, 'description' => 'Généré automatiquement si absent (ex. 2026-2027).'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Année créée', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/annees/{uuid}' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Détail d\'une année académique',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de l\'année académique.')]),
+                    'responses' => [
+                        '200' => self::succes('Année académique', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+                'patch' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Modifie partiellement une année',
+                    'description' => "Seules les clés envoyées sont modifiées. **Restriction** : `date_debut` et `date_fin` ne peuvent plus être modifiées si l'année est au statut `termine`. La note de suspension est modifiable à tout moment.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de l\'année académique.')]),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => [
+                                'date_debut'      => ['type' => 'string', 'format' => 'date'],
+                                'date_fin'        => ['type' => 'string', 'format' => 'date'],
+                                'libelle'         => ['type' => 'string', 'maxLength' => 20],
+                                'note_suspension' => ['type' => 'string'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Année mise à jour', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/annees/{uuid}/suspendre' => [
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Suspend une année académique',
+                    'description' => "La suspension est prioritaire sur le calcul normal du statut. Une année suspendue reste `suspendu` jusqu'à réactivation explicite, même si sa période est en cours. L'action est journalisée dans `audit_config_academique`.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de l\'année académique.')]),
+                    'requestBody' => [
+                        'required' => false,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => ['note' => ['type' => 'string', 'description' => 'Motif de la suspension (facultatif).']],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Année suspendue', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/annees/{uuid}/reactiver' => [
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Réactive une année suspendue',
+                    'description' => "Efface le flag `suspendu`. Le statut est recalculé depuis les dates : `en_cours`, `a_venir` ou `termine`. L'action est journalisée.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de l\'année académique.')]),
+                    'responses' => [
+                        '200' => self::succes('Année réactivée', ['data' => self::ref('AnneeAcademique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+
+            // Cycles actifs
+            '/interne/mon-etablissement/configuration/cycles' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les cycles actifs',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [[
+                        'name' => 'annee_uuid', 'in' => 'query', 'required' => false,
+                        'description' => 'Filtre par année académique.',
+                        'schema' => ['type' => 'string', 'format' => 'uuid'],
+                    ]]),
+                    'responses' => [
+                        '200' => self::succes('Cycles actifs', ['data' => ['type' => 'array', 'items' => self::ref('CycleConfig')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Active ou désactive un cycle pour une année',
+                    'description' => "Crée la ligne si elle n'existe pas (`actif: true` par défaut), sinon met à jour `actif`. Contrainte unique `(etablissement_id, annee_id, cycle)`.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'cycle'],
+                            'properties' => [
+                                'annee_uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                'cycle'      => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                                'actif'      => ['type' => 'boolean', 'default' => true],
+                            ],
+                        ], ['annee_uuid' => '...', 'cycle' => 'primaire', 'actif' => true]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Cycle mis à jour', ['data' => self::ref('CycleConfig')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // Subdivisions
+            '/interne/mon-etablissement/configuration/subdivisions' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les subdivisions pédagogiques',
+                    'description' => 'Groupes (primaire/maternelle), sections (secondaire) ou départements (université) filtrables par `annee_uuid` et `cycle_uuid`.',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [
+                        ['name' => 'annee_uuid',  'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                        ['name' => 'cycle_uuid',  'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                    ]),
+                    'responses' => [
+                        '200' => self::succes('Subdivisions', ['data' => ['type' => 'array', 'items' => self::ref('SubdivisionPedagogique')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une subdivision pédagogique',
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'cycle_config_uuid', 'type', 'nom'],
+                            'properties' => [
+                                'annee_uuid'        => ['type' => 'string', 'format' => 'uuid'],
+                                'cycle_config_uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                'type'              => ['type' => 'string', 'enum' => ['groupe', 'section', 'departement']],
+                                'nom'               => ['type' => 'string', 'maxLength' => 100, 'example' => 'Groupe A'],
+                                'code'              => ['type' => 'string', 'maxLength' => 20, 'nullable' => true, 'example' => 'A'],
+                                'description'       => ['type' => 'string', 'nullable' => true],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Subdivision créée', ['data' => self::ref('SubdivisionPedagogique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/subdivisions/{uuid}' => [
+                'patch' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Modifie une subdivision',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de la subdivision.')]),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => [
+                                'nom'        => ['type' => 'string', 'maxLength' => 100],
+                                'code'       => ['type' => 'string', 'maxLength' => 20],
+                                'description'=> ['type' => 'string'],
+                                'actif'      => ['type' => 'boolean'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Subdivision mise à jour', ['data' => self::ref('SubdivisionPedagogique')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+
+            // Niveaux
+            '/interne/mon-etablissement/configuration/niveaux' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les niveaux scolaires',
+                    'description' => "Référentiel des niveaux du tenant. Un même niveau (ex. CM2) est partagé par tous les groupes ; les classes concrètes font le lien avec une subdivision.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [[
+                        'name' => 'cycle', 'in' => 'query', 'required' => false,
+                        'schema' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                    ]]),
+                    'responses' => [
+                        '200' => self::succes('Niveaux scolaires', ['data' => ['type' => 'array', 'items' => self::ref('NiveauScolaire')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée un niveau scolaire',
+                    'description' => "L'abréviation est utilisée dans les sigles de classes (ex. `CM2` → `CM2 A`, `Tle` → `Tle D`). Contrainte unique `(etablissement_id, cycle, nom)`.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['cycle', 'nom'],
+                            'properties' => [
+                                'cycle'       => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                                'nom'         => ['type' => 'string', 'maxLength' => 100, 'example' => 'Cours moyen 2e année'],
+                                'abreviation' => ['type' => 'string', 'maxLength' => 20, 'nullable' => true, 'example' => 'CM2'],
+                                'ordre'       => ['type' => 'integer', 'minimum' => 0, 'description' => "Ordre d'affichage (0 = premier)."],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Niveau créé', ['data' => self::ref('NiveauScolaire')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/niveaux/{uuid}' => [
+                'patch' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Modifie un niveau scolaire',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid du niveau.')]),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => [
+                                'nom'         => ['type' => 'string', 'maxLength' => 100],
+                                'abreviation' => ['type' => 'string', 'maxLength' => 20],
+                                'ordre'       => ['type' => 'integer', 'minimum' => 0],
+                                'actif'       => ['type' => 'boolean'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Niveau mis à jour', ['data' => self::ref('NiveauScolaire')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+
+            // Séries / filières
+            '/interne/mon-etablissement/configuration/series' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les séries et filières',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [[
+                        'name' => 'cycle', 'in' => 'query', 'required' => false,
+                        'schema' => ['type' => 'string', 'enum' => ['secondaire', 'universitaire']],
+                    ]]),
+                    'responses' => [
+                        '200' => self::succes('Séries / filières', ['data' => ['type' => 'array', 'items' => self::ref('SerieFiliere')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une série ou une filière',
+                    'description' => "Secondaire : `A`, `C`, `D`, `F3`, `G2`… Université : `IT`, `EE`, `GC`… (filières rattachées à un département/`subdivision_uuid`). Contrainte unique `(etablissement_id, cycle, code)`.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['cycle', 'nom', 'code'],
+                            'properties' => [
+                                'cycle'            => ['type' => 'string', 'enum' => ['secondaire', 'universitaire']],
+                                'nom'              => ['type' => 'string', 'maxLength' => 100, 'example' => 'Sciences expérimentales'],
+                                'code'             => ['type' => 'string', 'maxLength' => 20, 'example' => 'D'],
+                                'description'      => ['type' => 'string', 'nullable' => true],
+                                'subdivision_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true, 'description' => 'Département universitaire auquel rattacher la filière (université uniquement).'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Série / filière créée', ['data' => self::ref('SerieFiliere')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // Classes concrètes
+            '/interne/mon-etablissement/configuration/classes' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les classes concrètes',
+                    'description' => "Une classe = niveau × subdivision × (série optionnelle). Le sigle est généré automatiquement (`CM2 A`, `Tle D`) mais reste modifiable.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [
+                        ['name' => 'annee_uuid', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                        ['name' => 'cycle',      'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']]],
+                    ]),
+                    'responses' => [
+                        '200' => self::succes('Classes concrètes', ['data' => ['type' => 'array', 'items' => self::ref('ClasseConfig')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une classe concrète',
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'niveau_uuid', 'subdivision_uuid'],
+                            'properties' => [
+                                'annee_uuid'             => ['type' => 'string', 'format' => 'uuid'],
+                                'niveau_uuid'            => ['type' => 'string', 'format' => 'uuid'],
+                                'subdivision_uuid'       => ['type' => 'string', 'format' => 'uuid'],
+                                'serie_uuid'             => ['type' => 'string', 'format' => 'uuid', 'nullable' => true, 'description' => 'Optionnel. Secondaire ou université.'],
+                                'sigle'                  => ['type' => 'string', 'maxLength' => 50, 'nullable' => true, 'description' => 'Laissez vide pour génération automatique.'],
+                                'effectif_previsionnel'  => ['type' => 'integer', 'minimum' => 1, 'nullable' => true],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Classe créée', ['data' => self::ref('ClasseConfig')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // Cohortes
+            '/interne/mon-etablissement/configuration/cohortes' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les cohortes universitaires',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [[
+                        'name' => 'annee_uuid', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid'],
+                    ]]),
+                    'responses' => [
+                        '200' => self::succes('Cohortes universitaires', ['data' => ['type' => 'array', 'items' => self::ref('CohorteUniversitaire')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Crée une cohorte universitaire',
+                    'description' => "Le sigle est généré automatiquement (ex. `IT2A` = filière IT, niveau L2, lettre A) si absent.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'filiere_uuid', 'niveau_uuid', 'diplome'],
+                            'properties' => [
+                                'annee_uuid'   => ['type' => 'string', 'format' => 'uuid'],
+                                'filiere_uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                'niveau_uuid'  => ['type' => 'string', 'format' => 'uuid'],
+                                'diplome'      => ['type' => 'string', 'enum' => ['licence', 'master', 'doctorat', 'ingenieur', 'bts', 'dut', 'autre']],
+                                'lettre'       => ['type' => 'string', 'maxLength' => 5, 'nullable' => true, 'example' => 'A'],
+                                'sigle'        => ['type' => 'string', 'maxLength' => 30, 'nullable' => true],
+                                'semestres'    => ['type' => 'string', 'maxLength' => 50, 'nullable' => true, 'example' => '1,2'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Cohorte créée', ['data' => self::ref('CohorteUniversitaire')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // Matières
+            '/interne/mon-etablissement/configuration/matieres' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Liste les configurations de matières',
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [
+                        ['name' => 'annee_uuid',  'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                        ['name' => 'niveau_uuid', 'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'format' => 'uuid']],
+                        ['name' => 'cycle',       'in' => 'query', 'required' => false, 'schema' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']]],
+                    ]),
+                    'responses' => [
+                        '200' => self::succes('Configurations de matières', ['data' => ['type' => 'array', 'items' => self::ref('MatiereConfig')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Configure une matière avec son coefficient',
+                    'description' => "`coefficient` **NULL** = non défini (pas de coefficient, approprié maternelle/primaire). `coefficient = 0` est une valeur numérique différente. `matiere_uuid_externe` = UUID depuis `evaluations.matieres` (jamais de FK locale inter-microservice). Contrainte unique `(etablissement_id, annee_id, niveau_id, serie_id, matiere_uuid_externe)`. Après création, appeler `GET …/matieres/{uuid}/propagation` pour voir les classes homologues potentielles.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['annee_uuid', 'cycle', 'niveau_uuid', 'matiere_uuid_externe', 'nom_matiere'],
+                            'properties' => [
+                                'annee_uuid'           => ['type' => 'string', 'format' => 'uuid'],
+                                'cycle'                => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                                'niveau_uuid'          => ['type' => 'string', 'format' => 'uuid'],
+                                'serie_uuid'           => ['type' => 'string', 'format' => 'uuid', 'nullable' => true],
+                                'matiere_uuid_externe' => ['type' => 'string', 'format' => 'uuid', 'description' => 'UUID de la matière dans evaluations.matieres.'],
+                                'nom_matiere'          => ['type' => 'string', 'maxLength' => 255, 'example' => 'Éducation scientifique et technologie'],
+                                'code_matiere'         => ['type' => 'string', 'maxLength' => 30, 'nullable' => true, 'example' => 'EST'],
+                                'coefficient'          => ['type' => 'number', 'nullable' => true, 'description' => 'NULL = non défini. 0 est une valeur numérique différente.'],
+                                'est_obligatoire'      => ['type' => 'boolean', 'default' => true],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Matière configurée', ['data' => self::ref('MatiereConfig')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/matieres/{uuid}/propagation' => [
+                'get' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Aperçu des classes homologues pour propagation',
+                    'description' => "Retourne les classes qui partagent le même niveau et la même année mais dans d'autres subdivisions, et pour lesquelles cette matière n'est pas encore configurée.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de la MatiereConfig.')]),
+                    'responses' => [
+                        '200' => self::succes('Classes homologues', [
+                            'data' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'classes' => ['type' => 'array', 'items' => ['type' => 'object', 'properties' => [
+                                        'uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                        'sigle' => ['type' => 'string'],
+                                        'niveau' => ['type' => 'string'],
+                                        'subdivision' => ['type' => 'string'],
+                                    ]]],
+                                    'count' => ['type' => 'integer'],
+                                ],
+                            ],
+                        ]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/configuration/matieres/{uuid}/propager' => [
+                'post' => [
+                    'tags' => ['Configuration académique'],
+                    'summary' => 'Propage une matière aux classes homologues',
+                    'description' => "Crée une `MatiereConfig` identique (même nom, code, coefficient, caractère obligatoire) pour chaque classe homologue (même niveau, même année, autre subdivision) qui n'en dispose pas encore. Les doublons sont évités par la contrainte d'unicité en base. L'action est journalisée dans `audit_config_academique`.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de la MatiereConfig source.')]),
+                    'responses' => [
+                        '200' => self::succes('Propagation effectuée', [
+                            'data' => ['type' => 'object', 'properties' => ['crees' => ['type' => 'integer', 'description' => 'Nombre de nouvelles configurations créées.']]],
+                        ]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
                     ],
                 ],
             ],
@@ -580,7 +1198,7 @@ MD;
                 'post' => [
                     'tags' => ['Interne'],
                     'summary' => 'Valide définitivement la demande',
-                    'description' => "La localisation doit être complète (même règle qu'à la soumission), sinon `422` : demander alors une correction. En **une seule transaction** : crée l'établissement (statut `actif`) avec son code public, son slug et son matricule, enregistre ses cycles autorisés et passe la demande à `validee`. Publie ensuite `etablissement.valide`, que le microservice Identité consomme pour créer le compte administrateur du dirigeant.\n\nSlug : minuscules, sans accents, suffixe numérique en cas de collision (`jean-marie-2`). Matricule : mot significatif le plus court du nom + code à 4 chiffres (ex. `kisito8945`).",
+                    'description' => "La localisation doit être complète (même règle qu'à la soumission), sinon `422` : demander alors une correction. En **une seule transaction** : crée l'établissement (statut `actif`) avec son code public, son slug et son matricule, rattache le logo de la demande (`logoDocumentId`), enregistre ses cycles autorisés et passe la demande à `validee`. Publie ensuite `etablissement.valide`, que le microservice Identité consomme pour créer le compte administrateur du dirigeant.\n\nSlug : minuscules, sans accents, suffixe numérique en cas de collision (`jean-marie-2`). Matricule : mot significatif le plus court du nom + code à 4 chiffres (ex. `kisito8945`).",
                     'security' => $secret,
                     'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
                     'responses' => [
@@ -601,7 +1219,7 @@ MD;
                 'post' => [
                     'tags' => ['Interne'],
                     'summary' => 'Suspend un établissement',
-                    'description' => "Effet immédiat : le statut passe à `suspendu`, les caches Redis du slug sont invalidés et `etablissement.suspendu` est publié. La page d'accueil publique affiche alors un contenu dégradé.",
+                    'description' => "Effet immédiat : le statut passe à `suspendu`, les caches Redis du slug sont invalidés et `etablissement.suspendu` est publié. La page d'accueil publique affiche alors un contenu dégradé. Tant qu'il est suspendu, son administrateur ne peut plus modifier le profil (`409`).",
                     'security' => $secret,
                     'parameters' => [self::paramUuid('uuid', "Uuid de l'établissement.")],
                     'responses' => [
@@ -717,8 +1335,15 @@ MD;
                         'error' => ['code' => 'SECRET_INTERNE_INVALIDE', 'message' => 'Acces reserve aux services internes de la plateforme.'],
                     ]),
                 ],
+                'AccesAdministrateurRequis' => [
+                    'description' => "Rôle `administrateur` absent, ou header `X-Tenant-Uuid` absent ou invalide.",
+                    'content' => self::json(self::ref('Erreur'), [
+                        'success' => false,
+                        'error' => ['code' => 'ROLE_ADMINISTRATEUR_REQUIS', 'message' => "Action réservée à l'administrateur de l'établissement."],
+                    ]),
+                ],
                 'ConflitStatut' => [
-                    'description' => "Action impossible dans l'état actuel de la demande (ex. demande déjà soumise ou déjà validée).",
+                    'description' => "Action impossible dans l'état actuel de la demande ou de l'établissement (ex. demande déjà soumise ou déjà validée, établissement non actif).",
                     'content' => self::json(self::ref('Erreur'), [
                         'success' => false,
                         'error' => ['code' => 'CONFLIT', 'message' => 'Cette demande a déjà été soumise.', 'details' => null],
@@ -785,8 +1410,8 @@ MD;
                                 'types' => [
                                     'type' => 'array',
                                     'minItems' => 1,
-                                    'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']],
-                                    'description' => 'Un établissement peut cumuler plusieurs types ; au moins un est obligatoire.',
+                                    'items' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universite']],
+                                    'description' => 'Un établissement peut cumuler plusieurs types ; au moins un est obligatoire. `maternelle` peut être demandé seul.',
                                 ],
                                 'annee_ouverture' => ['type' => 'integer', 'description' => 'Inférieure ou égale à l\'année en cours.', 'example' => 2015],
                                 'email' => ['type' => 'string', 'format' => 'email'],
@@ -882,7 +1507,7 @@ MD;
                         'code' => ['type' => 'string', 'example' => 'K7QP'],
                         'slug' => ['type' => 'string', 'example' => 'complexe-scolaire-kisito'],
                         'nom' => ['type' => 'string', 'example' => 'Complexe Scolaire Kisito'],
-                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['primaire', 'secondaire', 'universite']]],
+                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universite']]],
                         'anneeOuverture' => ['type' => 'integer', 'example' => 2015],
                         'logoDocumentId' => ['type' => 'string', 'nullable' => true],
                         'adresseComplete' => ['type' => 'string'],
@@ -915,6 +1540,83 @@ MD;
                         'message' => ['type' => 'string', 'description' => 'Présent uniquement en contenu dégradé.'],
                     ],
                 ],
+                'ModificationEtablissement' => [
+                    'type' => 'object',
+                    'description' => 'Tous les champs sont facultatifs ; au moins un est requis. Toute autre clé est refusée (`422`).',
+                    'properties' => [
+                        'types' => [
+                            'type' => 'array',
+                            'minItems' => 1,
+                            'items' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universite']],
+                            'description' => 'Remplace la liste des types. Un type retiré passe ses cycles à `inactif`.',
+                        ],
+                        'adresse_complete' => ['type' => 'string', 'minLength' => 5, 'maxLength' => 1000],
+                        'localisation' => [
+                            'type' => 'object',
+                            'required' => ['pays_uuid'],
+                            'description' => "Hiérarchie complète : remplace l'ancienne. Un niveau absent est effacé ; la règle de complétude de l'onboarding s'applique.",
+                            'properties' => [
+                                'pays_uuid' => ['type' => 'string', 'format' => 'uuid'],
+                                'departement_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true],
+                                'commune_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true],
+                                'arrondissement_uuid' => ['type' => 'string', 'format' => 'uuid', 'nullable' => true],
+                            ],
+                        ],
+                        'geolocalisation' => [
+                            'type' => 'object',
+                            'required' => ['latitude', 'longitude'],
+                            'properties' => [
+                                'latitude' => ['type' => 'number', 'minimum' => -90, 'maximum' => 90],
+                                'longitude' => ['type' => 'number', 'minimum' => -180, 'maximum' => 180],
+                            ],
+                        ],
+                    ],
+                ],
+                'ProfilEtablissement' => [
+                    'type' => 'object',
+                    'description' => "Profil vu par l'administrateur de l'établissement (matricule inclus). `nom`, `contact`, `anneeOuverture`, `code`, `slug` et `matricule` sont en lecture seule.",
+                    'properties' => [
+                        'uuid' => ['type' => 'string', 'format' => 'uuid'],
+                        'code' => ['type' => 'string', 'example' => 'K7QP'],
+                        'slug' => ['type' => 'string', 'example' => 'complexe-scolaire-kisito'],
+                        'matricule' => ['type' => 'string', 'example' => 'kisito8945'],
+                        'nom' => ['type' => 'string'],
+                        'types' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universite']]],
+                        'anneeOuverture' => ['type' => 'integer', 'example' => 2015],
+                        'logoDocumentId' => ['type' => 'string', 'nullable' => true],
+                        'adresseComplete' => ['type' => 'string'],
+                        'localisation' => [
+                            'type' => 'object',
+                            'description' => 'Chaque niveau : { uuid, nom } (pays : + code), ou null.',
+                            'properties' => [
+                                'pays' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'code' => ['type' => 'string', 'example' => 'BJ'], 'nom' => ['type' => 'string']]],
+                                'departement' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                                'commune' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                                'arrondissement' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                            ],
+                        ],
+                        'geolocalisation' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'latitude' => ['type' => 'number', 'nullable' => true],
+                                'longitude' => ['type' => 'number', 'nullable' => true],
+                            ],
+                        ],
+                        'contact' => [
+                            'type' => 'object',
+                            'description' => 'Lecture seule.',
+                            'properties' => [
+                                'email' => ['type' => 'string'],
+                                'telephone1' => ['type' => 'string'],
+                                'telephone2' => ['type' => 'string', 'nullable' => true],
+                            ],
+                        ],
+                        'cyclesAutorises' => ['type' => 'array', 'items' => self::ref('CycleAutorise')],
+                        'statut' => ['type' => 'string', 'enum' => ['actif', 'suspendu', 'archive']],
+                        'dateValidation' => ['type' => 'string', 'format' => 'date-time'],
+                        'champsModifiables' => ['type' => 'array', 'items' => ['type' => 'string'], 'example' => ['types', 'adresse_complete', 'localisation', 'geolocalisation', 'logo']],
+                    ],
+                ],
                 'AccueilPlateforme' => [
                     'type' => 'object',
                     'properties' => [
@@ -945,6 +1647,266 @@ MD;
                         'statut' => ['type' => 'string', 'enum' => ['actif', 'suspendu', 'archive']],
                         'degrade' => ['type' => 'boolean'],
                         'message' => ['type' => 'string', 'description' => 'Présent uniquement en contenu dégradé.'],
+                    ],
+                ],
+
+                // ── Demandes de cycle (établissement) ──────────────────────
+            '/interne/mon-etablissement/demandes-cycle' => [
+                'get' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Liste mes demandes de cycle',
+                    'description' => "Retourne toutes les demandes de cycle de l'établissement connecté, triées par date décroissante.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'responses' => [
+                        '200' => self::succes('Demandes de cycle', ['data' => ['type' => 'array', 'items' => self::ref('DemandeCycle')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                    ],
+                ],
+                'post' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Soumettre une demande de cycle',
+                    'description' => "L'établissement demande l'accès à un cycle qu'il ne possède pas encore. Une seule demande en attente par cycle par établissement. Le motif est obligatoire (min. 20 caractères) et doit justifier le besoin.",
+                    'security' => $secret,
+                    'parameters' => self::paramsContexteTenant(),
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['cycle', 'motif'],
+                            'properties' => [
+                                'cycle' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                                'motif' => ['type' => 'string', 'minLength' => 20, 'maxLength' => 1000, 'description' => 'Justification du besoin.'],
+                            ],
+                        ]),
+                    ],
+                    'responses' => [
+                        '201' => self::succes('Demande créée', ['data' => self::ref('DemandeCycle')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/mon-etablissement/demandes-cycle/{uuid}' => [
+                'delete' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Annuler une demande en attente',
+                    'description' => "Seule une demande au statut `en_attente` peut être annulée. La suppression est physique.",
+                    'security' => $secret,
+                    'parameters' => array_merge(self::paramsContexteTenant(), [self::paramUuid('uuid', 'Uuid de la demande.')]),
+                    'responses' => [
+                        '200' => ['description' => 'Demande annulée.', 'content' => self::json(['type' => 'object', 'properties' => ['success' => ['type' => 'boolean']]])],
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '403' => self::reponseRef('AccesAdministrateurRequis'),
+                        '409' => self::reponseRef('ConflitStatut'),
+                    ],
+                ],
+            ],
+
+            // ── Demandes de cycle (Super Administrateur) ────────────────
+            '/interne/demandes-cycle' => [
+                'get' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Lister toutes les demandes de cycle',
+                    'security' => $secret,
+                    'parameters' => [[
+                        'name' => 'statut', 'in' => 'query', 'required' => false,
+                        'description' => 'Filtre par statut. `tous` retourne toutes les demandes.',
+                        'schema' => ['type' => 'string', 'enum' => ['en_attente', 'acceptee', 'refusee', 'tous'], 'default' => 'en_attente'],
+                    ]],
+                    'responses' => [
+                        '200' => self::succes('Demandes de cycle', ['data' => ['type' => 'array', 'items' => self::ref('DemandeCycle')]]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                    ],
+                ],
+            ],
+            '/interne/demandes-cycle/{uuid}/accepter' => [
+                'post' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Accepter une demande',
+                    'description' => "Crée ou réactive la ligne dans `cycles_autorises`. L'établissement peut ensuite activer ce cycle dans sa configuration académique annuelle.",
+                    'security' => $secret,
+                    'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
+                    'requestBody' => [
+                        'required' => false,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'properties' => ['note' => ['type' => 'string', 'description' => 'Note optionnelle pour l\'établissement.']],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Demande acceptée', ['data' => self::ref('DemandeCycle')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+            '/interne/demandes-cycle/{uuid}/refuser' => [
+                'post' => [
+                    'tags' => ['Demandes de cycle'],
+                    'summary' => 'Refuser une demande',
+                    'description' => "Le refus est définitif pour cette demande. L'établissement peut re-soumettre. La note est obligatoire pour expliquer le refus.",
+                    'security' => $secret,
+                    'parameters' => [self::paramUuid('uuid', 'Uuid de la demande.')],
+                    'requestBody' => [
+                        'required' => true,
+                        'content' => self::json([
+                            'type' => 'object',
+                            'required' => ['note'],
+                            'properties' => ['note' => ['type' => 'string', 'minLength' => 10, 'description' => 'Motif du refus (obligatoire).']],
+                        ]),
+                    ],
+                    'responses' => [
+                        '200' => self::succes('Demande refusée', ['data' => self::ref('DemandeCycle')]),
+                        '401' => self::reponseRef('SecretInvalide'),
+                        '404' => self::reponseRef('RessourceIntrouvable'),
+                        '422' => self::reponseRef('DonneesInvalides'),
+                    ],
+                ],
+            ],
+
+            // ── Configuration académique ────────────────────────────────────
+                'AnneeAcademique' => [
+                    'type' => 'object',
+                    'description' => "Année académique d'un établissement. Jamais supprimable. Statut calculé dynamiquement.",
+                    'properties' => [
+                        'uuid'             => ['type' => 'string', 'format' => 'uuid'],
+                        'libelle'          => ['type' => 'string', 'example' => '2026-2027'],
+                        'date_debut'       => ['type' => 'string', 'format' => 'date', 'example' => '2026-09-01'],
+                        'date_fin'         => ['type' => 'string', 'format' => 'date', 'example' => '2027-07-31'],
+                        'suspendu'         => ['type' => 'boolean', 'description' => 'Flag de suspension explicite, prioritaire sur le calcul des dates.'],
+                        'note_suspension'  => ['type' => 'string', 'description' => 'Motif de suspension.'],
+                        'statut'           => ['type' => 'string', 'enum' => ['en_cours', 'a_venir', 'termine', 'suspendu'], 'description' => 'Calculé dynamiquement : jamais stocké en base.'],
+                        'nb_cycles'        => ['type' => 'integer', 'description' => 'Nombre de cycles actifs pour cette année.'],
+                        'created_at'       => ['type' => 'string', 'format' => 'date-time'],
+                        'updated_at'       => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'CycleConfig' => [
+                    'type' => 'object',
+                    'description' => "Activation d'un cycle pédagogique pour une année académique.",
+                    'properties' => [
+                        'uuid'  => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle' => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                        'actif' => ['type' => 'boolean'],
+                        'annee' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'uuid'    => ['type' => 'string', 'format' => 'uuid'],
+                                'libelle' => ['type' => 'string', 'example' => '2026-2027'],
+                            ],
+                        ],
+                        'created_at' => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'SubdivisionPedagogique' => [
+                    'type' => 'object',
+                    'description' => "Groupe (primaire/maternelle), section (secondaire) ou département (université).",
+                    'properties' => [
+                        'uuid'        => ['type' => 'string', 'format' => 'uuid'],
+                        'type'        => ['type' => 'string', 'enum' => ['groupe', 'section', 'departement']],
+                        'nom'         => ['type' => 'string', 'example' => 'Groupe A'],
+                        'code'        => ['type' => 'string', 'example' => 'A'],
+                        'description' => ['type' => 'string'],
+                        'actif'       => ['type' => 'boolean'],
+                        'annee'       => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'libelle' => ['type' => 'string']]],
+                        'cycle_config'=> ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'cycle' => ['type' => 'string']]],
+                        'created_at'  => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'NiveauScolaire' => [
+                    'type' => 'object',
+                    'description' => "Niveau du référentiel du tenant (partagé entre tous les groupes).",
+                    'properties' => [
+                        'uuid'        => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle'       => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                        'nom'         => ['type' => 'string', 'example' => 'Cours moyen 2e année'],
+                        'abreviation' => ['type' => 'string', 'example' => 'CM2'],
+                        'ordre'       => ['type' => 'integer', 'description' => "Ordre d'affichage (0 = premier)."],
+                        'actif'       => ['type' => 'boolean'],
+                        'created_at'  => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'SerieFiliere' => [
+                    'type' => 'object',
+                    'description' => "Série (secondaire : A, C, D, F3…) ou filière universitaire (IT, EE, GC…).",
+                    'properties' => [
+                        'uuid'        => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle'       => ['type' => 'string', 'enum' => ['secondaire', 'universitaire']],
+                        'nom'         => ['type' => 'string', 'example' => 'Sciences expérimentales'],
+                        'code'        => ['type' => 'string', 'example' => 'D'],
+                        'description' => ['type' => 'string'],
+                        'actif'       => ['type' => 'boolean'],
+                        'subdivision' => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                        'created_at'  => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'ClasseConfig' => [
+                    'type' => 'object',
+                    'description' => "Classe concrète = niveau × subdivision × (série optionnelle) pour une année. Sigle généré automatiquement.",
+                    'properties' => [
+                        'uuid'                   => ['type' => 'string', 'format' => 'uuid'],
+                        'sigle'                  => ['type' => 'string', 'example' => 'CM2 A'],
+                        'effectif_previsionnel'  => ['type' => 'integer', 'nullable' => true],
+                        'classe_uuid_externe'    => ['type' => 'string', 'format' => 'uuid', 'nullable' => true, 'description' => 'UUID de la classe dans scolarite.classes (pont optionnel).'],
+                        'actif'                  => ['type' => 'boolean'],
+                        'annee'                  => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'libelle' => ['type' => 'string']]],
+                        'niveau'                 => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'abreviation' => ['type' => 'string']]],
+                        'subdivision'            => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'code' => ['type' => 'string']]],
+                        'serie'                  => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'code' => ['type' => 'string']]],
+                        'created_at'             => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'CohorteUniversitaire' => [
+                    'type' => 'object',
+                    'description' => "Cohorte universitaire : filière × niveau × lettre. Sigle généré automatiquement (ex. IT2A).",
+                    'properties' => [
+                        'uuid'      => ['type' => 'string', 'format' => 'uuid'],
+                        'sigle'     => ['type' => 'string', 'example' => 'IT2A'],
+                        'diplome'   => ['type' => 'string', 'enum' => ['licence', 'master', 'doctorat', 'ingenieur', 'bts', 'dut', 'autre']],
+                        'lettre'    => ['type' => 'string', 'example' => 'A'],
+                        'semestres' => ['type' => 'string', 'example' => '1,2'],
+                        'actif'     => ['type' => 'boolean'],
+                        'annee'     => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'libelle' => ['type' => 'string']]],
+                        'filiere'   => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'code' => ['type' => 'string']]],
+                        'niveau'    => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string']]],
+                        'created_at'=> ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'DemandeCycle' => [
+                    'type' => 'object',
+                    'description' => "Demande d'extension de cycle soumise par un établissement. Cycle de vie : `en_attente` → `acceptee` | `refusee`.",
+                    'properties' => [
+                        'uuid'              => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle'             => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                        'statut'            => ['type' => 'string', 'enum' => ['en_attente', 'acceptee', 'refusee']],
+                        'motif'             => ['type' => 'string', 'description' => 'Justification fournie par l\'établissement.'],
+                        'note_instruction'  => ['type' => 'string', 'description' => 'Note du Super Administrateur.'],
+                        'date_instruction'  => ['type' => 'string', 'format' => 'date-time', 'nullable' => true],
+                        'etablissement_nom' => ['type' => 'string', 'description' => 'Présent dans les réponses Super Admin.', 'nullable' => true],
+                        'etablissement_slug'=> ['type' => 'string', 'nullable' => true],
+                        'created_at'        => ['type' => 'string', 'format' => 'date-time'],
+                        'updated_at'        => ['type' => 'string', 'format' => 'date-time'],
+                    ],
+                ],
+                'MatiereConfig' => [                    'type' => 'object',
+                    'description' => "Configuration locale d'une matière externe (evaluations.matieres) dans un contexte pédagogique précis. `coefficient` NULL = non défini ≠ 0.",
+                    'properties' => [
+                        'uuid'                 => ['type' => 'string', 'format' => 'uuid'],
+                        'cycle'                => ['type' => 'string', 'enum' => ['maternelle', 'primaire', 'secondaire', 'universitaire']],
+                        'matiere_uuid_externe' => ['type' => 'string', 'format' => 'uuid', 'description' => 'UUID de la matière dans evaluations.matieres.'],
+                        'nom_matiere'          => ['type' => 'string', 'example' => 'Éducation scientifique et technologie'],
+                        'code_matiere'         => ['type' => 'string', 'nullable' => true, 'example' => 'EST'],
+                        'coefficient'          => ['type' => 'string', 'nullable' => true, 'description' => 'Décimal sérialisé en chaîne. NULL = non défini.', 'example' => '2.00'],
+                        'est_obligatoire'      => ['type' => 'boolean'],
+                        'actif'                => ['type' => 'boolean'],
+                        'annee'                => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'libelle' => ['type' => 'string']]],
+                        'niveau'               => ['type' => 'object', 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'abreviation' => ['type' => 'string']]],
+                        'serie'                => ['type' => 'object', 'nullable' => true, 'properties' => ['uuid' => ['type' => 'string', 'format' => 'uuid'], 'nom' => ['type' => 'string'], 'code' => ['type' => 'string']]],
+                        'created_at'           => ['type' => 'string', 'format' => 'date-time'],
                     ],
                 ],
             ],

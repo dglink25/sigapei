@@ -32,7 +32,7 @@ Schedule::command('evaluations:escalader-contestations')->hourly()->withoutOverl
 */
 Artisan::command('evaluations:diagnostic-base', function () {
     $hote = (string) config('database.connections.pgsql.host');
-    $this->line('Hôte : '.(str_contains($hote, '-pooler') ? 'POOLER (PgBouncer) — à éviter pour les migrations' : 'direct'));
+    $this->line('Hôte : '.(str_contains($hote, '-pooler') ? 'POOLER (PgBouncer) - à éviter pour les migrations' : 'direct'));
 
     $info = DB::selectOne("SELECT current_user AS utilisateur, current_setting('search_path') AS search_path,
         has_database_privilege(current_database(), 'CREATE') AS peut_creer_schema");
@@ -54,5 +54,5 @@ Artisan::command('evaluations:diagnostic-base', function () {
     }
 
     $publique = DB::selectOne("SELECT to_regclass('public.migrations') AS t")->t;
-    $this->line('Table public.migrations : '.($publique === null ? 'absente (normal)' : 'PRÉSENTE — '.DB::table('public.migrations')->count().' ligne(s), à examiner avant toute action'));
+    $this->line('Table public.migrations : '.($publique === null ? 'absente (normal)' : 'PRÉSENTE - '.DB::table('public.migrations')->count().' ligne(s), à examiner avant toute action'));
 })->purpose('Diagnostic en lecture seule de la base partagée (schémas, tables, droits)');

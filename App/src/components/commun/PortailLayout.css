@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════
-   PortailLayout — Layout sidebar institutionnel SIGAPEI
+   PortailLayout - Layout sidebar institutionnel SIGAPEI
    Charte STRICTE : #006B3C · #E9AA20 · #FFF6DD
 ═══════════════════════════════════════════════════════ */
 
@@ -141,6 +141,92 @@
 .pl-nav-item.is-logout:hover {
   background: rgba(248,113,113,0.12);
   color: #fca5a5;
+}
+
+/* ── Item parent avec flèche ── */
+.pl-nav-item--parent {
+  justify-content: flex-start;
+}
+.pl-nav-item--parent .pl-nav-chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+}
+.pl-nav-item--parent .pl-nav-chevron.is-open {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* ── Sous-menu déroulant ── */
+.pl-nav-submenu {
+  padding: 2px 0 4px;
+  border-left: 2px solid rgba(233,170,32,0.35);
+  margin: 0 0 2px 28px;
+}
+
+.pl-nav-subitem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  color: rgba(255,246,221,0.60);
+  text-decoration: none;
+  font-size: 0.82rem;
+  border-radius: 0 6px 6px 0;
+  transition: background var(--pl-transition), color var(--pl-transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pl-nav-subitem:hover {
+  background: rgba(255,246,221,0.07);
+  color: var(--pl-cream);
+}
+.pl-nav-subitem.is-active {
+  background: rgba(233,170,32,0.18);
+  color: var(--pl-gold);
+  font-weight: 600;
+}
+
+/* ── Sous-item avec enfants (cycle) ── */
+.pl-nav-subitem--parent {
+  justify-content: flex-start;
+}
+.pl-nav-subitem--parent .pl-nav-chevron {
+  transition: transform 0.2s ease;
+  opacity: 0.6;
+}
+.pl-nav-subitem--parent .pl-nav-chevron.is-open {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+/* ── 3e niveau : onglets du cycle ── */
+.pl-nav-submenu-nested {
+  padding: 2px 0 4px;
+  margin-left: 18px;
+  border-left: 1px solid rgba(255,246,221,0.15);
+}
+.pl-nav-deepitem {
+  display: block;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  color: rgba(255,246,221,0.50);
+  text-decoration: none;
+  border-radius: 0 6px 6px 0;
+  transition: background var(--pl-transition), color var(--pl-transition);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pl-nav-deepitem:hover {
+  background: rgba(255,246,221,0.06);
+  color: rgba(255,246,221,0.85);
+}
+.pl-nav-deepitem.is-active {
+  color: var(--pl-gold);
+  font-weight: 600;
+  background: rgba(233,170,32,0.12);
 }
 
 /* Pied nav */
