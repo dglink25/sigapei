@@ -7,7 +7,7 @@ permissions d'absence et réclamations — rôles et permissions entièrement pa
 - **Préfixe API** : toutes les routes sont sous `/v1/...`
 - **Port interne** : non publié sur l'hôte, accès via la Gateway (réseau `sigapei`)
 - **Sonde de santé** : `GET /sante`
-- **Documentation interactive** : `GET /docs` (Swagger) — désactivée en production sauf `SWAGGER_ENABLED=true`
+- **Documentation interactive** : `GET /docs` (Swagger UI), JSON brut sur `GET /docs-json` — même convention qu'Identité
 - **Stack** : NestJS (TypeScript), PostgreSQL (schéma `demandes`), RabbitMQ (notifications).
 
 ---

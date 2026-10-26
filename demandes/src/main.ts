@@ -30,10 +30,7 @@ async function bootstrap() {
     }),
   );
 
-  // Documentation interactive desactivee en production sauf activation explicite.
-  const swaggerActif =
-    config.get<string>('nodeEnv') !== 'production' || process.env.SWAGGER_ENABLED === 'true';
-  if (swaggerActif) {
+  // --- Documentation Swagger (même convention qu'Identité) : /docs, JSON brut sur /docs-json ---
   const swaggerDoc = SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
@@ -52,7 +49,6 @@ async function bootstrap() {
     customSiteTitle: 'API Demandes - Documentation',
     swaggerOptions: { persistAuthorization: true },
   });
-  }
 
   const port = config.get<number>('port') ?? 4007;
   await app.listen(port, '0.0.0.0');

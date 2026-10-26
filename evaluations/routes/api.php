@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BulletinsController;
 use App\Http\Controllers\ContestationsController;
+use App\Http\Controllers\DocsController;
 use App\Http\Controllers\EvaluationsController;
 use App\Http\Controllers\InterneController;
 use App\Http\Controllers\MatieresController;
@@ -28,8 +29,9 @@ Route::get('/health', fn () => response()->json([
     'horodatage' => now()->toIso8601String(),
 ]));
 
-// Contrat OpenAPI 3 (même convention que les autres microservices : GET /docs public, sans donnée).
-Route::get('/docs', fn () => response((string) file_get_contents(base_path('docs/openapi.json')), 200, ['Content-Type' => 'application/json']));
+// Documentation (même convention qu'Identité et Établissements) : Swagger UI sur /docs, OpenAPI brut sur /docs-json.
+Route::get('/docs', [DocsController::class, 'interfaceSwagger']);
+Route::get('/docs-json', [DocsController::class, 'specification']);
 
 Route::prefix('v1')->group(function () {
 

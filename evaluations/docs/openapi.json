@@ -7,6 +7,10 @@
   },
   "servers": [
     {
+      "url": "/",
+      "description": "Ce serveur (celui qui affiche /docs)"
+    },
+    {
       "url": "http://api-evaluations:4006",
       "description": "Réseau Docker sigapei (derrière la Gateway)"
     }

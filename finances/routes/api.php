@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AbonnementController;
 use App\Http\Controllers\DecaissementController;
+use App\Http\Controllers\DocsController;
 use App\Http\Controllers\FactureController;
 use App\Http\Controllers\InterneController;
 use App\Http\Controllers\PaiementController;
@@ -19,6 +20,10 @@ use Illuminate\Support\Facades\Route;
  *  - /interne/*  : secret interne uniquement.
  *  - Séparation des tâches (initiateur ≠ validateur) contrôlée dans le service, pas seulement ici.
  */
+// Documentation (même convention qu'Identité et Établissements) : Swagger UI sur /docs, OpenAPI brut sur /docs-json.
+Route::get('/docs', [DocsController::class, 'interfaceSwagger']);
+Route::get('/docs-json', [DocsController::class, 'specification']);
+
 Route::prefix('v1')->group(function () {
 
     Route::middleware(['auth.tenant', 'throttle:api'])->group(function () {

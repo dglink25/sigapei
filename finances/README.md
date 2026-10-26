@@ -4,6 +4,7 @@ Double flux entrant/sortant, abonnement plateforme, hibernation sur impayé.
 
 - **Port** : `4008` (interne, non publié) | **Schéma** : `finances` | **Redis DB** : `5`
 - **Préfixe API** : `/v1/...` | **Sonde de santé** : `GET /sante`
+- **Documentation** : Swagger UI sur `GET /docs`, OpenAPI 3 brut sur `GET /docs-json` (source : [docs/openapi.json](docs/openapi.json))
 - **Stack** : Laravel 12, PHP 8.4, PostgreSQL (Neon), RabbitMQ
 
 ## Démarrage rapide

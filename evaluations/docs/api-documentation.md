@@ -5,7 +5,8 @@ Microservice de la plateforme **SIGAPEI** : notes, barèmes, coefficients, moyen
 - **Port interne** : `4006` (non publié ; accès via la Gateway sur le réseau `sigapei`)
 - **Préfixe** : `/v1`
 - **Santé** : `GET /health` (et `GET /sante`)
-- **Contrat OpenAPI 3 (JSON)** : `GET /docs` — fichier source : [`docs/openapi.json`](openapi.json), importable dans Postman, Insomnia ou Swagger Editor
+- **Documentation interactive (Swagger UI)** : `GET /docs`
+- **Contrat OpenAPI 3 (JSON)** : `GET /docs-json` — fichier source : [`docs/openapi.json`](openapi.json), importable dans Postman, Insomnia ou Swagger Editor
 - **Base** : PostgreSQL (Neon), schéma `evaluations`
 
 ---

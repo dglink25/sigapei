@@ -14,7 +14,8 @@ class SecuriteTest extends ApiTestCase
 
     public function test_contrat_openapi_publie(): void
     {
-        $this->get('/docs')->assertOk()->assertJsonPath('openapi', '3.0.3')->assertJsonPath('info.title', 'SIGAPEI — API Évaluations');
+        $this->get('/docs')->assertOk()->assertHeader('Content-Type', 'text/html; charset=UTF-8')->assertSee('swagger-ui', false);
+        $this->get('/docs-json')->assertOk()->assertJsonPath('openapi', '3.0.3')->assertJsonPath('info.title', 'SIGAPEI — API Évaluations');
     }
 
     public function test_contexte_gateway_sans_secret_refuse_meme_avec_un_role_administrateur(): void

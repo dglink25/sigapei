@@ -1,0 +1,861 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SIGAPEI — API Finances",
+    "version": "0.1.0",
+    "description": "Microservice Finances : factures, paiements Mobile Money (FedaPay, KkiaPay), décaissements à double validation, abonnements des établissements, rapports.\n\n**État** : socle sécurisé en place (contexte Gateway, rôles, signature des webhooks, routes internes). La logique métier est en cours : chaque route répond 501 pour l'instant.\n\nEn-têtes : toutes les routes `/v1/*` (sauf webhooks et `/v1/interne/*`) exigent les en-têtes posés par la Gateway : `X-Internal-Secret`, `X-Tenant-Id`, `X-User-Id`, `X-User-Role`."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Ce serveur (celui qui affiche /docs)"
+    },
+    {
+      "url": "http://api-finances:4008",
+      "description": "Réseau Docker sigapei (derrière la Gateway)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Factures"
+    },
+    {
+      "name": "Paiements"
+    },
+    {
+      "name": "Décaissements"
+    },
+    {
+      "name": "Abonnements"
+    },
+    {
+      "name": "Rapports"
+    },
+    {
+      "name": "Webhooks"
+    },
+    {
+      "name": "Interne"
+    }
+  ],
+  "paths": {
+    "/v1/factures": {
+      "post": {
+        "tags": [
+          "Factures"
+        ],
+        "summary": "Créer une facture",
+        "description": "**Rôles** : administrateur, personnel.\n\nFacture d'un apprenant (frais de scolarité, cantine, transport…). Montants en FCFA entiers.\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contexte Gateway absent ou secret invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_v1_factures"
+      }
+    },
+    "/v1/paiements/initier": {
+      "post": {
+        "tags": [
+          "Paiements"
+        ],
+        "summary": "Initier un paiement Mobile Money / carte",
+        "description": "**Rôles** : parent, administrateur, personnel.\n\nCrée une transaction auprès de l'agrégateur (FedaPay ou KkiaPay) et renvoie l'URL de paiement. Débit limité.\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contexte Gateway absent ou secret invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_v1_paiements_initier"
+      }
+    },
+    "/v1/decaissements": {
+      "post": {
+        "tags": [
+          "Décaissements"
+        ],
+        "summary": "Initier un décaissement",
+        "description": "**Rôles** : personnel, administrateur.\n\nDouble validation : l'initiateur ne peut pas valider sa propre demande.\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contexte Gateway absent ou secret invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_v1_decaissements"
+      }
+    },
+    "/v1/decaissements/{uuid}/valider": {
+      "put": {
+        "tags": [
+          "Décaissements"
+        ],
+        "summary": "Valider un décaissement",
+        "description": "**Rôles** : administrateur.\n\nValidateur différent de l'initiateur.\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contexte Gateway absent ou secret invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Décaissement"
+          }
+        ],
+        "operationId": "put_v1_decaissements_uuid_valider"
+      }
+    },
+    "/v1/decaissements/{uuid}/rejeter": {
+      "put": {
+        "tags": [
+          "Décaissements"
+        ],
+        "summary": "Rejeter un décaissement",
+        "description": "**Rôles** : administrateur.\n\nMotif obligatoire.\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contexte Gateway absent ou secret invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Décaissement"
+          }
+        ],
+        "operationId": "put_v1_decaissements_uuid_rejeter"
+      }
+    },
+    "/v1/abonnements/{tenant_uuid}": {
+      "get": {
+        "tags": [
+          "Abonnements"
+        ],
+        "summary": "Statut d'abonnement d'un établissement",
+        "description": "**Rôles** : administrateur, super_admin.\n\nActif, en période de grâce ou en hibernation.\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contexte Gateway absent ou secret invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tenant_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Établissement"
+          }
+        ],
+        "operationId": "get_v1_abonnements_tenant_uuid"
+      }
+    },
+    "/v1/abonnements/{tenant_uuid}/paiement": {
+      "post": {
+        "tags": [
+          "Abonnements"
+        ],
+        "summary": "Payer l'abonnement de l'établissement",
+        "description": "**Rôles** : administrateur.\n\n\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contexte Gateway absent ou secret invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tenant_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Établissement"
+          }
+        ],
+        "operationId": "post_v1_abonnements_tenant_uuid_paiement"
+      }
+    },
+    "/v1/rapports/etablissement/{tenant_uuid}": {
+      "get": {
+        "tags": [
+          "Rapports"
+        ],
+        "summary": "Rapport financier de l'établissement",
+        "description": "**Rôles** : administrateur, personnel.\n\n\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Contexte Gateway absent ou secret invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle non autorisé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "tenant_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Établissement"
+          }
+        ],
+        "operationId": "get_v1_rapports_etablissement_tenant_uuid"
+      }
+    },
+    "/v1/webhooks/fedapay": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Notification FedaPay",
+        "description": "Public mais **signature obligatoire** : en-tête `X-FEDAPAY-SIGNATURE` (`t=<horodatage>,s=<HMAC-SHA256>`), fenêtre de 300 s. Traitement idempotent.\n\n**Statut** : non implémenté (501).",
+        "security": [],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Signature absente, invalide ou expirée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_v1_webhooks_fedapay"
+      }
+    },
+    "/v1/webhooks/kkiapay": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Notification KkiaPay",
+        "description": "Public mais **secret obligatoire** : en-tête `x-kkiapay-secret` comparé en temps constant. Traitement idempotent.\n\n**Statut** : non implémenté (501).",
+        "security": [],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Secret absent ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_v1_webhooks_kkiapay"
+      }
+    },
+    "/v1/interne/solde/{apprenant_uuid}": {
+      "get": {
+        "tags": [
+          "Interne"
+        ],
+        "summary": "Solde d'un apprenant (Demandes administratives)",
+        "description": "**Appel inter-services uniquement** : `X-Internal-Secret` + `X-Tenant-Id`.\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": [],
+            "Tenant": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Secret interne absent ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "apprenant_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Apprenant"
+          }
+        ],
+        "operationId": "get_v1_interne_solde_apprenant_uuid"
+      }
+    },
+    "/v1/interne/revenus-consolides": {
+      "get": {
+        "tags": [
+          "Interne"
+        ],
+        "summary": "Revenus consolidés de la plateforme",
+        "description": "**Appel inter-services uniquement** : `X-Internal-Secret`.\n\n**Statut** : non implémenté (501).",
+        "security": [
+          {
+            "SecretInterne": []
+          }
+        ],
+        "responses": {
+          "501": {
+            "description": "Non implémenté (socle en place : sécurité, rôles, signature des webhooks)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Non implémenté"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Secret interne absent ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_v1_interne_revenus_consolides"
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "SecretInterne": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Internal-Secret",
+        "description": "INTERNAL_API_SECRET de la plateforme (ajouté par la Gateway)"
+      },
+      "Tenant": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Tenant-Id",
+        "description": "Établissement de l'utilisateur"
+      },
+      "Utilisateur": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-User-Id",
+        "description": "uuid de l'utilisateur connecté"
+      },
+      "Role": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-User-Role",
+        "description": "Rôle de l'utilisateur connecté"
+      }
+    },
+    "schemas": {
+      "Erreur": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
