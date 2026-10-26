@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from apps.core.mixins import TenantViewSetMixin
+from apps.core.permissions import EstEnseignantOuAdmin, RolePermission
 from apps.core.services import ServiceExterneNonConfigure
 from apps.medias.models import Medias
 from apps.medias.serializers import MediasSerializer
@@ -14,10 +15,31 @@ from apps.medias.services import (
 
 
 class MediasViewSet(TenantViewSetMixin, viewsets.ModelViewSet):
-    """CRUD des médias (exposition par `uuid`, isolation par tenant)."""
+    """CRUD des médias (exposition par `uuid`, isolation par tenant).
+
+    Consultation et référencement ouverts à tous les rôles - l'apprenant
+    doit créer/joindre un média pour déposer sa copie - mais la
+    modification d'une fiche appartient aux enseignants et
+    administrateurs, et aucune suppression physique n'est permise.
+    """
     queryset = Medias.objects.all()
     serializer_class = MediasSerializer
     lookup_field = 'uuid'
+    permission_classes = [RolePermission]
+
+    def get_permissions(self):
+        """Modification de fiche : enseignants et administrateurs."""
+        if self.action in ('update', 'partial_update'):
+            return [EstEnseignantOuAdmin()]
+        return super().get_permissions()
+
+    def destroy(self, request, *args, **kwargs):
+        """Règle 3 : un média est une référence partagée, jamais
+        supprimée physiquement."""
+        return Response(
+            {'detail': 'Suppression physique interdite.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     @action(detail=False, methods=['post'], url_path='signature-upload')
     def signature_upload(self, request):

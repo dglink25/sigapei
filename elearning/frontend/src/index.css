@@ -755,6 +755,12 @@ textarea {
   box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.15);
 }
 
+/* Interrupteur verrouillé (lecture seule - ex. hors rôle administrateur) */
+.interrupteur-desactive {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Stepper de durée (± 5 min) */
 .stepper {
   display: inline-flex;

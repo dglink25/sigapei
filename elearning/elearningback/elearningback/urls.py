@@ -17,8 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from apps.core.documentation import DocumentationAPIView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Documentation publique de l'API a la racine (sans authentification requise).
+    path('', DocumentationAPIView.as_view(), name='documentation'),
     # API du module E-learning - toutes les routes exigent l'en-tête
     # X-Tenant-ID (TenantMiddleware).
     path('v1/', include([

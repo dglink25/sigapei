@@ -10,12 +10,17 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
-from pathlib import Path
-
 import os
+from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Chargement des variables d'environnement (.env du projet elearningback,
+# puis .env du projet identite en fallback pour les credentials DB communs).
+load_dotenv(BASE_DIR.parent / '.env')  # elearning/elearningback/.env
+load_dotenv(Path(__file__).resolve().parents[3] / 'identite' / '.env')  # identite/.env
 
 
 # Quick-start development settings - unsuitable for production
@@ -74,6 +79,9 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    # Authentification via le microservice Identite : valide le jeton Bearer
+    # sur /v1/moi et injecte X-Tenant-ID / X-Role pour TenantMiddleware.
+    'apps.core.middleware_identite.IdentiteAuthMiddleware',
     # Isolation multi-tenant : exige X-Tenant-ID sur les routes /v1/.
     'apps.core.middleware.TenantMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -124,10 +132,19 @@ CORS_ALLOWED_ORIGINS = [
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
+# Meme base PostgreSQL (Neon) que le microservice Identite, avec un
+# schema dedie 'elearning' pour eviter les conflits de tables.
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME', 'neondb'),
+        'USER': os.getenv('DB_USERNAME', 'neondb_owner'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'ep-raspy-brook-b46yo20b-pooler.c-6.us-east-2.aws.neon.tech'),
+        'PORT': int(os.getenv('DB_PORT', '5432')),
+        'OPTIONS': {
+            'sslmode': 'require' if os.getenv('DB_SSL', 'true').lower() == 'true' else 'prefer',
+        },
     }
 }
 
@@ -177,3 +194,13 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+
+# Microservice Identite (SSO) - validation des jetons Bearer sur /v1/moi
+IDENTITE_SERVICE_URL = 'http://localhost:4001'
+
+# Secret interne partagé avec Evaluations (et autres microservices) pour
+# appeler leurs routes internes /v1/interne/* (X-Internal-Secret).
+INTERNAL_API_SECRET = os.getenv(
+    'INTERNAL_API_SECRET',
+    '761e9f65a2503602f3baecd4e8eb24df38aee9cb6a75609b542ce87b6c79ce606419c228850e4076b8a3c346bd73c79cf0ef4d2878df2736371128a1a2a4cd2c',
+)

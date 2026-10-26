@@ -320,7 +320,7 @@ export function QuizDetail() {
           </div>
         </div>
         <div className="actions-ligne">
-          {donnees.statut === 'publie' && (
+          {role === 'apprenant' && donnees.statut === 'publie' && (
             <Link to={`/quiz/${uuid}/passer`} className="bouton bouton-primaire">
               <Icone nom="play_arrow" />
               Passer le quiz

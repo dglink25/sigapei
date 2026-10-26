@@ -36,22 +36,24 @@ export class PermissionsRoleService {
   async listerRolesAvecDroits(acteurUuid: string) {
     const { etab, tenantId } = await this.contexteAdmin(acteurUuid);
 
-    // Rôles disponibles : globaux (tenantId null) + ceux de cet établissement
+    // Uniquement les rôles explicitement assignés à cet établissement via role_etablissements
+    // (système ou personnalisés - tout ce qui a été assigné par le super admin)
     const roles = await this.dataSource.query(
-      `SELECT r.uuid, r.code, r.libelle, r."familleAuth", r."estPersonnalise", r."peutVoirPortail",
-              COUNT(DISTINCT rse.etablissement_services_id)::int AS "nbServicesAccordes"
-         FROM "identite"."role" r
-         LEFT JOIN "identite"."role_services_etablissement" rse
-           ON rse.role_id = r.id
-           AND rse.etablissement_services_id IN (
+      `SELECT r.uuid, r.code, r.libelle, r."familleAuth", r."estPersonnalise", r."peut_voir_portail" AS "peutVoirPortail",
+              COUNT(DISTINCT rse_droits.etablissement_services_id)::int AS "nbServicesAccordes"
+         FROM "identite"."role_etablissements" re
+         JOIN "identite"."role" r ON r.id = re.role_id
+         LEFT JOIN "identite"."role_services_etablissement" rse_droits
+           ON rse_droits.role_id = r.id
+           AND rse_droits.etablissement_services_id IN (
              SELECT es.id FROM "identite"."etablissement_services" es
               WHERE es.etablissement_id = $1
            )
-        WHERE r.code <> 'super_admin'
-          AND (r."tenantId" IS NULL OR r."tenantId" = $2)
-        GROUP BY r.uuid, r.code, r.libelle, r."familleAuth", r."estPersonnalise", r."peutVoirPortail"
+        WHERE re.etablissement_id = $1
+          AND r.code <> 'super_admin'
+        GROUP BY r.uuid, r.code, r.libelle, r."familleAuth", r."estPersonnalise", r."peut_voir_portail"
         ORDER BY r."estPersonnalise" ASC, r.libelle ASC`,
-      [etab.id, tenantId],
+      [etab.id],
     );
 
     return { etablissement: { uuid: etab.uuid, nom: etab.nom }, roles };
@@ -63,11 +65,14 @@ export class PermissionsRoleService {
     const { etab } = await this.contexteAdmin(acteurUuid);
 
     const roleRows = await this.dataSource.query(
-      `SELECT id, code, libelle, "peutVoirPortail" FROM "identite"."role" WHERE uuid = $1`,
-      [roleUuid],
+      `SELECT r.id, r.code, r.libelle, r."peut_voir_portail" AS "peutVoirPortail"
+         FROM "identite"."role" r
+         JOIN "identite"."role_etablissements" re ON re.role_id = r.id
+        WHERE r.uuid = $1 AND re.etablissement_id = $2`,
+      [roleUuid, etab.id],
     );
     const role = roleRows[0];
-    if (!role) throw new NotFoundException({ code: 'ROLE_INTROUVABLE', message: 'Rôle introuvable.' });
+    if (!role) throw new NotFoundException({ code: 'ROLE_NON_ASSIGNE', message: 'Ce rôle n\'est pas assigné à votre établissement.' });
     if (role.code === ROLE_ADMIN) throw new ForbiddenException({ code: 'ADMIN_DROITS_IMPLICITES', message: "L'administrateur dispose toujours de tous les droits." });
 
     const services = await this.dataSource.query(
@@ -149,7 +154,7 @@ export class PermissionsRoleService {
     if (role.code === 'super_admin') throw new ForbiddenException({ code: 'SUPER_ADMIN_NON_MODIFIABLE', message: 'Le super admin ne peut pas être modifié.' });
 
     await this.dataSource.query(
-      `UPDATE "identite"."role" SET "peutVoirPortail" = $1 WHERE id = $2`,
+      `UPDATE "identite"."role" SET "peut_voir_portail" = $1 WHERE id = $2`,
       [peutVoirPortail, role.id],
     );
 
