@@ -241,7 +241,7 @@ body {
 [data-theme='dark'] .ld-orbit__center { background: var(--sg-surface-2); }
 
 /* ══════════════════════════════════════════════════════════
-   THÈME SOMBRE — Composants .ap-* et .cfg-*
+   THÈME SOMBRE - Composants .ap-* et .cfg-*
    Complète les règles déjà présentes dans admin.css,
    admin-ui.css et ConfigurationPage.css
 ══════════════════════════════════════════════════════════ */
