@@ -1,5 +1,6 @@
 /**
  * PanneauCycles - Activation/désactivation des cycles pour une année.
+ * Affiche uniquement les cycles autorisés par le super admin (cyclesAutorises).
  * Nécessite qu'une année soit sélectionnée (anneeActive).
  */
 import { useEffect, useState } from 'react'
@@ -14,11 +15,17 @@ const CYCLES_DISPO = [
   { id: 'universitaire', label: 'Universitaire',  sous: 'Licence, Master, Doctorat…' },
 ]
 
-export default function PanneauCycles({ anneeActive, onTerminee }) {
+export default function PanneauCycles({ anneeActive, cyclesAutorises = [], onTerminee }) {
   const notify = useNotify()
   const [cycles,     setCycles]     = useState([])
   const [chargement, setChargement] = useState(false)
   const [sauvegarde, setSauvegarde] = useState({})
+
+  // Cycles à afficher = intersection cycles autorisés ∩ cycles disponibles
+  // Si cyclesAutorises non fourni (ancien contexte), on affiche tout
+  const cyclesDispo = cyclesAutorises.length > 0
+    ? CYCLES_DISPO.filter((c) => cyclesAutorises.includes(c.id))
+    : CYCLES_DISPO
 
   const charger = async () => {
     if (!anneeActive) return
@@ -69,26 +76,37 @@ export default function PanneauCycles({ anneeActive, onTerminee }) {
     )
   }
 
+  if (cyclesDispo.length === 0) {
+    return (
+      <div className="ap-card">
+        <div className="ap-empty">
+          <AlertTriangle size={32} aria-hidden="true" />
+          <p>Aucun cycle autorisé pour votre établissement. Faites une demande de cycle depuis la Configuration.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="cfg-tab">
       <div className="ap-page-head">
         <div>
           <h2 className="ap-page-title">Cycles actifs</h2>
           <p className="ap-page-sub">
-            Année : <strong>{anneeActive.libelle}</strong> - activez les cycles proposés par votre établissement.
+            Année : <strong>{anneeActive.libelle}</strong> - activez les cycles autorisés pour votre établissement.
           </p>
         </div>
       </div>
 
       {chargement ? (
         <div className="cfg-cycles-grille">
-          {CYCLES_DISPO.map((_, i) => (
+          {cyclesDispo.map((_, i) => (
             <div key={i} className="ap-skel ap-skel--card" style={{ '--i': i, minHeight: 120 }} />
           ))}
         </div>
       ) : (
         <div className="cfg-cycles-grille">
-          {CYCLES_DISPO.map(({ id, label, sous }) => {
+          {cyclesDispo.map(({ id, label, sous }) => {
             const actif = estActif(id)
             const busy  = sauvegarde[id]
             return (

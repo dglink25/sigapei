@@ -1,8 +1,3 @@
-/**
- * PanneauAnnees - Gestion des années académiques.
- * Création (confirmation obligatoire), suspension, réactivation.
- * Jamais de suppression : protégé côté UI et backend.
- */
 import { useEffect, useState, useMemo } from 'react'
 import { CalendarDays, Plus, Pause, Play, AlertTriangle, X, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'

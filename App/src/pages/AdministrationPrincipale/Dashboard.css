@@ -1,12 +1,4 @@
-/* ═══════════════════════════════════════════════════════
-   Dashboard - SIGAPEI Administration Principale
-   Charte STRICTE : #006B3C · #E9AA20 · #FFF6DD · #000000
-   Zéro dégradé. Variables CSS uniquement.
-═══════════════════════════════════════════════════════ */
 
-/* Hérite des variables de .ap (admin.css) */
-
-/* ── Bienvenue ── */
 .db-welcome {
   display: flex;
   align-items: center;

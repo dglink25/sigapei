@@ -20,6 +20,20 @@
   --pl-radius:     12px;
   --pl-transition: 0.18s ease;
 
+  /* --ap-* identiques : les composants enfants (cfg-*, ap-*) en ont besoin */
+  --ap-green:      #006B3C;
+  --ap-green-dk:   #004d2b;
+  --ap-gold:       #E9AA20;
+  --ap-cream:      #FFF6DD;
+  --ap-bg:         var(--sg-page-bg, #f4f6f5);
+  --ap-surface:    var(--sg-surface, #ffffff);
+  --ap-border:     var(--sg-border, #dde4df);
+  --ap-text:       var(--sg-text, #1a2a1e);
+  --ap-muted:      var(--sg-text-secondary, #5a6b5f);
+  --ap-hover:      var(--sg-theme-hover, rgba(0,0,0,0.04));
+  --ap-radius:     12px;
+  --ap-transition: 0.18s ease;
+
   display: flex;
   min-height: 100dvh;
   background: var(--pl-bg);
@@ -432,11 +446,19 @@
 /* ══════════════════════════════════════
    THÈME SOMBRE
 ══════════════════════════════════════ */
-[data-theme='dark'] .pl-topbar-title { color: #4ade80; }
-[data-theme='dark'] .pl-icon-btn { color: var(--sg-text-secondary); }
-[data-theme='dark'] .pl-icon-btn:hover { background: var(--sg-theme-hover); color: var(--sg-text); }
+[data-theme='dark'] .pl-shell   { background: var(--sg-page-bg); color: var(--sg-text); }
+[data-theme='dark'] .pl-main    { background: var(--sg-page-bg); }
+[data-theme='dark'] .pl-content { background: var(--sg-page-bg); color: var(--sg-text); }
+[data-theme='dark'] .pl-topbar {
+  background: var(--sg-surface);
+  border-bottom-color: var(--sg-border);
+}
+[data-theme='dark'] .pl-topbar-title     { color: #4ade80; }
+[data-theme='dark'] .pl-topbar-user-nom  { color: var(--sg-text); }
+[data-theme='dark'] .pl-topbar-user-role { color: var(--sg-text-secondary); }
+[data-theme='dark'] .pl-topbar-sep       { background: var(--sg-border); }
+[data-theme='dark'] .pl-icon-btn         { color: var(--sg-text-secondary); }
+[data-theme='dark'] .pl-icon-btn:hover   { background: var(--sg-theme-hover); color: var(--sg-text); }
 [data-theme='dark'] .pl-icon-btn--logout:hover { color: #f87171; background: rgba(248,113,113,0.08); }
 [data-theme='dark'] .pl-nav-item.is-logout:hover { background: rgba(248,113,113,0.12); color: #fca5a5; }
-[data-theme='dark'] .pl-topbar-user-nom { color: var(--sg-text); }
-[data-theme='dark'] .pl-topbar-user-role { color: var(--sg-text-secondary); }
-[data-theme='dark'] .pl-topbar-sep { background: var(--pl-border); }
+[data-theme='dark'] .pl-menu-btn { color: var(--sg-text); }

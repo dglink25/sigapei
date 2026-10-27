@@ -22,18 +22,24 @@ const NIVEAUX_SUGGESTION = {
   universitaire: ['Licence 1 (L1)', 'Licence 2 (L2)', 'Licence 3 (L3)', 'Master 1 (M1)', 'Master 2 (M2)', 'Doctorat'],
 }
 
-export default function PanneauNiveaux({ onTerminee, cycleFiltre }) {
+export default function PanneauNiveaux({ onTerminee, cycleFiltre, cyclesDisponibles = [] }) {
   const notify = useNotify()
   const [filtre,  setFiltre]  = useState(cycleFiltre || '')
   const [items,   setItems]   = useState([])
   const [charge,  setCharge]  = useState(true)
   const [modale,  setModale]  = useState(false)
   const [enCours, setEnCours] = useState(false)
-  const [form,    setForm]    = useState({ cycle: 'primaire', nom: '', abreviation: '', ordre: '' })
+  const [form,    setForm]    = useState({ cycle: cycleFiltre || 'primaire', nom: '', abreviation: '', ordre: '' })
   const [erreurs, setErreurs] = useState({})
 
   // Si cycleFiltre est fourni (depuis PanneauCyclePage), masquer les filtres de cycle
   const afficherFiltres = !cycleFiltre
+
+  // Cycles disponibles dans le dropdown = seulement les cycles autorisés+actifs,
+  // ou tous si cyclesDisponibles non fourni (rétrocompatibilité)
+  const cyclesDansDropdown = cyclesDisponibles.length > 0
+    ? CYCLES.filter((c) => !c.id || cyclesDisponibles.includes(c.id))
+    : CYCLES
 
   const charger = async (cycle = filtre) => {
     setCharge(true)
@@ -115,7 +121,7 @@ export default function PanneauNiveaux({ onTerminee, cycleFiltre }) {
 
       {!cycleFiltre && (
         <div className="ap-filters">
-          {CYCLES.map((c) => (
+          {cyclesDansDropdown.map((c) => (
             <button
               key={c.id}
               type="button"
@@ -182,7 +188,7 @@ export default function PanneauNiveaux({ onTerminee, cycleFiltre }) {
                 <div className={`ap-field${erreurs.cycle ? ' has-error' : ''}`}>
                   <label className="ap-label" htmlFor="niv-cycle">Cycle <em>*</em></label>
                   <select id="niv-cycle" className="ap-input" value={form.cycle} onChange={(e) => setForm((f) => ({ ...f, cycle: e.target.value }))}>
-                    {CYCLES.filter((c) => c.id).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    {cyclesDansDropdown.filter((c) => c.id).map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                   </select>
                   {erreurs.cycle && <p className="ap-error">{erreurs.cycle}</p>}
                 </div>

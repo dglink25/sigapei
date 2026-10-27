@@ -10,7 +10,7 @@ import { StepDirigeant, StepDocuments, StepEtablissement, StepLocalisation } fro
 import ThemeToggle from '../../components/commun/ThemeToggle'
 import Loader from '../../components/commun/Loader'
 import usePageTitle from '../../hooks/commun/usePageTitle'
-import './etablissements.css'
+import './Etablissements.css'
 
 const COMPONENTS = {
   etablissement: StepEtablissement,

@@ -65,7 +65,7 @@ GeoNames fournit souvent des noms **en anglais et sans accents** (« Commune of 
 Deux garanties :
 
 - **Un nom corrigé n'est jamais écrasé.** Un nouvel import GeoNames ne remplace un nom que s'il est encore tel que GeoNames l'a fourni. Un nom modifié à la main ou par `geo:arbre --renommer` survit à tous les imports suivants.
-- **Les variantes sont reconnues.** La comparaison ignore la casse, les accents, les tirets et les préfixes, et traite `k` et `c` comme équivalents (« Atakora » = « Atacora », « Kouffo » = « Couffo »). Avec `--approximatif`, un écart d'une ou deux lettres est aussi toléré (« Pehonko » / « Péhunco »), de même qu'un nom contenu dans l'autre quand la correspondance est unique (« Dogbo » / « Dogbo Tota »).
+- **Les variantes sont reconnues.** La comparaison ignore la casse, les accents, les tirets et les préfixes, et traite `k` et `c` comme équivalents (« Atakora » = « Atacora », « Kouffo » = « Couffo »). Les arrondissements numérotés prennent une forme unique (« 13th Arrondissement » et « 3eme arrondissement » deviennent « 13ème Arrondissement » et « 3ème Arrondissement » ; « 1st arrondissement of Porto-Novo » devient « 1er Arrondissement »), et un nom contenant un chiffre n'est **jamais** rapproché approximativement d'un autre (« 10ème » et « 13ème » sont deux lieux distincts). Avec `--approximatif`, un écart d'une ou deux lettres est aussi toléré (« Pehonko » / « Péhunco »), de même qu'un nom contenu dans l'autre quand la correspondance est unique (« Dogbo » / « Dogbo Tota »).
 
 ### Données déjà présentes (test, import précédent) : fusion, pas de suppression
 
@@ -170,7 +170,12 @@ php artisan geo:arbre docs/donnees/benin-departements-communes.csv --renommer --
 #    Vérifier le détail affiché : des noms mis à jour, et AUCUN nœud créé (les 77 communes existent déjà).
 #    Si le bilan est conforme, relancer sans --simuler.
 
-# 3. Compléter les arrondissements avec le fichier officiel (546 au total, 530 présents via GeoNames)
+# 2 bis. Les 3 plus grandes villes (Cotonou 13 arrondissements, Porto-Novo 5, Parakou 3) : noms harmonisés
+#        (« 1er Arrondissement », « 2ème Arrondissement »...) et les 6 arrondissements de Cotonou absents de GeoNames
+php artisan geo:arbre docs/donnees/benin-arrondissements-cotonou-portonovo-parakou.csv --renommer --approximatif --simuler
+#    Attendu : 6 arrondissements créés (4ème, 5ème, 6ème, 10ème, 11ème et 12ème de Cotonou), les autres reconnus et renommés.
+
+# 3. Compléter les arrondissements restants avec le fichier officiel (546 au total ; 536 après l'étape 2 bis)
 php artisan geo:arbre arrondissements-benin.csv --iso=BJ --col-departement=... --col-commune=... --col-arrondissement=... --renommer --approximatif --simuler
 ```
 

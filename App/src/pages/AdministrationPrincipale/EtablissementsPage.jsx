@@ -171,6 +171,7 @@ export default function EtablissementsPage() {
                   <th>Slug</th>
                   <th>Types</th>
                   <th>Validé le</th>
+                  <th>Cycles autorisés</th>
                   <th>Services</th>
                   <th>Rôles</th>
                   <th>Statut</th>
@@ -191,6 +192,19 @@ export default function EtablissementsPage() {
                     <td><span className="ap-code">{e.slug ?? '-'}</span></td>
                     <td>{Array.isArray(e.types) ? e.types.join(', ') : (e.types ?? '-')}</td>
                     <td>{dateFr(e.date_validation ?? e.dateValidation ?? e.created_at)}</td>
+                    <td>
+                      {Array.isArray(e.cyclesAutorises) && e.cyclesAutorises.length > 0
+                        ? (
+                          <span style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
+                            {e.cyclesAutorises.map((c) => (
+                              <span key={c} className="ap-badge ap-badge--success" style={{ fontSize:'0.72rem' }}>
+                                {{ maternelle:'Mat.', primaire:'Prim.', secondaire:'Sec.', universitaire:'Univ.' }[c] ?? c}
+                              </span>
+                            ))}
+                          </span>
+                        )
+                        : <span className="ap-badge ap-badge--neutral">Aucun</span>}
+                    </td>
                     <td>
                       {resume[e.uuid]
                         ? (

@@ -1,0 +1,343 @@
+/* ============================================================
+   FORMULAIRE PRO - Design Institutionnel
+   Fichier : FormulairePro.css
+   ============================================================ */
+
+/* ── Structure de la modale ── */
+.modal-pro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-pro-content {
+  background: var(--sg-surface, #fff);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--sg-border, #e2e8e4);
+  overflow: hidden;
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-pro-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--sg-border, #e2e8e4);
+}
+
+.modal-pro-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sg-text, #1a2a1e);
+}
+
+.modal-pro-close {
+  background: transparent;
+  border: none;
+  color: var(--sg-text-muted, #7a8f83);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-pro-close:hover {
+  background: var(--sg-hover, rgba(0,107,60,0.05));
+  color: var(--sg-text, #1a2a1e);
+}
+
+.modal-pro-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-pro-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--sg-surface-2, #f8faf9);
+  border-top: 1px solid var(--sg-border, #e2e8e4);
+}
+
+/* ── Champs de saisie ── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sg-text, #1a2a1e);
+}
+
+.form-label span {
+  color: #e53e3e; /* Astérisque rouge */
+  margin-left: 2px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--sg-text, #1a2a1e);
+  background: var(--sg-input-bg, #fff);
+  border: 1.5px solid var(--sg-border, #dde4df);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.form-input::placeholder {
+  color: var(--sg-text-muted, #7a8f83);
+  font-weight: 400;
+}
+
+.form-input:focus {
+  border-color: #006B3C;
+  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.15);
+}
+
+.form-input.has-error {
+  border-color: #e53e3e;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--sg-text-muted, #7a8f83);
+  margin: 0;
+}
+
+.form-error {
+  font-size: 0.75rem;
+  color: #e53e3e;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ── SÉLECTEUR RADIO (Style Carte Pro) ── */
+.radio-cards-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.radio-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--sg-surface, #fff);
+  border: 2px solid var(--sg-border, #dde4df);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+/* On cache l'input natif de façon chirurgicale */
+.radio-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.radio-card-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sg-text-secondary, #4a5d50);
+  transition: color 0.2s;
+}
+
+/* Le faux point radio */
+.radio-card-dot {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--sg-text-muted, #7a8f83);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.radio-card-dot::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #006B3C;
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.radio-card:hover {
+  border-color: var(--sg-text-muted, #7a8f83);
+}
+
+/* État sélectionné */
+.radio-card.is-selected {
+  border-color: #006B3C;
+  background: rgba(0, 107, 60, 0.04);
+}
+
+.radio-card.is-selected .radio-card-label {
+  color: #006B3C;
+}
+
+.radio-card.is-selected .radio-card-dot {
+  border-color: #006B3C;
+}
+
+.radio-card.is-selected .radio-card-dot::after {
+  transform: scale(1);
+}
+
+/* ── BOUTONS ── */
+.btn-pro {
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.btn-pro--primary {
+  background: #006B3C;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 107, 60, 0.2);
+}
+
+.btn-pro--primary:hover:not(:disabled) {
+  background: #00522e;
+  box-shadow: 0 4px 6px rgba(0, 107, 60, 0.3);
+}
+
+.btn-pro--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-pro--ghost {
+  background: transparent;
+  color: var(--sg-text-secondary, #4a5d50);
+  border: 1px solid var(--sg-border, #dde4df);
+}
+
+.btn-pro--ghost:hover {
+  background: var(--sg-hover, rgba(0,0,0,0.05));
+  color: var(--sg-text, #1a2a1e);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODE SOMBRE (Corrections automatiques)
+   ═══════════════════════════════════════════════════════ */
+[data-theme='dark'] .modal-pro-content {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme='dark'] .modal-pro-header {
+  border-bottom-color: #334155;
+}
+
+[data-theme='dark'] .modal-pro-title {
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .modal-pro-footer {
+  background: #0f172a;
+  border-top-color: #334155;
+}
+
+[data-theme='dark'] .form-input {
+  background: #0f172a;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+[data-theme='dark'] .form-input:focus {
+  border-color: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+[data-theme='dark'] .radio-card {
+  background: #0f172a;
+  border-color: #475569;
+}
+
+[data-theme='dark'] .radio-card-label {
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .radio-card.is-selected {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+}
+
+[data-theme='dark'] .radio-card.is-selected .radio-card-label {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .radio-card.is-selected .radio-card-dot {
+  border-color: #4ade80;
+}
+
+[data-theme='dark'] .radio-card.is-selected .radio-card-dot::after {
+  background: #4ade80;
+}
+
+[data-theme='dark'] .btn-pro--primary {
+  background: #4ade80;
+  color: #0f172a;
+}
+
+[data-theme='dark'] .btn-pro--primary:hover:not(:disabled) {
+  background: #22c55e;
+}
+
+[data-theme='dark'] .btn-pro--ghost {
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .btn-pro--ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+}

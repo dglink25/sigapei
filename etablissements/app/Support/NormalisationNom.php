@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
  *    du nom, en francais ("Departement de l'Atlantique" -> "Atlantique", "Commune de
  *    Ouidah" -> "Ouidah", "Arrondissement d'Akassato" -> "Akassato") comme en anglais
  *    ("Commune of Ouidah" -> "Ouidah", "Atakora Department" -> "Atakora").
+ *    Les arrondissements numerotes prennent une forme unique ("13th Arrondissement",
+ *    "3eme arrondissement" -> "13ème Arrondissement", "3ème Arrondissement").
  *    Volontairement prudent : "District of Columbia", "Western Province" ou
  *    "Orange County" restent intacts, ce sont de vrais noms.
  *  - cle() : cle de comparaison insensible a la casse, aux accents, aux tirets, au
@@ -26,9 +28,20 @@ class NormalisationNom
 
     private const MOTIF_SUFFIXE_EN = "/\s+(?:department|departement)$/iu";
 
+    /** Arrondissement numerote, ecrit de n'importe quelle facon : "13th Arrondissement", "3eme arrondissement", "1st arrondissement of Porto-Novo". */
+    private const MOTIF_ARRONDISSEMENT_NUMEROTE = "/^(\d+)\s*(?:st|nd|rd|th|er|ère|ere|e|ème|eme|è)?\s+arrondissement(?:\s+(?:of|de la|de l['’]|de|du|des|d['’])\s*.+)?$/iu";
+
     public static function nettoyer(string $nom): string
     {
         $nom = trim(preg_replace('/\s+/u', ' ', $nom) ?? $nom);
+
+        // Forme canonique des arrondissements numerotes : "1er Arrondissement", "2ème Arrondissement"...
+        // (le nom de la commune, parfois ajoute par la source, est retire : il est deja porte par le parent).
+        if (preg_match(self::MOTIF_ARRONDISSEMENT_NUMEROTE, $nom, $correspondance)) {
+            $numero = (int) $correspondance[1];
+
+            return $numero === 1 ? '1er Arrondissement' : $numero.'ème Arrondissement';
+        }
 
         $nettoye = preg_replace(self::MOTIF_PREFIXE, '', $nom) ?? $nom;
         $nettoye = preg_replace(self::MOTIF_PREFIXE_EN, '', $nettoye) ?? $nettoye;
