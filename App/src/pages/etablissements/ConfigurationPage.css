@@ -1,10 +1,3 @@
-/* ============================================================
-   ConfigurationPage.css - Configuration établissement
-   - Classes .cfg-* : utilisées par les panneaux (existant)
-   - Classes .cf-*  : vue d'ensemble style Dashboard (nouveau)
-   Fichier autonome : aucun import de Dashboard.css
-   ============================================================ */
-
 .cfg {
   padding: 0;
   max-width: 1100px;
@@ -24,7 +17,11 @@
   font-size: 0.85rem;
   color: var(--sg-text-secondary, #5a6b5f);
 }
-.cfg-annee-bandeau strong { font-weight: 700; color: #006B3C; }
+
+.cfg-annee-bandeau strong {
+  font-weight: 700;
+  color: var(--sg-green, #006B3C);
+}
 
 /* ── Statuts années ── */
 .cfg-statut-badge {
@@ -37,10 +34,30 @@
   white-space: nowrap;
   border: 1px solid transparent;
 }
-.cfg-statut-badge.en_cours { background: rgba(0,107,60,0.09); color: #006B3C; border-color: rgba(0,107,60,0.20); }
-.cfg-statut-badge.a_venir  { background: rgba(21,101,168,0.09); color: #1565a8; border-color: rgba(21,101,168,0.18); }
-.cfg-statut-badge.termine  { background: var(--sg-surface-2,#f7faf8); color: var(--sg-text-muted,#8a9e92); border-color: var(--sg-border,#dde4df); }
-.cfg-statut-badge.suspendu { background: rgba(233,170,32,0.12); color: #a07010; border-color: rgba(233,170,32,0.28); }
+
+.cfg-statut-badge.en_cours {
+  background: rgba(0, 107, 60, 0.09);
+  color: var(--sg-green, #006B3C);
+  border-color: rgba(0, 107, 60, 0.20);
+}
+
+.cfg-statut-badge.a_venir {
+  background: rgba(21, 101, 168, 0.09);
+  color: #1565a8;
+  border-color: rgba(21, 101, 168, 0.18);
+}
+
+.cfg-statut-badge.termine {
+  background: var(--sg-surface-2, #f7faf8);
+  color: var(--sg-text-muted, #8a9e92);
+  border-color: var(--sg-border, #dde4df);
+}
+
+.cfg-statut-badge.suspendu {
+  background: rgba(233, 170, 32, 0.12);
+  color: #a07010;
+  border-color: rgba(233, 170, 32, 0.28);
+}
 
 /* ── Grille cycles ── */
 .cfg-cycles-grille {
@@ -49,6 +66,7 @@
   gap: 12px;
   margin-top: 16px;
 }
+
 .cfg-cycle-carte {
   display: flex;
   flex-direction: column;
@@ -64,22 +82,48 @@
   text-align: center;
   font-family: inherit;
 }
-.cfg-cycle-carte:hover                    { border-color: #006B3C; }
-.cfg-cycle-carte.is-actif                 { border-color: #006B3C; background: rgba(0,107,60,0.06); }
-.cfg-cycle-carte.is-actif .cfg-cycle-icone{ background: #006B3C; color: #FFF6DD; }
+
+.cfg-cycle-carte:hover {
+  border-color: var(--sg-green, #006B3C);
+}
+
+.cfg-cycle-carte.is-actif {
+  border-color: var(--sg-green, #006B3C);
+  background: rgba(0, 107, 60, 0.06);
+}
+
+.cfg-cycle-carte.is-actif .cfg-cycle-icone {
+  background: var(--sg-green, #006B3C);
+  color: var(--sg-cream, #FFF6DD);
+}
+
 .cfg-cycle-icone {
-  width: 48px; height: 48px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
-  background: rgba(0,107,60,0.08);
-  color: #006B3C;
-  display: grid; place-items: center;
+  background: rgba(0, 107, 60, 0.08);
+  color: var(--sg-green, #006B3C);
+  display: grid;
+  place-items: center;
   transition: background 0.15s ease, color 0.15s ease;
 }
-.cfg-cycle-nom  { font-size: 0.9rem; font-weight: 600; color: var(--sg-text, #1a2a1e); }
-.cfg-cycle-etat { font-size: 0.75rem; color: var(--sg-text-muted, #8a9e92); }
+
+.cfg-cycle-nom {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sg-text, #1a2a1e);
+}
+
+.cfg-cycle-etat {
+  font-size: 0.75rem;
+  color: var(--sg-text-muted, #8a9e92);
+}
 
 /* ── Progression ── */
-.cfg-progress-wrap { margin-bottom: 24px; }
+.cfg-progress-wrap {
+  margin-bottom: 24px;
+}
+
 .cfg-progress-barre {
   height: 8px;
   background: var(--sg-border, #dde4df);
@@ -87,15 +131,21 @@
   overflow: hidden;
   margin-top: 8px;
 }
+
 .cfg-progress-remplie {
   height: 100%;
-  background: #006B3C;
+  background: var(--sg-green, #006B3C);
   border-radius: 999px;
   transition: width 0.4s ease;
 }
 
 /* ── Étapes guidées ── */
-.cfg-etapes { display: grid; gap: 10px; margin-top: 20px; }
+.cfg-etapes {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
 .cfg-etape {
   display: flex;
   align-items: center;
@@ -110,31 +160,53 @@
   text-align: left;
   width: 100%;
 }
-.cfg-etape:hover        { border-color: #006B3C; background: rgba(0,107,60,0.04); }
-.cfg-etape.is-terminee  { border-color: rgba(0,107,60,0.25); background: rgba(0,107,60,0.04); }
+
+.cfg-etape:hover {
+  border-color: var(--sg-green, #006B3C);
+  background: rgba(0, 107, 60, 0.04);
+}
+
+.cfg-etape.is-terminee {
+  border-color: rgba(0, 107, 60, 0.25);
+  background: rgba(0, 107, 60, 0.04);
+}
+
 .cfg-etape-num {
-  width: 28px; height: 28px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: #006B3C;
-  color: #FFF6DD;
-  display: grid; place-items: center;
-  font-size: 0.82rem; font-weight: 700;
+  background: var(--sg-green, #006B3C);
+  color: var(--sg-cream, #FFF6DD);
+  display: grid;
+  place-items: center;
+  font-size: 0.82rem;
+  font-weight: 700;
   flex-shrink: 0;
 }
-.cfg-etape-num.is-terminee { background: rgba(0,107,60,0.15); color: #006B3C; }
-.cfg-etape-texte { font-size: 0.9rem; font-weight: 600; color: var(--sg-text, #1a2a1e); }
+
+.cfg-etape-num.is-terminee {
+  background: rgba(0, 107, 60, 0.15);
+  color: var(--sg-green, #006B3C);
+}
+
+.cfg-etape-texte {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sg-text, #1a2a1e);
+}
 
 /* ── Modales ── */
 .cfg-modale-fond {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: rgba(0,0,0,0.32);
+  background: rgba(0, 0, 0, 0.32);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
+
 .cfg-modale {
   background: var(--sg-surface, #fff);
   border-radius: 16px;
@@ -142,8 +214,9 @@
   max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
+
 .cfg-modale-tete {
   display: flex;
   align-items: center;
@@ -155,8 +228,18 @@
   background: var(--sg-surface, #fff);
   z-index: 1;
 }
-.cfg-modale-tete h3 { margin: 0; font-size: 1rem; font-weight: 700; color: #006B3C; }
-.cfg-modale-corps   { padding: 20px 22px; }
+
+.cfg-modale-tete h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sg-green, #006B3C);
+}
+
+.cfg-modale-corps {
+  padding: 20px 22px;
+}
+
 .cfg-modale-pied {
   display: flex;
   align-items: center;
@@ -173,15 +256,21 @@
   line-height: 1.55;
   margin: 0 0 14px;
 }
+
 .cfg-confirm-resume {
   padding: 12px 14px;
-  background: rgba(0,107,60,0.06);
-  border: 1px solid rgba(0,107,60,0.15);
+  background: rgba(0, 107, 60, 0.06);
+  border: 1px solid rgba(0, 107, 60, 0.15);
   border-radius: 8px;
   font-size: 0.88rem;
   margin-bottom: 14px;
 }
-.cfg-confirm-resume strong { display: block; margin-bottom: 4px; color: #006B3C; }
+
+.cfg-confirm-resume strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--sg-green, #006B3C);
+}
 
 /* ── Onglets de cycle ── */
 .cfg-onglets {
@@ -192,6 +281,7 @@
   border-bottom: 2px solid var(--sg-border, #dde4df);
   padding-bottom: 0;
 }
+
 .cfg-onglet {
   display: inline-flex;
   align-items: center;
@@ -209,12 +299,19 @@
   transition: color 0.15s ease, border-color 0.15s ease;
   white-space: nowrap;
 }
-.cfg-onglet:hover { color: #006B3C; }
-.cfg-onglet.is-actif {
-  color: #006B3C;
-  border-bottom-color: #006B3C;
+
+.cfg-onglet:hover {
+  color: var(--sg-green, #006B3C);
 }
-.cfg-onglet-contenu { min-height: 300px; }
+
+.cfg-onglet.is-actif {
+  color: var(--sg-green, #006B3C);
+  border-bottom-color: var(--sg-green, #006B3C);
+}
+
+.cfg-onglet-contenu {
+  min-height: 300px;
+}
 
 
 /* ============================================================
@@ -229,13 +326,23 @@
   gap: 16px;
   flex-wrap: wrap;
   padding: 22px 24px;
-  background: var(--ap-green, #006B3C);
+  background: var(--sg-green, #006B3C);
   border-radius: 12px;
-  color: #FFF6DD;
+  color: var(--sg-cream, #FFF6DD);
   margin-bottom: 24px;
 }
-.cf-welcome-title { margin: 0; font-size: 1.2rem; font-weight: 700; }
-.cf-welcome-sub   { margin: 3px 0 0; font-size: 0.86rem; color: rgba(255,246,221,0.78); }
+
+.cf-welcome-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.cf-welcome-sub {
+  margin: 3px 0 0;
+  font-size: 0.86rem;
+  color: rgba(255, 246, 221, 0.78);
+}
 
 /* ── Statistiques ── */
 .cf-stats {
@@ -244,50 +351,88 @@
   gap: 14px;
   margin-bottom: 28px;
 }
+
 .cf-stat {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 18px 20px;
-  background: var(--ap-surface, #fff);
-  border: 1px solid var(--ap-border, #dde4df);
+  background: var(--sg-surface, #fff);
+  border: 1px solid var(--sg-border, #dde4df);
   border-radius: 12px;
   position: relative;
   overflow: hidden;
   transition: border-color 0.18s ease;
 }
+
 .cf-stat::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 3px;
 }
-.cf-stat--success::before { background: var(--ap-green, #006B3C); }
-.cf-stat--warn::before    { background: var(--ap-gold,  #E9AA20); }
-.cf-stat--info::before    { background: #1565a8; }
-.cf-stat--danger::before  { background: #c0392b; }
+
+.cf-stat--success::before {
+  background: var(--sg-green, #006B3C);
+}
+
+.cf-stat--warn::before {
+  background: var(--sg-gold, #E9AA20);
+}
+
+.cf-stat--info::before {
+  background: #1565a8;
+}
+
+.cf-stat--danger::before {
+  background: #c0392b;
+}
 
 .cf-stat-icon {
   flex: none;
-  width: 40px; height: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
-  display: grid; place-items: center;
-  background: var(--ap-bg, #f4f6f5);
-  color: var(--ap-green, #006B3C);
+  display: grid;
+  place-items: center;
+  background: var(--sg-surface-2, #f4f6f5);
+  color: var(--sg-green, #006B3C);
 }
-.cf-stat--warn   .cf-stat-icon { color: var(--ap-gold, #E9AA20); }
-.cf-stat--info   .cf-stat-icon { color: #1565a8; }
-.cf-stat--danger .cf-stat-icon { color: #c0392b; }
 
-.cf-stat-val { margin: 0; font-size: 1.65rem; font-weight: 700; line-height: 1; color: var(--ap-text, #1a2a1e); }
-.cf-stat-lbl { margin: 3px 0 0; font-size: 0.78rem; color: var(--ap-muted, #5a6b5f); }
+.cf-stat--warn .cf-stat-icon {
+  color: var(--sg-gold, #E9AA20);
+}
+
+.cf-stat--info .cf-stat-icon {
+  color: #1565a8;
+}
+
+.cf-stat--danger .cf-stat-icon {
+  color: #c0392b;
+}
+
+.cf-stat-val {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--sg-text, #1a2a1e);
+}
+
+.cf-stat-lbl {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+  color: var(--sg-text-secondary, #5a6b5f);
+}
 
 /* ── Titre section ── */
 .cf-section-title {
   margin: 0 0 14px;
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--ap-text, #1a2a1e);
+  color: var(--sg-text, #1a2a1e);
 }
 
 /* ── Grille de cartes ── */
@@ -297,6 +442,7 @@
   gap: 14px;
   margin-bottom: 28px;
 }
+
 .cf-card {
   display: flex;
   flex-direction: column;
@@ -304,38 +450,58 @@
   gap: 5px;
   padding: 20px 18px;
   text-decoration: none;
-  color: var(--ap-text, #1a2a1e);
+  color: var(--sg-text, #1a2a1e);
   position: relative;
   cursor: pointer;
-  background: var(--ap-surface, #fff);
-  border: 1px solid var(--ap-border, #dde4df);
+  background: var(--sg-surface, #fff);
+  border: 1px solid var(--sg-border, #dde4df);
   border-radius: 12px;
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
   font-family: inherit;
   text-align: left;
   width: 100%;
 }
+
 .cf-card:hover {
-  border-color: var(--ap-green, #006B3C);
-  box-shadow: 0 4px 14px rgba(0,107,60,0.08);
+  border-color: var(--sg-green, #006B3C);
+  box-shadow: 0 4px 14px rgba(0, 107, 60, 0.08);
 }
+
 .cf-card-icon {
-  width: 44px; height: 44px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
-  display: grid; place-items: center;
-  background: rgba(0,107,60,0.08);
-  color: var(--ap-green, #006B3C);
+  display: grid;
+  place-items: center;
+  background: rgba(0, 107, 60, 0.08);
+  color: var(--sg-green, #006B3C);
   margin-bottom: 6px;
 }
-.cf-card-label { font-size: 0.92rem; font-weight: 700; margin: 0; }
-.cf-card-desc  { font-size: 0.78rem; color: var(--ap-muted, #5a6b5f); margin: 0; }
+
+.cf-card-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.cf-card-desc {
+  font-size: 0.78rem;
+  color: var(--sg-text-secondary, #5a6b5f);
+  margin: 0;
+}
+
 .cf-card-arrow {
-  position: absolute; right: 14px; top: 50%;
+  position: absolute;
+  right: 14px;
+  top: 50%;
   transform: translateY(-50%);
-  color: var(--ap-border, #dde4df);
+  color: var(--sg-border, #dde4df);
   transition: color 0.18s ease;
 }
-.cf-card:hover .cf-card-arrow { color: var(--ap-green, #006B3C); }
+
+.cf-card:hover .cf-card-arrow {
+  color: var(--sg-green, #006B3C);
+}
 
 /* ── Bandeau info / alerte ── */
 .cf-info {
@@ -343,33 +509,303 @@
   align-items: flex-start;
   gap: 12px;
   padding: 16px 18px;
-  background: rgba(233,170,32,0.07);
-  border: 1px solid rgba(233,170,32,0.28);
+  background: rgba(233, 170, 32, 0.07);
+  border: 1px solid rgba(233, 170, 32, 0.28);
   border-radius: 10px;
   font-size: 0.86rem;
   margin-bottom: 24px;
 }
-.cf-info > svg  { flex: none; color: #a07010; margin-top: 2px; }
-.cf-info strong { display: block; margin-bottom: 3px; color: var(--ap-text, #1a2a1e); }
-.cf-info p      { margin: 0; color: var(--ap-muted, #5a6b5f); line-height: 1.55; }
-.cf-info a      { color: var(--ap-green, #006B3C); font-weight: 600; }
+
+.cf-info>svg {
+  flex: none;
+  color: #a07010;
+  margin-top: 2px;
+}
+
+.cf-info strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--sg-text, #1a2a1e);
+}
+
+.cf-info p {
+  margin: 0;
+  color: var(--sg-text-secondary, #5a6b5f);
+  line-height: 1.55;
+}
+
+.cf-info a {
+  color: var(--sg-green, #006B3C);
+  font-weight: 600;
+}
 
 /* ── Responsive ── */
 @media (max-width: 1000px) {
-  .cf-stats { grid-template-columns: repeat(2, 1fr); }
-  .cf-grid  { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 640px) {
-  .cf-stats { grid-template-columns: 1fr 1fr; }
-  .cf-grid  { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 400px) {
-  .cf-stats { grid-template-columns: 1fr; }
-  .cf-grid  { grid-template-columns: 1fr; }
+  .cf-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cf-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-/* ── Thème sombre ── */
-[data-theme='dark'] .cf-welcome   { background: var(--ap-green, #006B3C); }
-[data-theme='dark'] .cf-card-icon { background: rgba(74,222,128,0.08); color: #4ade80; }
-[data-theme='dark'] .cf-card:hover .cf-card-arrow { color: #4ade80; }
-[data-theme='dark'] .cf-card:hover { border-color: #4ade80; }
+@media (max-width: 640px) {
+  .cf-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cf-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 400px) {
+  .cf-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .cf-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   THÈME SOMBRE
+   ============================================================ */
+[data-theme='dark'] .cf-welcome {
+  background: var(--sg-green, #006B3C);
+}
+
+[data-theme='dark'] .cf-stat {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+
+[data-theme='dark'] .cf-stat-icon {
+  background: var(--sg-surface-2);
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cf-stat--warn .cf-stat-icon {
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .cf-stat--info .cf-stat-icon {
+  color: #60a5fa;
+}
+
+[data-theme='dark'] .cf-stat--danger .cf-stat-icon {
+  color: #f87171;
+}
+
+[data-theme='dark'] .cf-stat-val {
+  color: var(--sg-text);
+}
+
+[data-theme='dark'] .cf-stat-lbl {
+  color: var(--sg-text-muted);
+}
+
+[data-theme='dark'] .cf-section-title {
+  color: var(--sg-text);
+}
+
+[data-theme='dark'] .cf-card {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+  color: var(--sg-text);
+}
+
+[data-theme='dark'] .cf-card-icon {
+  background: rgba(74, 222, 128, 0.08);
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cf-card:hover {
+  border-color: #4ade80;
+  box-shadow: 0 4px 14px rgba(74, 222, 128, 0.08);
+}
+
+[data-theme='dark'] .cf-card:hover .cf-card-arrow {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cf-card-arrow {
+  color: var(--sg-border);
+}
+
+[data-theme='dark'] .cf-card-label {
+  color: var(--sg-text);
+}
+
+[data-theme='dark'] .cf-card-desc {
+  color: var(--sg-text-muted);
+}
+
+[data-theme='dark'] .cf-info {
+  background: rgba(233, 170, 32, 0.06);
+  border-color: rgba(233, 170, 32, 0.18);
+}
+
+[data-theme='dark'] .cf-info strong {
+  color: var(--sg-text);
+}
+
+[data-theme='dark'] .cf-info p {
+  color: var(--sg-text-secondary);
+}
+
+[data-theme='dark'] .cf-info a {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cfg-annee-bandeau {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+  color: var(--sg-text-secondary);
+}
+
+[data-theme='dark'] .cfg-annee-bandeau strong {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cfg-statut-badge.en_cours {
+  background: rgba(74, 222, 128, 0.10);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.25);
+}
+
+[data-theme='dark'] .cfg-statut-badge.a_venir {
+  background: rgba(21, 101, 168, 0.15);
+  color: #60a5fa;
+  border-color: rgba(21, 101, 168, 0.30);
+}
+
+[data-theme='dark'] .cfg-statut-badge.termine {
+  background: var(--sg-surface-2);
+  color: var(--sg-text-muted);
+  border-color: var(--sg-border);
+}
+
+[data-theme='dark'] .cfg-statut-badge.suspendu {
+  background: rgba(233, 170, 32, 0.10);
+  color: #fbbf24;
+  border-color: rgba(233, 170, 32, 0.25);
+}
+
+[data-theme='dark'] .cfg-cycle-carte {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+
+[data-theme='dark'] .cfg-cycle-carte:hover {
+  border-color: #4ade80;
+}
+
+[data-theme='dark'] .cfg-cycle-carte.is-actif {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.06);
+}
+
+[data-theme='dark'] .cfg-cycle-icone {
+  background: rgba(74, 222, 128, 0.08);
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cfg-cycle-nom {
+  color: var(--sg-text);
+}
+
+[data-theme='dark'] .cfg-etape {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+
+[data-theme='dark'] .cfg-etape:hover {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.04);
+}
+
+[data-theme='dark'] .cfg-etape-texte {
+  color: var(--sg-text);
+}
+
+[data-theme='dark'] .cfg-modale {
+  background: var(--sg-surface);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+[data-theme='dark'] .cfg-modale-tete {
+  background: var(--sg-surface);
+  border-bottom-color: var(--sg-border);
+}
+
+[data-theme='dark'] .cfg-modale-tete h3 {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cfg-modale-pied {
+  border-top-color: var(--sg-border);
+}
+
+[data-theme='dark'] .cfg-onglets {
+  border-bottom-color: var(--sg-border);
+}
+
+[data-theme='dark'] .cfg-onglet {
+  color: var(--sg-text-muted);
+}
+
+[data-theme='dark'] .cfg-onglet:hover {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cfg-onglet.is-actif {
+  color: #4ade80;
+  border-bottom-color: #4ade80;
+}
+
+[data-theme='dark'] .cfg-confirm-resume {
+  background: rgba(74, 222, 128, 0.06);
+  border-color: rgba(74, 222, 128, 0.15);
+}
+
+[data-theme='dark'] .cfg-confirm-resume strong {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .cfg-confirm-texte {
+  color: var(--sg-text-secondary);
+}
+
+
+/* ============================================================
+   BOUTONS DANS LE BANDEAU D'ACCUEIL (Contraste garanti)
+   ============================================================ */
+
+/* Force le bouton Actualiser (ghost) à être blanc pur sur le fond vert.
+   Utilisation de 3 classes pour garantir la priorité sur admin.css */
+.cf-welcome .ap-btn.ap-btn--ghost.ap-btn--sm {
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: transparent !important;
+  font-weight: 600 !important;
+}
+
+/* Effet au survol : fond blanc très léger */
+.cf-welcome .ap-btn.ap-btn--ghost.ap-btn--sm:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #ffffff !important;
+}
+
+/* On force l'icône SVG (RefreshCw) à être blanche */
+.cf-welcome .ap-btn.ap-btn--ghost.ap-btn--sm svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* Le bouton Or (Faire une demande) garde son texte noir pour être lisible sur le jaune */
+.cf-welcome .ap-btn--gold {
+  color: #000000 !important;
+}
