@@ -278,8 +278,85 @@
 }
 
 /* ══ Thème sombre ══ */
-[data-theme='dark'] .ap-code { background: rgba(74,222,128,0.10); color: #4ade80; }
-[data-theme='dark'] .ap-badge--success { color: #4ade80; border-color: rgba(74,222,128,0.25); background: rgba(74,222,128,0.09); }
+:root[data-theme='dark'] .ap,
+[data-theme='dark'] .ap,
+.dark .ap {
+  --ap-green: #4ade80;
+  --ap-bg: #0d1520;
+  --ap-surface: #162232;
+  --ap-border: #283a52;
+  --ap-text: #f8fafc;
+  --ap-muted: #94a3b8;
+  --ap-hover: rgba(255,255,255,0.06);
+}
+
+[data-theme='dark'] .ap-code,
+.dark .ap-code { background: rgba(74,222,128,0.12); color: #4ade80; }
+
+[data-theme='dark'] .ap-badge--success,
+.dark .ap-badge--success { color: #4ade80; border-color: rgba(74,222,128,0.25); background: rgba(74,222,128,0.12); }
+
+[data-theme='dark'] .ap-badge--warning,
+.dark .ap-badge--warning { color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.15); }
+
+[data-theme='dark'] .ap-badge--info,
+.dark .ap-badge--info { color: #60a5fa; border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.15); }
+
+[data-theme='dark'] .ap-badge--danger,
+.dark .ap-badge--danger { color: #f87171; border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.15); }
+
+[data-theme='dark'] .ap-tab,
+.dark .ap-tab {
+  background: #162232;
+  border-color: #283a52;
+  color: #f8fafc;
+}
+[data-theme='dark'] .ap-tab:hover,
+.dark .ap-tab:hover {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+[data-theme='dark'] .ap-tab.is-active,
+.dark .ap-tab.is-active {
+  background: #006B3C;
+  border-color: #006B3C;
+  color: #FFF6DD;
+}
+
+[data-theme='dark'] .ddt-flag.is-on,
+.dark .ddt-flag.is-on {
+  border-color: #fbbf24;
+  background: rgba(251,191,36,0.15);
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .ddt-existing,
+.dark .ddt-existing {
+  background: rgba(251,191,36,0.12);
+  color: #fbbf24;
+  border-color: rgba(251,191,36,0.25);
+}
+
+[data-theme='dark'] .ddt-hint,
+.dark .ddt-hint {
+  color: #fbbf24;
+}
+
+[data-theme='dark'] .ddt-section-head h3,
+.dark .ddt-section-head h3 {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .ddt-result h2,
+.dark .ddt-result h2 {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .ddt-result-ico,
+.dark .ddt-result-ico {
+  background: rgba(74,222,128,0.15);
+  color: #4ade80;
+}
 
 /* ══ Spécifique DemandeDetailPage ══ */
 .ddt-section { transition: border-color var(--ap-transition, 0.18s ease); }

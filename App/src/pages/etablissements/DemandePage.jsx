@@ -15,6 +15,7 @@ import { demandeService } from '../../services/etablissements/etablissement.serv
 import { Stepper } from '../../components/etablissements/ui'
 import { StepConfirmation, StepDirigeant, StepDocuments, StepEtablissement, StepLocalisation } from '../../components/etablissements/FormSteps'
 import Loader from '../../components/commun/Loader'
+import ThemeToggle from '../../components/commun/ThemeToggle'
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import './Etablissements.css'
 
@@ -255,6 +256,7 @@ export default function DemandePage() {
               <p className="dm-sub">{sub}</p>
             </div>
             <div className="dm-head-actions">
+              <ThemeToggle className="dm-btn-icon" />
               {/* Bouton accueil visible uniquement sur mobile (sidebar masquée) */}
               <Link to={HOME_PATH} className="dm-btn-icon dm-btn-icon--mobile" aria-label="Retour à l'accueil">
                 <House size={16} />

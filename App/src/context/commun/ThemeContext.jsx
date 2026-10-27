@@ -10,16 +10,17 @@ export function ThemeProvider({ children }) {
     catch { return 'light' }
   })
 
-  /* Applique l'attribut data-theme sur <html> et persiste */
+  /* Applique l'attribut data-theme et la classe dark sur <html> et persiste */
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
+    document.documentElement.classList.toggle('dark', theme === 'dark')
     try { localStorage.setItem(STORAGE_KEY, theme) } catch { /* ignore */ }
   }, [theme])
 
   const toggle = useCallback(() => setTheme((t) => t === 'light' ? 'dark' : 'light'), [])
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle, isDark: theme === 'dark' }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggle, isDark: theme === 'dark' }}>
       {children}
     </ThemeContext.Provider>
   )
