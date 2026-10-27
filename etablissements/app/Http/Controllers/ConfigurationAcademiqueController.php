@@ -142,12 +142,31 @@ class ConfigurationAcademiqueController extends Controller
             'actif'      => ['sometimes', 'boolean'],
         ]);
 
-        $annee = AnneeAcademique::where('etablissement_id', $this->etablissementId())
+        $etablissementId = $this->etablissementId();
+
+        // Vérifier que le cycle est autorisé pour cet établissement
+        // (validé via une demande de cycle acceptée par le super admin)
+        $autorise = \App\Domain\Etablissement\CycleAutorise::where('etablissement_id', $etablissementId)
+            ->where('cycle', $donnees['cycle'])
+            ->where('statut', 'actif')
+            ->exists();
+
+        if (!$autorise && ($donnees['actif'] ?? true) === true) {
+            return response()->json([
+                'success' => false,
+                'error'   => [
+                    'code'    => 'CYCLE_NON_AUTORISE',
+                    'message' => "Ce cycle n'est pas autorisé pour votre établissement. Faites une demande de cycle depuis la Configuration.",
+                ],
+            ], 403);
+        }
+
+        $annee = AnneeAcademique::where('etablissement_id', $etablissementId)
             ->where('uuid', $donnees['annee_uuid'])
             ->firstOrFail();
 
         $cycle = CycleConfig::updateOrCreate(
-            ['etablissement_id' => $this->etablissementId(), 'annee_id' => $annee->id, 'cycle' => $donnees['cycle']],
+            ['etablissement_id' => $etablissementId, 'annee_id' => $annee->id, 'cycle' => $donnees['cycle']],
             ['actif' => $donnees['actif'] ?? true],
         );
 

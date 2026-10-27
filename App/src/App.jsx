@@ -52,6 +52,14 @@ import UtilisateursPage          from './pages/AdministrationPrincipale/Utilisat
 /* E-Learning (ajouté par fusion) */
 import ElearningApp from './pages/elearning/ElearningApp'
 
+/* Modules avec layout propre (chargement direct sans PortailLayout) */
+import ScolaritePage from './pages/etablissements/ScolaritePage'
+
+/** Wrapper direct pour Scolarité (sans PortailLayout). */
+function ScolariteDirecte() {
+  return <ScolaritePage />
+}
+
 /** Hôte d'un établissement (sous-domaine en production). */
 const SLUG_HOTE = MODE_SOUS_DOMAINE ? detecterSlugEtablissement() : null
 
@@ -72,15 +80,22 @@ function routesEtablissement(base) {
         <Route path={p('/portail')} element={<Portail />} />
       </Route>
 
-      {/* ── Services, compte, configuration : avec sidebar PortailLayout ── */}
+      {/* ── Modules avec leur propre layout (sidebar dédiée) ── */}
+      {/* Scolarité et futurs modules : rendus directement, SANS PortailLayout */}
+      <Route element={<RequireEtablissement />}>
+        <Route path={p('/scolarite/*')} element={<ScolariteDirecte />} />
+      </Route>
+
+      {/* ── Services sans layout propre + compte + configuration : dans PortailLayout ── */}
       <Route element={<RequireEtablissement />}>
         <Route element={<PortailLayout />}>
           <Route path={p('/compte')} element={<ComptePage />} />
+          {/* Exclure les modules avec layout propre via le wildcard /:code/* */}
           <Route path={p('/:code/*')} element={<ServiceEtablissementPage />} />
         </Route>
       </Route>
 
-      {/* ── Configuration : admin uniquement, aussi dans PortailLayout ── */}
+      {/* ── Configuration : admin uniquement, dans PortailLayout ── */}
       <Route element={<RequireAuth roles={['administrateur']} />}>
         <Route element={<PortailLayout />}>
           <Route path={p('/configuration')} element={<ConfigurationPage />} />

@@ -16,7 +16,7 @@ import { Stepper } from '../../components/etablissements/ui'
 import { StepConfirmation, StepDirigeant, StepDocuments, StepEtablissement, StepLocalisation } from '../../components/etablissements/FormSteps'
 import Loader from '../../components/commun/Loader'
 import usePageTitle from '../../hooks/commun/usePageTitle'
-import './etablissements.css'
+import './Etablissements.css'
 
 const TITLES = {
   1: ["Informations sur l'établissement", 'Présentez votre établissement.'],

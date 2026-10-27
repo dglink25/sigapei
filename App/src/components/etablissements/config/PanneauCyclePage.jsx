@@ -1,14 +1,3 @@
-/**
- * PanneauCyclePage - Vue principale d'un cycle.
- *
- * Affiche les onglets adaptés au cycle sélectionné :
- *   Maternelle  : Groupes | Niveaux & Classes | Matières
- *   Primaire    : Groupes | Niveaux & Classes | Matières
- *   Secondaire  : Groupes/Sections | Niveaux & Classes | Séries | Matières
- *   Université  : Départements | Filières | Niveaux | Cohortes | Matières
- *
- * L'onglet actif est piloté par ?onglet= dans l'URL.
- */
 import { AlertTriangle } from 'lucide-react'
 
 import PanneauSubdivisions from './PanneauSubdivisions'
@@ -54,19 +43,26 @@ const CYCLE_LABELS = {
 }
 
 export default function PanneauCyclePage({
-  cycle, cycleObj, anneeActive, onTerminee, searchParams, setSearchParams,
+  cycle, cycleObj, anneeActive, onTerminee, searchParams, setSearchParams, cyclesDisponibles: cyclesDisponiblesProps = [],
 }) {
-  const onglets   = ONGLETS_CYCLE[cycle] ?? []
+  const onglets     = ONGLETS_CYCLE[cycle] ?? []
   const ongletActif = searchParams.get('onglet') ?? onglets[0]?.id ?? ''
 
   const allerOnglet = (id) =>
     setSearchParams({ cycle, onglet: id })
+
+  // Cycles disponibles pour les panneaux enfants :
+  // on utilise ceux passés en props, ou à défaut uniquement le cycle courant
+  const cyclesDisponibles = cyclesDisponiblesProps.length > 0
+    ? cyclesDisponiblesProps
+    : (cycle ? [cycle] : [])
 
   const propsCommuns = {
     anneeActive,
     onTerminee,
     cycleFiltre: cycle,
     cycleObj,
+    cyclesDisponibles,
   }
 
   if (!anneeActive) {

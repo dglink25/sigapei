@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Construction } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { iconePourCode } from '../../config/services/config'
-import { COMPOSANTS_SERVICES } from '../../config/services/registre'
+import { composantService } from '../../config/services/registre'
 import { lienEtablissement } from '../../lib/etablissements/subdomain'
 import { portailService } from '../../services/identite/portail.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
@@ -12,12 +12,13 @@ import Loader from '../../components/commun/Loader'
 import '../commun/Portail.css'
 
 /**
- * Affiche le contenu d'un service quand il est disponible,
- * ou un écran "Bientôt disponible" sinon.
- * Header/sidebar fournis par PortailLayout.
+ * Affiche le contenu d'un service.
+ * Si le composant est enregistré → rendu direct.
+ * Sinon → écran "Bientôt disponible".
+ * Les services avec avecLayout:true gèrent leur propre layout en interne.
  */
 function ServiceContenu({ service, Icone, slug }) {
-  const Composant = COMPOSANTS_SERVICES[service.code]
+  const Composant = composantService(service.code)
   if (Composant) {
     return (
       <Suspense fallback={<Loader mode="inline" label="Chargement du service…" />}>
@@ -44,23 +45,27 @@ function ServiceContenu({ service, Icone, slug }) {
 }
 
 /**
- * Page d'un service de l'établissement.
- * Vérifie l'accès puis affiche le service ou "Bientôt disponible".
- * Header/sidebar fournis par PortailLayout.
+ * Page d'un service.
+ * Vérifie l'accès via portailService.lire() puis rend le composant.
+ *
+ * Les services avec avecLayout:true (ex: Scolarité) fournissent leur propre
+ * layout complet - cette page est donc rendue sans PortailLayout dans App.jsx.
+ *
+ * Les autres services restent dans PortailLayout (sidebar globale).
  */
 export default function ServiceEtablissementPage() {
   const { code } = useParams()
-  const slug = useSlugEtablissement()
+  const slug     = useSlugEtablissement()
   const navigate = useNavigate()
-  const notify = useNotify()
+  const notify   = useNotify()
   const [etat, setEtat] = useState({ chargement: true })
   usePageTitle(etat.service?.nom)
 
   useEffect(() => {
     let annule = false
     const retour = () => navigate(lienEtablissement(slug, '/portail'), { replace: true })
-    portailService
-      .lire()
+
+    portailService.lire()
       .then((r) => {
         if (annule) return
         const s = r?.services?.find((x) => x.code === code)
@@ -81,13 +86,13 @@ export default function ServiceEtablissementPage() {
 
   const Icone = iconePourCode(code)
 
-  return (
-    <main className="portail-main">
-      {etat.chargement ? (
+  if (etat.chargement) {
+    return (
+      <main className="portail-main">
         <Loader mode="inline" label="Ouverture du service…" />
-      ) : (
-        <ServiceContenu service={etat.service} Icone={Icone} slug={slug} />
-      )}
-    </main>
-  )
+      </main>
+    )
+  }
+
+  return <ServiceContenu service={etat.service} Icone={Icone} slug={slug} />
 }

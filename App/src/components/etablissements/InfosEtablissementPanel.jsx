@@ -13,7 +13,7 @@ import ConfirmDialog from '../commun/ConfirmDialog'
 import Loader from '../commun/Loader'
 import GeoSelects from './GeoSelects'
 import { Field } from './ui'
-import '../../pages/etablissements/etablissements.css'
+import '../../pages/etablissements/Etablissements.css'
 import './InfosEtablissementPanel.css'
 
 const typeLabel = (id) => TYPES.find((t) => t.id === id)?.label ?? id

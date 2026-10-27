@@ -1,224 +1,286 @@
-/**
- * ConfigurationPage - Configuration académique.
- * ?section=annees|droits|etablissement|demandes-cycle|utilisateurs|demandes-role
- * ?cycle=primaire&onglet=groupes
- */
 import { useEffect, useState, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CalendarDays, ChevronRight, School, BookOpen, GraduationCap, Building2 } from 'lucide-react'
+import {
+  ChevronRight, CheckCircle2, Clock, XCircle, RefreshCw,
+  ShieldCheck, Users, Building2, GraduationCap, UserCog, KeyRound,
+  AlertTriangle, Layers,
+} from 'lucide-react'
 
-import { lienEtablissement }    from '../../lib/etablissements/subdomain'
-import { portailService }       from '../../services/identite/portail.service'
-import { anneesService, cyclesService } from '../../services/etablissements/configurationAcademique.service'
-import useSlugEtablissement     from '../../hooks/etablissements/useSlugEtablissement'
-import usePageTitle             from '../../hooks/commun/usePageTitle'
+import { lienEtablissement }   from '../../lib/etablissements/subdomain'
+import { portailService }      from '../../services/identite/portail.service'
+import { monEtablissementService } from '../../services/etablissements/monEtablissement.service'
+import { demandesCycleEtabService } from '../../services/etablissements/demandesCycle.service'
+import useSlugEtablissement    from '../../hooks/etablissements/useSlugEtablissement'
+import usePageTitle            from '../../hooks/commun/usePageTitle'
 
-import AccesDroitsPanel         from '../../components/etablissements/AccesDroitsPanel'
-import InfosEtablissementPanel  from '../../components/etablissements/InfosEtablissementPanel'
-import PanneauAnnees            from '../../components/etablissements/config/PanneauAnnees'
-import PanneauCyclePage         from '../../components/etablissements/config/PanneauCyclePage'
-import PanneauDemandesCycle     from '../../components/etablissements/config/PanneauDemandesCycle'
-import PanneauUtilisateurs      from '../../components/etablissements/config/PanneauUtilisateurs'
-import PanneauDemandesRole      from '../../components/etablissements/config/PanneauDemandesRole'
-import PanneauPermissionsRole   from '../../components/etablissements/config/PanneauPermissionsRole'
+import AccesDroitsPanel        from '../../components/etablissements/AccesDroitsPanel'
+import InfosEtablissementPanel from '../../components/etablissements/InfosEtablissementPanel'
+import PanneauDemandesCycle    from '../../components/etablissements/config/PanneauDemandesCycle'
+import PanneauUtilisateurs     from '../../components/etablissements/config/PanneauUtilisateurs'
+import PanneauDemandesRole     from '../../components/etablissements/config/PanneauDemandesRole'
+import PanneauPermissionsRole  from '../../components/etablissements/config/PanneauPermissionsRole'
 
 import '../AdministrationPrincipale/admin.css'
 import '../../components/administration/admin-ui.css'
 import './ConfigurationPage.css'
 
-export const CYCLE_LABELS = {
+const CYCLE_LABELS = {
   maternelle:'Maternelle', primaire:'Primaire', secondaire:'Secondaire', universitaire:'Université',
 }
-const CYCLE_ICONES = {
-  maternelle:School, primaire:BookOpen, secondaire:GraduationCap, universitaire:Building2,
-}
-const LIBELLES_STATUT = {
-  en_cours:'En cours', a_venir:'À venir', termine:'Terminée', suspendu:'Suspendue',
-}
+
 const SECTION_LABELS = {
-  annees:'Années académiques',
-  droits:"Droits d'accès",
-  etablissement:'Infos établissement',
-  'demandes-cycle':'Demande de cycle',
-  utilisateurs:'Utilisateurs',
-  'demandes-role':'Demande de rôle',
-  'permissions-roles':'Permissions des rôles',
+  droits:              "Droits d'accès",
+  etablissement:       'Infos établissement',
+  utilisateurs:        'Utilisateurs',
+  'demandes-cycle':    'Cycles autorisés',
+  'demandes-role':     'Demande de rôle',
+  'permissions-roles': 'Permissions des rôles',
 }
+
+// ── Espaces de paramètres groupés ────────────────────────────────────
+const GROUPES = [
+  {
+    groupe: 'Accès & Sécurité',
+    items: [
+      { label: "Droits d'accès",       icon: ShieldCheck, section: 'droits',              desc: 'Gérer les accès aux services' },
+      { label: 'Permissions des rôles', icon: KeyRound,    section: 'permissions-roles',   desc: 'Services et portail par rôle' },
+    ],
+  },
+  {
+    groupe: 'Établissement',
+    items: [
+      { label: 'Infos établissement',  icon: Building2,   section: 'etablissement',       desc: 'Logo, types, adresse, localisation' },
+      { label: 'Utilisateurs',         icon: Users,       section: 'utilisateurs',        desc: 'Comptes et rôles assignés' },
+      { label: 'Demande de rôle',      icon: UserCog,     section: 'demandes-role',       desc: 'Rôle personnalisé au Super Admin' },
+    ],
+  },
+  {
+    groupe: 'Académique',
+    items: [
+      { label: 'Cycles autorisés',     icon: GraduationCap, section: 'demandes-cycle',    desc: 'Voir les cycles accordés et en demander' },
+    ],
+  },
+]
 
 export default function ConfigurationPage() {
   usePageTitle('Configuration')
   const slug = useSlugEtablissement()
   const [searchParams, setSearchParams] = useSearchParams()
-  const section    = searchParams.get('section') ?? ''
-  const cycleParam = searchParams.get('cycle')   ?? ''
+  const section = searchParams.get('section') ?? ''
 
-  const [etab,        setEtab]        = useState(null)
-  const [anneeActive, setAnneeActive] = useState(null)
-  const [cyclesActifs,setCyclesActifs]= useState([])
+  const [etab, setEtab] = useState(null)
 
-  useEffect(()=>{
-    let c=false
-    portailService.lire().then((r)=>{ if(!c) setEtab(r?.etablissement??null) }).catch(()=>{})
-    return ()=>{ c=true }
-  },[])
+  const chargerPortail = useCallback(() => {
+    portailService.lire()
+      .then((r) => setEtab(r?.etablissement ?? null))
+      .catch(() => {})
+  }, [])
 
-  useEffect(()=>{
-    let c=false
-    anneesService.lister().then((r)=>{
-      if(c) return
-      const liste=r?.data??r??[]
-      const active=liste.find((a)=>a.statut==='en_cours')??liste[0]??null
-      setAnneeActive(active)
-    }).catch(()=>{})
-    return ()=>{ c=true }
-  },[])
+  useEffect(() => { chargerPortail() }, [chargerPortail])
 
-  useEffect(()=>{
-    if(!anneeActive) return
-    let c=false
-    cyclesService.lister(anneeActive.uuid).then((r)=>{
-      if(c) return
-      setCyclesActifs((r?.data??r??[]).filter((x)=>x.actif))
-    }).catch(()=>{})
-    return ()=>{ c=true }
-  },[anneeActive?.uuid])
-
-  const allerA   = useCallback((params)=>setSearchParams(params),[setSearchParams])
-  const marquer  = useCallback(()=>{}, [])
+  const allerA     = useCallback((params) => setSearchParams(params), [setSearchParams])
   const configBase = lienEtablissement(slug, '/configuration')
 
   function renduContenu() {
-    if (section==='annees')         return <PanneauAnnees anneeActive={anneeActive} setAnneeActive={setAnneeActive} onTerminee={marquer}/>
-    if (section==='droits')         return <AccesDroitsPanel/>
-    if (section==='etablissement')  return <InfosEtablissementPanel/>
-    if (section==='demandes-cycle') return <PanneauDemandesCycle/>
-    if (section==='utilisateurs')   return <PanneauUtilisateurs/>
-    if (section==='demandes-role')  return <PanneauDemandesRole/>
-    if (section==='permissions-roles') return <PanneauPermissionsRole/>
-    if (cycleParam) return (
-      <PanneauCyclePage
-        cycle={cycleParam}
-        cycleObj={cyclesActifs.find((c)=>c.cycle===cycleParam)}
-        anneeActive={anneeActive}
-        onTerminee={marquer}
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-      />
-    )
-    return <VueEnsemble etab={etab} anneeActive={anneeActive} cyclesActifs={cyclesActifs} allerA={allerA}/>
+    if (section === 'droits')              return <AccesDroitsPanel />
+    if (section === 'etablissement')       return <InfosEtablissementPanel />
+    if (section === 'demandes-cycle')      return <PanneauDemandesCycle />
+    if (section === 'utilisateurs')        return <PanneauUtilisateurs />
+    if (section === 'demandes-role')       return <PanneauDemandesRole />
+    if (section === 'permissions-roles')   return <PanneauPermissionsRole />
+    return <VueEnsemble etab={etab} allerA={allerA} slug={slug} onRefresh={chargerPortail} />
   }
 
-  // Fil d'ariane
+  // Fil d'ariane : uniquement sur les sous-sections
   const migettes = [
-    <Link key="p" to={lienEtablissement(slug,'/portail')}>Portail</Link>,
+    <Link key="p" to={lienEtablissement(slug, '/portail')}>Portail</Link>,
     <span key="s1" className="ap-bread-sep">/</span>,
     <Link key="c" to={configBase}>Configuration</Link>,
   ]
-  if (cycleParam) {
+  if (section) {
     migettes.push(<span key="s2" className="ap-bread-sep">/</span>)
-    migettes.push(<span key="cy">{CYCLE_LABELS[cycleParam]??cycleParam}</span>)
-    const o=searchParams.get('onglet')
-    if(o){ migettes.push(<span key="s3" className="ap-bread-sep">/</span>); migettes.push(<span key="on">{o}</span>) }
-  } else if (section) {
-    migettes.push(<span key="s2" className="ap-bread-sep">/</span>)
-    migettes.push(<span key="se">{SECTION_LABELS[section]??section}</span>)
+    migettes.push(<span key="se">{SECTION_LABELS[section] ?? section}</span>)
   }
 
   return (
     <div className="ap cfg">
-      <nav className="ap-bread" aria-label="Fil d'ariane">{migettes}</nav>
-      {anneeActive && (
-        <div className="cfg-annee-bandeau">
-          <CalendarDays size={14} aria-hidden="true"/>
-          <span>Année active :</span>
-          <strong>{anneeActive.libelle}</strong>
-          <span className={`cfg-statut-badge ${anneeActive.statut}`}>
-            {LIBELLES_STATUT[anneeActive.statut]??anneeActive.statut}
-          </span>
-        </div>
+      {section && (
+        <nav className="ap-bread" aria-label="Fil d'ariane">{migettes}</nav>
       )}
       {renduContenu()}
     </div>
   )
 }
 
-/* ── Vue d'ensemble ─────────────────────────────────────────────────── */
-function VueEnsemble({ etab, anneeActive, cyclesActifs, allerA }) {
+/* ── Vue d'ensemble - design identique au Dashboard ─────────────────── */
+function VueEnsemble({ etab, allerA, slug, onRefresh }) {
+  const [cyclesAutorises, setCyclesAutorises] = useState([])
+  const [demandes, setDemandes]               = useState([])
+  const [loading, setLoading]                 = useState(false)
+
+  const charger = useCallback(() => {
+    setLoading(true)
+    let annule = false
+    Promise.all([
+      monEtablissementService.lire(),
+      demandesCycleEtabService.lister(),
+    ]).then(([profil, rDem]) => {
+      if (annule) return
+      setCyclesAutorises(
+        (profil?.cyclesAutorises ?? []).filter((x) => x.statut === 'actif').map((x) => x.cycle),
+      )
+      const listeDem = Array.isArray(rDem?.data) ? rDem.data : Array.isArray(rDem) ? rDem : []
+      setDemandes(listeDem)
+    }).catch(() => {}).finally(() => {
+      if (!annule) setLoading(false)
+    })
+    return () => { annule = true }
+  }, [])
+
+  useEffect(() => { charger() }, [charger])
+
+  const enAttente = demandes.filter((d) => d.statut === 'en_attente')
+  const refusees  = demandes.filter((d) => d.statut === 'refusee')
+  const fmt       = (v) => v === null || v === undefined ? '-' : String(v)
+  const base      = lienEtablissement(slug, '/configuration')
+
   return (
     <>
-      <div className="ap-page-head">
+      {/* Bandeau accueil */}
+      <section className="cf-welcome">
         <div>
-          <h2 className="ap-page-title">Configuration{etab ? ` · ${etab.nom}` : ''}</h2>
-          <p className="ap-page-sub">
-            {anneeActive
-              ? `Année ${anneeActive.libelle} - Sélectionnez un cycle ou une section.`
-              : "Créez d'abord une année académique."}
+          <h2 className="cf-welcome-title">
+            Configuration{etab ? ` · ${etab.nom}` : ''}
+          </h2>
+          <p className="cf-welcome-sub">
+            Gérez les paramètres de votre établissement. La gestion académique se fait dans{' '}
+            <Link to={lienEtablissement(slug, '/scolarite')} style={{ color:'#FFF6DD', fontWeight:700, textDecoration:'underline' }}>
+              Scolarité
+            </Link>.
           </p>
+        </div>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button
+            type="button"
+            className="ap-btn ap-btn--ghost ap-btn--sm"
+            onClick={() => { charger(); onRefresh?.() }}
+            disabled={loading}
+          >
+            <RefreshCw size={14} className={loading ? 'ap-spin' : ''} aria-hidden="true" /> Actualiser
+          </button>
+          <Link to={`${base}?section=demandes-cycle`} className="ap-btn ap-btn--gold">
+            Faire une demande <ChevronRight size={15} aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
+
+      {/* KPI stats */}
+      <div className="cf-stats" style={{ marginBottom: 28 }}>
+        <div className="cf-stat cf-stat--success">
+          <div className="cf-stat-icon"><CheckCircle2 size={20} aria-hidden="true" /></div>
+          <div>
+            <p className="cf-stat-val">{loading ? '…' : fmt(cyclesAutorises.length)}</p>
+            <p className="cf-stat-lbl">Cycles autorisés</p>
+          </div>
+        </div>
+        <div className={`cf-stat ${enAttente.length > 0 ? 'cf-stat--warn' : 'cf-stat--info'}`}>
+          <div className="cf-stat-icon"><Clock size={20} aria-hidden="true" /></div>
+          <div>
+            <p className="cf-stat-val">{loading ? '…' : fmt(enAttente.length)}</p>
+            <p className="cf-stat-lbl">Demandes en attente</p>
+          </div>
+        </div>
+        <div className={`cf-stat ${refusees.length > 0 ? 'cf-stat--danger' : 'cf-stat--info'}`}>
+          <div className="cf-stat-icon"><XCircle size={20} aria-hidden="true" /></div>
+          <div>
+            <p className="cf-stat-val">{loading ? '…' : fmt(refusees.length)}</p>
+            <p className="cf-stat-lbl">Demandes refusées</p>
+          </div>
+        </div>
+        <div className="cf-stat cf-stat--info">
+          <div className="cf-stat-icon"><Layers size={20} aria-hidden="true" /></div>
+          <div>
+            <p className="cf-stat-val">{loading ? '…' : fmt(demandes.length)}</p>
+            <p className="cf-stat-lbl">Demandes total</p>
+          </div>
         </div>
       </div>
 
-      {/* Cycles actifs - raccourcis directs */}
-      {cyclesActifs.length > 0 && (
-        <>
-          <h3 style={{margin:'0 0 12px',fontSize:'0.82rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'var(--sg-text-muted)'}}>
-            Cycles actifs
-          </h3>
-          <div className="cfg-cycles-grille" style={{marginBottom:32}}>
-            {cyclesActifs.map((c)=>{
-              const Icon = CYCLE_ICONES[c.cycle] ?? School
+      {/* Alertes */}
+      {!loading && cyclesAutorises.length === 0 && enAttente.length === 0 && (
+        <div className="cf-info">
+          <AlertTriangle size={17} aria-hidden="true" />
+          <div>
+            <strong>Aucun cycle autorisé</strong>
+            <p>
+              <Link to={`${base}?section=demandes-cycle`}>
+                Soumettez une demande de cycle
+              </Link>{' '}
+              pour débloquer la configuration académique dans Scolarité.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Cycles autorisés - aperçu */}
+      {(cyclesAutorises.length > 0 || enAttente.length > 0) && (
+        <section style={{ marginBottom: 28 }}>
+          <h3 className="cf-section-title">Cycles autorisés</h3>
+          <div className="ap-card ap-card--flush">
+            <table className="ap-table">
+              <thead>
+                <tr><th>Cycle</th><th>Statut</th></tr>
+              </thead>
+              <tbody>
+                {cyclesAutorises.map((id) => (
+                  <tr key={id}>
+                    <td><strong>{CYCLE_LABELS[id] ?? id}</strong></td>
+                    <td>
+                      <span style={{ display:'flex', alignItems:'center', gap:6, color:'var(--sg-green)', fontSize:'0.85rem', fontWeight:600 }}>
+                        <CheckCircle2 size={14} aria-hidden="true" /> Autorisé
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {enAttente.map((d) => (
+                  <tr key={`att-${d.uuid ?? d.cycle}`}>
+                    <td><strong>{CYCLE_LABELS[d.cycle] ?? d.cycle}</strong></td>
+                    <td>
+                      <span style={{ display:'flex', alignItems:'center', gap:6, color:'var(--sg-gold)', fontSize:'0.85rem', fontWeight:600 }}>
+                        <Clock size={14} aria-hidden="true" /> En attente
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Paramètres groupés - grille de cartes (identique Dashboard) */}
+      {GROUPES.map((g) => (
+        <section key={g.groupe} style={{ marginBottom: 28 }}>
+          <h3 className="cf-section-title">{g.groupe}</h3>
+          <div className="cf-grid">
+            {g.items.map((item) => {
+              const Icon = item.icon
               return (
-                <button key={c.uuid} type="button" className="cfg-cycle-carte is-actif"
-                  onClick={()=>allerA({cycle:c.cycle, onglet:'groupes'})}>
-                  <span className="cfg-cycle-icone"><Icon size={22} aria-hidden="true"/></span>
-                  <span className="cfg-cycle-nom">{CYCLE_LABELS[c.cycle]}</span>
-                  <span className="cfg-cycle-etat">Configurer</span>
-                </button>
+                <Link
+                  key={item.section}
+                  to={`${base}?section=${item.section}`}
+                  className="cf-card ap-card ap-card--hover"
+                >
+                  <div className="cf-card-icon"><Icon size={26} aria-hidden="true" /></div>
+                  <p className="cf-card-label">{item.label}</p>
+                  <p className="cf-card-desc">{item.desc}</p>
+                  <ChevronRight size={15} className="cf-card-arrow" aria-hidden="true" />
+                </Link>
               )
             })}
           </div>
-        </>
-      )}
-
-      {cyclesActifs.length===0 && anneeActive && (
-        <div className="ap-alert ap-alert--warning" style={{marginBottom:24}}>
-          <span>Aucun cycle actif pour <strong>{anneeActive.libelle}</strong>.{' '}
-            <button type="button" style={{border:0,background:'none',color:'inherit',fontWeight:700,cursor:'pointer',textDecoration:'underline',fontFamily:'inherit'}}
-              onClick={()=>allerA({section:'annees'})}>Activer des cycles</button>
-          </span>
-        </div>
-      )}
-      {!anneeActive && (
-        <div className="ap-alert ap-alert--warning" style={{marginBottom:24}}>
-          <span>
-            <button type="button" style={{border:0,background:'none',color:'inherit',fontWeight:700,cursor:'pointer',textDecoration:'underline',fontFamily:'inherit'}}
-              onClick={()=>allerA({section:'annees'})}>Créer une année académique</button>{' '}pour commencer.
-          </span>
-        </div>
-      )}
-
-      {/* Autres paramètres */}
-      <h3 style={{margin:'0 0 12px',fontSize:'0.82rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'var(--sg-text-muted)'}}>
-        Autres paramètres
-      </h3>
-      <div className="cfg-etapes">
-        {[
-          { label:'Années académiques',   sous:'Gérer les années et les cycles autorisés',   section:'annees' },
-          { label:"Droits d'accès",        sous:'Gérer les accès aux services',               section:'droits' },
-          { label:'Utilisateurs',          sous:'Gérer les comptes et assigner des rôles',    section:'utilisateurs' },
-          { label:'Infos établissement',   sous:'Logo, types, adresse, localisation',          section:'etablissement' },
-          { label:'Demande de cycle',      sous:'Demander un nouveau cycle au Super Admin',    section:'demandes-cycle' },
-          { label:'Demande de rôle',       sous:'Demander un rôle personnalisé au Super Admin',section:'demandes-role' },
-          { label:'Permissions des rôles', sous:'Configurer services et portail par rôle',     section:'permissions-roles' },
-        ].map(({label,sous,section})=>(
-          <button key={section} type="button" className="cfg-etape" onClick={()=>allerA({section})}>
-            <span>
-              <span className="cfg-etape-texte">{label}</span>
-              <span style={{display:'block',fontSize:'0.78rem',color:'var(--sg-text-muted)',marginTop:2}}>{sous}</span>
-            </span>
-            <ChevronRight size={16} style={{marginLeft:'auto',flexShrink:0,color:'var(--sg-text-muted)'}} aria-hidden="true"/>
-          </button>
-        ))}
-      </div>
+        </section>
+      ))}
     </>
   )
 }
