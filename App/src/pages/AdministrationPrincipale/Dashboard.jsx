@@ -14,6 +14,7 @@ import { adminService }     from '../../services/etablissements/etablissement.se
 import { utilisateursService } from '../../services/identite/utilisateurs.service'
 import { demandesCycleAdminService } from '../../services/etablissements/demandesCycle.service'
 import { demandesRoleAdminService }  from '../../services/identite/rolesEtablissements.service'
+import { demandesServiceAdminService } from '../../services/identite/demandesService.service'
 import { normaliserDemande } from '../../lib/etablissements/form'
 import './admin.css'
 import './Dashboard.css'
@@ -31,10 +32,11 @@ const ESPACES = [
   {
     groupe: 'Identité & Accès',
     items: [
-      { label: 'Services',          icon: Layers,       path: SERVICE_PATHS.liste,        desc: 'Catalogue des services & assignations' },
-      { label: 'Utilisateurs',      icon: Users,        path: '/admin/utilisateurs',      desc: 'Tous les comptes de la plateforme' },
-      { label: 'Rôles',             icon: ShieldCheck,  path: '/admin/roles',             desc: 'Gérer les rôles et permissions' },
-      { label: 'Demandes de rôle',  icon: ShieldCheck,  path: '/admin/demandes-role',     desc: 'Instruire les demandes de rôle' },
+      { label: 'Services',             icon: Layers,       path: SERVICE_PATHS.liste,        desc: 'Catalogue des services & assignations' },
+      { label: 'Demandes de service',  icon: Layers,       path: '/admin/demandes-service',  desc: 'Instruire les demandes d\'activation' },
+      { label: 'Utilisateurs',         icon: Users,        path: '/admin/utilisateurs',      desc: 'Tous les comptes de la plateforme' },
+      { label: 'Rôles',                icon: ShieldCheck,  path: '/admin/roles',             desc: 'Gérer les rôles et permissions' },
+      { label: 'Demandes de rôle',     icon: ShieldCheck,  path: '/admin/demandes-role',     desc: 'Instruire les demandes de rôle' },
     ],
   },
   {
@@ -60,17 +62,18 @@ export default function Dashboard() {
   const charger = useCallback(async () => {
     setLoading(true)
     try {
-      const [demandes, utilisateurs, demandesCycle, demandesRole] = await Promise.allSettled([
+      const [demandes, utilisateurs, demandesCycle, demandesRole, statDemService] = await Promise.allSettled([
         adminService.lister(),
         utilisateursService.lister({ limite: 1 }),
         demandesCycleAdminService.lister('en_attente'),
         demandesRoleAdminService.listerToutesDemandes('en_attente'),
+        demandesServiceAdminService.compteurs(),
       ])
 
       const demandesListe  = demandes.status === 'fulfilled'       ? (demandes.value ?? []).map(normaliserDemande) : []
       const nbUtilisateurs = utilisateurs.status === 'fulfilled'   ? (utilisateurs.value?.data?.pagination?.total ?? utilisateurs.value?.pagination?.total ?? 0) : null
 
-      // Normaliser : les deux services peuvent retourner un tableau direct ou { data: [...] }
+      // Normaliser : les services peuvent retourner un tableau direct ou { data: [...] }
       const extraireListe = (r) => {
         if (!r || r.status !== 'fulfilled') return null
         const val = r.value
@@ -81,7 +84,8 @@ export default function Dashboard() {
       }
       const nbDemCycle = extraireListe(demandesCycle)
       const nbDemRole  = extraireListe(demandesRole)
-      setData({ demandesListe, nbUtilisateurs, nbDemCycle, nbDemRole })
+      const nbDemService = statDemService.status === 'fulfilled' ? (statDemService.value?.enAttente ?? 0) : 0
+      setData({ demandesListe, nbUtilisateurs, nbDemCycle, nbDemRole, nbDemService })
     } catch (err) {
       notify.fromError(err)
     } finally {
@@ -159,20 +163,27 @@ export default function Dashboard() {
             <p className="db-stat-lbl">Utilisateurs</p>
           </div>
         </div>
-        <div className={`db-stat${data?.nbDemCycle > 0 ? ' db-stat--warn' : ' db-stat--info'}`}>
+        <Link to="/admin/demandes-service" className={`db-stat${data?.nbDemService > 0 ? ' db-stat--warn' : ' db-stat--info'}`} style={{ textDecoration: 'none' }}>
+          <div className="db-stat-icon"><Layers size={20} aria-hidden="true" /></div>
+          <div>
+            <p className="db-stat-val">{loading ? '…' : fmt(data?.nbDemService)}</p>
+            <p className="db-stat-lbl">Demandes service en attente</p>
+          </div>
+        </Link>
+        <Link to="/admin/demandes-cycle" className={`db-stat${data?.nbDemCycle > 0 ? ' db-stat--warn' : ' db-stat--info'}`} style={{ textDecoration: 'none' }}>
           <div className="db-stat-icon"><GitBranch size={20} aria-hidden="true" /></div>
           <div>
             <p className="db-stat-val">{loading ? '…' : fmt(data?.nbDemCycle)}</p>
             <p className="db-stat-lbl">Demandes cycle en attente</p>
           </div>
-        </div>
-        <div className={`db-stat${data?.nbDemRole > 0 ? ' db-stat--warn' : ' db-stat--info'}`}>
+        </Link>
+        <Link to="/admin/demandes-role" className={`db-stat${data?.nbDemRole > 0 ? ' db-stat--warn' : ' db-stat--info'}`} style={{ textDecoration: 'none' }}>
           <div className="db-stat-icon"><ShieldCheck size={20} aria-hidden="true" /></div>
           <div>
             <p className="db-stat-val">{loading ? '…' : fmt(data?.nbDemRole)}</p>
             <p className="db-stat-lbl">Demandes rôle en attente</p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Espaces de travail par groupe */}
@@ -196,13 +207,14 @@ export default function Dashboard() {
       ))}
 
       {/* Alertes en attente si des actions requises */}
-      {(data?.nbDemCycle > 0 || data?.nbDemRole > 0 || soumises > 0) && (
+      {(data?.nbDemService > 0 || data?.nbDemCycle > 0 || data?.nbDemRole > 0 || soumises > 0) && (
         <div className="db-info" style={{ borderColor:'rgba(233,170,32,0.4)', background:'rgba(233,170,32,0.06)' }}>
           <AlertTriangle size={17} aria-hidden="true" style={{ color:'#a07010' }} />
           <div>
             <strong>Actions en attente</strong>
             <p>
               {soumises > 0 && <><Link to={ADMIN_PATHS.demandes}>{soumises} dossier(s) d'établissement</Link> à instruire. </>}
+              {data?.nbDemService > 0 && <><Link to="/admin/demandes-service">{data.nbDemService} demande(s) de service</Link> à instruire. </>}
               {data?.nbDemCycle > 0 && <><Link to="/admin/demandes-cycle">{data.nbDemCycle} demande(s) de cycle</Link> à instruire. </>}
               {data?.nbDemRole > 0 && <><Link to="/admin/demandes-role">{data.nbDemRole} demande(s) de rôle</Link> à instruire.</>}
             </p>

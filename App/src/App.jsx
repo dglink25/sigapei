@@ -47,6 +47,7 @@ import EtablissementRolesPage    from './pages/AdministrationPrincipale/Etabliss
 import DemandesCyclePage         from './pages/AdministrationPrincipale/DemandesCyclePage'
 import RolesPage                 from './pages/AdministrationPrincipale/RolesPage'
 import DemandesRolePage          from './pages/AdministrationPrincipale/DemandesRolePage'
+import DemandesServicePage       from './pages/AdministrationPrincipale/DemandesServicePage'
 import UtilisateursPage          from './pages/AdministrationPrincipale/UtilisateursPage'
 
 /* E-Learning (ajouté par fusion) */
@@ -164,6 +165,7 @@ export default function App() {
           <Route path="/admin/demandes-cycle"              element={<DemandesCyclePage />} />
           <Route path="/admin/roles"                       element={<RolesPage />} />
           <Route path="/admin/demandes-role"               element={<DemandesRolePage />} />
+          <Route path="/admin/demandes-service"            element={<DemandesServicePage />} />
           <Route path="/admin/utilisateurs"                element={<UtilisateursPage />} />
         </Route>
       </Route>

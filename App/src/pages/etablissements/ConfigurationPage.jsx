@@ -19,6 +19,8 @@ import PanneauDemandesCycle    from '../../components/etablissements/config/Pann
 import PanneauUtilisateurs     from '../../components/etablissements/config/PanneauUtilisateurs'
 import PanneauDemandesRole     from '../../components/etablissements/config/PanneauDemandesRole'
 import PanneauPermissionsRole  from '../../components/etablissements/config/PanneauPermissionsRole'
+import PanneauServicesEtablissement from '../../components/etablissements/config/PanneauServicesEtablissement'
+import { demandesServiceEtabService } from '../../services/identite/demandesService.service'
 
 import '../AdministrationPrincipale/admin.css'
 import '../../components/administration/admin-ui.css'
@@ -29,6 +31,7 @@ const CYCLE_LABELS = {
 }
 
 const SECTION_LABELS = {
+  services:            'Services assignés',
   droits:              "Droits d'accès",
   etablissement:       'Infos établissement',
   utilisateurs:        'Utilisateurs',
@@ -42,6 +45,7 @@ const GROUPES = [
   {
     groupe: 'Accès & Sécurité',
     items: [
+      { label: 'Services assignés',    icon: Layers,      section: 'services',            desc: 'Services accordés et demandes d’accès' },
       { label: "Droits d'accès",       icon: ShieldCheck, section: 'droits',              desc: 'Gérer les accès aux services' },
       { label: 'Permissions des rôles', icon: KeyRound,    section: 'permissions-roles',   desc: 'Services et portail par rôle' },
     ],
@@ -82,6 +86,7 @@ export default function ConfigurationPage() {
   const configBase = lienEtablissement(slug, '/configuration')
 
   function renduContenu() {
+    if (section === 'services')            return <PanneauServicesEtablissement />
     if (section === 'droits')              return <AccesDroitsPanel />
     if (section === 'etablissement')       return <InfosEtablissementPanel />
     if (section === 'demandes-cycle')      return <PanneauDemandesCycle />
@@ -114,9 +119,11 @@ export default function ConfigurationPage() {
 
 /* ── Vue d'ensemble - design identique au Dashboard ─────────────────── */
 function VueEnsemble({ etab, allerA, slug, onRefresh }) {
-  const [cyclesAutorises, setCyclesAutorises] = useState([])
-  const [demandes, setDemandes]               = useState([])
-  const [loading, setLoading]                 = useState(false)
+  const [cyclesAutorises, setCyclesAutorises]   = useState([])
+  const [demandes, setDemandes]                 = useState([])
+  const [demandesSrv, setDemandesSrv]           = useState([])
+  const [servicesCount, setServicesCount]       = useState(0)
+  const [loading, setLoading]                   = useState(false)
 
   const charger = useCallback(() => {
     setLoading(true)
@@ -124,13 +131,18 @@ function VueEnsemble({ etab, allerA, slug, onRefresh }) {
     Promise.all([
       monEtablissementService.lire(),
       demandesCycleEtabService.lister(),
-    ]).then(([profil, rDem]) => {
+      demandesServiceEtabService.listerMesDemandes().catch(() => []),
+      portailService.lire().catch(() => null),
+    ]).then(([profil, rDem, rDemSrv, rPortail]) => {
       if (annule) return
       setCyclesAutorises(
         (profil?.cyclesAutorises ?? []).filter((x) => x.statut === 'actif').map((x) => x.cycle),
       )
       const listeDem = Array.isArray(rDem?.data) ? rDem.data : Array.isArray(rDem) ? rDem : []
       setDemandes(listeDem)
+      const listeDemSrv = Array.isArray(rDemSrv?.data) ? rDemSrv.data : Array.isArray(rDemSrv) ? rDemSrv : []
+      setDemandesSrv(listeDemSrv)
+      setServicesCount((rPortail?.services ?? []).length)
     }).catch(() => {}).finally(() => {
       if (!annule) setLoading(false)
     })
@@ -139,6 +151,7 @@ function VueEnsemble({ etab, allerA, slug, onRefresh }) {
 
   useEffect(() => { charger() }, [charger])
 
+  const demSrvEnAttente = demandesSrv.filter((d) => d.statut === 'en_attente')
   const enAttente = demandes.filter((d) => d.statut === 'en_attente')
   const refusees  = demandes.filter((d) => d.statut === 'refusee')
   const fmt       = (v) => v === null || v === undefined ? '-' : String(v)
@@ -168,15 +181,29 @@ function VueEnsemble({ etab, allerA, slug, onRefresh }) {
           >
             <RefreshCw size={14} className={loading ? 'ap-spin' : ''} aria-hidden="true" /> Actualiser
           </button>
-          <Link to={`${base}?section=demandes-cycle`} className="ap-btn ap-btn--gold">
-            Faire une demande <ChevronRight size={15} aria-hidden="true" />
+          <Link to={`${base}?section=services`} className="ap-btn ap-btn--gold">
+            Gérer les services <ChevronRight size={15} aria-hidden="true" />
           </Link>
         </div>
       </section>
 
       {/* KPI stats */}
       <div className="cf-stats" style={{ marginBottom: 28 }}>
-        <div className="cf-stat cf-stat--success">
+        <Link to={`${base}?section=services`} className="cf-stat cf-stat--success" style={{ textDecoration: 'none' }}>
+          <div className="cf-stat-icon"><Layers size={20} aria-hidden="true" /></div>
+          <div>
+            <p className="cf-stat-val">{loading ? '…' : fmt(servicesCount)}</p>
+            <p className="cf-stat-lbl">Services assignés</p>
+          </div>
+        </Link>
+        <Link to={`${base}?section=services`} className={`cf-stat ${demSrvEnAttente.length > 0 ? 'cf-stat--warn' : 'cf-stat--info'}`} style={{ textDecoration: 'none' }}>
+          <div className="cf-stat-icon"><Clock size={20} aria-hidden="true" /></div>
+          <div>
+            <p className="cf-stat-val">{loading ? '…' : fmt(demSrvEnAttente.length)}</p>
+            <p className="cf-stat-lbl">Demandes service en cours</p>
+          </div>
+        </Link>
+        <div className="cf-stat cf-stat--info">
           <div className="cf-stat-icon"><CheckCircle2 size={20} aria-hidden="true" /></div>
           <div>
             <p className="cf-stat-val">{loading ? '…' : fmt(cyclesAutorises.length)}</p>
@@ -187,21 +214,7 @@ function VueEnsemble({ etab, allerA, slug, onRefresh }) {
           <div className="cf-stat-icon"><Clock size={20} aria-hidden="true" /></div>
           <div>
             <p className="cf-stat-val">{loading ? '…' : fmt(enAttente.length)}</p>
-            <p className="cf-stat-lbl">Demandes en attente</p>
-          </div>
-        </div>
-        <div className={`cf-stat ${refusees.length > 0 ? 'cf-stat--danger' : 'cf-stat--info'}`}>
-          <div className="cf-stat-icon"><XCircle size={20} aria-hidden="true" /></div>
-          <div>
-            <p className="cf-stat-val">{loading ? '…' : fmt(refusees.length)}</p>
-            <p className="cf-stat-lbl">Demandes refusées</p>
-          </div>
-        </div>
-        <div className="cf-stat cf-stat--info">
-          <div className="cf-stat-icon"><Layers size={20} aria-hidden="true" /></div>
-          <div>
-            <p className="cf-stat-val">{loading ? '…' : fmt(demandes.length)}</p>
-            <p className="cf-stat-lbl">Demandes total</p>
+            <p className="cf-stat-lbl">Demandes cycle en attente</p>
           </div>
         </div>
       </div>
