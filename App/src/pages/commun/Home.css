@@ -310,6 +310,24 @@ html {
   gap: 10px;
 }
 
+.sg-theme-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--sg-radius-sm);
+  border: 1px solid var(--sg-border);
+  background: transparent;
+  color: var(--sg-text-main);
+  cursor: pointer;
+  transition: var(--sg-transition);
+}
+.sg-theme-btn:hover {
+  background-color: var(--sg-green-soft);
+  color: var(--sg-green);
+  border-color: var(--sg-green);
+}
+
 .sg-burger {
   display: none;
   align-items: center;
@@ -1521,4 +1539,22 @@ html {
     transform: none !important;
     animation: none !important;
   }
+}
+
+/* ══════════════════════════════════════════════════════════
+   THÈME SOMBRE - Page d'accueil SIGAPEI
+   ══════════════════════════════════════════════════════════ */
+:root[data-theme='dark'] .sg-page,
+[data-theme='dark'] .sg-page,
+html.dark .sg-page,
+.dark .sg-page {
+  --sg-bg:           #0b111a;
+  --sg-text-main:    #f8fafc;
+  --sg-text-muted:   #94a3b8;
+  --sg-text-light:   #64748b;
+  --sg-border:       #1e293b;
+  --sg-green-soft:   rgba(74, 222, 128, 0.10);
+  --sg-green-border: rgba(74, 222, 128, 0.25);
+  background-color: #0b111a;
+  color: #f8fafc;
 }

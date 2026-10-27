@@ -16,6 +16,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import ThemeToggle from '../../components/commun/ThemeToggle'
 import './Home.css'
 
 const MODULES = [
@@ -311,6 +312,7 @@ export default function Home() {
           </nav>
 
           <div className="sg-header-actions">
+            <ThemeToggle className="sg-theme-btn" />
             <a href="/login" className="sg-btn sg-btn-subtle">
               <Lock size={14} />
               Connexion

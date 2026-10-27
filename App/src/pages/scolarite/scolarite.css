@@ -122,3 +122,74 @@
 .btn-modal--submit:hover {
   background: #065f46;
 }
+
+/* ── Thème sombre Scolarité ── */
+[data-theme='dark'] .tab-btn,
+.dark .tab-btn {
+  background: var(--sg-surface, #162232);
+  border-color: var(--sg-border, #283a52);
+  color: var(--sg-text-secondary, #cbd5e1);
+}
+
+[data-theme='dark'] .tab-btn.active,
+.dark .tab-btn.active {
+  background: #006B3C;
+  color: #FFF6DD;
+  border-color: #006B3C;
+}
+
+[data-theme='dark'] .modal-overlay,
+.dark .modal-overlay {
+  background: rgba(3, 7, 18, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+[data-theme='dark'] .modal-content,
+.dark .modal-content {
+  background: var(--sg-surface, #162232);
+  border: 1px solid var(--sg-border, #283a52);
+  color: var(--sg-text, #f8fafc);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='dark'] .modal-content h3,
+.dark .modal-content h3 {
+  color: var(--sg-text, #f8fafc);
+}
+
+[data-theme='dark'] .form-control,
+.dark .form-control {
+  background: var(--sg-input-bg, #101a28);
+  border-color: var(--sg-input-border, #2c3e58);
+  color: var(--sg-text, #f8fafc);
+}
+[data-theme='dark'] .form-control:focus,
+.dark .form-control:focus {
+  border-color: #4ade80;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+[data-theme='dark'] .btn-modal--cancel,
+.dark .btn-modal--cancel {
+  background: transparent;
+  border: 1.5px solid var(--sg-border, #283a52);
+  color: var(--sg-text-secondary, #cbd5e1);
+}
+[data-theme='dark'] .btn-modal--cancel:hover,
+.dark .btn-modal--cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+[data-theme='dark'] .btn-modal--submit,
+.dark .btn-modal--submit {
+  background: #006B3C;
+  color: #FFF6DD;
+}
+[data-theme='dark'] .btn-modal--submit:hover,
+.dark .btn-modal--submit:hover {
+  background: #00874e;
+}
+

@@ -5,6 +5,7 @@ import { Icone } from './Icone.jsx'
 import { ROLES, useProfilStore } from '../../context/elearning/profil.js'
 import { ADMINISTRATION, ELEVES, GESTION, SANS_PARENT } from '../../config/elearning/config.js'
 import { syncProfilDepuisIdentite } from '../../context/elearning/profil.js'
+import ThemeToggle from '../commun/ThemeToggle.jsx'
 
 // Rôles autorisés par entrée (bilan RBAC validé) : pas de `roles` =
 // tous les rôles. L'apprenant et le parent ne voient ni Médias, ni
@@ -131,6 +132,9 @@ export function Layout() {
               <small className="texte-efface">{libelleRole}</small>
             </span>
           </div>
+          <div style={{ padding: '6px 0' }}>
+            <ThemeToggle variant="pill" />
+          </div>
           <Link to="/elearning/profil">Profil & Tenant</Link>
         </div>
       </aside>
@@ -188,6 +192,8 @@ export function Layout() {
               </button>
             ))}
           </div>
+
+          <ThemeToggle className="tt-icon" />
 
           <Link to="/elearning/profil" className="avatar" aria-label="Profil et tenant">
             <Icone nom="person" />
