@@ -239,3 +239,220 @@ body {
 }
 [data-theme='dark'] .ld-label  { color: var(--sg-text); }
 [data-theme='dark'] .ld-orbit__center { background: var(--sg-surface-2); }
+
+/* ══════════════════════════════════════════════════════════
+   THÈME SOMBRE — Composants .ap-* et .cfg-*
+   Complète les règles déjà présentes dans admin.css,
+   admin-ui.css et ConfigurationPage.css
+══════════════════════════════════════════════════════════ */
+
+/* ── Inputs / Textareas / Selects ── */
+[data-theme='dark'] .ap-input,
+[data-theme='dark'] .ap-textarea,
+[data-theme='dark'] select.ap-input {
+  background: var(--sg-input-bg);
+  border-color: var(--sg-input-border);
+  color: var(--sg-text);
+}
+[data-theme='dark'] .ap-input::placeholder,
+[data-theme='dark'] .ap-textarea::placeholder { color: var(--sg-text-muted); }
+[data-theme='dark'] .ap-input:focus,
+[data-theme='dark'] .ap-textarea:focus {
+  border-color: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.15);
+}
+
+/* ── Cartes ── */
+[data-theme='dark'] .ap-card {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+[data-theme='dark'] .ap-card--hover:hover {
+  border-color: #4ade80;
+  box-shadow: 0 4px 16px rgba(74,222,128,0.08);
+}
+
+/* ── Tableaux ── */
+[data-theme='dark'] .ap-table th {
+  background: var(--sg-surface-2);
+  color: var(--sg-text-secondary);
+  border-bottom-color: var(--sg-border);
+}
+[data-theme='dark'] .ap-table td {
+  border-bottom-color: var(--sg-border);
+  color: var(--sg-text);
+}
+[data-theme='dark'] .ap-table tbody tr:hover td { background: var(--sg-theme-hover); }
+
+/* ── Onglets / filtres ── */
+[data-theme='dark'] .ap-tab {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+  color: var(--sg-text);
+}
+[data-theme='dark'] .ap-tab span { background: var(--sg-border); color: var(--sg-text-muted); }
+[data-theme='dark'] .ap-tab:hover { border-color: #4ade80; color: #4ade80; }
+
+/* ── Boutons ghost ── */
+[data-theme='dark'] .ap-btn--ghost {
+  color: var(--sg-text);
+  border-color: var(--sg-border);
+}
+[data-theme='dark'] .ap-btn--ghost:hover:not(:disabled) {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+/* ── Badges ── */
+[data-theme='dark'] .ap-badge--info    { background: rgba(21,101,168,0.15); color: #60a5fa; border-color: rgba(21,101,168,0.30); }
+[data-theme='dark'] .ap-badge--warning { background: rgba(233,170,32,0.12); color: #fbbf24; border-color: rgba(233,170,32,0.28); }
+[data-theme='dark'] .ap-badge--neutral { background: var(--sg-surface-2); color: var(--sg-text-muted); border-color: var(--sg-border); }
+[data-theme='dark'] .ap-badge--danger  { background: rgba(192,57,43,0.15); color: #f87171; border-color: rgba(192,57,43,0.28); }
+
+/* ── Recherche ── */
+[data-theme='dark'] .etab-search {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+  color: var(--sg-text-muted);
+}
+[data-theme='dark'] .etab-search input { color: var(--sg-text); }
+[data-theme='dark'] .etab-search:focus-within { border-color: #4ade80; color: var(--sg-text); }
+
+/* ── Code inline ── */
+[data-theme='dark'] .ap-code { background: rgba(74,222,128,0.10); color: #4ade80; }
+
+/* ── Breadcrumb ── */
+[data-theme='dark'] .ap-bread a { color: #4ade80; }
+[data-theme='dark'] .ap-bread-sep { color: var(--sg-border); }
+
+/* ── Rows (dl détail) ── */
+[data-theme='dark'] .ap-rows > div { border-bottom-color: var(--sg-border); }
+[data-theme='dark'] .ap-rows dt { color: var(--sg-text-muted); }
+[data-theme='dark'] .ap-rows dd { color: var(--sg-text); }
+
+/* ── Vide ── */
+[data-theme='dark'] .ap-empty { color: var(--sg-text-muted); }
+
+/* ── Alert ── */
+[data-theme='dark'] .ap-alert--danger  { background: rgba(192,57,43,0.12); border-color: rgba(192,57,43,0.28); color: #fca5a5; }
+[data-theme='dark'] .ap-alert--warning { background: rgba(233,170,32,0.08); border-color: rgba(233,170,32,0.22); color: #fcd34d; }
+
+/* ── Modales ── */
+[data-theme='dark'] .cfg-modale {
+  background: var(--sg-surface);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+}
+[data-theme='dark'] .cfg-modale-tete {
+  background: var(--sg-surface);
+  border-bottom-color: var(--sg-border);
+}
+[data-theme='dark'] .cfg-modale-tete h3 { color: #4ade80; }
+[data-theme='dark'] .cfg-modale-pied { border-top-color: var(--sg-border); }
+[data-theme='dark'] .cfg-modale-fond { background: rgba(0,0,0,0.55); }
+
+/* ── Bandeau année ── */
+[data-theme='dark'] .cfg-annee-bandeau {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+  color: var(--sg-text-secondary);
+}
+[data-theme='dark'] .cfg-annee-bandeau strong { color: #4ade80; }
+
+/* ── Statuts années ── */
+[data-theme='dark'] .cfg-statut-badge.en_cours { background: rgba(74,222,128,0.10); color: #4ade80; border-color: rgba(74,222,128,0.25); }
+[data-theme='dark'] .cfg-statut-badge.a_venir  { background: rgba(21,101,168,0.15); color: #60a5fa; border-color: rgba(21,101,168,0.30); }
+[data-theme='dark'] .cfg-statut-badge.termine  { background: var(--sg-surface-2); color: var(--sg-text-muted); border-color: var(--sg-border); }
+[data-theme='dark'] .cfg-statut-badge.suspendu { background: rgba(233,170,32,0.10); color: #fbbf24; border-color: rgba(233,170,32,0.25); }
+
+/* ── Cycles ── */
+[data-theme='dark'] .cfg-cycle-carte {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+[data-theme='dark'] .cfg-cycle-carte:hover { border-color: #4ade80; }
+[data-theme='dark'] .cfg-cycle-carte.is-actif { border-color: #4ade80; background: rgba(74,222,128,0.06); }
+[data-theme='dark'] .cfg-cycle-carte.is-actif .cfg-cycle-icone { background: #006B3C; color: #FFF6DD; }
+[data-theme='dark'] .cfg-cycle-icone { background: rgba(74,222,128,0.08); color: #4ade80; }
+[data-theme='dark'] .cfg-cycle-nom  { color: var(--sg-text); }
+
+/* ── Étapes ── */
+[data-theme='dark'] .cfg-etape {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+[data-theme='dark'] .cfg-etape:hover { border-color: #4ade80; background: rgba(74,222,128,0.04); }
+[data-theme='dark'] .cfg-etape-texte { color: var(--sg-text); }
+
+/* ── Onglets cycle ── */
+[data-theme='dark'] .cfg-onglets { border-bottom-color: var(--sg-border); }
+[data-theme='dark'] .cfg-onglet { color: var(--sg-text-muted); }
+[data-theme='dark'] .cfg-onglet:hover { color: #4ade80; }
+[data-theme='dark'] .cfg-onglet.is-actif { color: #4ade80; border-bottom-color: #4ade80; }
+
+/* ── Confirmation ── */
+[data-theme='dark'] .cfg-confirm-resume {
+  background: rgba(74,222,128,0.06);
+  border-color: rgba(74,222,128,0.15);
+}
+[data-theme='dark'] .cfg-confirm-resume strong { color: #4ade80; }
+[data-theme='dark'] .cfg-confirm-texte { color: var(--sg-text-secondary); }
+
+/* ── Sections Scolarité (cf-*) ── */
+[data-theme='dark'] .cf-stat {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+[data-theme='dark'] .cf-stat-icon { background: var(--sg-surface-2); color: #4ade80; }
+[data-theme='dark'] .cf-stat--warn   .cf-stat-icon { color: #fbbf24; }
+[data-theme='dark'] .cf-stat--info   .cf-stat-icon { color: #60a5fa; }
+[data-theme='dark'] .cf-stat--danger .cf-stat-icon { color: #f87171; }
+[data-theme='dark'] .cf-stat-val { color: var(--sg-text); }
+[data-theme='dark'] .cf-stat-lbl { color: var(--sg-text-muted); }
+[data-theme='dark'] .cf-card {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+  color: var(--sg-text);
+}
+[data-theme='dark'] .cf-section-title { color: var(--sg-text); }
+[data-theme='dark'] .cf-card-desc { color: var(--sg-text-muted); }
+
+/* ── Notifications toast (ap-notify / ap-toast) ── */
+[data-theme='dark'] .ap-notify,
+[data-theme='dark'] .ap-toast {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+  color: var(--sg-text);
+  box-shadow: var(--sg-shadow-lg);
+}
+
+/* ── Check rows (checklists) ── */
+[data-theme='dark'] .ap-check-row {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+  color: var(--sg-text);
+}
+[data-theme='dark'] .ap-check-row:hover { background: var(--sg-surface-2); }
+[data-theme='dark'] .ap-check-row.is-on { background: rgba(74,222,128,0.08); border-color: rgba(74,222,128,0.25); }
+
+/* ── Drawer (tiroir latéral) ── */
+[data-theme='dark'] .ap-drawer {
+  background: var(--sg-surface);
+}
+[data-theme='dark'] .ap-drawer-head { border-bottom-color: var(--sg-border); }
+[data-theme='dark'] .ap-drawer-body { background: var(--sg-surface); }
+[data-theme='dark'] .ap-drawer-footer { border-top-color: var(--sg-border); background: var(--sg-surface); }
+[data-theme='dark'] .ap-drawer-title { color: #4ade80; }
+[data-theme='dark'] .ap-drawer-subtitle { color: var(--sg-text-secondary); }
+[data-theme='dark'] .ap-selectall { color: var(--sg-text); }
+
+/* ── Skeleton loaders ── */
+[data-theme='dark'] .ap-skel { background: var(--sg-surface-2); }
+[data-theme='dark'] .ap-skel-row { border-bottom-color: var(--sg-border); }
+
+/* ── Flash / ConfirmDialog ── */
+[data-theme='dark'] .ap-flash { background: var(--sg-surface-2); border-color: var(--sg-border); color: var(--sg-text); }
+[data-theme='dark'] .ap-flash--success { background: rgba(74,222,128,0.08); border-color: rgba(74,222,128,0.20); color: #4ade80; }
+
+/* ── DashboardTemp AdminLayout ── */
+[data-theme='dark'] .ap-page-title { color: var(--sg-text); }
+[data-theme='dark'] .ap-page-sub   { color: var(--sg-text-secondary); }
