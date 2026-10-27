@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Bell, LogOut, Menu, X } from 'lucide-react'
 import { useAuth }           from '../../context/identite/AuthContext'
@@ -6,6 +6,7 @@ import { roleCodeOf }        from '../../config/identite/routes'
 import { lienEtablissement } from '../../lib/etablissements/subdomain'
 import ThemeToggle           from './ThemeToggle'
 import { ENV }               from '../../config/commun/env'
+import { portailService }    from '../../services/identite/portail.service'
 import useSlugEtablissement  from '../../hooks/etablissements/useSlugEtablissement'
 import './ModuleLayout.css'
 
@@ -22,10 +23,23 @@ export default function ModuleLayout({ titre, icone: ModuleIcone, couleur, nav =
   const slug             = useSlugEtablissement()
   const [navOuvert, setNavOuvert] = useState(false)
 
-  // ── Identité établissement (défensive) ──
-  const etablissement = user?.etablissement ?? user?.etablissement_actif ?? null
-  const etablissementNom = etablissement?.nom ?? user?.etablissementNom ?? null
-  const logoUrl = etablissement?.logo ?? etablissement?.logoUrl ?? null
+  // ── Identité établissement : chargée via portailService.lire() ──
+  // (comme dans PortailLayout - le user du contexte ne contient pas ces infos)
+  const [etablissementNom, setEtablissementNom] = useState(null)
+  const [logoUrl,          setLogoUrl]          = useState(null)
+
+  useEffect(() => {
+    let cancel = false
+    portailService.lire()
+      .then((r) => {
+        if (!cancel) {
+          setEtablissementNom(r?.etablissement?.nom ?? null)
+          setLogoUrl(r?.etablissement?.logoUrl ?? null)
+        }
+      })
+      .catch(() => {})
+    return () => { cancel = true }
+  }, [])
 
   const nom       = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
   const initiales = nom.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()

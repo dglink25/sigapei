@@ -1,7 +1,3 @@
-/**
- * PanneauSubdivisions - Groupes (primaire/maternelle), sections (secondaire),
- * départements (université) pour une année et un cycle donnés.
- */
 import { useEffect, useState } from 'react'
 import { Plus, X, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
@@ -17,6 +13,9 @@ const TYPES = [
 ]
 
 const TYPE_DEFAUT = { maternelle: 'groupe', primaire: 'groupe', secondaire: 'groupe', universitaire: 'departement' }
+
+const CYCLE_LABEL  = { maternelle: 'Maternelle', primaire: 'Primaire', secondaire: 'Secondaire', universitaire: 'Université' }
+const TYPE_LABEL   = { groupe: 'Groupe', section: 'Section', departement: 'Département' }
 
 export default function PanneauSubdivisions({ anneeActive, onTerminee, cycleFiltre, cycleObj, labelTitre, labelType }) {
   const notify = useNotify()
@@ -198,43 +197,70 @@ export default function PanneauSubdivisions({ anneeActive, onTerminee, cycleFilt
             </div>
             <form onSubmit={soumettre}>
               <div className="cfg-modale-corps">
+                
+                {/* ── SÉLECTEUR DE TYPE (Style Radio Cards) ── */}
                 <div className="ap-field">
-                  <label className="ap-label">Type</label>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <label className="ap-label">Type de subdivision</label>
+                  <div className="ap-radio-group">
                     {TYPES.map((t) => (
-                      <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.88rem', fontWeight: form.type === t.id ? 700 : 400 }}>
-                        <input type="radio" name="type" value={t.id} checked={form.type === t.id} onChange={() => setForm((f) => ({ ...f, type: t.id }))} />
-                        {t.label}
+                      <label key={t.id} className={`ap-radio-card${form.type === t.id ? ' is-selected' : ''}`}>
+                        <input
+                          type="radio"
+                          name="type"
+                          value={t.id}
+                          checked={form.type === t.id}
+                          onChange={() => setForm((f) => ({ ...f, type: t.id }))}
+                          className="ap-radio-hidden"
+                        />
+                        <span className="ap-radio-indicator" />
+                        <span className="ap-radio-label">{t.label}</span>
                       </label>
                     ))}
                   </div>
                   <p className="ap-hint">{TYPES.find((t) => t.id === form.type)?.ex}</p>
                 </div>
+
+                {/* ── CHAMP NOM ── */}
                 <div className={`ap-field${erreurs.nom ? ' has-error' : ''}`}>
                   <label className="ap-label" htmlFor="sub-nom">Nom <em>*</em></label>
-                  <input id="sub-nom" className="ap-input" value={form.nom} onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))} placeholder="Ex. Groupe A, GEI…" />
+                  <input 
+                    id="sub-nom" 
+                    className="ap-input" 
+                    value={form.nom} 
+                    onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))} 
+                    placeholder="Ex. Groupe A, GEI…" 
+                  />
                   {erreurs.nom && <p className="ap-error">{erreurs.nom}</p>}
                 </div>
+
+                {/* ── CHAMP CODE ── */}
                 <div className="ap-field">
                   <label className="ap-label" htmlFor="sub-code">Code / Sigle</label>
-                  <input id="sub-code" className="ap-input" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder="Ex. A, GEI…" />
+                  <input 
+                    id="sub-code" 
+                    className="ap-input" 
+                    value={form.code} 
+                    onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} 
+                    placeholder="Ex. A, GEI…" 
+                  />
                   <p className="ap-hint">Court identifiant utilisé dans les sigles de classes.</p>
                 </div>
               </div>
+              
               <div className="cfg-modale-pied">
                 <button type="button" className="ap-btn ap-btn--ghost" onClick={() => setModale(false)}>Annuler</button>
-                <button type="submit" className="ap-btn" disabled={enCours}>{enCours ? 'Création…' : 'Créer'}</button>
+                <button type="submit" className="ap-btn ap-btn--primary" disabled={enCours}>
+                  {enCours ? 'Création…' : 'Créer'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   )
 }
-
-const CYCLE_LABEL  = { maternelle: 'Maternelle', primaire: 'Primaire', secondaire: 'Secondaire', universitaire: 'Université' }
-const TYPE_LABEL   = { groupe: 'Groupe', section: 'Section', departement: 'Département' }
 
 function AlerteAnnee() {
   return (

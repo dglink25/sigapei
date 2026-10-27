@@ -20,6 +20,20 @@
   --pl-font:       'Century Gothic','Questrial','Poppins',system-ui,sans-serif;
   --ml-accent:     var(--pl-green);
 
+  /* --ap-* identiques : les composants enfants (sc-*, cfg-*, ap-*) en ont besoin */
+  --ap-green:      #006B3C;
+  --ap-green-dk:   #004d2b;
+  --ap-gold:       #E9AA20;
+  --ap-cream:      #FFF6DD;
+  --ap-bg:         var(--sg-page-bg, #f4f6f5);
+  --ap-surface:    var(--sg-surface, #ffffff);
+  --ap-border:     var(--sg-border, #dde4df);
+  --ap-text:       var(--sg-text, #1a2a1e);
+  --ap-muted:      var(--sg-text-secondary, #5a6b5f);
+  --ap-hover:      var(--sg-theme-hover, rgba(0,0,0,0.04));
+  --ap-radius:     12px;
+  --ap-transition: 0.18s ease;
+
   display: flex;
   min-height: 100dvh;
   background: var(--pl-bg);
@@ -321,10 +335,18 @@
 /* ══════════════════════════════════════
    THÈME SOMBRE
 ══════════════════════════════════════ */
-[data-theme='dark'] .ml-topbar-title { filter: brightness(1.2); }
-[data-theme='dark'] .ml-icon-btn { color: var(--sg-text-secondary); }
+[data-theme='dark'] .ml-shell       { background: var(--sg-page-bg); color: var(--sg-text); }
+[data-theme='dark'] .ml-main        { background: var(--sg-page-bg); }
+[data-theme='dark'] .ml-content     { background: var(--sg-page-bg); color: var(--sg-text); }
+[data-theme='dark'] .ml-topbar {
+  background: var(--sg-surface);
+  border-bottom-color: var(--sg-border);
+}
+[data-theme='dark'] .ml-topbar-title { color: #4ade80; filter: none; }
+[data-theme='dark'] .ml-topbar-user-nom  { color: var(--sg-text); }
+[data-theme='dark'] .ml-topbar-user-role { color: var(--sg-text-secondary); }
+[data-theme='dark'] .ml-topbar-sep  { background: var(--sg-border); }
+[data-theme='dark'] .ml-icon-btn    { color: var(--sg-text-secondary); }
 [data-theme='dark'] .ml-icon-btn:hover { background: var(--sg-theme-hover); color: var(--sg-text); }
 [data-theme='dark'] .ml-icon-btn--logout:hover { color: #f87171; background: rgba(248,113,113,0.08); }
-[data-theme='dark'] .ml-topbar-user-nom { color: var(--sg-text); }
-[data-theme='dark'] .ml-topbar-user-role { color: var(--sg-text-secondary); }
-[data-theme='dark'] .ml-topbar-sep { background: var(--pl-border); }
+[data-theme='dark'] .ml-menu-btn    { color: var(--sg-text); }
