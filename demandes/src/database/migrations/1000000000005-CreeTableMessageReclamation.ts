@@ -1,40 +1,28 @@
-import { MigrationInterface, QueryRunner, Table } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
-/**
- * Table demandes.message_reclamation
- * CDC section 15.1 : messages successifs d'un fil de reclamation.
- * Fil de discussion horodate (CDC section 10.1).
- */
+/** Fil de discussion d'une reclamation (CDC §10) : messages horodates, en ajout seul (trigger). */
 export class CreeTableMessageReclamation1000000000005 implements MigrationInterface {
-  public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.createTable(
-      new Table({
-        name: 'message_reclamation',
-        schema: 'demandes',
-        columns: [
-          { name: 'id', type: 'bigserial', isPrimary: true },
-          { name: 'uuid', type: 'uuid', isUnique: true, default: 'gen_random_uuid()' },
-          { name: 'reclamation_id', type: 'bigint', isNullable: false },
-          // auteur_uuid reference identite.utilisateurs
-          { name: 'auteur_uuid', type: 'varchar', isNullable: false },
-          { name: 'contenu', type: 'text', isNullable: false },
-          { name: 'date', type: 'timestamptz', default: 'now()' },
-        ],
-        foreignKeys: [
-          {
-            columnNames: ['reclamation_id'],
-            referencedTableName: 'demandes.reclamations',
-            referencedColumnNames: ['id'],
-            onDelete: 'CASCADE',
-          },
-        ],
-        indices: [{ columnNames: ['reclamation_id'] }],
-      }),
-      true,
+  public async up(q: QueryRunner): Promise<void> {
+    await q.query(`
+      CREATE TABLE demandes.message_reclamation (
+        id bigserial PRIMARY KEY,
+        uuid uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+        reclamation_id bigint NOT NULL REFERENCES demandes.reclamations(id) ON DELETE RESTRICT,
+        auteur_uuid uuid NOT NULL,
+        auteur_role varchar(64) NOT NULL,
+        cote varchar(20) NOT NULL,
+        contenu varchar(4000) NOT NULL,
+        cree_le timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT message_cote_chk CHECK (cote IN ('usager','etablissement')),
+        CONSTRAINT message_contenu_chk CHECK (length(btrim(contenu)) > 0)
+      )`);
+    await q.query(`CREATE INDEX message_reclamation_fil_idx ON demandes.message_reclamation (reclamation_id, id)`);
+    await q.query(
+      `CREATE TRIGGER message_reclamation_immuable BEFORE UPDATE OR DELETE ON demandes.message_reclamation FOR EACH ROW EXECUTE FUNCTION demandes.refuser_modification()`,
     );
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('demandes.message_reclamation', true);
+  public async down(q: QueryRunner): Promise<void> {
+    await q.query(`DROP TABLE IF EXISTS demandes.message_reclamation`);
   }
 }

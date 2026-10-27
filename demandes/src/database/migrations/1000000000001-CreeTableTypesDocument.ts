@@ -1,42 +1,38 @@
-import { MigrationInterface, QueryRunner, Table } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Table demandes.types_document
- * CDC section 15.1 : referentiel des types de documents par etablissement,
- * avec categorie de demandeur et regles d'eligibilite parametrables.
- *
- * categorie_demandeur : apprenant | personnel | tout_profil
+ * Types de documents de chaque etablissement (CDC §7, §9) :
+ *  - categorie_demandeur : apprenant | personnel | tout_profil (decide la verification d'eligibilite) ;
+ *  - regles_eligibilite  : {dossier_actif, bulletins_publies, contrat_actif} (parametrable, jamais en dur) ;
+ *  - modele              : mise en page du PDF (titre, corps avec variables, mentions, signataire).
  */
 export class CreeTableTypesDocument1000000000001 implements MigrationInterface {
-  public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.createTable(
-      new Table({
-        name: 'types_document',
-        schema: 'demandes',
-        columns: [
-          { name: 'id', type: 'bigserial', isPrimary: true },
-          { name: 'uuid', type: 'uuid', isUnique: true, default: 'gen_random_uuid()' },
-          { name: 'tenant_id', type: 'varchar', isNullable: false },
-          { name: 'nom', type: 'varchar', isNullable: false },
-          // CDC section 7 : apprenant | personnel | tout_profil
-          { name: 'categorie_demandeur', type: 'varchar', isNullable: false },
-          // JSON : regles d'eligibilite parametrables par type et etablissement
-          { name: 'regles_eligibilite', type: 'jsonb', isNullable: true },
-          // UUID du modele PDF configure (schema transverse documents)
-          { name: 'modele_pdf_uuid', type: 'varchar', isNullable: true },
-          { name: 'created_at', type: 'timestamptz', default: 'now()' },
-          { name: 'updated_at', type: 'timestamptz', default: 'now()' },
-        ],
-        indices: [
-          { columnNames: ['tenant_id'] },
-          { columnNames: ['tenant_id', 'categorie_demandeur'] },
-        ],
-      }),
-      true,
-    );
+  public async up(q: QueryRunner): Promise<void> {
+    await q.query(`
+      CREATE TABLE demandes.types_document (
+        id bigserial PRIMARY KEY,
+        uuid uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+        tenant_id bigint NOT NULL,
+        code varchar(60) NOT NULL,
+        nom varchar(120) NOT NULL,
+        description varchar(500),
+        categorie_demandeur varchar(20) NOT NULL,
+        regles_eligibilite jsonb NOT NULL DEFAULT '{}'::jsonb,
+        traitement_automatique boolean NOT NULL DEFAULT false,
+        delai_indicatif_jours smallint,
+        modele jsonb NOT NULL DEFAULT '{}'::jsonb,
+        actif boolean NOT NULL DEFAULT true,
+        modifie_par_uuid uuid NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT types_document_code_unique UNIQUE (tenant_id, code),
+        CONSTRAINT types_document_categorie_chk CHECK (categorie_demandeur IN ('apprenant','personnel','tout_profil')),
+        CONSTRAINT types_document_delai_chk CHECK (delai_indicatif_jours IS NULL OR delai_indicatif_jours BETWEEN 0 AND 365)
+      )`);
+    await q.query(`CREATE INDEX types_document_tenant_idx ON demandes.types_document (tenant_id, actif)`);
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('demandes.types_document', true);
+  public async down(q: QueryRunner): Promise<void> {
+    await q.query(`DROP TABLE IF EXISTS demandes.types_document`);
   }
 }
