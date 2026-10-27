@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, X, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
+import './FormulairePanneauSubdivision.css'
 import {
   cyclesService,
   subdivisionsService,
@@ -188,72 +189,81 @@ export default function PanneauSubdivisions({ anneeActive, onTerminee, cycleFilt
         )
       )}
 
-      {modale && (
-        <div className="cfg-modale-fond" role="dialog" aria-modal="true" aria-labelledby="m-sub">
-          <div className="cfg-modale">
-            <div className="cfg-modale-tete">
-              <h3 id="m-sub">Nouvelle subdivision</h3>
-              <button type="button" className="ap-drawer-close" onClick={() => setModale(false)} aria-label="Fermer"><X size={16} /></button>
+            {modale && (
+        <div className="modal-pro-overlay" role="dialog" aria-modal="true" aria-labelledby="m-sub">
+          <div className="modal-pro-content">
+            
+            <div className="modal-pro-header">
+              <h3 className="modal-pro-title" id="m-sub">Nouvelle subdivision</h3>
+              <button type="button" className="modal-pro-close" onClick={() => setModale(false)} aria-label="Fermer">
+                <X size={20} />
+              </button>
             </div>
+
             <form onSubmit={soumettre}>
-              <div className="cfg-modale-corps">
+              <div className="modal-pro-body">
                 
-                {/* ── SÉLECTEUR DE TYPE (Style Radio Cards) ── */}
-                <div className="ap-field">
-                  <label className="ap-label">Type de subdivision</label>
-                  <div className="ap-radio-group">
+                {/* Type de subdivision */}
+                <div className="form-group">
+                  <label className="form-label">Type de subdivision <span>*</span></label>
+                  <div className="radio-cards-group">
                     {TYPES.map((t) => (
-                      <label key={t.id} className={`ap-radio-card${form.type === t.id ? ' is-selected' : ''}`}>
+                      <label key={t.id} className={`radio-card${form.type === t.id ? ' is-selected' : ''}`}>
                         <input
                           type="radio"
                           name="type"
                           value={t.id}
                           checked={form.type === t.id}
                           onChange={() => setForm((f) => ({ ...f, type: t.id }))}
-                          className="ap-radio-hidden"
                         />
-                        <span className="ap-radio-indicator" />
-                        <span className="ap-radio-label">{t.label}</span>
+                        <div className="radio-card-dot" />
+                        <span className="radio-card-label">{t.label}</span>
                       </label>
                     ))}
                   </div>
-                  <p className="ap-hint">{TYPES.find((t) => t.id === form.type)?.ex}</p>
+                  <p className="form-hint">{TYPES.find((t) => t.id === form.type)?.ex}</p>
                 </div>
 
-                {/* ── CHAMP NOM ── */}
-                <div className={`ap-field${erreurs.nom ? ' has-error' : ''}`}>
-                  <label className="ap-label" htmlFor="sub-nom">Nom <em>*</em></label>
-                  <input 
-                    id="sub-nom" 
-                    className="ap-input" 
-                    value={form.nom} 
-                    onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))} 
-                    placeholder="Ex. Groupe A, GEI…" 
+                {/* Nom */}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="sub-nom">Nom <span>*</span></label>
+                  <input
+                    id="sub-nom"
+                    type="text"
+                    className={`form-input${erreurs.nom ? ' has-error' : ''}`}
+                    value={form.nom}
+                    onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
+                    placeholder="Ex. Groupe A, GEI…"
                   />
-                  {erreurs.nom && <p className="ap-error">{erreurs.nom}</p>}
+                  {erreurs.nom && <p className="form-error">{erreurs.nom}</p>}
                 </div>
 
-                {/* ── CHAMP CODE ── */}
-                <div className="ap-field">
-                  <label className="ap-label" htmlFor="sub-code">Code / Sigle</label>
-                  <input 
-                    id="sub-code" 
-                    className="ap-input" 
-                    value={form.code} 
-                    onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} 
-                    placeholder="Ex. A, GEI…" 
+                {/* Code */}
+                <div className="form-group">
+                  <label className="form-label" htmlFor="sub-code">Code / Sigle</label>
+                  <input
+                    id="sub-code"
+                    type="text"
+                    className="form-input"
+                    value={form.code}
+                    onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+                    placeholder="Ex. A, GEI…"
                   />
-                  <p className="ap-hint">Court identifiant utilisé dans les sigles de classes.</p>
+                  <p className="form-hint">Court identifiant utilisé dans les sigles de classes.</p>
                 </div>
+
               </div>
-              
-              <div className="cfg-modale-pied">
-                <button type="button" className="ap-btn ap-btn--ghost" onClick={() => setModale(false)}>Annuler</button>
-                <button type="submit" className="ap-btn ap-btn--primary" disabled={enCours}>
-                  {enCours ? 'Création…' : 'Créer'}
+
+              <div className="modal-pro-footer">
+                <button type="button" className="btn-pro btn-pro--ghost" onClick={() => setModale(false)}>
+                  Annuler
+                </button>
+                <button type="submit" className="btn-pro btn-pro--primary" disabled={enCours}>
+                  {enCours ? 'Création…' : 'Créer la subdivision'}
                 </button>
               </div>
             </form>
+
           </div>
         </div>
       )}
