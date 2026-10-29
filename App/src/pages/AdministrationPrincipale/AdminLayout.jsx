@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/identite/AuthContext'
 import { withAuth } from '../../components/identite/RequireAuth'
 import ThemeToggle from '../../components/commun/ThemeToggle'
+import NotificationBell from '../../components/commun/NotificationBell'
 import { ENV } from '../../config/commun/env'
 import { ADMIN_DASHBOARD_PATH, COMPTE_PATH } from '../../config/identite/routes'
 import { ADMIN_PATHS } from '../../config/etablissements/config'
@@ -154,9 +155,7 @@ function AdminLayoutInner({ pageTitle }) {
           </button>
           <h1 className="al-topbar-title">{titreDepuisRoute(location.pathname, pageTitle)}</h1>
           <div className="al-topbar-actions">
-            <button className="al-icon-btn" aria-label="Notifications">
-              <Bell size={19} />
-            </button>
+            <NotificationBell className="al-icon-btn" />
             <ThemeToggle />
             <button
               className="al-icon-btn al-icon-btn--logout"

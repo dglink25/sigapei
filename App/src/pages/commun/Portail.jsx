@@ -16,6 +16,7 @@ import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissemen
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import Bloc3D     from '../../components/etablissements/Bloc3D'
 import ThemeToggle from '../../components/commun/ThemeToggle'
+import NotificationBell from '../../components/commun/NotificationBell'
 import Loader     from '../../components/commun/Loader'
 import './Portail.css'
 
@@ -190,9 +191,7 @@ export default function Portail() {
 
             {/* Droite : actions */}
             <div className="portail-bar-actions">
-              <button className="portail-icon-btn" aria-label="Notifications" title="Notifications">
-                <Bell size={19} aria-hidden="true" />
-              </button>
+              <NotificationBell className="portail-icon-btn" />
               <ThemeToggle className="portail-icon-btn" />
               <button
                 type="button"

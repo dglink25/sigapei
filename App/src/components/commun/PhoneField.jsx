@@ -3,8 +3,9 @@ import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import { getExampleNumber, getCountryCallingCode } from 'libphonenumber-js'
 import examples from 'libphonenumber-js/examples.mobile.json'
+import FlagInstitutionnel from './FlagInstitutionnel'
 
-/** Telephone international : drapeau + indicatif, format et placeholder automatiques, valeur en E.164. */
+/** Telephone international : code pays texte pro + indicatif, format et placeholder automatiques, valeur en E.164. */
 export default function PhoneField({ id, value, onChange, disabled, invalid, defaultCountry = 'BJ' }) {
   const [country, setCountry] = useState(defaultCountry)
   const example = useMemo(() => {
@@ -20,6 +21,7 @@ export default function PhoneField({ id, value, onChange, disabled, invalid, def
         <PhoneInput
           id={id}
           defaultCountry={defaultCountry}
+          flagComponent={FlagInstitutionnel}
           placeholder={example}
           value={value || undefined}
           onChange={(v) => onChange(v || '')}

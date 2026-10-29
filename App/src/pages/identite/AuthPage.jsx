@@ -16,6 +16,7 @@ import { getGoogleIdToken } from '../../lib/identite/firebase'
 import { HOME_PATH, LOGIN_PATH, redirectionPostLogin } from '../../config/identite/routes'
 import Loader from '../../components/commun/Loader'
 import usePageTitle from '../../hooks/commun/usePageTitle'
+import FlagInstitutionnel from '../../components/commun/FlagInstitutionnel'
 import './AuthPage.css'
 
 const METHODS = [
@@ -24,13 +25,12 @@ const METHODS = [
   { id: 'matricule', label: 'Matricule', Icon: Fingerprint },
 ]
 
-const MATRICULE_REGEX = /^[A-Z0-9]{3}-[A-Z0-9]{4}-[A-Z0-9]{7}$/
+const MATRICULE_REGEX = /^\d{3}-[A-Z0-9]{2,12}-\d{7}$/
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
-/* Masque XXX-XXXX-XXXXXXX applique a la frappe */
+/* Formatage matricule : XXX-code_de_son_etablissement-XXXXXXX */
 function formatMatricule(value) {
-  const c = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 14)
-  return [c.slice(0, 3), c.slice(3, 7), c.slice(7, 14)].filter(Boolean).join('-')
+  return value.toUpperCase().replace(/[^A-Z0-9-]/g, '')
 }
 
 const GoogleIcon = () => (
@@ -136,7 +136,8 @@ export default function AuthPage() {
     if (method === 'phone' && !(phone && isValidPhoneNumber(phone)))
       return `Numéro invalide.${example ? ` Exemple : ${example}` : ''}`
     if (method === 'email' && !EMAIL_REGEX.test(email.trim())) return 'Adresse e-mail invalide.'
-    if (method === 'matricule' && !MATRICULE_REGEX.test(matricule)) return 'Format attendu : XXX-XXXX-XXXXXXX.'
+    if (method === 'matricule' && !MATRICULE_REGEX.test(matricule))
+      return 'Format attendu : XXX-code_établissement-XXXXXXX (ex. 042-DGLINK-7182934).'
     return ''
   }
 
@@ -263,6 +264,7 @@ export default function AuthPage() {
                   <PhoneInput
                     id="phone"
                     defaultCountry="BJ"
+                    flagComponent={FlagInstitutionnel}
                     placeholder={example}
                     value={phone}
                     onChange={setPhone}
@@ -295,7 +297,7 @@ export default function AuthPage() {
                   placeholder="XXX-XXXX-XXXXXXX" value={matricule}
                   onChange={(e) => setMatricule(formatMatricule(e.target.value))}
                 />
-                <p className="auth-hint">La connexion se confirme avec l'empreinte digitale de cet appareil.</p>
+                <p className="auth-hint">Format : XXX-XXXX-XXXXXXX</p>
               </>
             )}
 

@@ -8,6 +8,7 @@ import { ENV } from '../../config/commun/env'
 import { portailService } from '../../services/identite/portail.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import ThemeToggle from '../commun/ThemeToggle'
+import NotificationBell from '../commun/NotificationBell'
 import './ParentLayout.css'
 
 export default function ParentLayout({ children, ongletActif = 'dashboard', onChangerOnglet }) {
@@ -133,6 +134,8 @@ export default function ParentLayout({ children, ongletActif = 'dashboard', onCh
               <Calendar size={14} aria-hidden="true" />
               <span>Année académique 2026-2027</span>
             </span>
+            <NotificationBell className="al-icon-btn" />
+            <ThemeToggle />
           </div>
         </header>
 

@@ -91,9 +91,13 @@
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
   margin-top: 1.5rem;
+}
+.modal-actions > :only-child {
+  margin-left: auto;
 }
 
 .btn-modal {

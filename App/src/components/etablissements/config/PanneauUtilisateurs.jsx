@@ -154,7 +154,14 @@ export default function PanneauUtilisateurs() {
             <tbody>
               {utilisateurs.map((u) => (
                 <tr key={u.uuid}>
-                  <td><strong>{u.nomComplet}</strong></td>
+                  <td>
+                    <strong>{u.nomComplet}</strong>
+                    {u.matricule && (
+                      <div style={{ fontSize: '0.78rem', color: 'var(--sg-primary, #006B3C)', fontFamily: 'var(--sg-font-mono, monospace)', fontWeight: 600, letterSpacing: '0.5px', marginTop: 2 }}>
+                        {u.matricule}
+                      </div>
+                    )}
+                  </td>
                   <td>
                     {u.email && <div style={{ fontSize:'0.85rem' }}>{u.email}</div>}
                     {u.telephone && <div style={{ fontSize:'0.82rem', color:'var(--sg-text-muted)' }}>{u.telephone}</div>}

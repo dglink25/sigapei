@@ -10,6 +10,7 @@ import { portailService } from '../../services/identite/portail.service'
 import { lienEtablissement } from '../../lib/etablissements/subdomain'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import ThemeToggle from '../commun/ThemeToggle'
+import NotificationBell from '../commun/NotificationBell'
 import './ApprenantLayout.css'
 
 export default function ApprenantLayout({ children, ongletActif = 'dashboard', onChangerOnglet }) {
@@ -132,11 +133,13 @@ export default function ApprenantLayout({ children, ongletActif = 'dashboard', o
             <h1 className="al-topbar-title">Espace Apprenant</h1>
           </div>
 
-          <div className="al-topbar-right">
+          <div className="al-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="al-badge-annee">
               <Calendar size={14} aria-hidden="true" />
               <span>Année académique en cours</span>
             </span>
+            <NotificationBell className="al-icon-btn" />
+            <ThemeToggle />
           </div>
         </header>
 
