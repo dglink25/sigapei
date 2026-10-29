@@ -12,6 +12,10 @@ export const COMPOSANTS_SERVICES = {
     composant:  lazy(() => import('../../pages/etablissements/ScolaritePage')),
     avecLayout: true,
   },
+  inscription: {
+    composant:  lazy(() => import('../../pages/inscription/InscriptionPage')),
+    avecLayout: true,
+  },
 }
 
 export const serviceDisponible = (code) => Object.prototype.hasOwnProperty.call(COMPOSANTS_SERVICES, code)

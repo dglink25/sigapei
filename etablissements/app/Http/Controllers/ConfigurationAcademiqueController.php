@@ -137,15 +137,15 @@ class ConfigurationAcademiqueController extends Controller
     public function creerOuMettreAJourCycle(Request $request): JsonResponse
     {
         $donnees = $request->validate([
-            'annee_uuid' => ['required', 'uuid'],
-            'cycle'      => ['required', Rule::in(CycleConfig::CYCLES)],
-            'actif'      => ['sometimes', 'boolean'],
+            'annee_uuid'   => ['required', 'uuid'],
+            'cycle'        => ['required', Rule::in(CycleConfig::CYCLES)],
+            'actif'        => ['sometimes', 'boolean'],
+            'cycle_unique' => ['sometimes', 'boolean'],
         ]);
 
         $etablissementId = $this->etablissementId();
 
         // Vérifier que le cycle est autorisé pour cet établissement
-        // (validé via une demande de cycle acceptée par le super admin)
         $autorise = \App\Domain\Etablissement\CycleAutorise::where('etablissement_id', $etablissementId)
             ->where('cycle', $donnees['cycle'])
             ->where('statut', 'actif')
@@ -167,7 +167,10 @@ class ConfigurationAcademiqueController extends Controller
 
         $cycle = CycleConfig::updateOrCreate(
             ['etablissement_id' => $etablissementId, 'annee_id' => $annee->id, 'cycle' => $donnees['cycle']],
-            ['actif' => $donnees['actif'] ?? true],
+            [
+                'actif'        => $donnees['actif'] ?? true,
+                'cycle_unique' => $donnees['cycle_unique'] ?? false,
+            ],
         );
 
         return $this->ok($cycle);
@@ -188,9 +191,13 @@ class ConfigurationAcademiqueController extends Controller
         if ($request->filled('cycle_uuid')) {
             $q->whereHas('cycleConfig', fn($s) => $s->where('uuid', $request->cycle_uuid));
         }
+        if ($request->filled('cycle_univ')) {
+            $q->where('cycle_univ', $request->cycle_univ);
+        }
 
         return $this->ok($q->get());
     }
+
     public function creerSubdivision(Request $request): JsonResponse
     {
         $donnees = $request->validate([
@@ -200,6 +207,8 @@ class ConfigurationAcademiqueController extends Controller
             'nom'              => ['required', 'string', 'max:100'],
             'code'             => ['nullable', 'string', 'max:20'],
             'description'      => ['nullable', 'string'],
+            'cycle_univ'       => ['nullable', 'string', 'max:50'],
+            'option_unique'    => ['sometimes', 'boolean'],
         ]);
 
         $annee = AnneeAcademique::where('etablissement_id', $this->etablissementId())
@@ -215,6 +224,8 @@ class ConfigurationAcademiqueController extends Controller
             'nom'              => $donnees['nom'],
             'code'             => $donnees['code'] ?? '',
             'description'      => $donnees['description'] ?? '',
+            'cycle_univ'       => $donnees['cycle_univ'] ?? null,
+            'option_unique'    => $donnees['option_unique'] ?? false,
         ]);
 
         return $this->ok($sub, 'Subdivision créée.', 201);
@@ -226,10 +237,12 @@ class ConfigurationAcademiqueController extends Controller
             ->where('uuid', $uuid)->firstOrFail();
 
         $donnees = $request->validate([
-            'nom'        => ['sometimes', 'string', 'max:100'],
-            'code'       => ['sometimes', 'string', 'max:20'],
-            'description'=> ['sometimes', 'string'],
-            'actif'      => ['sometimes', 'boolean'],
+            'nom'          => ['sometimes', 'string', 'max:100'],
+            'code'         => ['sometimes', 'string', 'max:20'],
+            'description'  => ['sometimes', 'string'],
+            'actif'        => ['sometimes', 'boolean'],
+            'cycle_univ'   => ['sometimes', 'nullable', 'string', 'max:50'],
+            'option_unique'=> ['sometimes', 'boolean'],
         ]);
 
         $sub->update($donnees);
@@ -237,16 +250,20 @@ class ConfigurationAcademiqueController extends Controller
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // Niveaux scolaires
+    // Niveaux scolaires & Promotions
     // ════════════════════════════════════════════════════════════════════
 
     public function listerNiveaux(Request $request): JsonResponse
     {
         $q = NiveauScolaire::where('etablissement_id', $this->etablissementId())
+            ->with(['subdivision:id,uuid,nom,code', 'serie:id,uuid,nom,code'])
             ->orderBy('cycle')->orderBy('ordre');
 
         if ($request->filled('cycle')) {
             $q->where('cycle', $request->cycle);
+        }
+        if ($request->filled('cycle_univ')) {
+            $q->where('cycle_univ', $request->cycle_univ);
         }
 
         return $this->ok($q->get());
@@ -255,17 +272,39 @@ class ConfigurationAcademiqueController extends Controller
     public function creerNiveau(Request $request): JsonResponse
     {
         $donnees = $request->validate([
-            'cycle'      => ['required', Rule::in(CycleConfig::CYCLES)],
-            'nom'        => ['required', 'string', 'max:100'],
-            'abreviation'=> ['nullable', 'string', 'max:20'],
-            'ordre'      => ['nullable', 'integer', 'min:0'],
+            'cycle'           => ['required', Rule::in(CycleConfig::CYCLES)],
+            'nom'             => ['required', 'string', 'max:100'],
+            'abreviation'     => ['nullable', 'string', 'max:20'],
+            'ordre'           => ['nullable', 'integer', 'min:0'],
+            'a_series'        => ['sometimes', 'boolean'],
+            'cycle_univ'      => ['nullable', 'string', 'max:50'],
+            'subdivision_uuid'=> ['nullable', 'uuid'],
+            'serie_uuid'      => ['nullable', 'uuid'],
         ]);
 
-        $niveau = NiveauScolaire::create(array_merge($donnees, [
-            'etablissement_id' => $this->etablissementId(),
-        ]));
+        $etabId = $this->etablissementId();
+        $subId = null;
+        if (!empty($donnees['subdivision_uuid'])) {
+            $subId = SubdivisionPedagogique::where('etablissement_id', $etabId)->where('uuid', $donnees['subdivision_uuid'])->value('id');
+        }
+        $serieId = null;
+        if (!empty($donnees['serie_uuid'])) {
+            $serieId = SerieFiliere::where('etablissement_id', $etabId)->where('uuid', $donnees['serie_uuid'])->value('id');
+        }
 
-        return $this->ok($niveau, 'Niveau créé.', 201);
+        $niveau = NiveauScolaire::create([
+            'etablissement_id' => $etabId,
+            'cycle'            => $donnees['cycle'],
+            'nom'              => $donnees['nom'],
+            'abreviation'      => $donnees['abreviation'] ?? '',
+            'ordre'            => $donnees['ordre'] ?? 0,
+            'a_series'         => $donnees['a_series'] ?? false,
+            'cycle_univ'       => $donnees['cycle_univ'] ?? null,
+            'subdivision_id'   => $subId,
+            'serie_id'         => $serieId,
+        ]);
+
+        return $this->ok($niveau->load(['subdivision:id,uuid,nom,code', 'serie:id,uuid,nom,code']), 'Niveau créé.', 201);
     }
 
     public function modifierNiveau(Request $request, string $uuid): JsonResponse
@@ -277,24 +316,29 @@ class ConfigurationAcademiqueController extends Controller
             'nom'        => ['sometimes', 'string', 'max:100'],
             'abreviation'=> ['sometimes', 'string', 'max:20'],
             'ordre'      => ['sometimes', 'integer', 'min:0'],
+            'a_series'   => ['sometimes', 'boolean'],
+            'cycle_univ' => ['sometimes', 'nullable', 'string', 'max:50'],
             'actif'      => ['sometimes', 'boolean'],
         ]);
 
         $niveau->update($donnees);
-        return $this->ok($niveau->fresh());
+        return $this->ok($niveau->fresh()->load(['subdivision:id,uuid,nom,code', 'serie:id,uuid,nom,code']));
     }
 
     // ════════════════════════════════════════════════════════════════════
-    // Séries / Filières
+    // Séries / Filières / Options
     // ════════════════════════════════════════════════════════════════════
 
     public function listerSeries(Request $request): JsonResponse
     {
         $q = SerieFiliere::where('etablissement_id', $this->etablissementId())
-            ->with('subdivision:id,uuid,nom');
+            ->with(['subdivision:id,uuid,nom,code', 'promotion:id,uuid,nom,abreviation']);
 
         if ($request->filled('cycle')) {
             $q->where('cycle', $request->cycle);
+        }
+        if ($request->filled('promotion_uuid')) {
+            $q->whereHas('promotion', fn($p) => $p->where('uuid', $request->promotion_uuid));
         }
 
         return $this->ok($q->orderBy('cycle')->orderBy('nom')->get());
@@ -308,25 +352,35 @@ class ConfigurationAcademiqueController extends Controller
             'code'            => ['nullable', 'string', 'max:20'],
             'description'     => ['nullable', 'string'],
             'subdivision_uuid' => ['nullable', 'uuid'],
+            'promotion_uuid'  => ['nullable', 'uuid'],
+            'cycle_univ'      => ['nullable', 'string', 'max:50'],
         ]);
 
+        $etabId = $this->etablissementId();
         $subId = null;
         if (!empty($donnees['subdivision_uuid'])) {
-            $sub   = SubdivisionPedagogique::where('etablissement_id', $this->etablissementId())
-                ->where('uuid', $donnees['subdivision_uuid'])->firstOrFail();
-            $subId = $sub->id;
+            $subId = SubdivisionPedagogique::where('etablissement_id', $etabId)
+                ->where('uuid', $donnees['subdivision_uuid'])->value('id');
+        }
+
+        $promotionId = null;
+        if (!empty($donnees['promotion_uuid'])) {
+            $promotionId = NiveauScolaire::where('etablissement_id', $etabId)
+                ->where('uuid', $donnees['promotion_uuid'])->value('id');
         }
 
         $serie = SerieFiliere::create([
-            'etablissement_id' => $this->etablissementId(),
+            'etablissement_id' => $etabId,
             'cycle'            => $donnees['cycle'],
             'nom'              => $donnees['nom'],
             'code'             => $donnees['code'] ?? '',
             'description'      => $donnees['description'] ?? '',
             'subdivision_id'   => $subId,
+            'promotion_id'     => $promotionId,
+            'cycle_univ'       => $donnees['cycle_univ'] ?? null,
         ]);
 
-        return $this->ok($serie->load('subdivision:id,uuid,nom'), 'Série / filière créée.', 201);
+        return $this->ok($serie->load(['subdivision:id,uuid,nom', 'promotion:id,uuid,nom,abreviation']), 'Série / filière créée.', 201);
     }
 
     public function modifierSerie(Request $request, string $uuid): JsonResponse
@@ -338,11 +392,12 @@ class ConfigurationAcademiqueController extends Controller
             'nom'        => ['sometimes', 'string', 'max:100'],
             'code'       => ['sometimes', 'string', 'max:20'],
             'description'=> ['sometimes', 'string'],
+            'cycle_univ' => ['sometimes', 'nullable', 'string', 'max:50'],
             'actif'      => ['sometimes', 'boolean'],
         ]);
 
         $serie->update($donnees);
-        return $this->ok($serie->fresh()->load('subdivision:id,uuid,nom'));
+        return $this->ok($serie->fresh()->load(['subdivision:id,uuid,nom', 'promotion:id,uuid,nom,abreviation']));
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -369,8 +424,10 @@ class ConfigurationAcademiqueController extends Controller
         $donnees = $request->validate([
             'annee_uuid'       => ['required', 'uuid'],
             'niveau_uuid'      => ['required', 'uuid'],
-            'subdivision_uuid' => ['required', 'uuid'],
+            'subdivision_uuid' => ['nullable', 'uuid'],
             'serie_uuid'       => ['nullable', 'uuid'],
+            'nom'              => ['nullable', 'string', 'max:100'],
+            'mode_numerotation'=> ['nullable', 'string', 'max:30'],
             'sigle'            => ['nullable', 'string', 'max:50'],
             'effectif_previsionnel' => ['nullable', 'integer', 'min:1'],
         ]);
@@ -378,24 +435,34 @@ class ConfigurationAcademiqueController extends Controller
         $etabId = $this->etablissementId();
         $annee  = AnneeAcademique::where('etablissement_id', $etabId)->where('uuid', $donnees['annee_uuid'])->firstOrFail();
         $niveau = NiveauScolaire::where('etablissement_id', $etabId)->where('uuid', $donnees['niveau_uuid'])->firstOrFail();
-        $sub    = SubdivisionPedagogique::where('etablissement_id', $etabId)->where('uuid', $donnees['subdivision_uuid'])->firstOrFail();
+        
+        $subId = null;
+        if (!empty($donnees['subdivision_uuid'])) {
+            $sub   = SubdivisionPedagogique::where('etablissement_id', $etabId)->where('uuid', $donnees['subdivision_uuid'])->first();
+            $subId = $sub?->id;
+        }
 
         $serieId = null;
         if (!empty($donnees['serie_uuid'])) {
-            $serieId = SerieFiliere::where('etablissement_id', $etabId)->where('uuid', $donnees['serie_uuid'])->firstOrFail()->id;
+            $serieId = SerieFiliere::where('etablissement_id', $etabId)->where('uuid', $donnees['serie_uuid'])->value('id');
         }
 
         $classe = ClasseConfig::create([
             'etablissement_id'      => $etabId,
             'annee_id'              => $annee->id,
             'niveau_id'             => $niveau->id,
-            'subdivision_id'        => $sub->id,
+            'subdivision_id'        => $subId,
             'serie_id'              => $serieId,
+            'nom'                   => $donnees['nom'] ?? null,
+            'mode_numerotation'     => $donnees['mode_numerotation'] ?? 'alphabetique',
             'sigle'                 => $donnees['sigle'] ?? '',
             'effectif_previsionnel' => $donnees['effectif_previsionnel'] ?? null,
         ]);
 
-        return $this->ok($classe->load(['niveau:id,uuid,nom,abreviation', 'subdivision:id,uuid,nom,code', 'serie:id,uuid,nom,code']), 'Classe créée.', 201);
+        // Auto-assigner immédiatement les matières déjà créées pour ce niveau / promotion / série
+        $this->service->synchroniserMatieresPourNouvelleClasse($classe);
+
+        return $this->ok($classe->load(['niveau:id,uuid,nom,abreviation', 'subdivision:id,uuid,nom,code', 'serie:id,uuid,nom,code']), 'Classe créée avec matières synchronisées.', 201);
     }
 
     public function modifierClasse(Request $request, string $uuid): JsonResponse
@@ -404,6 +471,7 @@ class ConfigurationAcademiqueController extends Controller
             ->where('uuid', $uuid)->firstOrFail();
 
         $donnees = $request->validate([
+            'nom'                   => ['sometimes', 'nullable', 'string', 'max:100'],
             'sigle'                 => ['sometimes', 'string', 'max:50'],
             'effectif_previsionnel' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'actif'                 => ['sometimes', 'boolean'],
@@ -420,7 +488,7 @@ class ConfigurationAcademiqueController extends Controller
     public function listerCohortes(Request $request): JsonResponse
     {
         $q = CohorteUniversitaire::where('etablissement_id', $this->etablissementId())
-            ->with(['filiere:id,uuid,nom,code', 'niveau:id,uuid,nom,abreviation', 'annee:id,uuid,libelle']);
+            ->with(['filiere:id,uuid,nom,code', 'niveau:id,uuid,nom,abreviation', 'departement:id,uuid,nom,code', 'annee:id,uuid,libelle']);
 
         if ($request->filled('annee_uuid')) {
             $q->whereHas('annee', fn($s) => $s->where('uuid', $request->annee_uuid));
@@ -432,13 +500,15 @@ class ConfigurationAcademiqueController extends Controller
     public function creerCohorte(Request $request): JsonResponse
     {
         $donnees = $request->validate([
-            'annee_uuid'   => ['required', 'uuid'],
-            'filiere_uuid' => ['required', 'uuid'],
-            'niveau_uuid'  => ['required', 'uuid'],
-            'diplome'      => ['required', Rule::in(CohorteUniversitaire::DIPLOMES)],
-            'lettre'       => ['nullable', 'string', 'max:5'],
-            'sigle'        => ['nullable', 'string', 'max:30'],
-            'semestres'    => ['nullable', 'string', 'max:50'],
+            'annee_uuid'       => ['required', 'uuid'],
+            'filiere_uuid'     => ['required', 'uuid'],
+            'niveau_uuid'      => ['required', 'uuid'],
+            'subdivision_uuid' => ['nullable', 'uuid'],
+            'cycle_univ'       => ['nullable', 'string', 'max:50'],
+            'diplome'          => ['required', Rule::in(CohorteUniversitaire::DIPLOMES)],
+            'lettre'           => ['nullable', 'string', 'max:5'],
+            'sigle'            => ['nullable', 'string', 'max:30'],
+            'semestres'        => ['nullable', 'string', 'max:50'],
         ]);
 
         $etabId  = $this->etablissementId();
@@ -446,18 +516,28 @@ class ConfigurationAcademiqueController extends Controller
         $filiere = SerieFiliere::where('etablissement_id', $etabId)->where('uuid', $donnees['filiere_uuid'])->firstOrFail();
         $niveau  = NiveauScolaire::where('etablissement_id', $etabId)->where('uuid', $donnees['niveau_uuid'])->firstOrFail();
 
+        $subId = null;
+        if (!empty($donnees['subdivision_uuid'])) {
+            $subId = SubdivisionPedagogique::where('etablissement_id', $etabId)->where('uuid', $donnees['subdivision_uuid'])->value('id');
+        }
+
         $cohorte = CohorteUniversitaire::create([
             'etablissement_id' => $etabId,
             'annee_id'         => $annee->id,
+            'subdivision_id'   => $subId,
             'filiere_id'       => $filiere->id,
             'niveau_id'        => $niveau->id,
+            'cycle_univ'       => $donnees['cycle_univ'] ?? $filiere->cycle_univ ?? 'licence',
             'diplome'          => $donnees['diplome'],
             'lettre'           => $donnees['lettre'] ?? '',
             'sigle'            => $donnees['sigle'] ?? '',
             'semestres'        => $donnees['semestres'] ?? '',
         ]);
 
-        return $this->ok($cohorte->load(['filiere:id,uuid,nom,code', 'niveau:id,uuid,nom,abreviation']), 'Cohorte créée.', 201);
+        // Auto-assigner immédiatement les matières déjà créées pour cette filière + niveau
+        $this->service->synchroniserMatieresPourNouvelleCohorte($cohorte);
+
+        return $this->ok($cohorte->load(['filiere:id,uuid,nom,code', 'niveau:id,uuid,nom,abreviation', 'departement:id,uuid,nom,code']), 'Cohorte créée.', 201);
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -467,7 +547,7 @@ class ConfigurationAcademiqueController extends Controller
     public function listerMatieres(Request $request): JsonResponse
     {
         $q = MatiereConfig::where('etablissement_id', $this->etablissementId())
-            ->with(['niveau:id,uuid,nom,abreviation', 'serie:id,uuid,nom,code', 'annee:id,uuid,libelle']);
+            ->with(['niveau:id,uuid,nom,abreviation', 'serie:id,uuid,nom,code', 'classe:id,uuid,nom,sigle', 'annee:id,uuid,libelle']);
 
         if ($request->filled('annee_uuid')) {
             $q->whereHas('annee', fn($s) => $s->where('uuid', $request->annee_uuid));
@@ -502,7 +582,7 @@ class ConfigurationAcademiqueController extends Controller
 
         $serieId = null;
         if (!empty($donnees['serie_uuid'])) {
-            $serieId = SerieFiliere::where('etablissement_id', $etabId)->where('uuid', $donnees['serie_uuid'])->firstOrFail()->id;
+            $serieId = SerieFiliere::where('etablissement_id', $etabId)->where('uuid', $donnees['serie_uuid'])->value('id');
         }
 
         $matiere = MatiereConfig::create([
@@ -510,6 +590,7 @@ class ConfigurationAcademiqueController extends Controller
             'annee_id'            => $annee->id,
             'cycle'               => $donnees['cycle'],
             'niveau_id'           => $niveau->id,
+            'promotion_id'        => $niveau->id,
             'serie_id'            => $serieId,
             'matiere_uuid_externe'=> $donnees['matiere_uuid_externe'],
             'nom_matiere'         => $donnees['nom_matiere'],
@@ -518,7 +599,18 @@ class ConfigurationAcademiqueController extends Controller
             'est_obligatoire'     => $donnees['est_obligatoire'] ?? true,
         ]);
 
-        return $this->ok($matiere->load(['niveau:id,uuid,nom,abreviation', 'serie:id,uuid,nom,code']), 'Matière configurée.', 201);
+        // Propagation automatique selon les règles strictes du cycle :
+        // - Maternelle / Primaire : assignée à toutes les classes homologues de ce niveau sur tous les groupes de l'année
+        // - Secondaire sans série : assignée à toutes les classes de la promotion
+        // - Secondaire avec série : assignée uniquement aux classes de cette promotion ET cette série (jamais les autres séries)
+        // - Universitaire : assignée à toutes les cohortes de cette filière + niveau
+        $propages = $this->service->propagerMatiere($matiere);
+
+        $msg = $propages > 0
+            ? "Matière configurée et propagée automatiquement à {$propages} classe(s)/cohorte(s) homologue(s)."
+            : "Matière configurée.";
+
+        return $this->ok($matiere->load(['niveau:id,uuid,nom,abreviation', 'serie:id,uuid,nom,code']), $msg, 201);
     }
 
     public function modifierMatiere(Request $request, string $uuid): JsonResponse

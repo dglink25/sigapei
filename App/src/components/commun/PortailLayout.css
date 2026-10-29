@@ -299,7 +299,7 @@
   transition: background var(--pl-transition), border-color var(--pl-transition);
 }
 
-/* ✅ Bande or en bas du header (Topbar) */
+/* Bande or en bas du header (Topbar) */
 .pl-topbar::after {
   content: '';
   position: absolute;

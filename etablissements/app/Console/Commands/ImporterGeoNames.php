@@ -62,10 +62,14 @@ class ImporterGeoNames extends Command
         {--avec-promotion : Importe au niveau 2 les ADM3 dont l ADM2 parent est absent (deconseille : melange les niveaux)}
         {--sans-promotion : Sans effet (comportement par defaut), conserve pour compatibilite}
         {--manquants : Ne traite que les pays qui n ont encore aucun departement}
+        {--orphelins : Liste les arrondissements sans parent identifiable, avec la commune la plus proche (suggestion a verifier), sans rien importer}
+        {--orphelins-csv= : Avec --orphelins, ecrit ces suggestions dans un fichier CSV compatible geo:arbre}
         {--noms-bruts : Conserve les noms tels que fournis, sans retirer les prefixes Departement de, Commune de...}
         {--lot=2000 : Nombre de lignes par requete d insertion}';
 
     protected $description = 'Telecharge et importe departements, communes et arrondissements depuis GeoNames.';
+
+    private bool $csvOrphelinsInitialise = false;
 
     public function handle(): int
     {
@@ -146,6 +150,13 @@ class ImporterGeoNames extends Command
             return [$iso, 0, 0, 0, 'Aucun niveau administratif dans GeoNames'];
         }
 
+        // Mode inspection : on liste les orphelins et on s'arrete, sans ecrire en base.
+        if ($this->option('orphelins') || $this->option('orphelins-csv')) {
+            $nombre = $this->suggererParentsOrphelins($iso, $adm1, $adm2, $adm3);
+
+            return [$iso, '-', '-', '-', "{$nombre} orphelin(s) liste(s)"];
+        }
+
         $nettoyerNoms = ! $this->option('noms-bruts');
         $promotion = (bool) $this->option('avec-promotion');
         $nettoyerAutres = (bool) ($this->option('nettoyer') || $this->option('remplacer'));
@@ -222,6 +233,88 @@ class ImporterGeoNames extends Command
         $this->line(sprintf('  %s : %d departements, %d communes, %d arrondissements%s', $iso, $n1, $n2, $n3, $details ? ' ('.implode(', ', $details).')' : ''));
 
         return [$iso, $n1, $n2, $n3, 'OK'.($restants ? ' *' : '')];
+    }
+
+    /**
+     * Pour chaque arrondissement (ADM3) dont la commune parente est introuvable, propose la commune
+     * (ADM2) la plus proche de la meme region (ADM1), par distance entre leurs coordonnees. C'est une
+     * SUGGESTION : un arrondissement proche de la limite entre deux communes peut etre mal attribue.
+     * A verifier avant tout import ; le CSV produit se passe a geo:arbre (en simulation d'abord).
+     */
+    private function suggererParentsOrphelins(string $iso, array $adm1, array $adm2, array $adm3): int
+    {
+        $lignes = [];
+
+        foreach ($adm3 as $a) {
+            if (isset($adm2[$a['a1'].'|'.$a['a2']])) {
+                continue; // parent identifiable : pas un orphelin
+            }
+
+            $meilleur = null;
+            $distanceMin = INF;
+            foreach ($adm2 as $commune) {
+                if ($a['a1'] !== '' && $commune['a1'] !== $a['a1']) {
+                    continue;
+                }
+                $distance = $this->distanceKm($a['lat'], $a['lon'], $commune['lat'], $commune['lon']);
+                if ($distance < $distanceMin) {
+                    $distanceMin = $distance;
+                    $meilleur = $commune;
+                }
+            }
+
+            $lignes[] = [
+                'departement' => NormalisationNom::nettoyer($adm1[$a['a1']]['nom'] ?? ''),
+                'commune' => $meilleur ? NormalisationNom::nettoyer($meilleur['nom']) : '',
+                'arrondissement' => NormalisationNom::nettoyer($a['nom']),
+                'distance_km' => $meilleur ? round($distanceMin, 1) : '',
+            ];
+        }
+
+        if (! $lignes) {
+            $this->line("  {$iso} : aucun arrondissement sans parent.");
+
+            return 0;
+        }
+
+        usort($lignes, fn ($x, $y) => [$x['departement'], $x['commune'], $x['arrondissement']] <=> [$y['departement'], $y['commune'], $y['arrondissement']]);
+
+        $this->line(sprintf('  %s : %d arrondissement(s) sans parent identifiable. Commune proposee = la plus proche (a verifier) :', $iso, count($lignes)));
+        $this->table(
+            ['Departement', 'Commune proposee', 'Arrondissement', 'Distance (km)'],
+            array_map(fn ($l) => [$l['departement'], $l['commune'], $l['arrondissement'], $l['distance_km']], array_slice($lignes, 0, 100))
+        );
+        if (count($lignes) > 100) {
+            $this->line(sprintf('  ... et %d autres (voir --orphelins-csv)', count($lignes) - 100));
+        }
+
+        if ($chemin = (string) $this->option('orphelins-csv')) {
+            $poignee = fopen($chemin, $this->csvOrphelinsInitialise ? 'a' : 'w');
+            if ($poignee === false) {
+                throw new RuntimeException("impossible d'ecrire {$chemin}");
+            }
+            if (! $this->csvOrphelinsInitialise) {
+                fputcsv($poignee, ['pays', 'departement', 'commune', 'arrondissement', 'distance_km'], ',', '"', '\\');
+                $this->csvOrphelinsInitialise = true;
+            }
+            foreach ($lignes as $l) {
+                fputcsv($poignee, [$iso, $l['departement'], $l['commune'], $l['arrondissement'], $l['distance_km']], ',', '"', '\\');
+            }
+            fclose($poignee);
+            $this->line("  suggestions ecrites dans {$chemin}");
+        }
+
+        return count($lignes);
+    }
+
+    /** Distance entre deux points (formule de haversine), en kilometres. */
+    private function distanceKm(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
+
+        return 2 * 6371 * asin(min(1.0, sqrt($a)));
     }
 
     /**
@@ -429,10 +522,10 @@ SQL, [$paysId, $paysId, $paysId]);
                         $adm1[$c[10]] ??= ['id' => $c[0], 'nom' => $c[1]];
                         break;
                     case 'ADM2':
-                        $adm2[$c[10].'|'.$c[11]] ??= ['id' => $c[0], 'nom' => $c[1], 'a1' => $c[10]];
+                        $adm2[$c[10].'|'.$c[11]] ??= ['id' => $c[0], 'nom' => $c[1], 'a1' => $c[10], 'lat' => (float) $c[4], 'lon' => (float) $c[5]];
                         break;
                     case 'ADM3':
-                        $adm3[$c[10].'|'.$c[11].'|'.$c[12]] ??= ['id' => $c[0], 'nom' => $c[1], 'a1' => $c[10], 'a2' => $c[11]];
+                        $adm3[$c[10].'|'.$c[11].'|'.$c[12]] ??= ['id' => $c[0], 'nom' => $c[1], 'a1' => $c[10], 'a2' => $c[11], 'lat' => (float) $c[4], 'lon' => (float) $c[5]];
                         break;
                 }
             }

@@ -12,8 +12,8 @@ class CycleConfig extends Model
     protected $table = 'cycles_config';
     protected $hidden = ['id', 'etablissement_id', 'annee_id'];
 
-    protected $fillable = ['etablissement_id', 'annee_id', 'cycle', 'actif'];
-    protected $casts    = ['actif' => 'boolean'];
+    protected $fillable = ['etablissement_id', 'annee_id', 'cycle', 'actif', 'cycle_unique'];
+    protected $casts    = ['actif' => 'boolean', 'cycle_unique' => 'boolean'];
 
     const CYCLES = ['maternelle', 'primaire', 'secondaire', 'universitaire'];
 

@@ -19,6 +19,34 @@
 .sc-welcome-title { margin: 0; font-size: 1.2rem; font-weight: 700; }
 .sc-welcome-sub   { margin: 3px 0 0; font-size: 0.86rem; color: rgba(255,246,221,0.78); }
 
+/* Contraste garanti dans le bandeau vert (Texte blanc/crème sur fond vert, JAMAIS de noir sur vert) */
+.sc-welcome .ap-btn.ap-btn--ghost,
+.sc-welcome .ap-btn--ghost {
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  font-weight: 600 !important;
+}
+
+.sc-welcome .ap-btn.ap-btn--ghost:hover:not(:disabled),
+.sc-welcome .ap-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.20) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.sc-welcome .ap-btn.ap-btn--ghost svg,
+.sc-welcome .ap-btn--ghost svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.sc-welcome select.ap-input {
+  background: #ffffff !important;
+  color: #1a2a1e !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+}
+
 /* ── Statistiques ── */
 .sc-stats {
   display: grid;

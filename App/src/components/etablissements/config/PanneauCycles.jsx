@@ -1,12 +1,8 @@
-/**
- * PanneauCycles - Activation/désactivation des cycles pour une année.
- * Affiche uniquement les cycles autorisés par le super admin (cyclesAutorises).
- * Nécessite qu'une année soit sélectionnée (anneeActive).
- */
 import { useEffect, useState } from 'react'
-import { School, AlertTriangle } from 'lucide-react'
+import { School, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { cyclesService } from '../../../services/etablissements/configurationAcademique.service'
+import Loader from '../../../components/commun/Loader'
 
 const CYCLES_DISPO = [
   { id: 'maternelle',    label: 'Maternelle',    sous: 'Petite, moyenne, grande section' },
@@ -21,11 +17,8 @@ export default function PanneauCycles({ anneeActive, cyclesAutorises = [], onTer
   const [chargement, setChargement] = useState(false)
   const [sauvegarde, setSauvegarde] = useState({})
 
-  // Cycles à afficher = intersection cycles autorisés ∩ cycles disponibles
-  // Si cyclesAutorises non fourni (ancien contexte), on affiche tout
-  const cyclesDispo = cyclesAutorises.length > 0
-    ? CYCLES_DISPO.filter((c) => cyclesAutorises.includes(c.id))
-    : CYCLES_DISPO
+  // Strictement les cycles autorisés pour cet établissement
+  const cyclesDispo = CYCLES_DISPO.filter((c) => cyclesAutorises.includes(c.id))
 
   const charger = async () => {
     if (!anneeActive) return
@@ -57,7 +50,7 @@ export default function PanneauCycles({ anneeActive, cyclesAutorises = [], onTer
         actif:      !actuel,
       })
       await charger()
-      notify.success(!actuel ? 'Cycle activé' : 'Cycle désactivé', cycleId)
+      notify.success(!actuel ? 'Cycle activé pour cette année' : 'Cycle désactivé pour cette année', cycleId)
     } catch (err) {
       notify.fromError(err)
     } finally {
@@ -81,7 +74,7 @@ export default function PanneauCycles({ anneeActive, cyclesAutorises = [], onTer
       <div className="ap-card">
         <div className="ap-empty">
           <AlertTriangle size={32} aria-hidden="true" />
-          <p>Aucun cycle autorisé pour votre établissement. Faites une demande de cycle depuis la Configuration.</p>
+          <p>Aucun cycle autorisé pour votre établissement. Rendez-vous dans <strong>Activer des cycles &gt; Demandes de cycles</strong> pour demander une autorisation d'extension.</p>
         </div>
       </div>
     )
@@ -91,18 +84,19 @@ export default function PanneauCycles({ anneeActive, cyclesAutorises = [], onTer
     <div className="cfg-tab">
       <div className="ap-page-head">
         <div>
-          <h2 className="ap-page-title">Cycles actifs</h2>
+          <h2 className="ap-page-title">Cycles actifs pour l'année</h2>
           <p className="ap-page-sub">
-            Année : <strong>{anneeActive.libelle}</strong> - activez les cycles autorisés pour votre établissement.
+            Année : <strong>{anneeActive.libelle}</strong> - Activez les cycles autorisés de votre établissement pour cette année scolaire.
           </p>
         </div>
+        <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={charger} disabled={chargement}>
+          <RefreshCw size={14} className={chargement ? 'spin' : ''} /> Actualiser
+        </button>
       </div>
 
       {chargement ? (
-        <div className="cfg-cycles-grille">
-          {cyclesDispo.map((_, i) => (
-            <div key={i} className="ap-skel ap-skel--card" style={{ '--i': i, minHeight: 120 }} />
-          ))}
+        <div className="ap-card" style={{ padding: '2.5rem', display: 'flex', justifyContent: 'center' }}>
+          <Loader mode="inline" label="Chargement des cycles de l'année…" />
         </div>
       ) : (
         <div className="cfg-cycles-grille">

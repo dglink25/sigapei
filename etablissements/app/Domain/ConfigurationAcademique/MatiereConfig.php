@@ -20,6 +20,7 @@ class MatiereConfig extends Model
 
     protected $fillable = [
         'etablissement_id', 'annee_id', 'cycle', 'niveau_id', 'serie_id',
+        'promotion_id', 'classe_id', 'cohorte_id',
         'matiere_uuid_externe', 'nom_matiere', 'code_matiere',
         'coefficient', 'est_obligatoire', 'actif',
     ];
@@ -29,7 +30,10 @@ class MatiereConfig extends Model
         'actif'          => 'boolean',
     ];
 
-    public function annee()  { return $this->belongsTo(AnneeAcademique::class, 'annee_id'); }
-    public function niveau() { return $this->belongsTo(NiveauScolaire::class, 'niveau_id'); }
-    public function serie()  { return $this->belongsTo(SerieFiliere::class, 'serie_id'); }
+    public function annee()     { return $this->belongsTo(AnneeAcademique::class, 'annee_id'); }
+    public function niveau()    { return $this->belongsTo(NiveauScolaire::class, 'niveau_id'); }
+    public function promotion() { return $this->belongsTo(NiveauScolaire::class, 'promotion_id'); }
+    public function serie()     { return $this->belongsTo(SerieFiliere::class, 'serie_id'); }
+    public function classe()    { return $this->belongsTo(ClasseConfig::class, 'classe_id'); }
+    public function cohorte()   { return $this->belongsTo(CohorteUniversitaire::class, 'cohorte_id'); }
 }
