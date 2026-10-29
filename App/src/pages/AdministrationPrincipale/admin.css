@@ -24,6 +24,11 @@
   font-size: 15px;
   color: var(--ap-text);
 }
+@media (max-width: 640px) {
+  .ap {
+    padding: 16px 12px 40px;
+  }
+}
 .ap *, .ap *::before, .ap *::after { box-sizing: border-box; }
 
 /* ══ Breadcrumb / fil d'ariane ══ */
@@ -69,7 +74,11 @@
   padding: 20px 22px;
   transition: background var(--ap-transition), border-color var(--ap-transition);
 }
-.ap-card--flush { padding: 0; overflow: hidden; }
+.ap-card--flush {
+  padding: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .ap-card--hover:hover {
   border-color: var(--ap-green);
   box-shadow: 0 4px 16px rgba(0,107,60,0.08);

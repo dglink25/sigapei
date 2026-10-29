@@ -52,4 +52,57 @@ export const inscriptionService = {
     const r = await http.post('/reinscriptions', donnees)
     return r?.donnees ?? r?.data ?? r
   },
+
+  // ── Appels à candidature ───────────────────────────────────────────
+
+  /**
+   * Lister les appels à candidature
+   */
+  listerAppels: async (filtres = {}) => {
+    const params = new URLSearchParams()
+    Object.entries(filtres).forEach(([k, v]) => { if (v) params.set(k, v) })
+    const qs = params.toString()
+    const r = await http.get(`/appels-candidatures${qs ? '?' + qs : ''}`)
+    return r?.donnees ?? r?.data ?? r ?? []
+  },
+
+  /**
+   * Afficher un appel par son UUID
+   */
+  afficherAppel: async (uuid) => {
+    const r = await http.get(`/appels-candidatures/${uuid}`)
+    return r?.donnees ?? r?.data ?? r
+  },
+
+  /**
+   * Lancer / Créer un appel à candidature
+   */
+  creerAppel: async (donnees) => {
+    const r = await http.post('/appels-candidatures', donnees)
+    return r?.donnees ?? r?.data ?? r
+  },
+
+  /**
+   * Modifier un appel à candidature
+   */
+  modifierAppel: async (uuid, donnees) => {
+    const r = await http.patch(`/appels-candidatures/${uuid}`, donnees)
+    return r?.donnees ?? r?.data ?? r
+  },
+
+  /**
+   * Marquer un appel à candidature comme terminé
+   */
+  terminerAppel: async (uuid) => {
+    const r = await http.post(`/appels-candidatures/${uuid}/terminer`, {})
+    return r?.donnees ?? r?.data ?? r
+  },
+
+  /**
+   * Supprimer un appel à candidature
+   */
+  supprimerAppel: async (uuid) => {
+    const r = await http.delete(`/appels-candidatures/${uuid}`)
+    return r?.donnees ?? r?.data ?? r
+  },
 }

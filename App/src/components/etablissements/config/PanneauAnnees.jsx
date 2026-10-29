@@ -76,7 +76,7 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
     }
   }, [form.date_debut, form.date_fin])
 
-  // 🔑 Min de la date de fin = lendemain de la date de début
+  // Min de la date de fin = lendemain de la date de début
   const minDateFin = useMemo(() => jourSuivant(form.date_debut), [form.date_debut])
 
   const ouvrirCreer = () => {
@@ -166,8 +166,8 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
           </p>
         </div>
         <div className="ap-page-actions">
-          <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={charger} disabled={chargement} aria-label="Actualiser">
-            <RefreshCw size={14} className={chargement ? 'ap-spin' : ''} />
+          <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={charger} disabled={chargement}>
+            <RefreshCw size={14} className={chargement ? 'ap-spin' : ''} /> Actualiser
           </button>
           <button type="button" className="ap-btn ap-btn--sm" onClick={ouvrirCreer}>
             <Plus size={14} /> Nouvelle année
@@ -286,8 +286,8 @@ export default function PanneauAnnees({ anneeActive, setAnneeActive, onTerminee 
                   type="date"
                   className="ap-input"
                   value={form.date_fin}
-                  min={minDateFin}                    // 🔑 bloque les dates ≤ début
-                  disabled={!form.date_debut}         // 🔑 oblige à choisir le début d'abord
+                  min={minDateFin}                    // bloque les dates ≤ début
+                  disabled={!form.date_debut}         // oblige à choisir le début d'abord
                   onChange={(e) => setForm((f) => ({ ...f, date_fin: e.target.value }))}
                   onClick={(e) => e.currentTarget.showPicker?.()}
                   style={{ cursor: form.date_debut ? 'pointer' : 'not-allowed' }}

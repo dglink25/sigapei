@@ -151,17 +151,41 @@ export default function ScolaritePage() {
         onTerminee={marquer}
       />
     )
-    if (cycleParam) return (
-      <PanneauCyclePage
-        cycle={cycleParam}
-        cycleObj={cyclesActifsValides.find((c) => c.cycle === cycleParam)}
-        anneeActive={anneeActive}
-        onTerminee={marquer}
-        searchParams={searchParams}
-        setSearchParams={setSearchParams}
-        cyclesDisponibles={cyclesActifsValides.map((c) => c.cycle)}
-      />
-    )
+    if (cycleParam) {
+      const cycleTrouve = cyclesActifsValides.find((c) => c.cycle === cycleParam)
+      if (!cycleTrouve) {
+        return (
+          <div className="ap-card ap-empty" style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
+            <AlertTriangle size={40} style={{ color: 'var(--sg-warning, #d97706)', margin: '0 auto 12px' }} />
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.1rem', fontWeight: 700 }}>
+              Cycle non autorisé ou inactif pour cette année
+            </h3>
+            <p style={{ maxWidth: 540, margin: '0 auto 16px', color: 'var(--sg-text-muted)' }}>
+              Le cycle <strong>{CYCLE_LABELS[cycleParam] ?? cycleParam}</strong> n'est pas autorisé pour votre établissement ou n'a pas encore été activé pour l'année académique <strong>{anneeActive?.libelle}</strong>.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <Link to={base} className="ap-btn ap-btn--ghost ap-btn--sm">
+                Retour à la vue d'ensemble
+              </Link>
+              <Link to={`${base}?section=cycles`} className="ap-btn ap-btn--sm">
+                Activer des cycles pour cette année
+              </Link>
+            </div>
+          </div>
+        )
+      }
+      return (
+        <PanneauCyclePage
+          cycle={cycleParam}
+          cycleObj={cycleTrouve}
+          anneeActive={anneeActive}
+          onTerminee={marquer}
+          searchParams={searchParams}
+          setSearchParams={setSearchParams}
+          cyclesDisponibles={cyclesActifsValides.map((c) => c.cycle)}
+        />
+      )
+    }
     return (
       <VueEnsemble
         anneeActive={anneeActive}
@@ -246,20 +270,23 @@ function buildNav(base, section, cycleParam, ongletURL, cyclesActifs) {
   const ONGLETS_CYCLE = {
     maternelle:    [{ id:'groupes', label:'Groupes' },{ id:'niveaux', label:'Niveaux' },{ id:'classes', label:'Classes' },{ id:'matieres', label:'Matières' }],
     primaire:      [{ id:'groupes', label:'Groupes' },{ id:'niveaux', label:'Niveaux' },{ id:'classes', label:'Classes' },{ id:'matieres', label:'Matières' }],
-    secondaire:    [{ id:'groupes', label:'Sections' },{ id:'niveaux', label:'Niveaux' },{ id:'classes', label:'Classes' },{ id:'series', label:'Séries' },{ id:'matieres', label:'Matières' }],
-    universitaire: [{ id:'groupes', label:'Départements' },{ id:'filieres', label:'Filières' },{ id:'niveaux', label:'Niveaux' },{ id:'cohortes', label:'Cohortes' },{ id:'matieres', label:'Matières' }],
+    secondaire:    [{ id:'niveaux', label:'Promotions' },{ id:'series', label:'Séries' },{ id:'classes', label:'Classes' },{ id:'matieres', label:'Matières' }],
+    universitaire: [{ id:'groupes', label:'Cycles & Départements' },{ id:'filieres', label:'Options / Filières' },{ id:'niveaux', label:"Niveaux d'études" },{ id:'cohortes', label:'Cohortes' },{ id:'matieres', label:'Matières / UE' }],
   }
-  const cycleItems = cyclesActifs.map((c) => ({
-    label:   CYCLE_LABELS[c.cycle] ?? c.cycle,
-    href:    `${base}?cycle=${c.cycle}&onglet=groupes`,
-    Icon:    CYCLE_ICONES[c.cycle] ?? School,
-    actif:   cycleParam === c.cycle,
-    enfants: (ONGLETS_CYCLE[c.cycle] ?? []).map(({ id, label }) => ({
-      label,
-      href:  `${base}?cycle=${c.cycle}&onglet=${id}`,
-      actif: cycleParam === c.cycle && ongletURL === id,
-    })),
-  }))
+  const cycleItems = cyclesActifs.map((c) => {
+    const premierOnglet = (ONGLETS_CYCLE[c.cycle] ?? [])[0]?.id ?? 'groupes'
+    return {
+      label:   CYCLE_LABELS[c.cycle] ?? c.cycle,
+      href:    `${base}?cycle=${c.cycle}&onglet=${premierOnglet}`,
+      Icon:    CYCLE_ICONES[c.cycle] ?? School,
+      actif:   cycleParam === c.cycle,
+      enfants: (ONGLETS_CYCLE[c.cycle] ?? []).map(({ id, label }) => ({
+        label,
+        href:  `${base}?cycle=${c.cycle}&onglet=${id}`,
+        actif: cycleParam === c.cycle && (ongletURL === id || (!ongletURL && id === premierOnglet)),
+      })),
+    }
+  })
   return [
     {
       groupe: 'GESTION',
@@ -315,6 +342,13 @@ function VueEnsemble({
               ))}
             </select>
           )}
+          <button
+            type="button"
+            className="ap-btn ap-btn--ghost ap-btn--sm"
+            onClick={() => window.location.reload()}
+          >
+            <RefreshCw size={14} /> Actualiser
+          </button>
           <Link to={`${base}?section=annees`} className="ap-btn ap-btn--ghost ap-btn--sm">
             <CalendarDays size={14} aria-hidden="true" /> Années
           </Link>

@@ -47,7 +47,7 @@ function QuestionAffichee({ question, numero, correctionsVisibles }) {
               }
             >
               {option.libelle}
-              {correctionsVisibles && option.est_correcte && ' ✓ réponse correcte'}
+              {correctionsVisibles && option.est_correcte && ' (Réponse correcte)'}
             </li>
           ))}
         </ul>

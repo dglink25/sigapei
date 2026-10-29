@@ -13,16 +13,17 @@ class CohorteUniversitaire extends Model
     protected $hidden = ['id', 'etablissement_id', 'annee_id', 'filiere_id', 'niveau_id'];
 
     protected $fillable = [
-        'etablissement_id', 'annee_id', 'filiere_id', 'niveau_id',
-        'diplome', 'lettre', 'sigle', 'semestres', 'actif',
+        'etablissement_id', 'annee_id', 'subdivision_id', 'filiere_id', 'niveau_id',
+        'cycle_univ', 'diplome', 'lettre', 'sigle', 'semestres', 'actif',
     ];
     protected $casts = ['actif' => 'boolean'];
 
-    const DIPLOMES = ['licence', 'master', 'doctorat', 'ingenieur', 'bts', 'dut', 'autre'];
+    const DIPLOMES = ['licence', 'licence_pro', 'master', 'doctorat', 'ingenieur', 'bts', 'dut', 'autre'];
 
-    public function annee()   { return $this->belongsTo(AnneeAcademique::class, 'annee_id'); }
-    public function filiere() { return $this->belongsTo(SerieFiliere::class, 'filiere_id'); }
-    public function niveau()  { return $this->belongsTo(NiveauScolaire::class, 'niveau_id'); }
+    public function annee()       { return $this->belongsTo(AnneeAcademique::class, 'annee_id'); }
+    public function departement() { return $this->belongsTo(SubdivisionPedagogique::class, 'subdivision_id'); }
+    public function filiere()     { return $this->belongsTo(SerieFiliere::class, 'filiere_id'); }
+    public function niveau()      { return $this->belongsTo(NiveauScolaire::class, 'niveau_id'); }
 
     public function genererSigle(): string
     {

@@ -70,12 +70,13 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--bg-card, #ffffff);
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 0.5rem;
+  background: var(--sg-surface, #ffffff);
+  border: 1.5px solid var(--sg-border, #d0d9d2);
+  border-radius: 8px;
   padding: 0.5rem 0.75rem;
   flex: 1;
   min-width: 250px;
+  color: var(--sg-text, #1a2a1e);
 }
 
 .module-search input {
@@ -84,6 +85,16 @@
   width: 100%;
   background: transparent;
   font-size: 0.875rem;
+  color: var(--sg-text, #1a2a1e) !important;
+}
+
+.module-search input::placeholder {
+  color: var(--sg-text-muted, #8a9e92) !important;
+}
+
+.module-search svg {
+  color: var(--sg-text-muted, #8a9e92);
+  flex-shrink: 0;
 }
 
 .module-filters {
@@ -93,18 +104,25 @@
 
 .module-filter-btn {
   padding: 0.5rem 0.875rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color, #e5e7eb);
-  background: var(--bg-card, #ffffff);
+  border-radius: 8px;
+  border: 1.5px solid var(--sg-border, #dde4df);
+  background: var(--sg-surface, #ffffff);
+  color: var(--sg-text, #1a2a1e) !important;
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.module-filter-btn:hover {
+  border-color: #006B3C;
+  color: #006B3C !important;
 }
 
 .module-filter-btn.active {
-  background: var(--primary, #047857);
-  color: #ffffff;
-  border-color: var(--primary, #047857);
+  background: #006B3C !important;
+  color: #ffffff !important;
+  border-color: #006B3C !important;
 }
 
 .module-card {
@@ -269,25 +287,29 @@
 .dark .module-search {
   background: var(--sg-input-bg, #101a28);
   border-color: var(--sg-input-border, #2c3e58);
-  color: var(--sg-text, #f8fafc);
+  color: var(--sg-text, #f8fafc) !important;
 }
 [data-theme='dark'] .module-search input,
 .dark .module-search input {
-  color: var(--sg-text, #f8fafc);
+  color: var(--sg-text, #f8fafc) !important;
+}
+[data-theme='dark'] .module-search input::placeholder,
+.dark .module-search input::placeholder {
+  color: #94a3b8 !important;
 }
 
 [data-theme='dark'] .module-filter-btn,
 .dark .module-filter-btn {
-  background: var(--sg-surface, #162232);
-  border-color: var(--sg-border, #283a52);
-  color: var(--sg-text, #f8fafc);
+  background: var(--sg-surface, #162232) !important;
+  border-color: var(--sg-border, #283a52) !important;
+  color: var(--sg-text, #f8fafc) !important;
 }
 
 [data-theme='dark'] .module-filter-btn.active,
 .dark .module-filter-btn.active {
-  background: #006B3C;
-  color: #FFF6DD;
-  border-color: #006B3C;
+  background: #006B3C !important;
+  color: #ffffff !important;
+  border-color: #006B3C !important;
 }
 
 [data-theme='dark'] .module-table th,
@@ -348,5 +370,110 @@
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #fca5a5;
+}
+
+/* ── Appels à candidatures Styles ── */
+.inscription-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid var(--border-color, #e5e7eb);
+  margin-bottom: 1.5rem;
+}
+
+.inscription-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--text-secondary, #6b7280);
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+}
+
+.inscription-tab-btn:hover {
+  color: var(--primary, #047857);
+}
+
+.inscription-tab-btn.is-active {
+  color: var(--primary, #047857);
+  border-bottom-color: var(--primary, #047857);
+}
+
+.status-pill--ouvert {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.status-pill--brouillon {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.status-pill--termine {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.status-pill--annule {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+[data-theme='dark'] .status-pill--ouvert,
+.dark .status-pill--ouvert {
+  background: rgba(74, 222, 128, 0.15);
+  color: #4ade80;
+}
+
+[data-theme='dark'] .status-pill--brouillon,
+.dark .status-pill--brouillon {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
+[data-theme='dark'] .status-pill--termine,
+.dark .status-pill--termine {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+[data-theme='dark'] .status-pill--annule,
+.dark .status-pill--annule {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.appel-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.appel-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-color: rgba(4, 120, 87, 0.35);
+}
+
+[data-theme='dark'] .appel-card,
+.dark .appel-card {
+  background: var(--sg-surface, #162232);
+  border-color: var(--sg-border, #283a52);
+}
+
+.appel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.25rem;
 }
 

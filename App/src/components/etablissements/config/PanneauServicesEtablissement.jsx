@@ -442,7 +442,7 @@ export default function PanneauServicesEtablissement() {
                               En cours d'instruction…
                             </span>
                           ) : (
-                            '—'
+                            '-'
                           )}
                         </td>
                         <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>

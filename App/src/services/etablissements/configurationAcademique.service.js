@@ -48,14 +48,24 @@ export const subdivisionsService = {
 
 // ── Niveaux ───────────────────────────────────────────────────────────
 export const niveauxService = {
-  lister:  (cycle)       => api().get(`${CFG}/niveaux${cycle ? `?cycle=${cycle}` : ''}`),
+  lister:  (params = {}) => {
+    const qs = typeof params === 'string'
+      ? `cycle=${params}`
+      : new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined && v !== ''))).toString()
+    return api().get(`${CFG}/niveaux${qs ? `?${qs}` : ''}`)
+  },
   creer:   (body)        => api().post(`${CFG}/niveaux`, body),
   modifier:(uuid, body)  => api().patch(`${CFG}/niveaux/${uuid}`, body),
 }
 
 // ── Séries / Filières ─────────────────────────────────────────────────
 export const seriesService = {
-  lister:  (cycle)       => api().get(`${CFG}/series${cycle ? `?cycle=${cycle}` : ''}`),
+  lister:  (params = {}) => {
+    const qs = typeof params === 'string'
+      ? `cycle=${params}`
+      : new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([_, v]) => v !== undefined && v !== ''))).toString()
+    return api().get(`${CFG}/series${qs ? `?${qs}` : ''}`)
+  },
   creer:   (body)        => api().post(`${CFG}/series`, body),
   modifier:(uuid, body)  => api().patch(`${CFG}/series/${uuid}`, body),
 }

@@ -35,7 +35,9 @@
   --ap-transition: 0.18s ease;
 
   display: flex;
-  min-height: 100dvh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   background: var(--pl-bg);
   font-family: var(--pl-font);
   font-size: 15px;
@@ -214,14 +216,18 @@
 ══════════════════════════════════════ */
 .ml-main {
   margin-left: var(--pl-nav-w);
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Topbar */
 .ml-topbar {
+  flex-shrink: 0;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -303,7 +309,13 @@
 .ml-icon-btn:hover { background: var(--pl-hover); color: var(--pl-text); }
 .ml-icon-btn--logout:hover { background: rgba(192,57,43,0.08); color: #c0392b; }
 
-.ml-content { flex: 1; overflow-y: auto; }
+.ml-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
 
 /* Animations */
 @keyframes ml-fade-in { from { opacity: 0 } to { opacity: 1 } }

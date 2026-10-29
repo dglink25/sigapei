@@ -1349,15 +1349,15 @@ body {
 
 [data-theme='dark'] .module-filter-btn,
 .dark .module-filter-btn {
-  background: var(--bg-card) !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-primary) !important;
+  background: var(--sg-surface) !important;
+  border-color: var(--sg-border) !important;
+  color: var(--sg-text, #f8fafc) !important;
 }
 
 [data-theme='dark'] .module-filter-btn.active,
 .dark .module-filter-btn.active {
   background: #006B3C !important;
-  color: #FFF6DD !important;
+  color: #ffffff !important;
   border-color: #006B3C !important;
 }
 

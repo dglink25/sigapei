@@ -53,12 +53,29 @@ import UtilisateursPage          from './pages/AdministrationPrincipale/Utilisat
 /* E-Learning (ajouté par fusion) */
 import ElearningApp from './pages/elearning/ElearningApp'
 
+import { Suspense, lazy } from 'react'
+import Loader from './components/commun/Loader'
+
 /* Modules avec layout propre (chargement direct sans PortailLayout) */
-import ScolaritePage from './pages/etablissements/ScolaritePage'
+const ScolaritePage = lazy(() => import('./pages/etablissements/ScolaritePage'))
+const InscriptionPage = lazy(() => import('./pages/inscription/InscriptionPage'))
 
 /** Wrapper direct pour Scolarité (sans PortailLayout). */
 function ScolariteDirecte() {
-  return <ScolaritePage />
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}><Loader mode="inline" label="Ouverture de Scolarité…" /></div>}>
+      <ScolaritePage />
+    </Suspense>
+  )
+}
+
+/** Wrapper direct pour Inscription (sans PortailLayout). */
+function InscriptionDirecte() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}><Loader mode="inline" label="Ouverture des Inscriptions…" /></div>}>
+      <InscriptionPage />
+    </Suspense>
+  )
 }
 
 /** Hôte d'un établissement (sous-domaine en production). */
@@ -82,9 +99,10 @@ function routesEtablissement(base) {
       </Route>
 
       {/* ── Modules avec leur propre layout (sidebar dédiée) ── */}
-      {/* Scolarité et futurs modules : rendus directement, SANS PortailLayout */}
+      {/* Scolarité et Inscription : rendus directement, SANS PortailLayout */}
       <Route element={<RequireEtablissement />}>
         <Route path={p('/scolarite/*')} element={<ScolariteDirecte />} />
+        <Route path={p('/inscription/*')} element={<InscriptionDirecte />} />
       </Route>
 
       {/* ── Services sans layout propre + compte + configuration : dans PortailLayout ── */}

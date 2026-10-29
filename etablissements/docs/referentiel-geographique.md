@@ -104,6 +104,24 @@ JOIN etablissements.pays p ON p.id = d.pays_id
 WHERE p.code_iso = 'BJ' AND (a.source IS NULL OR a.source <> 'geonames');
 ```
 
+### Retrouver les arrondissements « sans parent » : suggestions à vérifier
+
+Les arrondissements ignorés (« N sans parent ignorés ») existent dans GeoNames mais sans commune identifiable. Pour les voir, avec la commune **la plus proche** par les coordonnées (une suggestion : un arrondissement proche de la limite entre deux communes peut être mal attribué) :
+
+```bash
+php artisan geo:geonames BJ --sans-telechargement --orphelins --orphelins-csv=storage/app/orphelins-benin.csv
+```
+
+Cette commande **n'écrit rien en base**. Après vérification du tableau affiché (corriger à la main les lignes douteuses dans le CSV, en particulier celles à grande distance, et retirer celles déjà présentes), le fichier se passe à `geo:arbre` :
+
+```bash
+php artisan geo:arbre storage/app/orphelins-benin.csv --approximatif --simuler
+```
+
+**Ne jamais ajouter `--renommer` avec ce fichier** : les noms de communes qu'il contient sont ceux de GeoNames, sans accents (« Ze », « Ouake »). Avec `--renommer`, ils remplaceraient les orthographes officielles déjà corrigées en base (« Zè », « Ouaké »). Ce fichier sert uniquement à rattacher des arrondissements à une commune.
+
+Les arrondissements déjà ajoutés par ailleurs (par exemple ceux de Cotonou, créés par `geo:arbre` avec un fichier dédié) apparaissent encore dans cette liste : le bilan de la simulation les compte alors comme « déjà présents ».
+
 ### Données de test qui bloquent le nettoyage
 
 Une ligne conservée après `--nettoyer` est **utilisée** par une demande ou un établissement (souvent des données de test créées avant l'import). Pour voir lesquels :
