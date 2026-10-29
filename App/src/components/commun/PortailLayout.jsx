@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useAuth }            from '../../context/identite/AuthContext'
 import ThemeToggle            from './ThemeToggle'
+import NotificationBell       from './NotificationBell'
 import { ENV }                from '../../config/commun/env'
 import { roleCodeOf }         from '../../config/identite/routes'
 import { lienEtablissement }  from '../../lib/etablissements/subdomain'
@@ -206,7 +207,7 @@ export default function PortailLayout() {
             </Link>
             <div className="pl-topbar-sep" aria-hidden="true" />
             <div className="pl-topbar-actions">
-              <button className="pl-icon-btn" aria-label="Notifications"><Bell size={19} /></button>
+              <NotificationBell className="pl-icon-btn" />
               <ThemeToggle className="pl-icon-btn" />
               <button type="button" className="pl-icon-btn pl-icon-btn--logout" onClick={() => logout('manual')} aria-label="Déconnexion">
                 <LogOut size={19} />

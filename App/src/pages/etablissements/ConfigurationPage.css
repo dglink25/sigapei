@@ -260,12 +260,15 @@
 .cfg-modale-pied {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   padding: 14px 22px;
   border-top: 1px solid var(--sg-border, #dde4df);
   background: var(--sg-surface, #fff);
   flex-shrink: 0;
+}
+.cfg-modale-pied > :only-child {
+  margin-left: auto;
 }
 
 @media (max-width: 640px) {

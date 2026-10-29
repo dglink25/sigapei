@@ -57,13 +57,15 @@ export default function ChecklistDrawer({
       onClose={onClose}
       footer={
         <>
-          <span className={`ap-drawer-count${trop ? ' is-over' : ''}`} aria-live="polite">
-            {sel.size} sélectionné{sel.size > 1 ? 's' : ''}{max !== undefined ? ` / ${max} max.` : ''}
-          </span>
           <button type="button" className="ap-btn ap-btn--ghost" onClick={onClose} disabled={busy}>Annuler</button>
-          <button type="button" className="ap-btn" disabled={busy || sel.size === 0 || trop} onClick={() => onSubmit([...sel])}>
-            {busy ? 'Enregistrement…' : submitLabel}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span className={`ap-drawer-count${trop ? ' is-over' : ''}`} aria-live="polite">
+              {sel.size} sélectionné{sel.size > 1 ? 's' : ''}{max !== undefined ? ` / ${max} max.` : ''}
+            </span>
+            <button type="button" className="ap-btn" disabled={busy || sel.size === 0 || trop} onClick={() => onSubmit([...sel])}>
+              {busy ? 'Enregistrement…' : submitLabel}
+            </button>
+          </div>
         </>
       }
     >

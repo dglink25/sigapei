@@ -1442,3 +1442,110 @@ body {
   background: rgba(239, 68, 68, 0.28) !important;
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   1. ERGONOMIE GLOBALE DES FORMULAIRES & MODALES
+   Bouton Annuler TOUJOURS complètement à gauche, action principale à droite
+   ════════════════════════════════════════════════════════════════════ */
+.cfg-modale-pied,
+.modal-pro-footer,
+.ap-drawer-foot,
+.modal-actions,
+.ie-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.cfg-modale-pied > :only-child,
+.modal-pro-footer > :only-child,
+.ap-drawer-foot > :only-child,
+.modal-actions > :only-child,
+.ie-actions > :only-child {
+  margin-left: auto !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   2. CONTRASTE STRICT DES BANDEAUX & EN-TÊTES VERTS
+   Jamais de texte noir sur fond vert : boutons fantômes / rafraîchir en blanc pur
+   ════════════════════════════════════════════════════════════════════ */
+.db-welcome .ap-btn--ghost,
+.cf-welcome .ap-btn--ghost,
+.sc-welcome .ap-btn--ghost,
+.in-welcome .ap-btn--ghost,
+.dash-welcome .ap-btn--ghost,
+.ap-welcome .ap-btn--ghost,
+[class*='-welcome'] .ap-btn--ghost,
+[class*='-welcome'] button.ap-btn--ghost,
+[class*='-welcome'] a.ap-btn--ghost {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  font-weight: 600 !important;
+}
+
+.db-welcome .ap-btn--ghost:hover:not(:disabled),
+.cf-welcome .ap-btn--ghost:hover:not(:disabled),
+.sc-welcome .ap-btn--ghost:hover:not(:disabled),
+.in-welcome .ap-btn--ghost:hover:not(:disabled),
+.dash-welcome .ap-btn--ghost:hover:not(:disabled),
+.ap-welcome .ap-btn--ghost:hover:not(:disabled),
+[class*='-welcome'] .ap-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.db-welcome .ap-btn--ghost svg,
+.cf-welcome .ap-btn--ghost svg,
+.sc-welcome .ap-btn--ghost svg,
+.in-welcome .ap-btn--ghost svg,
+.dash-welcome .ap-btn--ghost svg,
+.ap-welcome .ap-btn--ghost svg,
+[class*='-welcome'] .ap-btn--ghost svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   3. RENDU INSTITUTIONNEL TÉLÉPHONE - STRICTEMENT AUCUN ÉMOJI / STICKER
+   ════════════════════════════════════════════════════════════════════ */
+.PhoneInputCountryIconImg,
+.PhoneInputCountryIcon--border {
+  display: none !important;
+}
+
+.PhoneInputCountryIcon {
+  box-shadow: none !important;
+  background: transparent !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.sg-phone-flag-iso {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sg-font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--sg-primary-dark, #005a30);
+  background: rgba(0, 107, 60, 0.08);
+  border: 1px solid rgba(0, 107, 60, 0.3);
+  border-radius: 4px;
+  padding: 2px 5px;
+  min-width: 26px;
+  height: 20px;
+  line-height: 1;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+[data-theme='dark'] .sg-phone-flag-iso {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.35);
+}
+
+
+

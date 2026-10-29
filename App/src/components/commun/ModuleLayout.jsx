@@ -5,6 +5,7 @@ import { useAuth }           from '../../context/identite/AuthContext'
 import { roleCodeOf }        from '../../config/identite/routes'
 import { lienEtablissement } from '../../lib/etablissements/subdomain'
 import ThemeToggle           from './ThemeToggle'
+import NotificationBell      from './NotificationBell'
 import { ENV }               from '../../config/commun/env'
 import { portailService }    from '../../services/identite/portail.service'
 import useSlugEtablissement  from '../../hooks/etablissements/useSlugEtablissement'
@@ -164,7 +165,7 @@ export default function ModuleLayout({ titre, icone: ModuleIcone, couleur, nav =
             </Link>
             <div className="ml-topbar-sep" aria-hidden="true" />
             <div className="ml-topbar-actions">
-              <button className="ml-icon-btn" aria-label="Notifications"><Bell size={19} /></button>
+              <NotificationBell className="ml-icon-btn" />
               <ThemeToggle className="ml-icon-btn" />
               <button type="button" className="ml-icon-btn ml-icon-btn--logout" onClick={() => logout('manual')} aria-label="Déconnexion">
                 <LogOut size={19} />

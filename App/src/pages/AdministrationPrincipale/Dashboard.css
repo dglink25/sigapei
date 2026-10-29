@@ -14,6 +14,23 @@
 .db-welcome-title { margin: 0; font-size: 1.2rem; font-weight: 700; }
 .db-welcome-sub   { margin: 3px 0 0; font-size: 0.86rem; color: rgba(255,246,221,0.78); }
 
+/* Boutons dans le bandeau vert : Contraste garanti (texte blanc pur, jamais noir) */
+.db-welcome .ap-btn.ap-btn--ghost {
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  font-weight: 600 !important;
+}
+.db-welcome .ap-btn.ap-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+.db-welcome .ap-btn.ap-btn--ghost svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
 /* ── Statistiques ── */
 .db-stats {
   display: grid;

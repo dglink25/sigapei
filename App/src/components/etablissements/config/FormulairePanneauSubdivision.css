@@ -96,12 +96,15 @@
 .modal-pro-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
   padding: 16px 24px;
   background: var(--sg-surface-2, #f8faf9);
   border-top: 1px solid var(--sg-border, #e2e8e4);
   flex-shrink: 0;
+}
+.modal-pro-footer > :only-child {
+  margin-left: auto;
 }
 
 @media (max-width: 640px) {
