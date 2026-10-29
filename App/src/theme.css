@@ -1580,6 +1580,224 @@ body {
   min-height: 28px;
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   5. SÉCURITÉ INSTITUTIONNELLE SIGAPEI : MODALES STYLE PAGE 404
+   Charte graphique : Vert #006B3C · Or #E9AA20 · Crème #FFF6DD · Noir #000000
+   Arrière-plan : /bg-sigapei.jpg + dégradé émeraude signature
+   ════════════════════════════════════════════════════════════════════ */
+.sg-modal-page {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
+  color: #fff6dd;
+  background-color: #04201a;
+  background-image: linear-gradient(180deg, rgba(0, 20, 12, 0.45), rgba(0, 20, 12, 0.7)), url('/bg-sigapei.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-sizing: border-box;
+  animation: sg-modal-fade 0.25s ease-out;
+}
 
+@keyframes sg-modal-fade {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.sg-modal-card {
+  margin: auto;
+  width: 100%;
+  max-width: 490px;
+  padding: 38px 34px 28px;
+  text-align: center;
+  border-radius: 40px;
+  border: 2px solid rgba(255, 246, 221, 0.55);
+  background: linear-gradient(160deg, rgba(255, 246, 221, 0.14), rgba(0, 107, 60, 0.2) 50%, rgba(0, 0, 0, 0.35));
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  box-sizing: border-box;
+}
+
+.sg-modal-logo {
+  height: 52px;
+  margin-bottom: 16px;
+  object-fit: contain;
+  display: inline-block;
+}
+
+.sg-modal-code {
+  margin: 0;
+  font-size: 4.2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #e9aa20;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+}
+
+.sg-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: rgba(233, 170, 32, 0.16);
+  border: 1px solid rgba(233, 170, 32, 0.45);
+  color: #e9aa20;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sg-modal-title {
+  margin: 10px 0 12px;
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.25;
+  color: #fff6dd;
+}
+
+.sg-modal-msg {
+  margin: 0 0 20px;
+  line-height: 1.6;
+  font-size: 0.94rem;
+  color: rgba(255, 246, 221, 0.9);
+}
+
+.sg-modal-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background: rgba(0, 107, 60, 0.35);
+  border: 1px solid rgba(255, 246, 221, 0.25);
+  color: #fff6dd;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.sg-modal-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e9aa20;
+  box-shadow: 0 0 8px rgba(233, 170, 32, 0.8);
+  animation: ap-pulse-kf 1.5s infinite;
+}
+
+.sg-modal-timer-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 246, 221, 0.20);
+  border-radius: 18px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.sg-modal-timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sg-modal-timer-icon {
+  color: #e9aa20;
+}
+
+.sg-modal-timer-val {
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #e9aa20;
+  font-variant-numeric: tabular-nums;
+}
+
+.sg-modal-timer-unit {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 246, 221, 0.85);
+}
+
+.sg-modal-progress-bg {
+  width: 100%;
+  height: 7px;
+  background: rgba(255, 246, 221, 0.15);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.sg-modal-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #e9aa20, #0a8a52);
+  border-radius: 9999px;
+  transition: width 1s linear;
+}
+
+.sg-modal-timer-sub {
+  margin: 0;
+  font-size: 0.80rem;
+  line-height: 1.45;
+  color: rgba(255, 246, 221, 0.75);
+}
+
+.sg-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.sg-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  height: 48px;
+  padding: 0 22px;
+  border: 1.5px solid #fff6dd;
+  border-radius: 14px;
+  background: rgba(255, 246, 221, 0.1);
+  color: #fff6dd;
+  font: inherit;
+  font-size: 0.90rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sg-modal-btn.is-primary {
+  background: linear-gradient(180deg, #0a8a52, #006b3c);
+  border-color: rgba(233, 170, 32, 0.7);
+  box-shadow: 0 4px 18px rgba(0, 107, 60, 0.5);
+}
+
+.sg-modal-btn:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.sg-modal-btn:active {
+  transform: translateY(0);
+}
+
+.sg-modal-foot {
+  margin: 22px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 246, 221, 0.65);
+}
 
 

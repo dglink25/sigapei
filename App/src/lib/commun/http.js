@@ -1,6 +1,7 @@
 import { ENV } from '../../config/commun/env'
 import { tokenStore, extractSession } from '../identite/tokenStore'
 import { authEvents } from '../identite/authEvents'
+import { rateLimitGuard } from '../../services/securite/rateLimitGuard.service'
 
 export class ApiError extends Error {
   constructor({ status = 0, kind = 'http', title = 'Erreur', message = '', details = null, sessionExpired = false } = {}) {
@@ -109,6 +110,16 @@ export function createHttp(baseUrl) {
   const root = `${baseUrl}${ENV.apiPrefix}`
 
   async function request(method, path, { body, auth = true, retry = true, headers: extraHeaders = {} } = {}) {
+    if (rateLimitGuard.isLocked()) {
+      const remaining = rateLimitGuard.getRemainingSeconds()
+      throw new ApiError({
+        status: 429,
+        kind: 'rate_limit',
+        title: 'Sécurité : requêtes temporairement bloquées',
+        message: `Trop de requêtes détectées (protection anti-surcharge). Veuillez patienter ${remaining} seconde(s) avant de soumettre une nouvelle requête.`,
+      })
+    }
+
     const ctrl = new AbortController()
     const timer = setTimeout(() => ctrl.abort(), ENV.timeout)
     const headers = { Accept: 'application/json', ...extraHeaders }
@@ -133,6 +144,12 @@ export function createHttp(baseUrl) {
         : new ApiError({ kind: 'network', title: 'Service injoignable', message: 'Impossible de joindre le serveur. Vérifiez votre connexion Internet puis réessayez.' })
     } finally {
       clearTimeout(timer)
+    }
+
+    if (res.status === 429) {
+      const retryHeader = res.headers?.get?.('Retry-After')
+      const retrySec = retryHeader ? parseInt(retryHeader, 10) : 60
+      rateLimitGuard.lock(isNaN(retrySec) ? 60 : retrySec, 'Trop de requêtes ou tentatives détectées sur le serveur')
     }
 
     let sessionExpired = false

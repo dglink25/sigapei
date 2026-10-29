@@ -1,7 +1,8 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { notificationService } from '../../services/commun/notification.service'
+import { realtimeService } from '../../services/commun/realtime.service'
+import { pushNotificationService } from '../../services/commun/pushNotification.service'
 import { useAuth } from '../identite/AuthContext'
 import { useNotify } from './NotifyContext'
 import NotificationDrawer from '../../components/commun/NotificationDrawer'
@@ -21,6 +22,7 @@ export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([])
   const [ouvert, setOuvert] = useState(false)
   const [selection, setSelection] = useState([])
+  const [permissionPush, setPermissionPush] = useState(() => pushNotificationService.obtenirPermission())
 
   // Recharger les notifications selon l'utilisateur
   const recharger = useCallback(() => {
@@ -31,6 +33,44 @@ export function NotificationProvider({ children }) {
   useEffect(() => {
     recharger()
   }, [recharger])
+
+  // Synchronisation en temps réel (multi-onglets et événements plateforme)
+  useEffect(() => {
+    const unsubNotif = realtimeService.abonner('NOUVELLE_NOTIFICATION', (nouvelle) => {
+      const estSuperAdmin = userRole === 'super_admin'
+      const concerne = estSuperAdmin
+        ? nouvelle.roleRequis?.includes('super_admin') || nouvelle.categorie === 'securite' || nouvelle.type?.startsWith('DEMANDE_')
+        : !nouvelle.roleRequis?.includes('super_admin')
+
+      if (!concerne) return
+
+      notificationService.ajouterNotification(nouvelle)
+      setNotifications((prev) => [nouvelle, ...prev.filter((n) => n.id !== nouvelle.id)])
+
+      // Déclencher Web Push et son discret institutionnel
+      pushNotificationService.afficherNotificationPush(nouvelle.titre, {
+        body: nouvelle.message,
+        lien: nouvelle.lien,
+        tag: nouvelle.id,
+      })
+
+      notify.info(nouvelle.titre, nouvelle.message)
+    })
+
+    const unsubLue = realtimeService.abonner('NOTIFICATION_LUE', ({ id }) => {
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)))
+    })
+
+    const unsubSync = realtimeService.abonner('NOTIFICATIONS_SYNC', () => {
+      recharger()
+    })
+
+    return () => {
+      unsubNotif()
+      unsubLue()
+      unsubSync()
+    }
+  }, [userRole, recharger, notify])
 
   // Compteur de non-lues
   const nbNonLues = useMemo(() => {
@@ -46,6 +86,7 @@ export function NotificationProvider({ children }) {
   const marquerCommeLu = useCallback((id) => {
     notificationService.marquerCommeLu(id)
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)))
+    realtimeService.publier('NOTIFICATION_LUE', { id })
   }, [])
 
   const marquerSelectionCommeLue = useCallback(() => {
@@ -54,12 +95,14 @@ export function NotificationProvider({ children }) {
     const setIds = new Set(selection)
     setNotifications((prev) => prev.map((n) => (setIds.has(n.id) ? { ...n, lu: true } : n)))
     setSelection([])
+    realtimeService.publier('NOTIFICATIONS_SYNC')
     notify.success('Notifications mises à jour', `${selection.length} notification(s) marquée(s) comme lue(s).`)
   }, [selection, notify])
 
   const marquerToutCommeLu = useCallback(() => {
     notificationService.marquerToutCommeLu(userRole)
     setNotifications((prev) => prev.map((n) => ({ ...n, lu: true })))
+    realtimeService.publier('NOTIFICATIONS_SYNC')
     notify.info('Notifications lues', 'Toutes les notifications ont été marquées comme lues.')
   }, [userRole, notify])
 
@@ -67,6 +110,7 @@ export function NotificationProvider({ children }) {
     notificationService.supprimerNotification(id)
     setNotifications((prev) => prev.filter((n) => n.id !== id))
     setSelection((prev) => prev.filter((item) => item !== id))
+    realtimeService.publier('NOTIFICATIONS_SYNC')
   }, [])
 
   const supprimerSelection = useCallback(() => {
@@ -76,6 +120,7 @@ export function NotificationProvider({ children }) {
     const setIds = new Set(selection)
     setNotifications((prev) => prev.filter((n) => !setIds.has(n.id)))
     setSelection([])
+    realtimeService.publier('NOTIFICATIONS_SYNC')
     notify.success('Suppression effectuée', `${nb} notification(s) supprimée(s).`)
   }, [selection, notify])
 
@@ -83,8 +128,24 @@ export function NotificationProvider({ children }) {
     notificationService.supprimerTout(userRole)
     setNotifications([])
     setSelection([])
+    realtimeService.publier('NOTIFICATIONS_SYNC')
     notify.info('Historique vidé', 'Toutes les notifications ont été supprimées.')
   }, [userRole, notify])
+
+  const demanderPermissionPush = useCallback(async () => {
+    const perm = await pushNotificationService.demanderPermission()
+    setPermissionPush(perm)
+    if (perm === 'granted') {
+      notify.success('Notifications push activées', 'Vous recevrez désormais les alertes officielles directement sur votre appareil.')
+      pushNotificationService.afficherNotificationPush('SIGAPEI - Notifications actives', {
+        body: 'Le canal de communication temps réel et notifications push est opérationnel.',
+        lien: '/',
+      })
+    } else if (perm === 'denied') {
+      notify.warning('Notifications push bloquées', 'Veuillez autoriser les notifications dans les paramètres de votre navigateur pour recevoir les alertes directes.')
+    }
+    return perm
+  }, [notify])
 
   const toggleSelection = useCallback((id) => {
     setSelection((prev) =>
@@ -140,6 +201,8 @@ export function NotificationProvider({ children }) {
       nbNonLues,
       ouvert,
       selection,
+      permissionPush,
+      demanderPermissionPush,
       ouvrir,
       fermer,
       recharger,
@@ -159,6 +222,8 @@ export function NotificationProvider({ children }) {
       nbNonLues,
       ouvert,
       selection,
+      permissionPush,
+      demanderPermissionPush,
       ouvrir,
       fermer,
       recharger,
