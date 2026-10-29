@@ -7,7 +7,7 @@ import {
 import { useAuth }    from '../../context/identite/AuthContext'
 import { useNotify }  from '../../context/commun/NotifyContext'
 import { ENV }        from '../../config/commun/env'
-import { roleCodeOf } from '../../config/identite/routes'
+import { roleCodeOf, determinerEspaceRole, cheminEspaceRole } from '../../config/identite/routes'
 import { serviceDisponible } from '../../config/services/registre'
 import { MODE_SOUS_DOMAINE, lienEtablissement } from '../../lib/etablissements/subdomain'
 import { allerVersEtablissement } from '../../lib/identite/transfert'
@@ -72,6 +72,14 @@ export default function Portail() {
 
   if (nonConforme && !MODE_SOUS_DOMAINE)
     return <Navigate to={lienEtablissement(etab.slug, '/portail')} replace />
+
+  /* ── Redirection si l'accès au portail est bloqué ── */
+  if (data?.motif === 'PORTAIL_INACCESSIBLE' || (!data?.estAdmin && data?.peutVoirPortail === false)) {
+    const roleCode = roleCodeOf(user)
+    const espace = determinerEspaceRole(roleCode)
+    const cible = espace ? cheminEspaceRole(espace) : '/dashboard'
+    return <Navigate to={lienEtablissement(slug, cible)} replace />
+  }
 
   /* ── Corps central ── */
   let corps

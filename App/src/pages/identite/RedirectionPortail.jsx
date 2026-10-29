@@ -1,16 +1,28 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/identite/AuthContext'
 import { useNotify } from '../../context/commun/NotifyContext'
-import { DASHBOARD_TEMP_PATH } from '../../config/identite/routes'
+import {
+  DASHBOARD_TEMP_PATH,
+  determinerEspaceRole,
+  cheminEspaceRole,
+  roleCodeOf,
+} from '../../config/identite/routes'
 import { allerVersEtablissement } from '../../lib/identite/transfert'
 import { portailService } from '../../services/identite/portail.service'
 import Loader from '../../components/commun/Loader'
 
 /**
  * Redirection intelligente après connexion (hors super administrateur) :
- * administrateur ou au moins un service accessible -> portail de son établissement ; sinon tableau de bord temporaire.
+ * - Si administrateur ou portail accessible avec au moins un service -> /portail
+ * - Si l'accès au portail n'est pas permis :
+ *   * apprenant / étudiant / élève -> /apprenant (Dashboard Apprenant)
+ *   * parent / tuteur -> /parent (Dashboard Parent)
+ *   * prestataire / prestataire externe -> /prestataire (Dashboard Prestataire)
+ *   * sinon -> /dashboard temporaire
  */
 export default function RedirectionPortail() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const notify = useNotify()
   const lance = useRef(false)
@@ -21,19 +33,29 @@ export default function RedirectionPortail() {
     const executer = async () => {
       try {
         const p = await portailService.lire()
-        const ouvre = p?.etablissement && (p.estAdmin || p.services?.some((s) => s.accessible))
+        const ouvre = p?.etablissement && (p.estAdmin || (p.motif !== 'PORTAIL_INACCESSIBLE' && p.services?.some((s) => s.accessible)))
         if (!ouvre) {
-          navigate(DASHBOARD_TEMP_PATH, { replace: true })
+          const roleCode = roleCodeOf(user)
+          const espace = determinerEspaceRole(roleCode)
+          const cible = espace ? cheminEspaceRole(espace) : DASHBOARD_TEMP_PATH
+          if (p?.etablissement?.slug) {
+            await allerVersEtablissement(p.etablissement.slug, cible, navigate)
+          } else {
+            navigate(cible, { replace: true })
+          }
           return
         }
         await allerVersEtablissement(p.etablissement.slug, '/portail', navigate)
       } catch (err) {
         notify.fromError(err)
-        navigate(DASHBOARD_TEMP_PATH, { replace: true })
+        const roleCode = roleCodeOf(user)
+        const espace = determinerEspaceRole(roleCode)
+        const cible = espace ? cheminEspaceRole(espace) : DASHBOARD_TEMP_PATH
+        navigate(cible, { replace: true })
       }
     }
     executer()
-  }, [navigate, notify])
+  }, [navigate, notify, user])
 
   return <Loader label="Ouverture de votre espace…" />
 }
