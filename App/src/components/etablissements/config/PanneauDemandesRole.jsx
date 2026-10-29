@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { Plus, X, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { demandesRoleEtabService } from '../../../services/identite/rolesEtablissements.service'
+import Loader from '../../commun/Loader'
 
 const STATUT_BADGE = { en_attente:'ap-badge--warning', acceptee:'ap-badge--success', refusee:'ap-badge--danger' }
 const STATUT_LABEL = { en_attente:'En attente', acceptee:'Acceptée', refusee:'Refusée' }
@@ -98,8 +99,8 @@ export default function PanneauDemandesRole() {
       </div>
 
       {charge ? (
-        <div className="ap-card">
-          {[0,1].map((i) => <div key={i} className="ap-skel-row"><div className="ap-skel ap-skel--tile" /><div className="ap-skel ap-skel--line" /></div>)}
+        <div className="ap-card" style={{ padding: '3.5rem', display: 'flex', justifyContent: 'center' }}>
+          <Loader mode="inline" label="Chargement des demandes de rôle…" />
         </div>
       ) : demandes.length === 0 ? (
         <div className="ap-card ap-empty">

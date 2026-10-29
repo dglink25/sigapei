@@ -1547,5 +1547,52 @@ body {
   border-color: rgba(74, 222, 128, 0.35);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   4. ANIMATIONS UNIVERSELLES DE CHARGEMENT & SPINNERS
+   ════════════════════════════════════════════════════════════════════ */
+.ap-spin,
+.sg-spin,
+.spin {
+  display: inline-block;
+  animation: ap-spin-kf 0.85s linear infinite !important;
+  transform-origin: center center;
+}
+
+@keyframes ap-spin-kf {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes ap-pulse-kf {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.38; transform: scale(0.98); }
+}
+
+.ap-skel,
+.cf-stat-skeleton {
+  animation: ap-pulse-kf 1.3s ease-in-out infinite !important;
+}
+
+.cf-stat-skeleton {
+  display: inline-block;
+  height: 22px;
+  width: 32px;
+  background: rgba(0, 107, 60, 0.18);
+  border-radius: 6px;
+  vertical-align: middle;
+}
+
+[data-theme='dark'] .cf-stat-skeleton {
+  background: rgba(74, 222, 128, 0.22);
+}
+
+.cf-stat-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+}
+
+
 
 

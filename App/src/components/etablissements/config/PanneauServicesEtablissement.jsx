@@ -23,6 +23,7 @@ import { EtatBadge } from '../../administration/Badges'
 import Drawer from '../../administration/Drawer'
 import { Flash, useFlash } from '../../administration/Flash'
 import { SkeletonList } from '../../administration/Skeleton'
+import Loader from '../../commun/Loader'
 import '../../../pages/AdministrationPrincipale/admin.css'
 import '../../../pages/AdministrationPrincipale/services.css'
 import '../../administration/admin-ui.css'
@@ -230,18 +231,24 @@ export default function PanneauServicesEtablissement() {
       <div className="sv-stats">
         <div className="ap-card sv-stat sv-rise" style={{ '--i': 1 }}>
           <p className="sv-stat-lbl">Services assignés</p>
-          <p className="sv-stat-val">{loading ? '…' : servicesAssignes.length}</p>
+          <p className="sv-stat-val">
+            {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : servicesAssignes.length}
+          </p>
         </div>
         <div className="ap-card sv-stat sv-rise" style={{ '--i': 2 }}>
           <p className="sv-stat-lbl">Actifs</p>
-          <p className="sv-stat-val">{loading ? '…' : nbActifs}</p>
+          <p className="sv-stat-val">
+            {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : nbActifs}
+          </p>
         </div>
         <div
           className={`ap-card sv-stat sv-rise ${demandesEnAttente.length > 0 ? 'sv-stat--gold' : ''}`}
           style={{ '--i': 3 }}
         >
           <p className="sv-stat-lbl">Demandes en cours</p>
-          <p className="sv-stat-val">{loading ? '…' : demandesEnAttente.length}</p>
+          <p className="sv-stat-val">
+            {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : demandesEnAttente.length}
+          </p>
         </div>
       </div>
 
@@ -286,8 +293,8 @@ export default function PanneauServicesEtablissement() {
       {/* ── Contenu selon onglet actif ── */}
       {tab === 'services' ? (
         loading && servicesAssignes.length === 0 ? (
-          <div className="ap-card ap-card--flush">
-            <SkeletonList rows={4} />
+          <div className="ap-card" style={{ padding: '3.5rem', display: 'flex', justifyContent: 'center' }}>
+            <Loader mode="inline" label="Chargement des services assignés…" />
           </div>
         ) : servicesFiltres.length === 0 ? (
           <div className="ap-card ap-empty">
