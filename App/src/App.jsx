@@ -58,6 +58,10 @@ import UtilisateursPage          from './pages/AdministrationPrincipale/Utilisat
 /* E-Learning (ajouté par fusion) */
 import ElearningApp from './pages/elearning/ElearningApp'
 
+/* Modales de sécurité globale */
+import RateLimitModal from './components/securite/RateLimitModal'
+import TabConflictModal from './components/securite/TabConflictModal'
+
 import { Suspense, lazy } from 'react'
 import Loader from './components/commun/Loader'
 
@@ -141,25 +145,32 @@ export default function App() {
   /* ── Sous-domaine d'un établissement ── */
   if (SLUG_HOTE) {
     return (
-      <Routes>
-        {routesEtablissement('')}
-        <Route path={LOGIN_PATH} element={<VersConnexion />} />
-        <Route element={<RequireEtablissement />}>
-          <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
-        </Route>
-        <Route path={FORBIDDEN_PATH} element={<ForbiddenPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+      <>
+        <RateLimitModal />
+        <TabConflictModal />
+        <Routes>
+          {routesEtablissement('')}
+          <Route path={LOGIN_PATH} element={<VersConnexion />} />
+          <Route element={<RequireEtablissement />}>
+            <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
+          </Route>
+          <Route path={FORBIDDEN_PATH} element={<ForbiddenPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </>
     )
   }
 
   /* ── Plateforme (domaine de base, ou application locale) ── */
   return (
-    <Routes>
-      {/* ── Visiteurs uniquement ── */}
-      <Route element={<PublicOnly />}>
-        <Route path={LOGIN_PATH} element={<AuthPage />} />
-      </Route>
+    <>
+      <RateLimitModal />
+      <TabConflictModal />
+      <Routes>
+        {/* ── Visiteurs uniquement ── */}
+        <Route element={<PublicOnly />}>
+          <Route path={LOGIN_PATH} element={<AuthPage />} />
+        </Route>
 
       {/* ── Onboarding public ── */}
       <Route path={PATHS.demande}         element={<DemandePage />} />
@@ -212,5 +223,6 @@ export default function App() {
       <Route path={FORBIDDEN_PATH} element={<ForbiddenPage />} />
       <Route path="*"              element={<NotFoundPage />} />
     </Routes>
+    </>
   )
 }

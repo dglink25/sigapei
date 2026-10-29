@@ -11,6 +11,7 @@ import { ENV }                from '../../config/commun/env'
 import { roleCodeOf }         from '../../config/identite/routes'
 import { lienEtablissement }  from '../../lib/etablissements/subdomain'
 import { portailService }     from '../../services/identite/portail.service'
+import { persistentStorage }  from '../../services/stockage/persistentStorage.service'
 import useSlugEtablissement   from '../../hooks/etablissements/useSlugEtablissement'
 import './PortailLayout.css'
 
@@ -26,9 +27,10 @@ export default function PortailLayout() {
   const location         = useLocation()
   const slug             = useSlugEtablissement()
 
+  const cachedEtab = persistentStorage.get('sigapei_portail_info')?.value?.etablissement
   const [navOuvert,        setNavOuvert]        = useState(false)
-  const [etablissementNom, setEtablissementNom] = useState(null)
-  const [logoUrl,          setLogoUrl]          = useState(null)
+  const [etablissementNom, setEtablissementNom] = useState(() => cachedEtab?.nom ?? null)
+  const [logoUrl,          setLogoUrl]          = useState(() => cachedEtab?.logoUrl ?? null)
 
   const nom       = user?.nomComplet ?? user?.nom_complet ?? 'Utilisateur'
   const initiales = nom.split(' ').map((p)=>p[0]).join('').slice(0,2).toUpperCase()
@@ -40,7 +42,7 @@ export default function PortailLayout() {
   const estDansConfig = location.pathname.startsWith(configBase)
   const sectionURL    = search.get('section') ?? ''
 
-  // Charger le nom et logo de l'établissement
+  // Charger le nom et logo de l'établissement (avec Stale-While-Revalidate persistant)
   useEffect(() => {
     let cancel = false
     portailService.lire()

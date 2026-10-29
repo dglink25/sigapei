@@ -90,6 +90,8 @@ export default function NotificationDrawer() {
     nbNonLues,
     ouvert,
     selection,
+    permissionPush,
+    demanderPermissionPush,
     fermer,
     marquerCommeLu,
     marquerSelectionCommeLue,
@@ -189,6 +191,23 @@ export default function NotificationDrawer() {
             <X size={20} aria-hidden="true" />
           </button>
         </header>
+
+        {/* ── BANDEAU NOTIFICATIONS PUSH WEB ── */}
+        {permissionPush !== 'granted' && (
+          <div className="notif-push-banner">
+            <div className="notif-push-banner-txt">
+              <strong>Notifications Push Web</strong>
+              <span>Recevez les alertes temps réel même lorsque l&apos;application est en arrière-plan.</span>
+            </div>
+            <button
+              type="button"
+              className="notif-push-banner-btn"
+              onClick={demanderPermissionPush}
+            >
+              Activer
+            </button>
+          </div>
+        )}
 
         {/* ── ONGLETS DE FILTRAGE ── */}
         <div className="notif-tabs" role="tablist">
