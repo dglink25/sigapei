@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { RefreshCw, Shield } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { permissionsRoleService } from '../../../services/identite/permissionsRole.service'
+import Loader from '../../commun/Loader'
 
 export default function PanneauPermissionsRole() {
   const notify = useNotify()
@@ -155,9 +156,13 @@ export default function PanneauPermissionsRole() {
 
         {/* Droits du rôle sélectionné */}
         <div>
-          {!roleActif && (
+          {chargeDroits ? (
+            <div className="ap-card" style={{ padding: '3rem', display: 'flex', justifyContent: 'center' }}>
+              <Loader mode="inline" label="Chargement des permissions du rôle…" />
+            </div>
+          ) : !roleActif ? (
             <div className="ap-card ap-empty"><p>Sélectionnez un rôle.</p></div>
-          )}
+          ) : null}
 
           {roleActif && estAdmin && (
             <div className="ap-alert ap-alert--warning">

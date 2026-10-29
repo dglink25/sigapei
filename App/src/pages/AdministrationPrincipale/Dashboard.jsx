@@ -16,6 +16,7 @@ import { demandesCycleAdminService } from '../../services/etablissements/demande
 import { demandesRoleAdminService }  from '../../services/identite/rolesEtablissements.service'
 import { demandesServiceAdminService } from '../../services/identite/demandesService.service'
 import { normaliserDemande } from '../../lib/etablissements/form'
+import Loader from '../../components/commun/Loader'
 import './admin.css'
 import './Dashboard.css'
 
@@ -103,6 +104,14 @@ export default function Dashboard() {
 
   const fmt = (v) => v === null ? '-' : String(v)
 
+  if (data === null) {
+    return (
+      <div className="ap db" style={{ minHeight: 380, display: 'grid', placeItems: 'center', padding: '60px 0' }}>
+        <Loader mode="inline" label="Chargement du tableau de bord…" />
+      </div>
+    )
+  }
+
   return (
     <div className="ap db">
 
@@ -127,28 +136,36 @@ export default function Dashboard() {
         <div className="db-stat db-stat--warn">
           <div className="db-stat-icon"><Clock size={20} aria-hidden="true" /></div>
           <div>
-            <p className="db-stat-val">{loading ? '…' : fmt(soumises)}</p>
+            <p className="db-stat-val">
+              {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : fmt(soumises)}
+            </p>
             <p className="db-stat-lbl">Dossiers à instruire</p>
           </div>
         </div>
         <div className="db-stat db-stat--success">
           <div className="db-stat-icon"><CheckCircle2 size={20} aria-hidden="true" /></div>
           <div>
-            <p className="db-stat-val">{loading ? '…' : fmt(validees)}</p>
+            <p className="db-stat-val">
+              {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : fmt(validees)}
+            </p>
             <p className="db-stat-lbl">Établissements validés</p>
           </div>
         </div>
         <div className="db-stat db-stat--info">
           <div className="db-stat-icon"><FileText size={20} aria-hidden="true" /></div>
           <div>
-            <p className="db-stat-val">{loading ? '…' : fmt(total)}</p>
+            <p className="db-stat-val">
+              {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : fmt(total)}
+            </p>
             <p className="db-stat-lbl">Dossiers total</p>
           </div>
         </div>
         <div className="db-stat db-stat--danger">
           <div className="db-stat-icon"><AlertTriangle size={20} aria-hidden="true" /></div>
           <div>
-            <p className="db-stat-val">{loading ? '…' : fmt(correction)}</p>
+            <p className="db-stat-val">
+              {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : fmt(correction)}
+            </p>
             <p className="db-stat-lbl">En correction</p>
           </div>
         </div>
@@ -159,28 +176,36 @@ export default function Dashboard() {
         <div className="db-stat db-stat--info">
           <div className="db-stat-icon"><Users size={20} aria-hidden="true" /></div>
           <div>
-            <p className="db-stat-val">{loading ? '…' : fmt(data?.nbUtilisateurs)}</p>
+            <p className="db-stat-val">
+              {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : fmt(data?.nbUtilisateurs)}
+            </p>
             <p className="db-stat-lbl">Utilisateurs</p>
           </div>
         </div>
         <Link to="/admin/demandes-service" className={`db-stat${data?.nbDemService > 0 ? ' db-stat--warn' : ' db-stat--info'}`} style={{ textDecoration: 'none' }}>
           <div className="db-stat-icon"><Layers size={20} aria-hidden="true" /></div>
           <div>
-            <p className="db-stat-val">{loading ? '…' : fmt(data?.nbDemService)}</p>
+            <p className="db-stat-val">
+              {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : fmt(data?.nbDemService)}
+            </p>
             <p className="db-stat-lbl">Demandes service en attente</p>
           </div>
         </Link>
         <Link to="/admin/demandes-cycle" className={`db-stat${data?.nbDemCycle > 0 ? ' db-stat--warn' : ' db-stat--info'}`} style={{ textDecoration: 'none' }}>
           <div className="db-stat-icon"><GitBranch size={20} aria-hidden="true" /></div>
           <div>
-            <p className="db-stat-val">{loading ? '…' : fmt(data?.nbDemCycle)}</p>
+            <p className="db-stat-val">
+              {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : fmt(data?.nbDemCycle)}
+            </p>
             <p className="db-stat-lbl">Demandes cycle en attente</p>
           </div>
         </Link>
         <Link to="/admin/demandes-role" className={`db-stat${data?.nbDemRole > 0 ? ' db-stat--warn' : ' db-stat--info'}`} style={{ textDecoration: 'none' }}>
           <div className="db-stat-icon"><ShieldCheck size={20} aria-hidden="true" /></div>
           <div>
-            <p className="db-stat-val">{loading ? '…' : fmt(data?.nbDemRole)}</p>
+            <p className="db-stat-val">
+              {loading ? <span className="cf-stat-loading"><span className="ld-spin--mini" /></span> : fmt(data?.nbDemRole)}
+            </p>
             <p className="db-stat-lbl">Demandes rôle en attente</p>
           </div>
         </Link>
