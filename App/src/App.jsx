@@ -34,6 +34,11 @@ import { VersConnexion, VersEtablissement } from './pages/commun/Redirections'
 /* Layout portail établissement */
 import PortailLayout from './components/commun/PortailLayout'
 
+/* Tableaux de bord dédiés par rôle */
+import DashboardApprenantPage from './pages/apprenants/DashboardApprenantPage'
+import DashboardParentPage from './pages/parents/DashboardParentPage'
+import DashboardPrestatairePage from './pages/prestataires/DashboardPrestatairePage'
+
 /* Administration principale */
 import AdminLayout               from './pages/AdministrationPrincipale/AdminLayout'
 import Dashboard                 from './pages/AdministrationPrincipale/Dashboard'
@@ -99,10 +104,16 @@ function routesEtablissement(base) {
       </Route>
 
       {/* ── Modules avec leur propre layout (sidebar dédiée) ── */}
-      {/* Scolarité et Inscription : rendus directement, SANS PortailLayout */}
+      {/* Scolarité, Inscription et Espaces Métiers Dédiés (Apprenants, Parents, Prestataires) */}
       <Route element={<RequireEtablissement />}>
         <Route path={p('/scolarite/*')} element={<ScolariteDirecte />} />
         <Route path={p('/inscription/*')} element={<InscriptionDirecte />} />
+        <Route path={p('/apprenant/*')} element={<DashboardApprenantPage />} />
+        <Route path={p('/apprenants/*')} element={<DashboardApprenantPage />} />
+        <Route path={p('/parent/*')} element={<DashboardParentPage />} />
+        <Route path={p('/parents/*')} element={<DashboardParentPage />} />
+        <Route path={p('/prestataire/*')} element={<DashboardPrestatairePage />} />
+        <Route path={p('/prestataires/*')} element={<DashboardPrestatairePage />} />
       </Route>
 
       {/* ── Services sans layout propre + compte + configuration : dans PortailLayout ── */}
@@ -162,10 +173,16 @@ export default function App() {
       {/* ── Accueil public ── */}
       <Route path={HOME_PATH} element={<Home />} />
 
-      {/* ── Redirection intelligente post-login ── */}
+      {/* ── Redirection intelligente post-login & Espaces Dédiés ── */}
       <Route element={<RequireEtablissement />}>
         <Route path={PORTAIL_PATH} element={<RedirectionPortail />} />
         <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
+        <Route path="/apprenant/*" element={<DashboardApprenantPage />} />
+        <Route path="/apprenants/*" element={<DashboardApprenantPage />} />
+        <Route path="/parent/*" element={<DashboardParentPage />} />
+        <Route path="/parents/*" element={<DashboardParentPage />} />
+        <Route path="/prestataire/*" element={<DashboardPrestatairePage />} />
+        <Route path="/prestataires/*" element={<DashboardPrestatairePage />} />
       </Route>
 
       {/* ── Administration : super_admin ── */}
