@@ -16,7 +16,7 @@ import { getGoogleIdToken } from '../../lib/identite/firebase'
 import { HOME_PATH, LOGIN_PATH, redirectionPostLogin } from '../../config/identite/routes'
 import Loader from '../../components/commun/Loader'
 import usePageTitle from '../../hooks/commun/usePageTitle'
-import FlagInstitutionnel from '../../components/commun/FlagInstitutionnel'
+import flags from 'react-phone-number-input/flags'
 import './AuthPage.css'
 
 const METHODS = [
@@ -264,7 +264,7 @@ export default function AuthPage() {
                   <PhoneInput
                     id="phone"
                     defaultCountry="BJ"
-                    flagComponent={FlagInstitutionnel}
+                    flags={flags}
                     placeholder={example}
                     value={phone}
                     onChange={setPhone}
