@@ -57,6 +57,25 @@ class ScolariteClient
         return $parUuid;
     }
 
+    /**
+     * Apprenants liés à un compte : l'apprenant lui-même (utilisateur_uuid) ou les enfants d'un parent
+     * (parents[].parent_uuid). CONTRAT DEMANDÉ À SCOLARITÉ : filtres ?utilisateur_uuid= et ?parent_uuid=.
+     * Le filtre distant n'est jamais cru sur parole : chaque apprenant renvoyé est recontrôlé ici.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function apprenantsDuCompte(string $utilisateurUuid, bool $parent): array
+    {
+        $donnees = $this->appeler([$parent ? 'parent_uuid' : 'utilisateur_uuid' => $utilisateurUuid, 'statut' => 'actif']);
+        if ($donnees === null) {
+            return [];
+        }
+        $liste = is_array($donnees) && array_is_list($donnees) ? $donnees : [$donnees];
+
+        return array_values(array_filter($liste, fn ($a) => is_array($a) && isset($a['uuid'])
+            && ($parent ? $this->estParentDe($a, $utilisateurUuid) : $this->estLApprenant($a, $utilisateurUuid))));
+    }
+
     /** Classe d'un apprenant {uuid, cycle, niveau, programme}, ou null. */
     public function classeDe(string $apprenantUuid): ?array
     {

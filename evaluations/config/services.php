@@ -17,6 +17,19 @@ return [
         'timeout' => (int) env('SCOLARITE_TIMEOUT', 5),
     ],
 
+    // Identité : introspection du jeton du front (règle n°5, cas 2 : appel direct sans Gateway).
+    'identite' => [
+        'url' => env('IDENTITE_URL', 'http://api-identite:4001'),
+        'timeout' => 5,
+        'cache_secondes' => 60,
+    ],
+
+    // Établissements : correspondance uuid de l'établissement -> identifiant tenant (tenant_id).
+    'etablissements' => [
+        'url' => env('ETABLISSEMENTS_URL', 'http://api-etablissements:4002'),
+        'timeout' => 5,
+    ],
+
     // Microservice RH : source de vérité de `rh.affectations` (règle 5), son unique propriétaire.
     'rh' => [
         'url' => env('RH_URL', 'http://api-rh:4009'),

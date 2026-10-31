@@ -64,15 +64,16 @@ class BulletinService
         return Bulletin::where('periode_id', $periode->id)
             ->where('apprenant_uuid', $apprenantUuid)
             ->orderByDesc('version')
-            ->get(['uuid', 'version', 'contenu', 'rang', 'motif_version', 'genere_le', 'pdf_document_uuid'])
-            ->map(fn (Bulletin $b) => [
+            ->get(['uuid', 'version', 'contenu', 'rang', 'motif_version', 'genere_le'])
+            ->values()
+            ->map(fn (Bulletin $b, int $i) => [
                 'bulletin_uuid' => $b->uuid,
                 'version' => $b->version,
                 'moyenne' => $b->contenu['moyenne'] ?? null, // même format que le bulletin affiché
                 'rang' => $b->rang,
                 'motif_version' => $b->motif_version,
                 'genere_le' => $b->genere_le?->toIso8601String(),
-                'pdf_disponible' => $b->pdf_document_uuid !== null,
+                'pdf_disponible' => $i === 0, // le PDF (GET .../pdf) est celui de la dernière version
             ])
             ->all();
     }

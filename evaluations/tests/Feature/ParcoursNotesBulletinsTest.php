@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Common\Tenant\Contexte;
+use App\Models\Bulletin;
+use App\Services\BulletinPdfService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -282,6 +285,65 @@ class ParcoursNotesBulletinsTest extends ApiTestCase
     // ---------------------------------------------------------------- Outils
 
     /** Devoir 1 (coef 1) et devoir 2 (coef 2) : Alice 14/16, Bob 10/10, Carla absente non justifiée ou note fournie. */
+    // ---------------------------------------------------------------- PDF
+
+    public function test_pdf_indisponible_avant_cloture(): void
+    {
+        $this->remplirNotes();
+
+        $this->en('apprenant', $this->eleveUser)->getJson("/v1/bulletins/apprenant/{$this->alice}/pdf?periode_uuid={$this->c['periode']}")
+            ->assertStatus(409)->assertJsonPath('error.code', 'PERIODE_NON_CLOTUREE');
+    }
+
+    public function test_pdf_par_lien_signe_expirant(): void
+    {
+        $this->remplirNotes();
+        $this->commeAdmin()->postJson('/v1/modeles-bulletin', [
+            'cycle' => 'secondaire',
+            'en_tete' => ['titre' => 'Collège <Les Palmiers>', 'sous_titre' => 'Bulletin trimestriel'],
+            'colonnes_affichees' => ['matiere', 'coefficient', 'notes', 'moyenne', 'moyenne_classe', 'appreciation'],
+            'mentions_bas_de_page' => 'Signature du directeur',
+        ])->assertSuccessful();
+        $this->commeAdmin()->postJson("/v1/periodes/{$this->c['periode']}/cloturer")->assertStatus(202);
+
+        $lien = $this->en('apprenant', $this->eleveUser)->getJson("/v1/bulletins/apprenant/{$this->alice}/pdf?periode_uuid={$this->c['periode']}")
+            ->assertOk()->assertJsonPath('data.version', 1)->json('data.url');
+        $this->assertStringStartsWith('/v1/bulletins/telecharger/', $lien);
+
+        // Le parent d'un autre enfant n'obtient pas de lien.
+        $this->en('parent', $this->parent)->getJson("/v1/bulletins/apprenant/{$this->alice}/pdf?periode_uuid={$this->c['periode']}")->assertStatus(403);
+
+        $this->flushHeaders();
+        $reponse = $this->get($lien)->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $reponse->getContent());
+        $this->assertStringContainsString('attachment; filename="bulletin-M0-1er-trimestre-v1.pdf"', $reponse->headers->get('Content-Disposition'));
+
+        // Lien modifié (autre établissement) ou expiré : refusé.
+        $this->get(str_replace('tenant=1', 'tenant=2', $lien))->assertStatus(403);
+        $this->travel(6)->minutes();
+        $this->get($lien)->assertStatus(403);
+    }
+
+    public function test_html_du_bulletin_echappe_et_suit_le_modele(): void
+    {
+        $this->remplirNotes();
+        $this->commeAdmin()->postJson('/v1/modeles-bulletin', [
+            'cycle' => 'secondaire',
+            'en_tete' => ['titre' => 'Collège <script>alert(1)</script>'],
+            'colonnes_affichees' => ['matiere', 'moyenne'],
+        ])->assertSuccessful();
+        $this->commeAdmin()->postJson("/v1/periodes/{$this->c['periode']}/cloturer")->assertStatus(202);
+
+        $html = Contexte::executerPour(self::TENANT, fn () => app(BulletinPdfService::class)
+            ->html(Bulletin::where('apprenant_uuid', $this->alice)->firstOrFail()));
+
+        $this->assertStringNotContainsString('<script>', $html);
+        $this->assertStringContainsString('Collège &lt;script&gt;', $html);
+        $this->assertStringContainsString('<th>Moyenne</th>', $html);
+        $this->assertStringNotContainsString('Moy. classe', $html);
+        $this->assertStringContainsString('15.33', $html);
+    }
+
     private function remplirNotes(?string $carla = null): void
     {
         $d1 = $this->creerEvaluation($this->c['periode'], $this->c['maths']);

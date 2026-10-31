@@ -13,7 +13,7 @@ Compositions en ligne surveillées : phase 2, bloquée par le contrat d'interfac
 
 ## 1. Démarrage
 
-1. `cp .env.example .env` puis renseigner `DB_*` et `INTERNAL_API_SECRET` (valeurs du chef de projet) et `php artisan key:generate`.
+1. `cp .env.example .env` puis renseigner `DB_*` et `INTERNAL_API_SECRET` (valeurs du chef de projet) et `php artisan key:generate` (la clé signe aussi les liens de téléchargement des PDF).
 2. **Migrations : utiliser l'hôte Neon DIRECT** (sans `-pooler` dans `DB_HOST`). Le pooler (PgBouncer, mode transaction) ne conserve pas le `search_path` ni les transactions longues des migrations : c'est la recommandation de Neon.
 3. Créer le schéma **une seule fois** (une migration ne peut pas le faire : la table `migrations` y est créée avant toute migration) :
    ```bash
@@ -40,13 +40,14 @@ vendor/bin/pint --test
 
 | Couche | Règle |
 |---|---|
-| Entrée | `auth.tenant` : `X-Tenant-Id`, `X-User-Id` (uuid), `X-User-Role` (liste fermée) acceptés **uniquement avec `X-Internal-Secret` valide** (32 car. min., temps constant). Sinon 401 : n'importe quel conteneur du réseau pourrait se déclarer administrateur. |
+| Entrée | `auth.tenant`, deux voies seulement (règle n°5) : **front** `Authorization: Bearer` vérifié **par Identité** (introspection, cache 60 s) ; **Gateway** `X-Tenant-Id`, `X-User-Id`, `X-User-Role` acceptés **uniquement avec `X-Internal-Secret` valide** (32 car. min., temps constant). Le contexte ne vient jamais d'en-têtes envoyés par le navigateur. Tenant : identifiant ou uuid (converti par Établissements). |
 | Rôle | `role:...` sur chaque route (CDC Tableau 1). `super_admin` et `personnel` : aucun accès aux notes individuelles. |
 | Relation | `ControleAcces` : enseignant = classes/matières affectées ; apprenant = son dossier ; parent = enfants rattachés. |
 | Tenant | Filtre global sur chaque modèle : sans contexte, aucune ligne ; écriture impossible chez un autre tenant. Le contexte est posé **avant** la résolution des paramètres de route. |
 | Base | `audit_note`, `surveillance_incident` immuables, `notes` jamais supprimées, `bulletins` archivés non modifiables : **triggers PostgreSQL**, pas seulement du code. |
-| Dépendances | Scolarité muette ou contrat incomplet ⇒ **503**, jamais un accès accordé par défaut. |
-| Divers | Débit limité (120/min/utilisateur, 10/min sur clôture et contestation), aucun `id` interne exposé, aucune trace d'erreur en réponse, pas de fichier servi par l'API. |
+| Dépendances | Identité, Établissements, Scolarité ou RH muet, ou contrat incomplet ⇒ **503**, jamais un accès accordé par défaut. |
+| PDF | Lien relatif signé (HMAC `APP_KEY`), valable 5 min, couvrant bulletin + tenant + expiration ; PDF produit depuis l'instantané immuable, sans ressource distante ni PHP dans le moteur. |
+| Divers | Débit limité (120/min/utilisateur, 10/min sur clôture et contestation), aucun `id` interne exposé, aucune trace d'erreur en réponse ; seul fichier servi : le PDF d'un bulletin, par lien signé (30/min/IP). |
 
 ## 3. Règles de calcul (`CalculService`, fonctions pures, arithmétique entière exacte)
 
@@ -90,6 +91,9 @@ Paramétrables par établissement **et** par cycle (`PUT /v1/parametres-notation
 |---|---|---|
 | `GET` | `/grilles?cycle=` | administrateur, enseignant |
 | `POST` | `/grilles` | administrateur |
+| `GET` | `/mes-affectations` | enseignant - ses classes et matières (RH) |
+| `GET` | `/mes-apprenants` | apprenant (son dossier), parent (ses enfants) - Scolarité |
+| `GET` | `/modeles-bulletin/{cycle}` | administrateur |
 | `GET` / `PUT` | `/parametres-notation/{cycle}` | lecture : admin, enseignant · écriture : admin |
 | `POST` | `/modeles-bulletin` | administrateur |
 | `GET` / `POST` | `/matieres` · `PUT /matieres/{uuid}` · `PUT /matieres/{uuid}/coefficients` | lecture : admin, enseignant · écriture : admin |
@@ -101,7 +105,8 @@ Paramétrables par établissement **et** par cycle (`PUT /v1/parametres-notation
 | `GET` | `/notes/classe/{uuid}?periode_uuid=&matiere_uuid=` | admin, enseignant affecté |
 | `PUT` | `/notes/{uuid}/corriger` | administrateur - motif ≥ 10 car. ; après clôture : nouvelle version des bulletins concernés |
 | `GET` | `/bulletins/apprenant/{uuid}?periode_uuid=` | admin, enseignant de la classe, l'apprenant, ses parents |
-| `GET` | `/bulletins/apprenant/{uuid}/pdf?periode_uuid=` | idem - voir §7 |
+| `GET` | `/bulletins/apprenant/{uuid}/pdf?periode_uuid=` | idem - lien signé valable 5 min (après clôture) |
+| `GET` | `/bulletins/telecharger/{bulletin_uuid}?tenant=&expires=&signature=` | lien signé uniquement (aucun en-tête) - le PDF |
 | `GET` | `/classements/classe/{uuid}?periode_uuid=` | admin, enseignant de la classe |
 | `GET` / `POST` | `/contestations` · `PUT /contestations/{uuid}/traiter` | ouverture : apprenant, parent · traitement : enseignant de l'évaluation, admin |
 | `GET` | `/interne/eligibilite-document/{apprenant_uuid}` | `X-Internal-Secret` + `X-Tenant-Id` (Demandes administratives) |
@@ -125,7 +130,7 @@ Tant qu'ils ne sont pas livrés, les actions concernées répondent **503** (fai
 
 | Service | Besoin |
 |---|---|
-| **Scolarité** - `GET /v1/interne/apprenants` | ajouter `utilisateur_uuid` (compte de l'apprenant) et `parents[].parent_uuid` (uuid Identité du parent) |
+| **Scolarité** - `GET /v1/interne/apprenants` | ajouter `utilisateur_uuid` (compte de l'apprenant) et `parents[].parent_uuid` (uuid Identité du parent), et les filtres `?utilisateur_uuid=` / `?parent_uuid=` (écran « mes bulletins » de l'apprenant et du parent) |
 | **RH** - `GET /v1/interne/affectations/verifier` et `/v1/interne/affectations` | source des affectations enseignant / matière / classe (branché par le microservice RH) : `matiere_uuid` doit être l'uuid de la matière d'Évaluations |
-| **Documents** (transverse) | stockage des PDF et URL signées : la génération PDF des bulletins sera branchée dessus |
+| **Établissements** - `GET /v1/interne/etablissements?uuid=` | renvoyer l'établissement avec son **`id`** numérique (nécessaire pour convertir l'uuid du jeton Identité en `tenant_id` ; même besoin que Scolarité) |
 | **E-learning** (Roc) | adapter `EvaluationsClient` à `POST /v1/interne/notes-elearning` (en-têtes, corps, réponse, uuid de matière d'Évaluations) ; contrat des compositions en ligne (phase 2) |

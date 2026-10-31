@@ -71,6 +71,32 @@ class RhClient
         return false;
     }
 
+    /**
+     * Affectations actives d'un enseignant (classe + matière) : sert au choix de classe et de matière
+     * dans l'interface. Chaque ligne est recontrôlée (écho de l'enseignant, champs du contrat).
+     *
+     * @return list<array{classe_uuid: string, matiere_uuid: string}>
+     */
+    public function affectationsDe(string $enseignantUuid): array
+    {
+        $affectations = $this->interroger('/v1/interne/affectations', ['enseignant_uuid' => $enseignantUuid]);
+        if (! is_array($affectations) || ! array_is_list($affectations)) {
+            throw new ContratIncompletException('RH ne fournit pas `data` sous forme de liste sur /interne/affectations.');
+        }
+
+        $sortie = [];
+        foreach ($affectations as $a) {
+            if (! is_array($a) || ! isset($a['enseignant_uuid'], $a['classe_uuid'], $a['matiere_uuid'])) {
+                throw new ContratIncompletException('RH ne fournit pas enseignant_uuid / classe_uuid / matiere_uuid dans ses affectations.');
+            }
+            if (($a['statut'] ?? 'actif') === 'actif' && hash_equals((string) $a['enseignant_uuid'], $enseignantUuid)) {
+                $sortie[$a['classe_uuid'].'|'.$a['matiere_uuid']] = ['classe_uuid' => (string) $a['classe_uuid'], 'matiere_uuid' => (string) $a['matiere_uuid']];
+            }
+        }
+
+        return array_values($sortie);
+    }
+
     /** @param  array<string, mixed>  $filtres  @return mixed valeur de `data` */
     private function interroger(string $chemin, array $filtres): mixed
     {

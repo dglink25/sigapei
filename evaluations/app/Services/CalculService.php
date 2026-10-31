@@ -85,6 +85,8 @@ final class CalculService
             );
             $matieres[$m]['_moyenne_echelle'] = $moyenne;
             $matieres[$m]['moyenne'] = $moyenne === null ? null : Decimal::versTexte($moyenne, $regles['decimales']);
+            // Appréciation de la matière : même échelle que la moyenne générale, sur la moyenne affichée.
+            $matieres[$m]['mention'] = $moyenne === null || $competences ? null : $this->mention(Decimal::arrondir($moyenne, $regles['decimales']), $regles['echelle_appreciation']);
             $matieres[$m]['moyennes_blocs'] = array_map(fn ($b) => Decimal::versTexte($b, $regles['decimales']), $blocs);
             $matieres[$m]['coefficient'] = Decimal::versTexte($ligne['coefficient'] * 100, 2);
         }
