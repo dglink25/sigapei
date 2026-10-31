@@ -1,7 +1,7 @@
 {
     "name": "sigapei/api-finances",
     "type": "project",
-    "description": "Microservice Finances (transactions, facturation, abonnements, hibernation) - plateforme SIGAPEI",
+    "description": "Microservice Finances (formules tarifaires, facturation, règlements, soldes ; paiements en ligne via le microservice Paiement) - plateforme SIGAPEI",
     "keywords": [
         "sigapei",
         "laravel",
@@ -10,9 +10,10 @@
     "license": "proprietary",
     "require": {
         "php": "^8.4",
+        "dompdf/dompdf": "^3.1",
+        "guzzlehttp/guzzle": "^7.9",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.9",
-        "guzzlehttp/guzzle": "^7.9",
         "php-amqplib/php-amqplib": "^3.7",
         "predis/predis": "^2.3",
         "ramsey/uuid": "^4.7"

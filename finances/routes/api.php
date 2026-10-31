@@ -1,61 +1,75 @@
 <?php
 
-use App\Http\Controllers\AbonnementController;
-use App\Http\Controllers\DecaissementController;
 use App\Http\Controllers\DocsController;
-use App\Http\Controllers\FactureController;
+use App\Http\Controllers\DocumentsController;
+use App\Http\Controllers\FacturesController;
+use App\Http\Controllers\FormulesController;
 use App\Http\Controllers\InterneController;
-use App\Http\Controllers\PaiementController;
-use App\Http\Controllers\RapportController;
+use App\Http\Controllers\MesFinancesController;
+use App\Http\Controllers\PaiementsController;
+use App\Http\Controllers\ParametresController;
+use App\Http\Controllers\RapportsController;
+use App\Http\Controllers\ReglementsController;
 use Illuminate\Support\Facades\Route;
 
 /**
- * Endpoints : Tableau 6 du CDC Finances. Réponses : uuid uniquement.
+ * API Finances (base /v1, sans préfixe /api). Ressources désignées par uuid uniquement.
  *
  * Sécurité :
- *  - auth.tenant : contexte Gateway obligatoire (secret interne + tenant + utilisateur + rôle) ;
- *  - role:...    : Tableau 1. "Comptable" = rôle plateforme `personnel` (les permissions fines
- *                  par fonction viendront de identite.role_permissions) ;
- *  - webhooks    : publics mais signature de l'agrégateur obligatoire, jamais de contexte utilisateur ;
- *  - /interne/*  : secret interne uniquement.
- *  - Séparation des tâches (initiateur ≠ validateur) contrôlée dans le service, pas seulement ici.
+ *  - auth.tenant : jeton Identité (appel direct du front) ou contexte Gateway signé ; accès au module vérifié ;
+ *  - droits : grille rôle x action de l'établissement (services/Gouvernance), contrôlée dans chaque action ;
+ *  - documents PDF : lien relatif signé et court, délivré par une route authentifiée ;
+ *  - /interne/* : secret interne uniquement (Gateway, Paiement, Scolarité, Demandes).
+ * L'argent réel n'est jamais manipulé ici : le microservice Paiement exécute les paiements en ligne.
  */
-// Documentation (même convention qu'Identité et Établissements) : Swagger UI sur /docs, OpenAPI brut sur /docs-json.
 Route::get('/docs', [DocsController::class, 'interfaceSwagger']);
 Route::get('/docs-json', [DocsController::class, 'specification']);
 
 Route::prefix('v1')->group(function () {
-
     Route::middleware(['auth.tenant', 'throttle:api'])->group(function () {
-        Route::post('/factures', [FactureController::class, 'creer'])
-            ->middleware('role:administrateur,personnel');
+        Route::get('/mes-droits', [MesFinancesController::class, 'droits']);
+        Route::get('/mes-finances', [MesFinancesController::class, 'famille']);
 
-        Route::post('/paiements/initier', [PaiementController::class, 'initier'])
-            ->middleware(['role:parent,administrateur,personnel', 'throttle:paiement']);
+        Route::get('/formules', [FormulesController::class, 'index']);
+        Route::get('/formules/applicables', [FormulesController::class, 'applicables']);
+        Route::post('/formules', [FormulesController::class, 'creer']);
+        Route::patch('/formules/{formule}', [FormulesController::class, 'modifier'])->whereUuid('formule');
 
-        Route::post('/decaissements', [DecaissementController::class, 'initier'])
-            ->middleware('role:personnel,administrateur');
-        Route::put('/decaissements/{uuid}/valider', [DecaissementController::class, 'valider'])
-            ->middleware('role:administrateur')->whereUuid('uuid');
-        Route::put('/decaissements/{uuid}/rejeter', [DecaissementController::class, 'rejeter'])
-            ->middleware('role:administrateur')->whereUuid('uuid');
+        Route::get('/factures', [FacturesController::class, 'index']);
+        Route::post('/factures', [FacturesController::class, 'emettre'])->middleware('throttle:sensible');
+        Route::post('/factures/classe', [FacturesController::class, 'emettrePourClasse'])->middleware('throttle:sensible');
+        Route::get('/factures/{facture}', [FacturesController::class, 'voir'])->whereUuid('facture');
+        Route::post('/factures/{facture}/annuler', [FacturesController::class, 'annuler'])->whereUuid('facture')->middleware('throttle:sensible');
+        Route::get('/factures/{facture}/pdf', [FacturesController::class, 'pdf'])->whereUuid('facture');
 
-        Route::get('/abonnements/{tenant_uuid}', [AbonnementController::class, 'statut'])
-            ->middleware('role:administrateur,super_admin')->whereUuid('tenant_uuid');
-        Route::post('/abonnements/{tenant_uuid}/paiement', [AbonnementController::class, 'payer'])
-            ->middleware('role:administrateur')->whereUuid('tenant_uuid');
+        Route::get('/factures/{facture}/paiements', [PaiementsController::class, 'historique'])->whereUuid('facture');
+        Route::post('/factures/{facture}/paiements', [PaiementsController::class, 'initier'])->whereUuid('facture')->middleware('throttle:paiement');
+        Route::get('/paiements/{paiement}', [PaiementsController::class, 'voir'])->whereUuid('paiement');
 
-        Route::get('/rapports/etablissement/{tenant_uuid}', [RapportController::class, 'parEtablissement'])
-            ->middleware('role:administrateur,personnel')->whereUuid('tenant_uuid');
+        Route::get('/reglements', [ReglementsController::class, 'index']);
+        Route::post('/factures/{facture}/reglements', [ReglementsController::class, 'saisir'])->whereUuid('facture')->middleware('throttle:sensible');
+        Route::post('/reglements/{reglement}/valider', [ReglementsController::class, 'valider'])->whereUuid('reglement')->middleware('throttle:sensible');
+        Route::post('/reglements/{reglement}/rejeter', [ReglementsController::class, 'rejeter'])->whereUuid('reglement')->middleware('throttle:sensible');
+        Route::get('/reglements/{reglement}/recu', [ReglementsController::class, 'recu'])->whereUuid('reglement');
+
+        Route::get('/apprenants/{apprenant}/solde', [RapportsController::class, 'soldeApprenant'])->whereUuid('apprenant');
+        Route::get('/rapports/synthese', [RapportsController::class, 'synthese']);
+        Route::get('/journal', [RapportsController::class, 'journal']);
+
+        Route::get('/parametres', [ParametresController::class, 'lire']);
+        Route::put('/parametres', [ParametresController::class, 'enregistrer']);
+        Route::get('/gouvernance', [ParametresController::class, 'grille']);
+        Route::put('/gouvernance/{role}', [ParametresController::class, 'definirRole'])->where('role', '[a-z][a-z0-9_-]{1,63}');
     });
 
-    Route::post('/webhooks/fedapay', [PaiementController::class, 'webhookFedapay'])
-        ->middleware(['throttle:webhook', 'webhook:fedapay']);
-    Route::post('/webhooks/kkiapay', [PaiementController::class, 'webhookKkiapay'])
-        ->middleware(['throttle:webhook', 'webhook:kkiapay']);
+    Route::middleware(['signed:relative', 'throttle:telechargement'])->prefix('documents')->group(function () {
+        Route::get('/factures/{facture}', [DocumentsController::class, 'facture'])->whereUuid('facture')->name('documents.facture');
+        Route::get('/recus/{reglement}', [DocumentsController::class, 'recu'])->whereUuid('reglement')->name('documents.recu');
+    });
 
     Route::middleware('secret.interne')->prefix('interne')->group(function () {
-        Route::get('/solde/{apprenant_uuid}', [InterneController::class, 'soldeApprenant'])->whereUuid('apprenant_uuid');
-        Route::get('/revenus-consolides', [InterneController::class, 'revenusConsolides']);
+        Route::get('/solde/{apprenant}', [InterneController::class, 'solde'])->whereUuid('apprenant');
+        Route::get('/apprenants/paiements', [InterneController::class, 'situationApprenant']);
+        Route::post('/paiements/notification', [InterneController::class, 'notificationPaiement']);
     });
 });
