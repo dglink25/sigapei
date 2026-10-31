@@ -7,7 +7,7 @@ import {
 import { useAuth }    from '../../context/identite/AuthContext'
 import { useNotify }  from '../../context/commun/NotifyContext'
 import { ENV }        from '../../config/commun/env'
-import { roleCodeOf } from '../../config/identite/routes'
+import { roleCodeOf, determinerEspaceRole, cheminEspaceRole } from '../../config/identite/routes'
 import { serviceDisponible } from '../../config/services/registre'
 import { MODE_SOUS_DOMAINE, lienEtablissement } from '../../lib/etablissements/subdomain'
 import { allerVersEtablissement } from '../../lib/identite/transfert'
@@ -16,6 +16,7 @@ import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissemen
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import Bloc3D     from '../../components/etablissements/Bloc3D'
 import ThemeToggle from '../../components/commun/ThemeToggle'
+import NotificationBell from '../../components/commun/NotificationBell'
 import Loader     from '../../components/commun/Loader'
 import './Portail.css'
 
@@ -72,6 +73,14 @@ export default function Portail() {
 
   if (nonConforme && !MODE_SOUS_DOMAINE)
     return <Navigate to={lienEtablissement(etab.slug, '/portail')} replace />
+
+  /* ── Redirection si l'accès au portail est bloqué ── */
+  if (data?.motif === 'PORTAIL_INACCESSIBLE' || (!data?.estAdmin && data?.peutVoirPortail === false)) {
+    const roleCode = roleCodeOf(user)
+    const espace = determinerEspaceRole(roleCode)
+    const cible = espace ? cheminEspaceRole(espace) : '/dashboard'
+    return <Navigate to={lienEtablissement(slug, cible)} replace />
+  }
 
   /* ── Corps central ── */
   let corps
@@ -182,9 +191,7 @@ export default function Portail() {
 
             {/* Droite : actions */}
             <div className="portail-bar-actions">
-              <button className="portail-icon-btn" aria-label="Notifications" title="Notifications">
-                <Bell size={19} aria-hidden="true" />
-              </button>
+              <NotificationBell className="portail-icon-btn" />
               <ThemeToggle className="portail-icon-btn" />
               <button
                 type="button"

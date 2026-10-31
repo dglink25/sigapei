@@ -22,6 +22,20 @@
   --al-radius:      12px;
   --al-transition:  0.18s ease;
 
+  /* --ap-* pour les composants enfants */
+  --ap-green:      #006B3C;
+  --ap-green-dk:   #004d2b;
+  --ap-gold:       #E9AA20;
+  --ap-cream:      #FFF6DD;
+  --ap-bg:         var(--sg-page-bg, #f4f6f5);
+  --ap-surface:    var(--sg-surface, #ffffff);
+  --ap-border:     var(--sg-border, #dde4df);
+  --ap-text:       var(--sg-text, #1a2a1e);
+  --ap-muted:      var(--sg-text-secondary, #5a6b5f);
+  --ap-hover:      var(--sg-theme-hover, rgba(0,0,0,0.04));
+  --ap-radius:     12px;
+  --ap-transition: 0.18s ease;
+
   display: flex;
   min-height: 100dvh;
   background: var(--al-bg);

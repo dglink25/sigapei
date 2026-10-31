@@ -1,14 +1,3 @@
-/**
- * PanneauCyclePage - Vue principale d'un cycle.
- *
- * Affiche les onglets adaptés au cycle sélectionné :
- *   Maternelle  : Groupes | Niveaux & Classes | Matières
- *   Primaire    : Groupes | Niveaux & Classes | Matières
- *   Secondaire  : Groupes/Sections | Niveaux & Classes | Séries | Matières
- *   Université  : Départements | Filières | Niveaux | Cohortes | Matières
- *
- * L'onglet actif est piloté par ?onglet= dans l'URL.
- */
 import { AlertTriangle } from 'lucide-react'
 
 import PanneauSubdivisions from './PanneauSubdivisions'
@@ -18,7 +7,7 @@ import PanneauSeries       from './PanneauSeries'
 import PanneauCohortes     from './PanneauCohortes'
 import PanneauMatieres     from './PanneauMatieres'
 
-// Onglets par cycle
+// Onglets par cycle avec respect de la terminologie institutionnelle
 const ONGLETS_CYCLE = {
   maternelle: [
     { id: 'groupes',  label: 'Groupes' },
@@ -33,15 +22,14 @@ const ONGLETS_CYCLE = {
     { id: 'matieres', label: 'Matières' },
   ],
   secondaire: [
-    { id: 'groupes',  label: 'Groupes / Sections' },
-    { id: 'niveaux',  label: 'Niveaux' },
-    { id: 'classes',  label: 'Classes' },
+    { id: 'niveaux',  label: 'Promotions' },
     { id: 'series',   label: 'Séries' },
+    { id: 'classes',  label: 'Classes' },
     { id: 'matieres', label: 'Matières' },
   ],
   universitaire: [
-    { id: 'groupes',  label: 'Départements' },
-    { id: 'filieres', label: 'Filières' },
+    { id: 'groupes',  label: 'Cycles & Départements' },
+    { id: 'filieres', label: 'Options / Filières' },
     { id: 'niveaux',  label: "Niveaux d'études" },
     { id: 'cohortes', label: 'Cohortes' },
     { id: 'matieres', label: 'Matières / UE' },
@@ -54,19 +42,26 @@ const CYCLE_LABELS = {
 }
 
 export default function PanneauCyclePage({
-  cycle, cycleObj, anneeActive, onTerminee, searchParams, setSearchParams,
+  cycle, cycleObj, anneeActive, onTerminee, searchParams, setSearchParams, cyclesDisponibles: cyclesDisponiblesProps = [],
 }) {
-  const onglets   = ONGLETS_CYCLE[cycle] ?? []
+  const onglets     = ONGLETS_CYCLE[cycle] ?? []
   const ongletActif = searchParams.get('onglet') ?? onglets[0]?.id ?? ''
 
   const allerOnglet = (id) =>
     setSearchParams({ cycle, onglet: id })
+
+  // Cycles disponibles pour les panneaux enfants :
+  // on utilise ceux passés en props, ou à défaut uniquement le cycle courant
+  const cyclesDisponibles = cyclesDisponiblesProps.length > 0
+    ? cyclesDisponiblesProps
+    : (cycle ? [cycle] : [])
 
   const propsCommuns = {
     anneeActive,
     onTerminee,
     cycleFiltre: cycle,
     cycleObj,
+    cyclesDisponibles,
   }
 
   if (!anneeActive) {
@@ -84,14 +79,19 @@ export default function PanneauCyclePage({
         return (
           <PanneauSubdivisions
             {...propsCommuns}
-            labelTitre={cycle === 'universitaire' ? 'Départements' : 'Groupes'}
+            labelTitre={cycle === 'universitaire' ? 'Cycles & Départements' : 'Groupes'}
             labelType={cycle === 'universitaire' ? 'departement' : 'groupe'}
           />
         )
       case 'filieres':
-        return <PanneauSeries {...propsCommuns} cycleForce="universitaire" labelTitre="Filières" />
+        return <PanneauSeries {...propsCommuns} cycleForce="universitaire" labelTitre="Options / Filières" />
       case 'niveaux':
-        return <PanneauNiveaux {...propsCommuns} />
+        return (
+          <PanneauNiveaux
+            {...propsCommuns}
+            labelTitre={cycle === 'secondaire' ? 'Promotions' : cycle === 'universitaire' ? "Niveaux d'études" : 'Niveaux'}
+          />
+        )
       case 'classes':
         return <PanneauClasses {...propsCommuns} />
       case 'series':

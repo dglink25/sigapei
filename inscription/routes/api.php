@@ -1,5 +1,6 @@
 <?php
 
+use App\appels_candidatures\AppelCandidatureController;
 use App\candidatures\CandidatureController;
 use App\common\Middleware\VerifyTenantAndJwt;
 use App\docs\DocsController;
@@ -24,6 +25,18 @@ Route::get('/docs-json', [DocsController::class, 'specification']);
 // Routes metier sous le prefixe v1, protegees par VerifyTenantAndJwt
 // Roles identite utilisables : super_admin | administrateur | personnel | enseignant | apprenant | parent
 Route::prefix('v1')->middleware([VerifyTenantAndJwt::class])->group(function () {
+
+    // --- Appels à candidatures ---
+    Route::get('/appels-candidatures', [AppelCandidatureController::class, 'index']);
+    Route::get('/appels-candidatures/{uuid}', [AppelCandidatureController::class, 'show']);
+    Route::post('/appels-candidatures', [AppelCandidatureController::class, 'store'])
+        ->middleware('role:administrateur,personnel');
+    Route::patch('/appels-candidatures/{uuid}', [AppelCandidatureController::class, 'update'])
+        ->middleware('role:administrateur,personnel');
+    Route::post('/appels-candidatures/{uuid}/terminer', [AppelCandidatureController::class, 'terminer'])
+        ->middleware('role:administrateur,personnel');
+    Route::delete('/appels-candidatures/{uuid}', [AppelCandidatureController::class, 'destroy'])
+        ->middleware('role:administrateur');
 
     // --- Candidatures ---
 

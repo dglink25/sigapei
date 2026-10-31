@@ -82,3 +82,73 @@ jobs:
       - name: Run tests
         run: php artisan test
 
+  auto-pr:
+    name: Fusion automatique vers develop
+    needs: [tests, rh-tests]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: auto-pr-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      BRANCH: ${{ github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Créer la PR et fusionner vers develop
+        run: |
+          set -euo pipefail
+
+          # Vérifier si la branche a des commits d'avance sur develop
+          AHEAD=$(gh api "repos/$REPO/compare/develop...$BRANCH" --jq '.ahead_by // 0')
+          if [ "$AHEAD" -eq 0 ]; then
+            echo "Aucun commit d'avance sur develop : rien à fusionner."
+            exit 0
+          fi
+
+          # Vérifier si une PR existe déjà
+          PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --base develop \
+                 --state open --json number --jq '.[0].number // empty')
+
+          if [ -z "$PR" ]; then
+            echo "Création de la PR $BRANCH -> develop..."
+            gh pr create --repo "$REPO" --base develop --head "$BRANCH" \
+              --title "Fusion de $BRANCH vers develop" \
+              --body "PR créée automatiquement après succès de la CI."
+            sleep 3
+            PR=$(gh pr list --repo "$REPO" --head "$BRANCH" --base develop \
+                   --state open --json number --jq '.[0].number // empty')
+          fi
+
+          echo "PR #$PR identifiée."
+
+          # Attente de l'état de fusionnabilité calculé par GitHub
+          for i in 1 2 3 4 5 6; do
+            STATE=$(gh pr view "$PR" --repo "$REPO" --json mergeable --jq '.mergeable')
+            [ "$STATE" != "UNKNOWN" ] && break
+            sleep 4
+          done
+
+          if [ "$STATE" = "CONFLICTING" ]; then
+            echo "::error::Conflit de fusion entre $BRANCH et develop. Veuillez résoudre le conflit en local puis repousser."
+            exit 1
+          fi
+
+          # Tentative de fusion immédiate, sinon auto-merge
+          if ! gh pr merge "$PR" --repo "$REPO" --merge; then
+            echo "Fusion directe non disponible, tentative avec --auto..."
+            gh pr merge "$PR" --repo "$REPO" --merge --auto || {
+              echo "::error::Échec de la fusion de la PR #$PR."
+              gh pr view "$PR" --repo "$REPO" --json mergeable,mergeStateStatus,reviewDecision
+              exit 1
+            }
+          fi
+
+          echo "PR #$PR fusionnée avec succès dans develop !"
+

@@ -17,8 +17,8 @@
   width: min(440px, 100%);
   padding: 40px 28px 28px;
   text-align: center;
-  color: #1a1a1a;
-  background: #ffffff;
+  color: var(--sg-text, #1a1a1a);
+  background: var(--sg-surface, #ffffff);
   border: none;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
@@ -91,19 +91,19 @@
   to   { opacity:1; transform: none; }
 }
 
-.cd-title { margin: 0 0 8px; font-size: 1.25rem; font-weight: 700; color: #111; }
-.cd-msg   { margin: 0 0 18px; line-height: 1.6; color: #555; font-size: 1rem; }
+.cd-title { margin: 0 0 8px; font-size: 1.25rem; font-weight: 700; color: var(--sg-text, #111); }
+.cd-msg   { margin: 0 0 18px; line-height: 1.6; color: var(--sg-text-secondary, #555); font-size: 1rem; }
 
 .cd-actions { display: flex; gap: 12px; margin-top: 20px; }
 .cd-btn {
   flex: 1; height: 48px;
-  border: 1.5px solid #d0d0d0; border-radius: 10px;
-  background: transparent; color: #1a1a1a;
+  border: 1.5px solid var(--sg-border, #d0d0d0); border-radius: 10px;
+  background: transparent; color: var(--sg-text, #1a1a1a);
   font: inherit; font-size: 1rem; font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
-.cd-btn:hover:not(:disabled) { border-color: #aaa; background: #f5f5f5; }
+.cd-btn:hover:not(:disabled) { border-color: var(--sg-text-secondary, #aaa); background: var(--sg-theme-hover, #f5f5f5); }
 .cd-btn--main {
   border-color: var(--accent); background: var(--accent); color: #fff;
 }

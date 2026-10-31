@@ -9,6 +9,7 @@ import ErrorBoundary from './components/commun/ErrorBoundary'
 import { NotifyProvider } from './context/commun/NotifyContext'
 import { ThemeProvider } from './context/commun/ThemeContext'
 import { AuthProvider } from './context/identite'
+import { NotificationProvider } from './context/commun/NotificationContext'
 
 // Client React Query (module E-Learning) : pas de retry automatique,
 // 15 s de fraîcheur, pas de refetch au focus de la fenêtre.
@@ -29,9 +30,11 @@ createRoot(document.getElementById('root')).render(
         <ThemeProvider>
           <NotifyProvider>
             <AuthProvider>
-              <QueryClientProvider client={clientRequetes}>
-                <App />
-              </QueryClientProvider>
+              <NotificationProvider>
+                <QueryClientProvider client={clientRequetes}>
+                  <App />
+                </QueryClientProvider>
+              </NotificationProvider>
             </AuthProvider>
           </NotifyProvider>
         </ThemeProvider>

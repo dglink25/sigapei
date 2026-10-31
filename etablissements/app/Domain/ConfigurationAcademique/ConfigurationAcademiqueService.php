@@ -120,29 +120,40 @@ class ConfigurationAcademiqueService
     // ── Propagation de matières ──────────────────────────────────────────
 
     /**
-     * Retourne les MatiereConfig manquantes pour les classes homologues
-     * (même niveau, même année, même établissement) sans créer de doublons.
+     * Retourne les classes homologues devant recevoir la matière selon les règles de cycle :
+     * - Maternelle / Primaire : toutes les classes du même niveau (homologues entre groupes).
+     * - Secondaire sans série : toutes les classes de la promotion (même niveau).
+     * - Secondaire avec série : uniquement les classes de la même promotion ET même série (jamais les autres séries).
+     * - Universitaire : géré au niveau des cohortes.
      * @return ClasseConfig[]
      */
     public function classesPourPropagation(MatiereConfig $source): \Illuminate\Support\Collection
     {
-        $dejaConfigures = MatiereConfig::where('etablissement_id', $source->etablissement_id)
+        $q = ClasseConfig::where('etablissement_id', $source->etablissement_id)
             ->where('annee_id', $source->annee_id)
             ->where('niveau_id', $source->niveau_id)
-            ->where('matiere_uuid_externe', $source->matiere_uuid_externe)
-            ->where('id', '!=', $source->id)
-            ->pluck('serie_id');
+            ->where('actif', true);
 
-        return ClasseConfig::where('etablissement_id', $source->etablissement_id)
-            ->where('annee_id', $source->annee_id)
-            ->where('niveau_id', $source->niveau_id)
-            ->where('actif', true)
-            ->whereNotIn('serie_id', $dejaConfigures)
-            ->where('id', '!=', $source->id ?? 0)
-            ->with(['niveau', 'subdivision', 'serie'])
-            ->get();
+        if ($source->cycle === 'secondaire') {
+            if ($source->serie_id) {
+                // Strictement la même série
+                $q->where('serie_id', $source->serie_id);
+            } else {
+                // Promotion générale sans série
+                $q->whereNull('serie_id');
+            }
+        }
+
+        if ($source->classe_id) {
+            $q->where('id', '!=', $source->classe_id);
+        }
+
+        return $q->with(['niveau', 'subdivision', 'serie'])->get();
     }
 
+    /**
+     * Propage automatiquement une matière selon les règles des cycles.
+     */
     public function propagerMatiere(MatiereConfig $source, ?string $auteurUuid = null): int
     {
         $classes = $this->classesPourPropagation($source);
@@ -151,27 +162,68 @@ class ConfigurationAcademiqueService
         DB::transaction(function () use ($source, $classes, $auteurUuid, &$crees) {
             foreach ($classes as $classe) {
                 $existe = MatiereConfig::where([
-                    'etablissement_id'    => $source->etablissement_id,
-                    'annee_id'            => $source->annee_id,
-                    'niveau_id'           => $source->niveau_id,
-                    'serie_id'            => $classe->serie_id,
+                    'etablissement_id'     => $source->etablissement_id,
+                    'annee_id'             => $source->annee_id,
+                    'niveau_id'            => $source->niveau_id,
+                    'serie_id'             => $classe->serie_id,
+                    'classe_id'            => $classe->id,
                     'matiere_uuid_externe' => $source->matiere_uuid_externe,
                 ])->exists();
 
                 if (! $existe) {
                     MatiereConfig::create([
-                        'etablissement_id'    => $source->etablissement_id,
-                        'annee_id'            => $source->annee_id,
-                        'cycle'               => $source->cycle,
-                        'niveau_id'           => $source->niveau_id,
-                        'serie_id'            => $classe->serie_id,
+                        'etablissement_id'     => $source->etablissement_id,
+                        'annee_id'             => $source->annee_id,
+                        'cycle'                => $source->cycle,
+                        'niveau_id'            => $source->niveau_id,
+                        'serie_id'             => $classe->serie_id,
+                        'promotion_id'         => $source->promotion_id ?: $source->niveau_id,
+                        'classe_id'            => $classe->id,
                         'matiere_uuid_externe' => $source->matiere_uuid_externe,
-                        'nom_matiere'         => $source->nom_matiere,
-                        'code_matiere'        => $source->code_matiere,
-                        'coefficient'         => $source->coefficient,
-                        'est_obligatoire'     => $source->est_obligatoire,
+                        'nom_matiere'          => $source->nom_matiere,
+                        'code_matiere'         => $source->code_matiere,
+                        'coefficient'          => $source->coefficient,
+                        'est_obligatoire'      => $source->est_obligatoire,
                     ]);
                     $crees++;
+                }
+            }
+
+            // Pour l'universitaire : propager aux cohortes de la même filière + niveau
+            if ($source->cycle === 'universitaire' && $source->serie_id) {
+                $cohortes = CohorteUniversitaire::where('etablissement_id', $source->etablissement_id)
+                    ->where('annee_id', $source->annee_id)
+                    ->where('filiere_id', $source->serie_id)
+                    ->where('niveau_id', $source->niveau_id)
+                    ->where('actif', true)
+                    ->get();
+
+                foreach ($cohortes as $cohorte) {
+                    $existe = MatiereConfig::where([
+                        'etablissement_id'     => $source->etablissement_id,
+                        'annee_id'             => $source->annee_id,
+                        'niveau_id'            => $source->niveau_id,
+                        'serie_id'             => $source->serie_id,
+                        'cohorte_id'           => $cohorte->id,
+                        'matiere_uuid_externe' => $source->matiere_uuid_externe,
+                    ])->exists();
+
+                    if (! $existe) {
+                        MatiereConfig::create([
+                            'etablissement_id'     => $source->etablissement_id,
+                            'annee_id'             => $source->annee_id,
+                            'cycle'                => 'universitaire',
+                            'niveau_id'            => $source->niveau_id,
+                            'serie_id'             => $source->serie_id,
+                            'cohorte_id'           => $cohorte->id,
+                            'matiere_uuid_externe' => $source->matiere_uuid_externe,
+                            'nom_matiere'          => $source->nom_matiere,
+                            'code_matiere'         => $source->code_matiere,
+                            'coefficient'          => $source->coefficient,
+                            'est_obligatoire'      => $source->est_obligatoire,
+                        ]);
+                        $crees++;
+                    }
                 }
             }
 
@@ -188,6 +240,107 @@ class ConfigurationAcademiqueService
         });
 
         return $crees;
+    }
+
+    /**
+     * Quand une nouvelle classe est créée, elle hérite automatiquement
+     * de toutes les matières déjà configurées pour son niveau / série.
+     */
+    public function synchroniserMatieresPourNouvelleClasse(ClasseConfig $classe): int
+    {
+        $q = MatiereConfig::where('etablissement_id', $classe->etablissement_id)
+            ->where('annee_id', $classe->annee_id)
+            ->where('niveau_id', $classe->niveau_id);
+
+        if ($classe->niveau?->cycle === 'secondaire') {
+            if ($classe->serie_id) {
+                $q->where(function ($sub) use ($classe) {
+                    $sub->where('serie_id', $classe->serie_id)
+                        ->orWhereNull('serie_id');
+                });
+            } else {
+                $q->whereNull('serie_id');
+            }
+        }
+
+        $matieresModeles = $q->get()->unique('matiere_uuid_externe');
+        $attachees = 0;
+
+        foreach ($matieresModeles as $modele) {
+            $existe = MatiereConfig::where([
+                'etablissement_id'     => $classe->etablissement_id,
+                'annee_id'             => $classe->annee_id,
+                'niveau_id'            => $classe->niveau_id,
+                'classe_id'            => $classe->id,
+                'matiere_uuid_externe' => $modele->matiere_uuid_externe,
+            ])->exists();
+
+            if (! $existe) {
+                MatiereConfig::create([
+                    'etablissement_id'     => $classe->etablissement_id,
+                    'annee_id'             => $classe->annee_id,
+                    'cycle'                => $modele->cycle,
+                    'niveau_id'            => $classe->niveau_id,
+                    'serie_id'             => $classe->serie_id,
+                    'promotion_id'         => $classe->niveau_id,
+                    'classe_id'            => $classe->id,
+                    'matiere_uuid_externe' => $modele->matiere_uuid_externe,
+                    'nom_matiere'          => $modele->nom_matiere,
+                    'code_matiere'         => $modele->code_matiere,
+                    'coefficient'          => $modele->coefficient,
+                    'est_obligatoire'      => $modele->est_obligatoire,
+                ]);
+                $attachees++;
+            }
+        }
+
+        return $attachees;
+    }
+
+    /**
+     * Quand une nouvelle cohorte est créée, elle hérite automatiquement
+     * de toutes les matières configurées pour sa filière et niveau.
+     */
+    public function synchroniserMatieresPourNouvelleCohorte(CohorteUniversitaire $cohorte): int
+    {
+        $matieresModeles = MatiereConfig::where('etablissement_id', $cohorte->etablissement_id)
+            ->where('annee_id', $cohorte->annee_id)
+            ->where('niveau_id', $cohorte->niveau_id)
+            ->where('serie_id', $cohorte->filiere_id)
+            ->get()
+            ->unique('matiere_uuid_externe');
+
+        $attachees = 0;
+
+        foreach ($matieresModeles as $modele) {
+            $existe = MatiereConfig::where([
+                'etablissement_id'     => $cohorte->etablissement_id,
+                'annee_id'             => $cohorte->annee_id,
+                'niveau_id'            => $cohorte->niveau_id,
+                'serie_id'             => $cohorte->filiere_id,
+                'cohorte_id'           => $cohorte->id,
+                'matiere_uuid_externe' => $modele->matiere_uuid_externe,
+            ])->exists();
+
+            if (! $existe) {
+                MatiereConfig::create([
+                    'etablissement_id'     => $cohorte->etablissement_id,
+                    'annee_id'             => $cohorte->annee_id,
+                    'cycle'                => 'universitaire',
+                    'niveau_id'            => $cohorte->niveau_id,
+                    'serie_id'             => $cohorte->filiere_id,
+                    'cohorte_id'           => $cohorte->id,
+                    'matiere_uuid_externe' => $modele->matiere_uuid_externe,
+                    'nom_matiere'          => $modele->nom_matiere,
+                    'code_matiere'         => $modele->code_matiere,
+                    'coefficient'          => $modele->coefficient,
+                    'est_obligatoire'      => $modele->est_obligatoire,
+                ]);
+                $attachees++;
+            }
+        }
+
+        return $attachees;
     }
 
     // ── Audit ────────────────────────────────────────────────────────────

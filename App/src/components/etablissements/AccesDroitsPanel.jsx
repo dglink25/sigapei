@@ -9,6 +9,7 @@ import Pagination from '../administration/Pagination'
 import ServiceIcon from '../administration/ServiceIcon'
 import { Flash, useFlash } from '../administration/Flash'
 import { SkeletonList } from '../administration/Skeleton'
+import Loader from '../commun/Loader'
 import '../administration/admin-ui.css'
 
 const FILTRES = [
@@ -198,7 +199,13 @@ export default function AccesDroitsPanel() {
   }
 
   /* ── Rendu ── */
-  if (services === null) return <div className="ap-card ap-card--flush"><SkeletonList rows={4} /></div>
+  if (services === null) {
+    return (
+      <div className="ap-card" style={{ padding: '3.5rem', display: 'flex', justifyContent: 'center' }}>
+        <Loader mode="inline" label="Chargement des droits d'accès…" />
+      </div>
+    )
+  }
 
   if (services.length === 0) {
     return (

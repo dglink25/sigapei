@@ -6,6 +6,7 @@ export const SERVICE_PATHS = {
   detail: (uuid) => `/admin/services/${uuid}`,
   etablissementRoute: '/admin/etablissements/:uuid/services',
   etablissement: (uuid) => `/admin/etablissements/${uuid}/services`,
+  demandes: '/admin/demandes-service',
 }
 
 /** Meme regle que le backend (code stable et immuable). */

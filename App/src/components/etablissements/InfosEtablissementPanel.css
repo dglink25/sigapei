@@ -37,7 +37,8 @@
 
 .ie-geo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
-.ie-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.ie-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.ie-actions > :only-child { margin-left: auto; }
 
 /* Lecture seule */
 .ie-ro { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; margin: 0 0 12px; }

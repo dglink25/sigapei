@@ -18,7 +18,7 @@ class ClasseConfig extends Model
 
     protected $fillable = [
         'etablissement_id', 'annee_id', 'niveau_id', 'subdivision_id', 'serie_id',
-        'sigle', 'classe_uuid_externe', 'effectif_previsionnel', 'actif',
+        'nom', 'mode_numerotation', 'sigle', 'classe_uuid_externe', 'effectif_previsionnel', 'actif',
     ];
     protected $casts = [
         'actif'                 => 'boolean',
@@ -29,19 +29,35 @@ class ClasseConfig extends Model
     public function niveau()      { return $this->belongsTo(NiveauScolaire::class, 'niveau_id'); }
     public function subdivision() { return $this->belongsTo(SubdivisionPedagogique::class, 'subdivision_id'); }
     public function serie()       { return $this->belongsTo(SerieFiliere::class, 'serie_id'); }
+    public function matieres()    { return $this->hasMany(MatiereConfig::class, 'classe_id'); }
 
     /**
-     * Génère un sigle lisible depuis niveau + série/subdivision.
-     * Ex. "CM2 A", "Tle D", "5ème M1"
+     * Génère un sigle lisible selon le cycle et la structure :
+     * - Maternelle : "M1 A", "M1"
+     * - Primaire : "CM2 A", "CM2"
+     * - Secondaire : "6ème", "6ème A", "6ème M1", "2nde B1", "Tle D"
      */
     public function genererSigle(): string
     {
-        $abr = $this->niveau->abreviation ?: $this->niveau->nom;
-        if ($this->serie && $this->serie->code) {
-            return trim("{$abr} {$this->serie->code}");
+        $abr = $this->niveau?->abreviation ?: ($this->niveau?->nom ?? '');
+
+        // 1. Secondaire avec Série (ex: 2nde B1, Tle D)
+        if ($this->serie && ($this->serie->code || $this->serie->nom)) {
+            $codeSerie = $this->serie->code ?: $this->serie->nom;
+            if ($this->nom && preg_match('/\b[0-9]+\b/', $this->nom, $m)) {
+                return trim("{$abr} {$codeSerie}{$m[0]}");
+            }
+            return trim("{$abr} {$codeSerie}");
         }
-        $codeSub = $this->subdivision->code ?: last(explode(' ', $this->subdivision->nom));
-        return trim("{$abr} {$codeSub}");
+
+        // 2. Avec subdivision / groupe (ex: CM2 A, M1 A)
+        if ($this->subdivision) {
+            $codeSub = $this->subdivision->code ?: last(explode(' ', $this->subdivision->nom));
+            return trim("{$abr} {$codeSub}");
+        }
+
+        // 3. Cycle unique ou sans subdivision (ex: CM2, 6ème)
+        return trim($abr);
     }
 
     protected static function booted(): void
@@ -49,6 +65,9 @@ class ClasseConfig extends Model
         static::creating(function (self $c) {
             if (empty($c->sigle) && $c->niveau) {
                 $c->sigle = $c->genererSigle();
+            }
+            if (empty($c->nom)) {
+                $c->nom = $c->sigle ?: ($c->niveau?->nom ?? '');
             }
         });
     }

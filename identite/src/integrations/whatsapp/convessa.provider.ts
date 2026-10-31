@@ -124,6 +124,11 @@ export class ConvessaProvider implements OnModuleInit {
     // Numéro E.164 → retirer le +
     const to = destinataire.startsWith('+') ? destinataire.replace('+', '') : destinataire;
 
+    if (!this.config.get<string>('convessa.apiUrl')) {
+      this.logger.log(`[WhatsApp Simulation] Vers ${to} : ${message}`);
+      return { succes: true };
+    }
+
     try {
       const { data } = await this.http.post('/api/v1/send', { to, message });
       return { succes: true, messageId: data?.messageId };

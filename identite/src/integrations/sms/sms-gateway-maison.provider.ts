@@ -67,6 +67,32 @@ export class SmsGatewayMaisonProvider {
     }
   }
 
+  /**
+   * Envoi d'un message SMS texte générique (onboarding utilisateur, confirmation de matricule, etc.).
+   */
+  async envoyerMessage(telephoneE164: string, message: string): Promise<EnvoiSmsResultat> {
+    const gatewayUrl = this.config.get<string>('smsGateway.url');
+    if (!gatewayUrl) {
+      this.logger.log(`[SMS Simulation] Vers ${telephoneE164} : ${message}`);
+      return { succes: true };
+    }
+
+    const emetteur = this.prochainEmetteur();
+    try {
+      await this.http.post('/messages', {
+        from: emetteur,
+        to: telephoneE164,
+        text: message,
+      });
+      this.logger.log(`SMS délivré avec succès à ${telephoneE164}`);
+      return { succes: true, emetteur };
+    } catch (err) {
+      const erreur = axios.isAxiosError(err) ? err.message : (err as Error).message;
+      this.logger.warn(`Échec envoi SMS via ${emetteur} vers ${telephoneE164}: ${erreur}`);
+      return { succes: false, emetteur, erreur };
+    }
+  }
+
   /** Suivi du credit restant par emetteur, pour alerter avant epuisement (section 15). */
   async recupererCreditPool(): Promise<Array<{ emetteur: string; creditRestant: number }>> {
     try {

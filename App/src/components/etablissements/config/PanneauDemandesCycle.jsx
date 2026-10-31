@@ -1,18 +1,10 @@
-/**
- * PanneauDemandesCycle - Demandes d'extension de cycle.
- *
- * Accessible depuis Configuration > section "demandes-cycle".
- * L'administrateur peut :
- *   - Voir ses demandes en cours / acceptées / refusées
- *   - Soumettre une nouvelle demande pour un cycle non encore autorisé
- *   - Annuler une demande en attente
- */
 import { useEffect, useState } from 'react'
-import { Plus, X, RefreshCw, AlertTriangle } from 'lucide-react'
+import { Plus, X, RefreshCw, AlertTriangle, CheckCircle2, School, BookOpen, GraduationCap, Building2 } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { tokenStore, decodeJwt } from '../../../lib/identite/tokenStore'
 import { demandesCycleEtabService } from '../../../services/etablissements/demandesCycle.service'
 import { monEtablissementService }  from '../../../services/etablissements/monEtablissement.service'
+import Loader from '../../../components/commun/Loader'
 
 // Clé localStorage : une par tenant pour que chaque établissement ait son propre état
 const cleAlerte = () => {
@@ -31,10 +23,10 @@ const persisterAlerteFermee = () => {
 }
 
 const CYCLES_DISPO = [
-  { id: 'maternelle',    label: 'Maternelle',   desc: 'Petite, moyenne et grande section' },
-  { id: 'primaire',      label: 'Primaire',      desc: 'CI, CP, CE1, CE2, CM1, CM2' },
-  { id: 'secondaire',    label: 'Secondaire',    desc: 'Collège et lycée' },
-  { id: 'universitaire', label: 'Universitaire', desc: 'Licence, Master, Doctorat…' },
+  { id: 'maternelle',    label: 'Maternelle',   icon: School,        desc: 'Petite, moyenne et grande section' },
+  { id: 'primaire',      label: 'Primaire',      icon: BookOpen,      desc: 'CI, CP, CE1, CE2, CM1, CM2' },
+  { id: 'secondaire',    label: 'Secondaire',    icon: GraduationCap, desc: 'Collège et lycée' },
+  { id: 'universitaire', label: 'Universitaire', icon: Building2,     desc: 'Licence, Master, Doctorat…' },
 ]
 
 const STATUT_BADGE = {
@@ -52,6 +44,7 @@ export default function PanneauDemandesCycle() {
   const notify = useNotify()
   const [demandes,       setDemandes]       = useState([])
   const [cyclesAutorises,setCyclesAutorises]= useState([]) // cycles déjà accordés
+  const [typesInitiaux,  setTypesInitiaux]  = useState([]) // types déclarés à la création
   const [charge,         setCharge]         = useState(true)
   const [modale,         setModale]         = useState(false)
   const [enCours,        setEnCours]        = useState(false)
@@ -71,13 +64,17 @@ export default function PanneauDemandesCycle() {
         demandesCycleEtabService.lister(),
         monEtablissementService.lire(),
       ])
-      setDemandes(rDemandes?.data ?? rDemandes ?? [])
+      const dem = rDemandes?.data ?? rDemandes ?? []
+      setDemandes(dem)
+
+      const prof = rProfil?.etablissement ?? rProfil ?? {}
+      setTypesInitiaux(prof?.types ?? [])
+
       // cyclesAutorises : [{ cycle: 'primaire', statut: 'actif' }, …]
-      setCyclesAutorises(
-        (rProfil?.cyclesAutorises ?? [])
-          .filter((c) => c.statut === 'actif')
-          .map((c) => c.cycle)
-      )
+      const aut = (prof?.cyclesAutorises ?? [])
+        .filter((c) => c.statut === 'actif')
+        .map((c) => c.cycle)
+      setCyclesAutorises(aut)
     } catch (err) {
       notify.fromError(err)
     } finally {
@@ -98,7 +95,7 @@ export default function PanneauDemandesCycle() {
 
   const raisonIndisponible = (id) => {
     if (cyclesAutorises.includes(id)) return 'Déjà autorisé pour votre établissement'
-    if (cyclesEnAttente.includes(id)) return 'Demande déjà en cours d\'instruction'
+    if (cyclesEnAttente.includes(id)) return "Demande déjà en cours d'instruction"
     return null
   }
 
@@ -119,7 +116,7 @@ export default function PanneauDemandesCycle() {
         cycle: form.cycle,
         motif: form.motif.trim(),
       })
-      notify.success('Demande envoyée', 'Le Super Administrateur va l\'instruire.')
+      notify.success('Demande envoyée', "Le Super Administrateur va l'instruire.")
       setModale(false)
       await charger()
     } catch (err) {
@@ -145,7 +142,10 @@ export default function PanneauDemandesCycle() {
     <div className="cfg-tab">
       <div className="ap-page-head">
         <div>
-          <h2 className="ap-page-title">Demandes d'extension de cycle</h2>
+          <h2 className="ap-page-title">Cycles autorisés & Demandes d'extension</h2>
+          <p className="ap-page-sub">
+            Consultez les cycles d'enseignement accordés à votre établissement et déposez des demandes d'extension.
+          </p>
         </div>
         <div className="ap-page-actions">
           <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={charger} disabled={charge}>
@@ -196,44 +196,145 @@ export default function PanneauDemandesCycle() {
       )}
 
       {charge ? (
-        <div className="ap-card">
-          {[0,1].map((i) => <div key={i} className="ap-skel-row"><div className="ap-skel ap-skel--tile" /><div className="ap-skel ap-skel--line" /></div>)}
-        </div>
-      ) : demandes.length === 0 ? (
-        <div className="ap-card ap-empty">
-          <Plus size={36} aria-hidden="true" />
-          <p>Aucune demande. Cliquez sur <strong>Nouvelle demande</strong> pour en soumettre une.</p>
+        <div className="ap-card" style={{ padding: '2.5rem', display: 'flex', justifyContent: 'center' }}>
+          <Loader mode="inline" label="Chargement des cycles autorisés et des demandes…" />
         </div>
       ) : (
-        <div className="ap-card ap-card--flush">
-          <table className="ap-table">
-            <thead>
-              <tr><th>Cycle demandé</th><th>Date</th><th>Statut</th><th>Note</th><th></th></tr>
-            </thead>
-            <tbody>
-              {demandes.map((d) => (
-                <tr key={d.uuid}>
-                  <td><strong>{CYCLES_DISPO.find((c) => c.id === d.cycle)?.label ?? d.cycle}</strong></td>
-                  <td>{fmt(d.created_at)}</td>
-                  <td><span className={`ap-badge ${STATUT_BADGE[d.statut] ?? 'ap-badge--neutral'}`}>{STATUT_LABEL[d.statut] ?? d.statut}</span></td>
-                  <td>
-                    {d.note_instruction
-                      ? <small style={{ color: 'var(--sg-text-secondary)' }}>{d.note_instruction}</small>
-                      : <span style={{ color: 'var(--sg-text-muted)' }}>-</span>
-                    }
-                  </td>
-                  <td>
-                    {d.statut === 'en_attente' && (
-                      <button type="button" className="ap-btn ap-btn--danger ap-btn--sm" onClick={() => annuler(d.uuid)}>
-                        Annuler
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* 1. SECTION : CYCLES ACTUELLEMENT AUTORISÉS */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <CheckCircle2 size={18} color="var(--primary, #047857)" />
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
+                Cycles actuellement autorisés pour votre établissement ({cyclesAutorises.length})
+              </h3>
+            </div>
+
+            {cyclesAutorises.length === 0 ? (
+              <div className="ap-card ap-empty">
+                <p>Aucun cycle d'enseignement n'est actuellement autorisé.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+                {cyclesAutorises.map((cycleId) => {
+                  const conf = CYCLES_DISPO.find((c) => c.id === cycleId) || { id: cycleId, label: cycleId, icon: School }
+                  const Icon = conf.icon || School
+                  const demandeAcceptee = demandes.find((d) => d.cycle === cycleId && d.statut === 'acceptee')
+                  const estInitial = typesInitiaux.includes(cycleId)
+
+                  return (
+                    <div
+                      key={cycleId}
+                      className="ap-card"
+                      style={{
+                        padding: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 14,
+                        borderLeft: '4px solid var(--primary, #047857)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 10,
+                          background: 'rgba(4, 120, 87, 0.1)',
+                          color: 'var(--primary, #047857)',
+                          display: 'grid',
+                          placeItems: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon size={22} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                          <strong style={{ fontSize: '1rem' }}>{conf.label}</strong>
+                          <span className="ap-badge ap-badge--success" style={{ fontSize: '0.72rem' }}>
+                            Autorisé
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--sg-text-muted)' }}>
+                          {demandeAcceptee
+                            ? `Extension accordée le ${fmt(demandeAcceptee.updated_at || demandeAcceptee.created_at)}`
+                            : estInitial
+                            ? "Cycle d'ouverture de l'établissement"
+                            : "Cycle validé par l'administration"}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 2. SECTION : HISTORIQUE DES DEMANDES D'EXTENSION */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>
+                Historique des demandes d'extension de cycle ({demandes.length})
+              </h3>
+            </div>
+
+            {demandes.length === 0 ? (
+              <div className="ap-card ap-empty">
+                <Plus size={36} aria-hidden="true" />
+                <p>Aucune demande d'extension déposée. Cliquez sur <strong>Nouvelle demande</strong> pour solliciter un nouveau cycle.</p>
+              </div>
+            ) : (
+              <div className="ap-card ap-card--flush">
+                <table className="ap-table">
+                  <thead>
+                    <tr>
+                      <th>Cycle demandé</th>
+                      <th>Date de dépôt</th>
+                      <th>Statut</th>
+                      <th>Note / Motif</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {demandes.map((d) => (
+                      <tr key={d.uuid}>
+                        <td>
+                          <strong>{CYCLES_DISPO.find((c) => c.id === d.cycle)?.label ?? d.cycle}</strong>
+                        </td>
+                        <td>{fmt(d.created_at)}</td>
+                        <td>
+                          <span className={`ap-badge ${STATUT_BADGE[d.statut] ?? 'ap-badge--neutral'}`}>
+                            {STATUT_LABEL[d.statut] ?? d.statut}
+                          </span>
+                        </td>
+                        <td>
+                          {d.note_instruction ? (
+                            <small style={{ color: 'var(--sg-text-secondary)' }}>{d.note_instruction}</small>
+                          ) : d.motif ? (
+                            <small style={{ color: 'var(--sg-text-muted)' }}>{d.motif.slice(0, 50)}…</small>
+                          ) : (
+                            <span style={{ color: 'var(--sg-text-muted)' }}>-</span>
+                          )}
+                        </td>
+                        <td>
+                          {d.statut === 'en_attente' && (
+                            <button
+                              type="button"
+                              className="ap-btn ap-btn--danger ap-btn--sm"
+                              onClick={() => annuler(d.uuid)}
+                            >
+                              Annuler
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {modale && (

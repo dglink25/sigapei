@@ -12,6 +12,7 @@ import { BiometrieModule } from '../biometrie/biometrie.module';
 import { OtpModule } from '../otp/otp.module';
 import { EtablissementsRefModule } from '../etablissements-ref/etablissements-ref.module';
 import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
+import { IntegrationsModule } from '../integrations/integrations.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RabbitmqModule } from '../rabbitmq/rabbitmq.module';
     OtpModule,
     EtablissementsRefModule,
     RabbitmqModule,
+    IntegrationsModule,
   ],
   controllers: [MoiController, GestionUtilisateursController],
   providers: [UtilisateursService, GestionUtilisateursService],

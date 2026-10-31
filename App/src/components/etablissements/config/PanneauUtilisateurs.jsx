@@ -13,6 +13,7 @@ import { Plus, X, RefreshCw, Search, Users } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { utilisateursService } from '../../../services/identite/utilisateurs.service'
 import ChampTelephone from '../../commun/ChampTelephone'
+import Loader from '../../commun/Loader'
 
 const STATUT_BADGE = { actif:'ap-badge--success', bloque:'ap-badge--warning', archive:'ap-badge--neutral' }
 const STATUT_LABEL = { actif:'Actif', bloque:'Bloqué', archive:'Archivé' }
@@ -137,8 +138,8 @@ export default function PanneauUtilisateurs() {
       </div>
 
       {utilisateurs === null ? (
-        <div className="ap-card">
-          {[0,1,2].map((i) => <div key={i} className="ap-skel-row"><div className="ap-skel ap-skel--tile" /><div className="ap-skel ap-skel--line" /></div>)}
+        <div className="ap-card" style={{ padding: '3rem', display: 'flex', justifyContent: 'center' }}>
+          <Loader mode="inline" label="Chargement des utilisateurs…" />
         </div>
       ) : utilisateurs.length === 0 ? (
         <div className="ap-card ap-empty">
@@ -154,7 +155,14 @@ export default function PanneauUtilisateurs() {
             <tbody>
               {utilisateurs.map((u) => (
                 <tr key={u.uuid}>
-                  <td><strong>{u.nomComplet}</strong></td>
+                  <td>
+                    <strong>{u.nomComplet}</strong>
+                    {u.matricule && (
+                      <div style={{ fontSize: '0.78rem', color: 'var(--sg-primary, #006B3C)', fontFamily: 'var(--sg-font-mono, monospace)', fontWeight: 600, letterSpacing: '0.5px', marginTop: 2 }}>
+                        {u.matricule}
+                      </div>
+                    )}
+                  </td>
                   <td>
                     {u.email && <div style={{ fontSize:'0.85rem' }}>{u.email}</div>}
                     {u.telephone && <div style={{ fontSize:'0.82rem', color:'var(--sg-text-muted)' }}>{u.telephone}</div>}

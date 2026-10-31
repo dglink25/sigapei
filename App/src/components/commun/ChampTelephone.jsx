@@ -4,6 +4,7 @@
  */
 import { useState, useMemo } from 'react'
 import PhoneInput from 'react-phone-number-input'
+import flags from 'react-phone-number-input/flags'
 import { getExampleNumber } from 'libphonenumber-js'
 import examples from 'libphonenumber-js/examples.mobile.json'
 import 'react-phone-number-input/style.css'
@@ -35,6 +36,7 @@ export default function ChampTelephone({
         <PhoneInput
           id={id}
           defaultCountry={defaultCountry}
+          flags={flags}
           placeholder={exemple}
           value={value}
           onChange={onChange}

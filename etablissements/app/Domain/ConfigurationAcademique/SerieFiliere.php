@@ -13,12 +13,13 @@ class SerieFiliere extends Model
     protected $hidden = ['id', 'etablissement_id', 'subdivision_id'];
 
     protected $fillable = [
-        'etablissement_id', 'cycle', 'subdivision_id',
+        'etablissement_id', 'cycle', 'subdivision_id', 'promotion_id', 'cycle_univ',
         'nom', 'code', 'description', 'actif',
     ];
     protected $casts = ['actif' => 'boolean'];
 
     public function subdivision() { return $this->belongsTo(SubdivisionPedagogique::class, 'subdivision_id'); }
+    public function promotion()   { return $this->belongsTo(NiveauScolaire::class, 'promotion_id'); }
     public function classes()     { return $this->hasMany(ClasseConfig::class, 'serie_id'); }
     public function cohortes()    { return $this->hasMany(CohorteUniversitaire::class, 'filiere_id'); }
 }

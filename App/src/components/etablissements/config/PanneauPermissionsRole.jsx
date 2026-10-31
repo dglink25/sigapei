@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { RefreshCw, Shield } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { permissionsRoleService } from '../../../services/identite/permissionsRole.service'
+import Loader from '../../commun/Loader'
 
 export default function PanneauPermissionsRole() {
   const notify = useNotify()
@@ -57,6 +58,10 @@ export default function PanneauPermissionsRole() {
   }, [roleActif?.uuid]) // eslint-disable-line
 
   const toggleService = async (serviceUuid, actuel) => {
+    if (!droits?.role?.peutVoirPortail) {
+      notify.warning("Activez d'abord l'accès au portail pour pouvoir accorder des services à ce rôle.")
+      return
+    }
     setBusy((b) => ({ ...b, [serviceUuid]: true }))
     try {
       await permissionsRoleService.definirService(roleActif.uuid, serviceUuid, !actuel)
@@ -76,11 +81,23 @@ export default function PanneauPermissionsRole() {
   }
 
   const togglePortail = async (actuel) => {
+    const nouveau = !actuel
     setBusy((b) => ({ ...b, portail: true }))
     try {
-      await permissionsRoleService.definirPortail(roleActif.uuid, !actuel)
-      setDroits((d) => ({ ...d, role: { ...d.role, peutVoirPortail: !actuel } }))
-      setRoles((prev) => prev.map((r) => r.uuid === roleActif.uuid ? { ...r, peutVoirPortail: !actuel } : r))
+      await permissionsRoleService.definirPortail(roleActif.uuid, nouveau)
+      setDroits((d) => ({
+        ...d,
+        role: { ...d.role, peutVoirPortail: nouveau },
+        services: nouveau ? d.services : d.services.map((s) => ({ ...s, accorde: false })),
+      }))
+      setRoles((prev) =>
+        prev.map((r) =>
+          r.uuid === roleActif.uuid
+            ? { ...r, peutVoirPortail: nouveau, nbServicesAccordes: nouveau ? r.nbServicesAccordes : 0 }
+            : r,
+        ),
+      )
+      await chargerRoles()
     } catch (err) {
       notify.fromError(err)
     } finally {
@@ -101,7 +118,7 @@ export default function PanneauPermissionsRole() {
           </p>
         </div>
         <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={chargerRoles} disabled={chargeListe}>
-          <RefreshCw size={14} className={chargeListe ? 'ap-spin' : ''} />
+          <RefreshCw size={14} className={chargeListe ? 'ap-spin' : ''} /> Actualiser
         </button>
       </div>
 
@@ -139,9 +156,13 @@ export default function PanneauPermissionsRole() {
 
         {/* Droits du rôle sélectionné */}
         <div>
-          {!roleActif && (
+          {chargeDroits ? (
+            <div className="ap-card" style={{ padding: '3rem', display: 'flex', justifyContent: 'center' }}>
+              <Loader mode="inline" label="Chargement des permissions du rôle…" />
+            </div>
+          ) : !roleActif ? (
             <div className="ap-card ap-empty"><p>Sélectionnez un rôle.</p></div>
-          )}
+          ) : null}
 
           {roleActif && estAdmin && (
             <div className="ap-alert ap-alert--warning">
@@ -176,6 +197,17 @@ export default function PanneauPermissionsRole() {
                 </div>
               </div>
 
+              {/* Avertissement si portail inactif */}
+              {!(droits?.role?.peutVoirPortail ?? true) && (
+                <div className="ap-alert ap-alert--warning" style={{ marginBottom: 14 }}>
+                  <Shield size={16} aria-hidden="true" />
+                  <div>
+                    <strong>Accès au portail désactivé</strong>
+                    L'accès aux services reste suspendu et ne peut être accordé tant que l'accès au portail n'est pas activé pour ce rôle.
+                  </div>
+                </div>
+              )}
+
               {/* Services */}
               <div className="ap-card ap-card--flush">
                 {chargeDroits ? (
@@ -192,33 +224,38 @@ export default function PanneauPermissionsRole() {
                       <tr><th>Service</th><th>Code</th><th>Disponible</th><th>Accordé à ce rôle</th></tr>
                     </thead>
                     <tbody>
-                      {droits.services.map((s) => (
-                        <tr key={s.uuid}>
-                          <td>
-                            <strong>{s.nom}</strong>
-                            {s.description && <small>{s.description}</small>}
-                          </td>
-                          <td><span className="ap-code">{s.code}</span></td>
-                          <td>
-                            <span className={`ap-badge ${s.actif ? 'ap-badge--success' : 'ap-badge--neutral'}`}>
-                              {s.actif ? 'Actif' : 'Bloqué'}
-                            </span>
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              role="switch"
-                              aria-checked={s.accorde}
-                              className={`ap-switch${s.accorde ? ' is-on' : ''}${busy[s.uuid] ? ' is-busy' : ''}`}
-                              onClick={() => toggleService(s.uuid, s.accorde)}
-                              disabled={!!busy[s.uuid] || !s.actif}
-                              title={!s.actif ? 'Service bloqué' : undefined}
-                            >
-                              <span className="ap-switch-thumb" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {droits.services.map((s) => {
+                        const peutVoirPortail = droits?.role?.peutVoirPortail ?? true
+                        const estAccorde = Boolean(s.accorde && peutVoirPortail)
+                        const estDesactive = !!busy[s.uuid] || !s.actif || !peutVoirPortail
+                        return (
+                          <tr key={s.uuid} style={{ opacity: peutVoirPortail ? 1 : 0.65 }}>
+                            <td>
+                              <strong>{s.nom}</strong>
+                              {s.description && <small>{s.description}</small>}
+                            </td>
+                            <td><span className="ap-code">{s.code}</span></td>
+                            <td>
+                              <span className={`ap-badge ${s.actif ? 'ap-badge--success' : 'ap-badge--neutral'}`}>
+                                {s.actif ? 'Actif' : 'Bloqué'}
+                              </span>
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={estAccorde}
+                                className={`ap-switch${estAccorde ? ' is-on' : ''}${busy[s.uuid] ? ' is-busy' : ''}`}
+                                onClick={() => toggleService(s.uuid, s.accorde)}
+                                disabled={estDesactive}
+                                title={!peutVoirPortail ? "Activez l'accès au portail pour ce rôle pour lui accorder des services" : !s.actif ? 'Service bloqué' : undefined}
+                              >
+                                <span className="ap-switch-thumb" />
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 )}

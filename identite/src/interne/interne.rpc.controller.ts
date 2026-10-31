@@ -10,6 +10,7 @@ import { UtilisateursService } from '../utilisateurs/utilisateurs.service';
 import { normaliserTelephoneE164 } from '../common/utils/phone.util';
 import { ConvessaProvider } from '../integrations/whatsapp/convessa.provider';
 import { SmtpAppPasswordProvider } from '../integrations/email/smtp-app-password.provider';
+import { SmsGatewayMaisonProvider } from '../integrations/sms/sms-gateway-maison.provider';
 
 @Controller()
 export class InterneRpcController {
@@ -24,6 +25,7 @@ export class InterneRpcController {
     private readonly utilisateursService: UtilisateursService,
     private readonly whatsapp: ConvessaProvider,
     private readonly email: SmtpAppPasswordProvider,
+    private readonly sms: SmsGatewayMaisonProvider,
   ) {}
 
   @MessagePattern('identite.introspection')
@@ -66,10 +68,12 @@ export class InterneRpcController {
     } = ev;
 
     /* ── 1. Créer le compte administrateur ── */
+    let matriculeAdmin: string | null = null;
     try {
       if (dirigeantEmail) {
         const existant = await this.utilisateursService.trouverParEmail(dirigeantEmail.toLowerCase());
         if (existant) {
+          matriculeAdmin = existant.matricule ?? null;
           this.logger.log(`Compte deja existant pour ${dirigeantEmail}, evenement ignore (idempotence).`);
           // Même si le compte existe, on envoie quand même les notifications ci-dessous
         } else {
@@ -82,14 +86,16 @@ export class InterneRpcController {
             if (dirigeantTelephone) {
               try { telephoneE164 = normaliserTelephoneE164(dirigeantTelephone).e164; } catch { /* ignore */ }
             }
+            matriculeAdmin = await this.utilisateursService.genererMatriculeUnique(code);
             await this.utilisateursService.creerUtilisateurAdministrateur({
               tenantId: tenantUuid,
               roleId:   roleAdmin.id,
               nomComplet: dirigeantNom,
               email:    dirigeantEmail?.toLowerCase() ?? null,
               telephone: telephoneE164,
+              matricule: matriculeAdmin,
             });
-            this.logger.log(`Compte administrateur créé pour ${nomEtablissement} (${tenantUuid}).`);
+            this.logger.log(`Compte administrateur créé pour ${nomEtablissement} (${tenantUuid}) avec matricule ${matriculeAdmin}.`);
           }
         }
       }
@@ -97,7 +103,7 @@ export class InterneRpcController {
       this.logger.error(`Échec création compte admin pour ${tenantUuid}: ${(err as Error).message}`);
     }
 
-    /* ── 2. Notifications WhatsApp + e-mail au dirigeant ── */
+    /* ── 2. Notifications SMS + WhatsApp + e-mail au dirigeant ── */
     const url = urlAccueil ?? `https://${slug}.sigapei.com`;
 
     const msgWa =
@@ -106,6 +112,7 @@ export class InterneRpcController {
       `Votre établissement *${nomEtablissement}* a été validé et est désormais actif sur SIGAPEI.\n\n` +
       `*Vos identifiants administrateur :*\n` +
       `Identifiant de connexion : ${dirigeantEmail ?? dirigeantTelephone}\n` +
+      (matriculeAdmin ? `Matricule administrateur : ${matriculeAdmin}\n` : '') +
       `Matricule établissement : ${matricule}\n` +
       `Code public : ${code}\n\n` +
       `*Page d'accueil :*\n${url}\n\n` +
@@ -118,6 +125,11 @@ export class InterneRpcController {
       try {
         const tel = normaliserTelephoneE164(dirigeantTelephone).e164;
         promesses.push(this.whatsapp.envoyerMessage(tel, msgWa));
+        const msgSms =
+          `SIGAPEI: Félicitations ${dirigeantNom}! Votre établissement ${nomEtablissement} est validé.` +
+          (matriculeAdmin ? ` Matricule admin: ${matriculeAdmin}.` : '') +
+          ` Code: ${code}. Accès: ${url}`;
+        promesses.push(this.sms.envoyerMessage(tel, msgSms));
       } catch { /* numéro invalide */ }
     }
 
@@ -138,6 +150,11 @@ export class InterneRpcController {
                 <td style="padding:10px 18px;color:#5a6b5f;font-size:14px;width:200px">Identifiant de connexion</td>
                 <td style="padding:10px 18px;color:#1a2a1e;font-size:14px;font-weight:600">${dirigeantEmail ?? dirigeantTelephone}</td>
               </tr>
+              ${matriculeAdmin ? `
+              <tr>
+                <td style="padding:10px 18px;color:#5a6b5f;font-size:14px;border-top:1px solid #dde4df">Matricule administrateur</td>
+                <td style="padding:10px 18px;color:#006B3C;font-size:14px;font-weight:700;letter-spacing:1px;border-top:1px solid #dde4df">${matriculeAdmin}</td>
+              </tr>` : ''}
               <tr>
                 <td style="padding:10px 18px;color:#5a6b5f;font-size:14px;border-top:1px solid #dde4df">Matricule établissement</td>
                 <td style="padding:10px 18px;color:#1a2a1e;font-size:14px;font-weight:600;letter-spacing:2px;border-top:1px solid #dde4df">${matricule}</td>
@@ -351,8 +368,10 @@ export class InterneRpcController {
       `*SIGAPEI - Bienvenue*\n\n` +
       `Bonjour ${nom},\n\n` +
       `Un compte a été créé pour vous sur la plateforme *SIGAPEI*.\n\n` +
-      `*Votre identifiant de connexion :*\n${identifiant}\n\n` +
-      `Connectez-vous sur SIGAPEI avec ce numéro ou cet e-mail pour accéder à vos services.\n\n` +
+      `*Vos identifiants de connexion :*\n` +
+      `Identifiant : ${identifiant}\n` +
+      (utilisateur.matricule ? `Matricule : ${utilisateur.matricule}\n` : '') +
+      `\nConnectez-vous sur SIGAPEI pour accéder à vos services.\n\n` +
       `SIGAPEI - Plateforme E-Académique`;
 
     const promesses: Promise<any>[] = [];
@@ -361,6 +380,11 @@ export class InterneRpcController {
       try {
         const tel = normaliserTelephoneE164(telephone).e164;
         promesses.push(this.whatsapp.envoyerMessage(tel, msgWa));
+        const msgSms =
+          `SIGAPEI: Bonjour ${nom}, votre compte a été créé.` +
+          (utilisateur.matricule ? ` Matricule: ${utilisateur.matricule}.` : '') +
+          ` Identifiant: ${identifiant}. Connectez-vous sur la plateforme.`;
+        promesses.push(this.sms.envoyerMessage(tel, msgSms));
       } catch { /* numéro invalide */ }
     }
 
@@ -374,14 +398,22 @@ export class InterneRpcController {
             <p style="margin:0 0 24px;color:#1a2a1e;font-size:15px;line-height:1.6">
               Un compte vous a été créé sur la plateforme SIGAPEI.
             </p>
-            <p style="margin:0 0 12px;color:#5a6b5f;font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600">Votre identifiant de connexion</p>
+            <p style="margin:0 0 12px;color:#5a6b5f;font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600">Vos accès SIGAPEI</p>
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
               style="border:1px solid #dde4df;border-radius:8px;overflow:hidden;margin-bottom:24px">
               <tr style="background:#f7faf8">
+                <td style="padding:12px 18px;color:#5a6b5f;font-size:14px;width:180px">Identifiant de connexion</td>
                 <td style="padding:12px 18px;color:#1a2a1e;font-size:15px;font-weight:700">
                   ${identifiant}
                 </td>
               </tr>
+              ${utilisateur.matricule ? `
+              <tr>
+                <td style="padding:12px 18px;color:#5a6b5f;font-size:14px;border-top:1px solid #dde4df">Matricule personnel</td>
+                <td style="padding:12px 18px;color:#006B3C;font-size:15px;font-weight:700;letter-spacing:1px;border-top:1px solid #dde4df">
+                  ${utilisateur.matricule}
+                </td>
+              </tr>` : ''}
             </table>
             <p style="margin:0;color:#5a6b5f;font-size:14px;line-height:1.6">
               Connectez-vous avec cet identifiant pour accéder à vos services.

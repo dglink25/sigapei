@@ -6,6 +6,7 @@ export interface EtablissementRef {
   uuid: string;
   nom: string;
   slug: string;
+  code?: string;
   /** UUID du document logo (null si pas de logo). */
   logoDocumentId: string | null;
   /** actif | suspendu | archive (schema "etablissements", gere par le microservice Etablissements). */
@@ -22,7 +23,7 @@ export class EtablissementsRefService {
 
   async trouverParUuid(uuid: string): Promise<EtablissementRef | null> {
     const lignes: EtablissementRef[] = await this.dataSource.query(
-      `SELECT id::text AS id, uuid::text AS uuid, nom, slug, statut,
+      `SELECT id::text AS id, uuid::text AS uuid, nom, slug, code, statut,
               logo_document_id AS "logoDocumentId"
          FROM "etablissements"."etablissements" WHERE uuid = $1 LIMIT 1`,
       [uuid],
@@ -32,7 +33,7 @@ export class EtablissementsRefService {
 
   async trouverParId(id: string): Promise<EtablissementRef | null> {
     const lignes: EtablissementRef[] = await this.dataSource.query(
-      `SELECT id::text AS id, uuid::text AS uuid, nom, slug, statut,
+      `SELECT id::text AS id, uuid::text AS uuid, nom, slug, code, statut,
               logo_document_id AS "logoDocumentId"
          FROM "etablissements"."etablissements" WHERE id = $1 LIMIT 1`,
       [id],
@@ -43,7 +44,7 @@ export class EtablissementsRefService {
   async trouverParIds(ids: string[]): Promise<EtablissementRef[]> {
     if (ids.length === 0) return [];
     return this.dataSource.query(
-      `SELECT id::text AS id, uuid::text AS uuid, nom, slug, statut,
+      `SELECT id::text AS id, uuid::text AS uuid, nom, slug, code, statut,
               logo_document_id AS "logoDocumentId"
          FROM "etablissements"."etablissements" WHERE id = ANY($1::bigint[])`,
       [ids],
@@ -55,7 +56,7 @@ export class EtablissementsRefService {
     // Passage explicite via unnest pour éviter les problèmes de cast uuid[]
     const placeholders = uuids.map((_, i) => `$${i + 1}::uuid`).join(',');
     return this.dataSource.query(
-      `SELECT id::text AS id, uuid::text AS uuid, nom, slug, statut,
+      `SELECT id::text AS id, uuid::text AS uuid, nom, slug, code, statut,
               logo_document_id AS "logoDocumentId"
          FROM "etablissements"."etablissements"
         WHERE uuid IN (${placeholders})`,

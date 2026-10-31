@@ -47,6 +47,37 @@ export class UtilisateursService {
    * Cree le compte administrateur d'un etablissement (role = administrateur,
    * tenantId = uuid de l'etablissement), a la demande du microservice
    * Etablissements lors de la validation definitive d'une demande
+  /**
+   * Génération automatique du matricule unique utilisateur selon la règle stricte :
+   * XXX-code_de_son_etablissement-XXXXXXX
+   * où tous les X sont des chiffres numériques (3 chiffres préfixe, 7 chiffres suffixe).
+   */
+  async genererMatriculeUnique(codeEtablissement?: string | null): Promise<string> {
+    const code = (codeEtablissement || 'SIGA').trim().toUpperCase().replace(/[^A-Z0-9]/g, '') || 'SIGA';
+
+    let matricule = '';
+    let existe = true;
+    let tentatives = 0;
+
+    while (existe && tentatives < 50) {
+      tentatives++;
+      // 3 chiffres (100 à 999)
+      const p1 = Math.floor(100 + Math.random() * 900).toString();
+      // 7 chiffres (1000000 à 9999999)
+      const p2 = Math.floor(1000000 + Math.random() * 9000000).toString();
+      matricule = `${p1}-${code}-${p2}`;
+
+      const doublon = await this.utilisateurRepo.findOne({ where: { matricule } });
+      if (!doublon) {
+        existe = false;
+      }
+    }
+
+    return matricule;
+  }
+
+  /**
+   * Cree le compte administrateur suite a la validation d'un etablissement
    * (evenement RabbitMQ "etablissement.valide" - voir InterneRpcController).
    * Rappel du principe "pas d'inscription" : ce microservice ne fait
    * qu'executer la creation ordonnee par le module metier proprietaire.
@@ -57,6 +88,7 @@ export class UtilisateursService {
     nomComplet: string;
     email: string | null;
     telephone: string | null;
+    matricule?: string | null;
   }): Promise<Utilisateur> {
     const utilisateur = this.utilisateurRepo.create({
       tenantId: params.tenantId,
@@ -64,7 +96,7 @@ export class UtilisateursService {
       nomComplet: params.nomComplet,
       email: params.email,
       telephone: params.telephone,
-      matricule: null,
+      matricule: params.matricule ?? null,
       paysTelephone: null,
       statut: StatutUtilisateur.ACTIF,
     });

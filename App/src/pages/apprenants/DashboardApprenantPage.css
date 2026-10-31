@@ -1,0 +1,249 @@
+/* ============================================================
+   DashboardApprenantPage.css - Style Institutionnel Apprenant
+   ============================================================ */
+
+.dap-welcome {
+  background: #006B3C;
+  color: #FFF6DD;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(0, 107, 60, 0.15);
+}
+
+.dap-welcome-info h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.dap-welcome-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: rgba(255, 246, 221, 0.85);
+}
+
+.dap-welcome-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dap-badge-status {
+  background: rgba(233, 170, 32, 0.25);
+  border: 1px solid #E9AA20;
+  color: #FFF6DD;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Boutons dans le bandeau vert : texte blanc pur garanti */
+.dap-welcome-actions .ap-btn--ghost {
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  font-weight: 600 !important;
+}
+
+.dap-welcome-actions .ap-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.20) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.dap-welcome-actions .ap-btn--ghost svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* ── KPI GRID ── */
+.dap-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dap-stat-card {
+  background: var(--sg-surface, #ffffff);
+  border: 1px solid var(--sg-border, #dde4df);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dap-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(0, 107, 60, 0.08);
+  color: #006B3C;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.dap-stat-card--gold .dap-stat-icon {
+  background: rgba(233, 170, 32, 0.12);
+  color: #d97706;
+}
+
+.dap-stat-card--blue .dap-stat-icon {
+  background: rgba(30, 64, 175, 0.08);
+  color: #1e40af;
+}
+
+.dap-stat-val {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--sg-text, #1a2a1e);
+  line-height: 1.2;
+}
+
+.dap-stat-lbl {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--sg-text-muted, #64748b);
+  font-weight: 500;
+}
+
+/* ── SECTIONS & CARDS ── */
+.dap-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.dap-card {
+  background: var(--sg-surface, #ffffff);
+  border: 1px solid var(--sg-border, #dde4df);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.dap-card-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--sg-border, #dde4df);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dap-card-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--sg-text, #1a2a1e);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dap-card-body {
+  padding: 20px;
+}
+
+.dap-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dap-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--sg-surface-2, #f8fafc);
+  border: 1px solid var(--sg-border, #e2e8f0);
+}
+
+.dap-timeline-time {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #006B3C;
+  min-width: 90px;
+}
+
+.dap-timeline-content {
+  flex: 1;
+}
+
+.dap-timeline-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--sg-text, #1a2a1e);
+}
+
+.dap-timeline-sub {
+  font-size: 0.78rem;
+  color: var(--sg-text-muted, #64748b);
+  margin: 2px 0 0;
+}
+
+/* ── RESPONSIVE MOBILE ── */
+@media (max-width: 960px) {
+  .dap-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .dap-welcome {
+    padding: 16px;
+  }
+  .dap-welcome-info h2 {
+    font-size: 1.15rem;
+  }
+  .dap-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── DARK THEME ── */
+[data-theme='dark'] .dap-stat-card,
+[data-theme='dark'] .dap-card {
+  background: var(--sg-surface, #162232);
+  border-color: var(--sg-border, #283a52);
+}
+
+[data-theme='dark'] .dap-card-head {
+  border-color: var(--sg-border, #283a52);
+}
+
+[data-theme='dark'] .dap-card-head h3,
+[data-theme='dark'] .dap-stat-val,
+[data-theme='dark'] .dap-timeline-title {
+  color: var(--sg-text, #f8fafc);
+}
+
+[data-theme='dark'] .dap-timeline-item {
+  background: var(--sg-surface-2, #1e2e42);
+  border-color: var(--sg-border, #283a52);
+}
+
+[data-theme='dark'] .dap-timeline-time {
+  color: #4ade80;
+}
+
+[data-theme='dark'] .dap-stat-icon {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+}

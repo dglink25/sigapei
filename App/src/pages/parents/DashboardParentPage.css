@@ -1,0 +1,169 @@
+/* ============================================================
+   DashboardParentPage.css - Espace Parents Institutionnel
+   ============================================================ */
+
+.dpp-welcome {
+  background: #006B3C;
+  color: #FFF6DD;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(0, 107, 60, 0.15);
+}
+
+.dpp-welcome-info h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.dpp-welcome-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: rgba(255, 246, 221, 0.85);
+}
+
+.dpp-welcome-actions .ap-btn--ghost {
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  font-weight: 600 !important;
+}
+
+.dpp-welcome-actions .ap-btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.20) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.dpp-welcome-actions .ap-btn--ghost svg {
+  stroke: #ffffff !important;
+  color: #ffffff !important;
+}
+
+.dpp-selector-card {
+  background: var(--sg-surface, #ffffff);
+  border: 1.5px solid var(--sg-border, #dde4df);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.dpp-selector-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dpp-child-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--sg-border, #dde4df);
+  background: var(--sg-surface-2, #f8fafc);
+  color: var(--sg-text, #1a2a1e);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dpp-child-pill.is-active {
+  background: #006B3C;
+  color: #ffffff;
+  border-color: #006B3C;
+}
+
+/* ── KPI GRID ── */
+.dpp-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dpp-stat-card {
+  background: var(--sg-surface, #ffffff);
+  border: 1px solid var(--sg-border, #dde4df);
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dpp-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(0, 107, 60, 0.08);
+  color: #006B3C;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.dpp-stat-card--gold .dpp-stat-icon {
+  background: rgba(233, 170, 32, 0.12);
+  color: #d97706;
+}
+
+.dpp-stat-val {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--sg-text, #1a2a1e);
+  line-height: 1.2;
+}
+
+.dpp-stat-lbl {
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
+  color: var(--sg-text-muted, #64748b);
+  font-weight: 500;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .dpp-welcome {
+    padding: 16px;
+  }
+  .dpp-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── DARK THEME ── */
+[data-theme='dark'] .dpp-stat-card,
+[data-theme='dark'] .dpp-selector-card {
+  background: var(--sg-surface, #162232);
+  border-color: var(--sg-border, #283a52);
+}
+
+[data-theme='dark'] .dpp-stat-val {
+  color: var(--sg-text, #f8fafc);
+}
+
+[data-theme='dark'] .dpp-child-pill {
+  background: var(--sg-surface-2, #1e2e42);
+  border-color: var(--sg-border, #283a52);
+  color: var(--sg-text, #f8fafc);
+}
+
+[data-theme='dark'] .dpp-child-pill.is-active {
+  background: #006B3C;
+  color: #ffffff;
+  border-color: #006B3C;
+}

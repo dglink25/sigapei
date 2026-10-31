@@ -62,9 +62,10 @@
 .ap-drawer-close:disabled { opacity: 0.5; cursor: not-allowed; }
 .ap-drawer-body { flex: 1; overflow-y: auto; padding: 20px 22px; }
 .ap-drawer-foot {
-  display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
   padding: 14px 22px; border-top: 1px solid var(--ap-border); background: var(--ap-surface);
 }
+.ap-drawer-foot > :only-child { margin-left: auto; }
 .ap-drawer-count { margin-right: auto; font-size: 0.85rem; font-weight: 600; color: var(--ap-muted); }
 .ap-drawer-count.is-over { color: #c0392b; }
 

@@ -268,6 +268,12 @@ class ImporterArbreGeo extends Command
      */
     private function plusProche(array $freres, string $cle): ?array
     {
+        // Un nom numerote ("10ème Arrondissement") ne se rapproche JAMAIS d'un autre : "10" et "13"
+        // ne different que d'un caractere mais designent deux lieux distincts. Correspondance exacte seulement.
+        if (preg_match('/\d/', $cle)) {
+            return null;
+        }
+
         $inclusions = [];
         foreach ($freres as $cleFrere => $frere) {
             $cleFrere = (string) $cleFrere;

@@ -88,19 +88,24 @@ class InterneController extends Controller
     public function listerEtablissements(): JsonResponse
     {
         $etablissements = \App\Domain\Etablissement\Etablissement::orderBy('nom')
+            ->with('cyclesAutorises')
             ->get()
             ->map(fn($e) => [
-                'uuid'            => $e->uuid,
-                'nom'             => $e->nom,
-                'code'            => $e->code,
-                'slug'            => $e->slug,
-                'matricule'       => $e->matricule,
-                'types'           => $e->types,
-                'statut'          => $e->statut,
-                'adresse_complete'=> $e->adresse_complete,
-                'email'           => $e->email,
-                'telephone_1'     => $e->telephone_1,
-                'date_validation' => $e->date_validation,
+                'uuid'             => $e->uuid,
+                'nom'              => $e->nom,
+                'code'             => $e->code,
+                'slug'             => $e->slug,
+                'matricule'        => $e->matricule,
+                'types'            => $e->types,
+                'statut'           => $e->statut,
+                'adresse_complete' => $e->adresse_complete,
+                'email'            => $e->email,
+                'telephone_1'      => $e->telephone_1,
+                'date_validation'  => $e->date_validation,
+                'cyclesAutorises'  => $e->cyclesAutorises
+                    ->where('statut', 'actif')
+                    ->pluck('cycle')
+                    ->values(),
             ]);
 
         return response()->json(['success' => true, 'etablissements' => $etablissements]);

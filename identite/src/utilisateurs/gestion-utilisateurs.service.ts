@@ -14,6 +14,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -24,6 +25,12 @@ import { RabbitmqService } from '../rabbitmq/rabbitmq.service';
 import { normaliserTelephoneE164 } from '../common/utils/phone.util';
 import { echapperLike, lirePagination, metaPagination } from '../common/dto/pagination.dto';
 import { CreerUtilisateurDto } from './dto/creer-utilisateur.dto';
+import { EtablissementsRefService } from '../etablissements-ref/etablissements-ref.service';
+import { UtilisateursService } from './utilisateurs.service';
+import { SmsGatewayMaisonProvider } from '../integrations/sms/sms-gateway-maison.provider';
+import { ConvessaProvider } from '../integrations/whatsapp/convessa.provider';
+import { SmtpAppPasswordProvider } from '../integrations/email/smtp-app-password.provider';
+
 export interface ActeurGestion {
   roleCode: string;
   tenantId: string | null;
@@ -32,11 +39,18 @@ export interface ActeurGestion {
 
 @Injectable()
 export class GestionUtilisateursService {
+  private readonly logger = new Logger(GestionUtilisateursService.name);
+
   constructor(
     @InjectRepository(Utilisateur) private readonly utilisateurRepo: Repository<Utilisateur>,
     @InjectRepository(Role) private readonly roleRepo: Repository<Role>,
     private readonly dataSource: DataSource,
     private readonly rabbitmq: RabbitmqService,
+    private readonly etablissementsRef: EtablissementsRefService,
+    private readonly utilisateursService: UtilisateursService,
+    private readonly smsProvider: SmsGatewayMaisonProvider,
+    private readonly whatsappProvider: ConvessaProvider,
+    private readonly emailProvider: SmtpAppPasswordProvider,
   ) {}
 
   // ── Liste des utilisateurs ────────────────────────────────────────────
@@ -163,22 +177,138 @@ export class GestionUtilisateursService {
       if (existe) throw new ConflictException({ code: 'TELEPHONE_DEJA_UTILISE', message: 'Ce numéro est déjà utilisé.' });
     }
 
+    // Résolution du code établissement pour le matricule
+    const etab = tenantId ? await this.etablissementsRef.trouverParUuid(tenantId) : null;
+    const codeEtab = etab?.code || (etab?.slug ? etab.slug.slice(0, 6).toUpperCase() : 'SIGA');
+    const nomEtab = etab?.nom || 'SIGAPEI';
+    const slugEtab = etab?.slug || '';
+
+    // Génération automatique du matricule unique : XXX-code_de_son_etablissement-XXXXXXX
+    const matricule = await this.utilisateursService.genererMatriculeUnique(codeEtab);
+
     const utilisateur = this.utilisateurRepo.create({
       tenantId,
       roleId: role.id,
       nomComplet: dto.nomComplet.trim(),
       email: dto.email?.toLowerCase() ?? null,
       telephone: telephoneE164,
+      matricule,
       statut: StatutUtilisateur.ACTIF,
     });
 
     const enregistre = await this.utilisateurRepo.save(utilisateur);
+
+    // Envoi automatique et immédiat des notifications SMS, WhatsApp et E-mail
+    await this.envoyerNotificationsCreation({
+      utilisateur: enregistre,
+      matricule,
+      roleLibelle: role.libelle,
+      nomEtablissement: nomEtab,
+      slugEtablissement: slugEtab,
+    });
+
     this.rabbitmq.publier('utilisateur.cree', {
       utilisateurUuid: enregistre.uuid,
       tenantId,
       roleCode: role.code,
+      matricule,
     });
     return enregistre;
+  }
+
+  /**
+   * Envoi automatique multi-canal (SMS, WhatsApp et E-mail) des accès lors de la création d'un utilisateur.
+   */
+  private async envoyerNotificationsCreation(params: {
+    utilisateur: Utilisateur;
+    matricule: string;
+    roleLibelle: string;
+    nomEtablissement: string;
+    slugEtablissement: string;
+  }): Promise<void> {
+    const { utilisateur, matricule, roleLibelle, nomEtablissement, slugEtablissement } = params;
+    const nom = utilisateur.nomComplet;
+    const tel = utilisateur.telephone;
+    const email = utilisateur.email;
+    const identifiant = email ?? tel ?? matricule;
+    const urlPortail = slugEtablissement
+      ? `https://${slugEtablissement}.sigapei.com/login`
+      : 'https://sigapei.com/login';
+
+    const promesses: Promise<any>[] = [];
+
+    // 1. Envoi SMS automatique
+    if (tel) {
+      const msgSms = `SIGAPEI: Bonjour ${nom}, votre compte a été créé (${nomEtablissement}). Matricule: ${matricule}, Identifiant: ${identifiant}, Rôle: ${roleLibelle}. Accès: ${urlPortail}`;
+      promesses.push(
+        this.smsProvider.envoyerMessage(tel, msgSms).catch((err) => {
+          this.logger.warn(`Échec SMS onboarding utilisateur vers ${tel}: ${err.message}`);
+        }),
+      );
+    }
+
+    // 2. Envoi WhatsApp automatique
+    if (tel) {
+      const msgWa =
+        `*SIGAPEI - Création de compte*\n\n` +
+        `Bonjour *${nom}*,\n\n` +
+        `Votre compte utilisateur a été créé avec succès pour l'établissement *${nomEtablissement}*.\n\n` +
+        `*Vos identifiants d'accès :*\n` +
+        `• Matricule : *${matricule}*\n` +
+        `• Identifiant de connexion : *${identifiant}*\n` +
+        `• Rôle : ${roleLibelle}\n\n` +
+        `*Accéder à votre espace :*\n${urlPortail}\n\n` +
+        `SIGAPEI - Plateforme E-Académique`;
+
+      promesses.push(
+        this.whatsappProvider.envoyerMessage(tel, msgWa).catch((err) => {
+          this.logger.warn(`Échec WhatsApp onboarding utilisateur vers ${tel}: ${err.message}`);
+        }),
+      );
+    }
+
+    // 3. Envoi E-mail automatique
+    if (email) {
+      promesses.push(
+        this.emailProvider
+          .envoyerNotificationOnboarding(email.toLowerCase(), {
+            sujet: `Votre compte SIGAPEI est prêt - ${nomEtablissement}`,
+            titreCourrier: 'Création de votre compte',
+            corps: `
+              <p style="margin:0 0 16px;color:#5a6b5f;font-size:14px">Bonjour <strong style="color:#1a2a1e">${nom}</strong>,</p>
+              <p style="margin:0 0 24px;color:#1a2a1e;font-size:15px;line-height:1.6">
+                Un compte d'accès vous a été créé pour l'établissement <strong>${nomEtablissement}</strong>.
+              </p>
+              <p style="margin:0 0 12px;color:#5a6b5f;font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-weight:600">Vos identifiants d'accès</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #dde4df;border-radius:8px;overflow:hidden;margin-bottom:24px">
+                <tr style="background:#f7faf8">
+                  <td style="padding:10px 18px;color:#5a6b5f;font-size:14px;width:180px">Matricule personnel</td>
+                  <td style="padding:10px 18px;color:#006B3C;font-size:14px;font-weight:700;font-family:monospace;letter-spacing:1px">${matricule}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 18px;color:#5a6b5f;font-size:14px;border-top:1px solid #dde4df">Identifiant de connexion</td>
+                  <td style="padding:10px 18px;color:#1a2a1e;font-size:14px;font-weight:600;border-top:1px solid #dde4df">${identifiant}</td>
+                </tr>
+                <tr style="background:#f7faf8">
+                  <td style="padding:10px 18px;color:#5a6b5f;font-size:14px;border-top:1px solid #dde4df">Rôle attribué</td>
+                  <td style="padding:10px 18px;color:#1a2a1e;font-size:14px;font-weight:600;border-top:1px solid #dde4df">${roleLibelle}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 18px;color:#5a6b5f;font-size:14px;border-top:1px solid #dde4df">Établissement</td>
+                  <td style="padding:10px 18px;color:#1a2a1e;font-size:14px;font-weight:600;border-top:1px solid #dde4df">${nomEtablissement}</td>
+                </tr>
+              </table>
+              ${this.emailProvider.construireBoutonCta(urlPortail, 'Accéder à mon espace')}
+            `,
+          })
+          .catch((err) => {
+            this.logger.warn(`Échec e-mail onboarding utilisateur vers ${email}: ${err.message}`);
+          }),
+      );
+    }
+
+    await Promise.allSettled(promesses);
+    this.logger.log(`Notifications onboarding (SMS, WhatsApp, Email) déclenchées pour ${utilisateur.uuid}`);
   }
 
   // ── Assignation de rôle ────────────────────────────────────────────────

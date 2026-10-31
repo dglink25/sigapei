@@ -150,6 +150,45 @@
   flex: none;
 }
 
+/* ── Spinner mini (indicateurs KPIs & badges) ── */
+.ld-spin--mini {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 107, 60, 0.25);
+  border-top-color: var(--sg-primary, #006B3C);
+  animation: ld-spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+/* ══════════════════════════
+   Thème sombre - Loader
+══════════════════════════ */
+[data-theme='dark'] .ld-overlay .ld-card,
+[data-theme='dark'] .ld-card-wrap .ld-card {
+  background: #142018;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+[data-theme='dark'] .ld-orbit__center {
+  background: #1a2a1e;
+  box-shadow: 0 2px 14px rgba(74, 222, 128, 0.2);
+}
+[data-theme='dark'] .ld-label {
+  color: #f3f7f4;
+}
+[data-theme='dark'] .ld-label--inline {
+  color: #9cb1a3;
+}
+[data-theme='dark'] .ld-orbit__track {
+  border-color: rgba(74, 222, 128, 0.3);
+}
+[data-theme='dark'] .ld-spin--mini {
+  border-color: rgba(74, 222, 128, 0.25);
+  border-top-color: #4ade80;
+}
+
 /* ══════════════════════════
    Keyframes
 ══════════════════════════ */
@@ -183,6 +222,7 @@
   .ld-orbit__track,
   .ld-orbit__center,
   .ld-spin--btn,
+  .ld-spin--mini,
   .ld-overlay,
   .ld-overlay .ld-card,
   .ld-card-wrap .ld-card { animation: none; }

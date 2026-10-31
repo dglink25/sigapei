@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../../context/identite/AuthContext'
 import { withAuth } from '../../components/identite/RequireAuth'
 import ThemeToggle from '../../components/commun/ThemeToggle'
+import NotificationBell from '../../components/commun/NotificationBell'
 import { ENV } from '../../config/commun/env'
 import { ADMIN_DASHBOARD_PATH, COMPTE_PATH } from '../../config/identite/routes'
 import { ADMIN_PATHS } from '../../config/etablissements/config'
@@ -32,13 +33,14 @@ const NAV = [
   {
     groupe: 'ESPACES MÉTIER',
     items: [
-      { id: 'demandes',       label: 'Demandes',             icon: FileText,        path: ADMIN_PATHS.demandes },
-      { id: 'demandes-cycle', label: 'Extensions de cycle',  icon: Layers,          path: '/admin/demandes-cycle' },
-      { id: 'etablissements', label: 'Établissements',       icon: Building2,       path: '/admin/etablissements' },
-      { id: 'services',       label: 'Services',             icon: Layers,          path: SERVICE_PATHS.liste },
-      { id: 'utilisateurs',   label: 'Utilisateurs',         icon: Users,           path: '/admin/utilisateurs' },
-      { id: 'roles',          label: 'Rôles',                icon: Layers,          path: '/admin/roles' },
-      { id: 'demandes-role',  label: 'Demandes de rôle',     icon: FileText,        path: '/admin/demandes-role' },
+      { id: 'demandes',         label: 'Demandes',             icon: FileText,        path: ADMIN_PATHS.demandes },
+      { id: 'demandes-service', label: 'Demandes de service',  icon: Layers,          path: '/admin/demandes-service' },
+      { id: 'demandes-cycle',   label: 'Extensions de cycle',  icon: Layers,          path: '/admin/demandes-cycle' },
+      { id: 'etablissements',   label: 'Établissements',       icon: Building2,       path: '/admin/etablissements' },
+      { id: 'services',         label: 'Services',             icon: Layers,          path: SERVICE_PATHS.liste },
+      { id: 'utilisateurs',     label: 'Utilisateurs',         icon: Users,           path: '/admin/utilisateurs' },
+      { id: 'roles',            label: 'Rôles',                icon: Layers,          path: '/admin/roles' },
+      { id: 'demandes-role',    label: 'Demandes de rôle',     icon: FileText,        path: '/admin/demandes-role' },
     ],
   },
   {
@@ -153,9 +155,7 @@ function AdminLayoutInner({ pageTitle }) {
           </button>
           <h1 className="al-topbar-title">{titreDepuisRoute(location.pathname, pageTitle)}</h1>
           <div className="al-topbar-actions">
-            <button className="al-icon-btn" aria-label="Notifications">
-              <Bell size={19} />
-            </button>
+            <NotificationBell className="al-icon-btn" />
             <ThemeToggle />
             <button
               className="al-icon-btn al-icon-btn--logout"

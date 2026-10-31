@@ -15,8 +15,12 @@ class SubdivisionPedagogique extends Model
     protected $fillable = [
         'etablissement_id', 'annee_id', 'cycle_config_id',
         'type', 'nom', 'code', 'description', 'actif',
+        'cycle_univ', 'option_unique',
     ];
-    protected $casts = ['actif' => 'boolean'];
+    protected $casts = [
+        'actif' => 'boolean',
+        'option_unique' => 'boolean',
+    ];
 
     const TYPES = ['groupe', 'section', 'departement'];
 

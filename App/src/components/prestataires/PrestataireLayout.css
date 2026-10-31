@@ -1,0 +1,302 @@
+/* ============================================================
+   PrestataireLayout.css - Espace Prestataire Externe
+   Design Institutionnel, Responsive Mobile & Desktop
+   ============================================================ */
+
+.prl-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--sg-bg, #f4f6f4);
+  color: var(--sg-text, #1a2a1e);
+  font-family: inherit;
+}
+
+/* ── SIDEBAR PRESTATAIRE ── */
+.prl-sidebar {
+  width: 260px;
+  background: #0f382a;
+  color: #FFF6DD;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+  border-right: 1px solid rgba(255, 246, 221, 0.12);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.prl-sidebar-head {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid rgba(255, 246, 221, 0.12);
+}
+
+.prl-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.prl-brand-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 3px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.prl-brand-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.prl-brand-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.prl-brand-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.prl-brand-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #E9AA20;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ── NAV ITEMS ── */
+.prl-nav {
+  padding: 16px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prl-nav-group-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 246, 221, 0.5);
+  padding: 8px 10px 4px;
+}
+
+.prl-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: rgba(255, 246, 221, 0.85);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.prl-nav-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.prl-nav-link.is-active {
+  background: rgba(233, 170, 32, 0.18);
+  color: #FFF6DD;
+  font-weight: 700;
+  border-left: 3px solid #E9AA20;
+}
+
+/* ── SIDEBAR FOOTER ── */
+.prl-sidebar-footer {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255, 246, 221, 0.12);
+  background: rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.prl-user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.prl-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #E9AA20;
+  color: #1a2a1e;
+  font-weight: 700;
+  font-size: 0.82rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.prl-user-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.prl-user-role {
+  font-size: 0.72rem;
+  color: rgba(255, 246, 221, 0.65);
+}
+
+/* ── CONTENU PRINCIPAL ── */
+.prl-main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.prl-topbar {
+  background: var(--sg-surface, #ffffff);
+  border-bottom: 1px solid var(--sg-border, #dde4df);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.prl-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.prl-menu-toggle {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--sg-border, #dde4df);
+  background: var(--sg-surface, #ffffff);
+  color: var(--sg-text, #1a2a1e);
+  place-items: center;
+  cursor: pointer;
+}
+
+.prl-topbar-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--sg-text, #1a2a1e);
+}
+
+.prl-content {
+  flex: 1;
+  padding: 24px;
+  max-width: 1320px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ── BACKDROP MOBILE ── */
+.prl-backdrop {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .prl-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .prl-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .prl-menu-toggle {
+    display: grid;
+  }
+
+  .prl-topbar {
+    padding: 10px 16px;
+  }
+
+  .prl-content {
+    padding: 16px;
+  }
+
+  .prl-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 95;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .prl-backdrop.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+/* ── DARK THEME ── */
+[data-theme='dark'] .prl-shell {
+  background: var(--sg-bg, #0d1520);
+  color: var(--sg-text, #f8fafc);
+}
+
+[data-theme='dark'] .prl-topbar {
+  background: var(--sg-surface, #162232);
+  border-color: var(--sg-border, #283a52);
+}
+
+[data-theme='dark'] .prl-topbar-title {
+  color: var(--sg-text, #f8fafc);
+}
+
+[data-theme='dark'] .prl-menu-toggle {
+  background: var(--sg-surface, #162232);
+  border-color: var(--sg-border, #283a52);
+  color: var(--sg-text, #f8fafc);
+}
