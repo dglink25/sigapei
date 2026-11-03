@@ -25,6 +25,7 @@ export default () => ({
     scolarite: process.env.SCOLARITE_URL ?? 'http://api-scolarite:4004',
     evaluations: process.env.EVALUATIONS_URL ?? 'http://api-evaluations:4006',
     rh: process.env.RH_URL ?? 'http://api-rh:4009',
+    finances: process.env.FINANCES_URL ?? 'http://api-finances:4008',
     timeoutMs: 5000,
   },
   // Code de ce module dans le catalogue des services d'Identite (acces par role et par etablissement).

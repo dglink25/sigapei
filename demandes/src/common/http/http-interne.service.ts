@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import axios, { AxiosError } from 'axios';
 import { DependanceIndisponible } from '../erreurs/erreurs';
 
-export type Service = 'identite' | 'etablissements' | 'scolarite' | 'evaluations' | 'rh';
+export type Service = 'identite' | 'etablissements' | 'scolarite' | 'evaluations' | 'rh' | 'finances';
 
 /**
  * Appels /v1/interne/* vers les autres microservices (Regle n°1 : jamais de jointure SQL inter-schemas ;

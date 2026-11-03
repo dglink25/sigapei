@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * Types de documents de chaque etablissement (CDC §7, §9) :
  *  - categorie_demandeur : apprenant | personnel | tout_profil (decide la verification d'eligibilite) ;
- *  - regles_eligibilite  : {dossier_actif, bulletins_publies, contrat_actif} (parametrable, jamais en dur) ;
+ *  - regles_eligibilite  : {dossier_actif, bulletins_publies, solde_a_jour, contrat_actif} (parametrable, jamais en dur) ;
  *  - modele              : mise en page du PDF (titre, corps avec variables, mentions, signataire).
  */
 export class CreeTableTypesDocument1000000000001 implements MigrationInterface {

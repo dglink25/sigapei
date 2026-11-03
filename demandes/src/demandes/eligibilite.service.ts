@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UtilisateurCourant } from '../common/contexte/utilisateur-courant';
 import { ErreurMetier } from '../common/erreurs/erreurs';
 import { EvaluationsClient } from '../integrations/evaluations.client';
+import { FinancesClient } from '../integrations/finances.client';
 import { RhClient, Personnel } from '../integrations/rh.client';
 import { Apprenant, ScolariteClient } from '../integrations/scolarite.client';
 
@@ -23,7 +24,7 @@ export interface Verdict {
 /**
  * Service Eligibilite (CDC §7, §8, §16) : verdict unique et motif exploitable cote interface,
  * calcule EN DIRECT aupres des microservices proprietaires (jamais de copie du dossier).
- *  - categorie apprenant : Scolarite (dossier actif) et Evaluations (bulletins publies) ;
+ *  - categorie apprenant : Scolarite (dossier actif), Evaluations (bulletins publies) et Finances (solde a jour) ;
  *  - categorie personnel : RH (dossier actif) ;
  *  - tout profil : aucune verification automatique.
  * Le lien du demandeur avec l'apprenant beneficiaire (lui-meme ou parent rattache) est verifie ici.
@@ -33,6 +34,7 @@ export class EligibiliteService {
   constructor(
     private readonly scolarite: ScolariteClient,
     private readonly evaluations: EvaluationsClient,
+    private readonly finances: FinancesClient,
     private readonly rh: RhClient,
   ) {}
 
@@ -85,6 +87,15 @@ export class EligibiliteService {
           return {
             eligible: false,
             motif: "Aucun bulletin n'a encore été publié pour cet apprenant.",
+            sujet,
+          };
+      }
+      if (r.solde_a_jour) {
+        const s = await this.finances.solde(a.uuid, u.tenantId);
+        if (!s.a_jour)
+          return {
+            eligible: false,
+            motif: "La scolarité de l'apprenant présente des échéances impayées : régularisez la situation auprès de l'établissement.",
             sujet,
           };
       }

@@ -44,11 +44,9 @@ DB_HOST=127.0.0.1 DB_PASSWORD=... npm test
 
 | Catégorie du type | Vérifications possibles (cochées par l'établissement) |
 |---|---|
-| `apprenant` | `dossier_actif` (Scolarité), `bulletins_publies` (Évaluations) |
+| `apprenant` | `dossier_actif` (Scolarité), `bulletins_publies` (Évaluations), `solde_a_jour` (Finances : aucune échéance passée impayée) |
 | `personnel` | `contrat_actif` (RH) |
 | `tout_profil` | aucune - traitement manuel (le gestionnaire peut saisir le texte du document) |
-
-`solde_a_jour` (Finances) est refusée tant que le périmètre de Finances n'est pas arrêté.
 
 ## 4. Schéma `demandes`
 
@@ -105,4 +103,4 @@ Réponses : `{success, message?, data}` ; listes : `data.elements` + `data.pagin
 | **RH** | `GET /v1/interne/personnel/utilisateur/{utilisateur_uuid}` (existe). |
 | **Évaluations** | `GET /v1/interne/eligibilite-document/{apprenant_uuid}` (existe). |
 | **Vie scolaire** (Paul) | consommer `GET /v1/interne/permission-active/{apprenant_uuid}?date=` → `{permissionnaire, permission: {uuid, date_debut, date_fin}}`. |
-| **Finances** | `GET /v1/interne/solde/{apprenant_uuid}` une fois le périmètre de Finances arrêté (règle `solde_a_jour`). |
+| **Finances** | `GET /v1/interne/solde/{apprenant_uuid}` (existe) : règle `solde_a_jour`. |

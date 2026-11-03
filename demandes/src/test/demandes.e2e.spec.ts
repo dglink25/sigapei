@@ -135,7 +135,7 @@ describe('Demandes administratives (bout en bout, PostgreSQL reel)', () => {
       .expect((x) => expect(x.body.data).toHaveLength(0));
   });
 
-  it('refuse une regle hors categorie et la verification de solde pas encore disponible', async () => {
+  it('refuse une regle hors categorie', async () => {
     await en(app, 'admin')
       .post('/types-document', {
         code: 'test_x',
@@ -148,11 +148,10 @@ describe('Demandes administratives (bout en bout, PostgreSQL reel)', () => {
       .post('/types-document', {
         code: 'test_y',
         nom: 'Test',
-        categorie_demandeur: 'apprenant',
+        categorie_demandeur: 'personnel',
         regles_eligibilite: { solde_a_jour: true },
       })
-      .expect(422)
-      .expect((r) => expect(r.body.error.details['regles_eligibilite.solde_a_jour']).toBeDefined());
+      .expect(422);
     await en(app, 'admin')
       .post('/types-document', {
         code: 'Mauvais Code',
@@ -321,6 +320,30 @@ describe('Demandes administratives (bout en bout, PostgreSQL reel)', () => {
     const r = await en(app, 'eleve').post(`/demandes/${d.uuid}/resoumettre`).expect(200);
     expect(r.body.data.statut).toBe('en_traitement');
     expect(r.body.data.etapes.map((e: any) => e.statut)).toEqual(['recue', 'bloquee', 'en_traitement']);
+  });
+
+  it('solde a jour verifie aupres de Finances : demande bloquee tant qu une echeance passee est impayee', async () => {
+    const type = (
+      await en(app, 'admin')
+        .post('/types-document', {
+          code: 'quitus',
+          nom: 'Quitus de scolarité',
+          categorie_demandeur: 'apprenant',
+          regles_eligibilite: { dossier_actif: true, solde_a_jour: true },
+        })
+        .expect(201)
+    ).body.data;
+    monde.impayes[alice] = true;
+    const d = (
+      await en(app, 'eleve')
+        .post('/demandes', { type_document_uuid: type.uuid, beneficiaire_apprenant_uuid: alice })
+        .expect(201)
+    ).body.data;
+    expect(d.statut).toBe('bloquee');
+    expect(d.motif_blocage).toContain('impayées');
+    monde.impayes[alice] = false;
+    const r = await en(app, 'eleve').post(`/demandes/${d.uuid}/resoumettre`).expect(200);
+    expect(r.body.data.statut).toBe('en_traitement');
   });
 
   it('personnel : attestation de travail verifiee aupres de RH, refusee a un non-membre du personnel', async () => {

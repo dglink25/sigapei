@@ -17,6 +17,7 @@ import { GouvernanceController } from './gouvernance/gouvernance.controller';
 import { GouvernanceService } from './gouvernance/gouvernance.service';
 import { EtablissementsClient } from './integrations/etablissements.client';
 import { EvaluationsClient } from './integrations/evaluations.client';
+import { FinancesClient } from './integrations/finances.client';
 import { IdentiteClient } from './integrations/identite.client';
 import { RhClient } from './integrations/rh.client';
 import { ScolariteClient } from './integrations/scolarite.client';
@@ -75,6 +76,7 @@ import { TypesDocumentService } from './types-document/types-document.service';
     ScolariteClient,
     RhClient,
     EvaluationsClient,
+    FinancesClient,
     RabbitMqPublisher,
     GouvernanceService,
     TypesDocumentService,

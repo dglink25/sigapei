@@ -31,7 +31,7 @@ export class ReglesEligibiliteDto {
 
   @ApiProperty({
     required: false,
-    description: 'Apprenant : solde a jour (Finances) - pas encore disponible.',
+    description: 'Apprenant : aucune échéance passée impayée (Finances).',
   })
   @IsOptional()
   @IsBoolean()

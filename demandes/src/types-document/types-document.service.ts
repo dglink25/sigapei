@@ -7,7 +7,7 @@ import { CreerTypeDocumentDto, ModifierTypeDocumentDto } from './dto/type-docume
 
 /** Regles d'eligibilite applicables selon la categorie de demandeur (CDC §7). */
 const REGLES_PAR_CATEGORIE: Record<string, string[]> = {
-  apprenant: ['dossier_actif', 'bulletins_publies'],
+  apprenant: ['dossier_actif', 'bulletins_publies', 'solde_a_jour'],
   personnel: ['contrat_actif'],
   tout_profil: [],
 };
@@ -241,12 +241,6 @@ export class TypesDocumentService {
     const actives = Object.entries(regles ?? {})
       .filter(([, v]) => v === true)
       .map(([k]) => k);
-    if (actives.includes('solde_a_jour')) {
-      throw ErreurMetier.invalide(
-        'regles_eligibilite.solde_a_jour',
-        "La vérification du solde n'est pas encore disponible (microservice Finances).",
-      );
-    }
     const permises = REGLES_PAR_CATEGORIE[categorie] ?? [];
     const interdites = actives.filter((k) => !permises.includes(k));
     if (interdites.length) {

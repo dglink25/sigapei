@@ -28,11 +28,12 @@ export interface Monde {
   apprenants: Record<string, any>;
   personnel: Record<string, any>;
   bulletins: Record<string, boolean>;
+  impayes: Record<string, boolean>;
   sansAcces: Set<string>;
   enPanne: Set<Service>;
 }
 
-/** Faux microservices (Identite, Etablissements, Scolarite, RH, Evaluations) au niveau du client HTTP interne. */
+/** Faux microservices (Identite, Etablissements, Scolarite, RH, Evaluations, Finances) au niveau du client HTTP interne. */
 export class FauxHttp {
   constructor(private readonly monde: Monde) {}
 
@@ -72,6 +73,14 @@ export class FauxHttp {
         },
       };
     }
+    if (service === 'finances') {
+      const uuid = chemin.split('/').pop()!;
+      const impaye = !!this.monde.impayes[uuid];
+      return {
+        success: true,
+        data: { apprenant_uuid: uuid, a_jour: !impaye, montant_echu_impaye: impaye ? 50000 : 0, en_retard_depuis: impaye ? '2026-10-01' : null },
+      };
+    }
     return null;
   }
 }
@@ -109,6 +118,7 @@ export const nouveauMonde = (): Monde => ({
   apprenants: {},
   personnel: {},
   bulletins: {},
+  impayes: {},
   sansAcces: new Set(),
   enPanne: new Set(),
 });
