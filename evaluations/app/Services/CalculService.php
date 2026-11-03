@@ -66,6 +66,9 @@ final class CalculService
 
             $matieres[$m]['notes'][] = [
                 'evaluation_uuid' => $ev['evaluation_uuid'],
+                // Pour l'interface (libellé, contestation d'une note) : sans effet sur le calcul.
+                'evaluation_libelle' => $ev['evaluation_libelle'] ?? null,
+                'note_uuid' => $ev['note']['uuid'] ?? null,
                 'statut' => $ev['note']['statut'] ?? 'non_saisie',
                 'valeur' => $ev['note']['valeur'] ?? null,
                 'niveau_competence' => $ev['note']['niveau_competence'] ?? null,

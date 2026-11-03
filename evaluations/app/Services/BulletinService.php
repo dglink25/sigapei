@@ -253,7 +253,7 @@ class BulletinService
             ->get();
 
         $notes = Note::whereIn('evaluation_id', $evaluations->pluck('id'))
-            ->get(['evaluation_id', 'apprenant_uuid', 'statut', 'valeur', 'niveau_competence'])
+            ->get(['uuid', 'evaluation_id', 'apprenant_uuid', 'statut', 'valeur', 'niveau_competence'])
             ->groupBy('apprenant_uuid')
             ->map(fn ($n) => $n->keyBy('evaluation_id'));
 
@@ -264,6 +264,7 @@ class BulletinService
                 $note = $notes->get($apprenantUuid)?->get($ev->id);
                 $lignes[] = [
                     'evaluation_uuid' => $ev->uuid,
+                    'evaluation_libelle' => $ev->libelle,
                     'type' => $ev->type,
                     'matiere_uuid' => $ev->matiere->uuid,
                     'matiere_nom' => $ev->matiere->nom,
@@ -272,6 +273,7 @@ class BulletinService
                     'note_sur' => (string) $ev->note_sur,
                     'rattrapage_de' => $ev->rattrapageDe?->uuid,
                     'note' => $note === null ? null : [
+                        'uuid' => $note->uuid,
                         'statut' => $note->statut,
                         'valeur' => $note->valeur === null ? null : (string) $note->valeur,
                         'niveau_competence' => $note->niveau_competence,

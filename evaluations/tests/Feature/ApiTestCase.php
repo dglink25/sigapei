@@ -49,6 +49,9 @@ abstract class ApiTestCase extends TestCase
 
     protected bool $identiteEnPanne = false;
 
+    /** @var array<string, bool> utilisateurs sans accès au module (catalogue d'Identité simulé) */
+    protected array $sansAcces = [];
+
     protected int $appelsIntrospection = 0;
 
     protected function beforeRefreshingDatabase()
@@ -119,6 +122,10 @@ abstract class ApiTestCase extends TestCase
                 return Http::response($ctx === null
                     ? ['success' => true, 'valide' => false, 'motif' => 'JETON_INVALIDE_OU_EXPIRE']
                     : ['success' => true, 'valide' => true, 'familleAuth' => 'personnel_admin'] + $ctx);
+            }
+
+            if (str_starts_with($r->url(), 'http://identite.test/v1/interne/acces')) {
+                return Http::response(['success' => true, 'autorise' => ! isset($this->sansAcces[strtolower($q['utilisateurUuid'] ?? '')])]);
             }
 
             if (str_starts_with($r->url(), 'http://etablissements.test/v1/interne/etablissements')) {

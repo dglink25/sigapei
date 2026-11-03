@@ -68,6 +68,13 @@ class AccesFrontTest extends ApiTestCase
         $this->bearer('jeton-plateforme')->getJson('/v1/matieres')->assertStatus(401)->assertJsonPath('error.code', 'TENANT_MANQUANT');
     }
 
+    public function test_module_non_ouvert_au_profil_refuse(): void
+    {
+        $this->sansAcces[strtolower($this->admin)] = true;
+
+        $this->bearer('jeton-admin')->getJson('/v1/matieres')->assertStatus(403)->assertJsonPath('error.code', 'MODULE_NON_AUTORISE');
+    }
+
     public function test_identite_injoignable_donne_503_jamais_un_acces(): void
     {
         $this->identiteEnPanne = true;

@@ -60,4 +60,35 @@ class IdentiteClient
 
         return $contexte;
     }
+
+    /**
+     * L'utilisateur a-t-il accès au module ? (rôle autorisé ET service activé pour son établissement, catalogue
+     * d'Identité) : GET /v1/interne/acces?utilisateurUuid=&serviceCode= => { autorise: bool }. Cache 60 s.
+     */
+    public function accesModule(string $utilisateurUuid): bool
+    {
+        return Cache::remember('acces-module:'.$utilisateurUuid, (int) config('services.identite.cache_secondes', 60), function () use ($utilisateurUuid) {
+            $url = rtrim((string) config('services.identite.url'), '/');
+            try {
+                $reponse = Http::withHeaders(['X-Internal-Secret' => (string) config('services.interne.secret', ''), 'Accept' => 'application/json'])
+                    ->timeout((int) config('services.identite.timeout', 5))
+                    ->retry(2, 200, throw: false)
+                    ->get($url.'/v1/interne/acces', [
+                        'utilisateurUuid' => $utilisateurUuid,
+                        'serviceCode' => (string) config('services.identite.code_service', 'evaluations'),
+                    ]);
+            } catch (ConnectionException $e) {
+                throw new ServiceIndisponibleException('Identité (accès au module) injoignable.', previous: $e);
+            }
+            if (! $reponse->successful()) {
+                throw new ServiceIndisponibleException('Identité (accès au module) a répondu HTTP '.$reponse->status().'.');
+            }
+            $autorise = $reponse->json('autorise');
+            if (! is_bool($autorise)) {
+                throw new ContratIncompletException('Accès Identité : champ `autorise` absent.');
+            }
+
+            return $autorise;
+        });
+    }
 }

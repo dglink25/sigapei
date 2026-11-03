@@ -40,7 +40,7 @@ vendor/bin/pint --test
 
 | Couche | Règle |
 |---|---|
-| Entrée | `auth.tenant`, deux voies seulement (règle n°5) : **front** `Authorization: Bearer` vérifié **par Identité** (introspection, cache 60 s) ; **Gateway** `X-Tenant-Id`, `X-User-Id`, `X-User-Role` acceptés **uniquement avec `X-Internal-Secret` valide** (32 car. min., temps constant). Le contexte ne vient jamais d'en-têtes envoyés par le navigateur. Tenant : identifiant ou uuid (converti par Établissements). |
+| Entrée | `auth.tenant`, deux voies seulement (règle n°5) : **front** `Authorization: Bearer` vérifié **par Identité** (introspection, cache 60 s) ; **Gateway** `X-Tenant-Id`, `X-User-Id`, `X-User-Role` acceptés **uniquement avec `X-Internal-Secret` valide** (32 car. min., temps constant). Le contexte ne vient jamais d'en-têtes envoyés par le navigateur. Tenant : identifiant ou uuid (converti par Établissements). Puis accès au module vérifié dans Identité (`GET /v1/interne/acces`, code `IDENTITE_CODE_SERVICE`, défaut `evaluations`). |
 | Rôle | `role:...` sur chaque route (CDC Tableau 1). `super_admin` et `personnel` : aucun accès aux notes individuelles. |
 | Relation | `ControleAcces` : enseignant = classes/matières affectées ; apprenant = son dossier ; parent = enfants rattachés. |
 | Tenant | Filtre global sur chaque modèle : sans contexte, aucune ligne ; écriture impossible chez un autre tenant. Le contexte est posé **avant** la résolution des paramètres de route. |

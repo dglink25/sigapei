@@ -22,6 +22,8 @@ return [
         'url' => env('IDENTITE_URL', 'http://api-identite:4001'),
         'timeout' => 5,
         'cache_secondes' => 60,
+        // Code de ce module dans le catalogue des services d'Identité (accès par rôle et par établissement).
+        'code_service' => env('IDENTITE_CODE_SERVICE', 'evaluations'),
     ],
 
     // Établissements : correspondance uuid de l'établissement -> identifiant tenant (tenant_id).

@@ -91,6 +91,9 @@ class VerifyTenantAndJwt
         if ($tenantId === null) {
             return ApiResponse::erreur('Contexte établissement manquant ou invalide.', 'TENANT_MANQUANT', 401);
         }
+        if (! $this->identite->accesModule($userId)) {
+            return ApiResponse::erreur('Ce service n\'est pas ouvert à votre profil dans votre établissement.', 'MODULE_NON_AUTORISE', 403);
+        }
 
         app()->instance('current_tenant_id', $tenantId);
         app()->instance('current_user', ['uuid' => $userId, 'roleCode' => $role, 'tenantId' => $tenantId]);

@@ -74,6 +74,17 @@ class ParcoursNotesBulletinsTest extends ApiTestCase
             ->assertOk()->assertJsonPath('data.matieres.0.coefficient', '5.00');
     }
 
+    public function test_le_bulletin_donne_le_libelle_et_l_uuid_de_chaque_note_pour_la_contester(): void
+    {
+        $this->remplirNotes();
+        $r = $this->en('apprenant', $this->eleveUser)->getJson("/v1/bulletins/apprenant/{$this->alice}?periode_uuid={$this->c['periode']}")->assertOk();
+        $note = $r->json('data.matieres.0.notes.0');
+
+        $this->assertNotEmpty($note['evaluation_libelle']);
+        $this->en('apprenant', $this->eleveUser)->postJson('/v1/contestations', ['note_uuid' => $note['note_uuid'], 'motif' => 'Ma copie a été mal additionnée.'])
+            ->assertCreated();
+    }
+
     // ---------------------------------------------------------------- Évaluations
 
     public function test_enseignant_non_affecte_ne_peut_pas_creer_d_evaluation(): void
