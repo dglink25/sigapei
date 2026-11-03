@@ -68,6 +68,7 @@ import Loader from './components/commun/Loader'
 /* Modules avec layout propre (chargement direct sans PortailLayout) */
 const ScolaritePage = lazy(() => import('./pages/etablissements/ScolaritePage'))
 const InscriptionPage = lazy(() => import('./pages/inscription/InscriptionPage'))
+const EvaluationsPage = lazy(() => import('./pages/evaluations/EvaluationsPage'))
 
 /** Wrapper direct pour Scolarité (sans PortailLayout). */
 function ScolariteDirecte() {
@@ -83,6 +84,15 @@ function InscriptionDirecte() {
   return (
     <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}><Loader mode="inline" label="Ouverture des Inscriptions…" /></div>}>
       <InscriptionPage />
+    </Suspense>
+  )
+}
+
+/** Wrapper direct pour Évaluations (sans PortailLayout). */
+function EvaluationsDirecte() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}><Loader mode="inline" label="Ouverture des Évaluations…" /></div>}>
+      <EvaluationsPage />
     </Suspense>
   )
 }
@@ -112,6 +122,7 @@ function routesEtablissement(base) {
       <Route element={<RequireEtablissement />}>
         <Route path={p('/scolarite/*')} element={<ScolariteDirecte />} />
         <Route path={p('/inscription/*')} element={<InscriptionDirecte />} />
+        <Route path={p('/evaluations/*')} element={<EvaluationsDirecte />} />
         <Route path={p('/apprenant/*')} element={<DashboardApprenantPage />} />
         <Route path={p('/apprenants/*')} element={<DashboardApprenantPage />} />
         <Route path={p('/parent/*')} element={<DashboardParentPage />} />
