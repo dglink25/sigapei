@@ -74,7 +74,10 @@ export class OtpService {
     await this.enregistrerOtp(email, code, CanalOtp.EMAIL, utilisateurId);
     const dureeMinutes = Math.round(this.config.get<number>('otp.ttlSeconds')! / 60);
     const envoye = await this.smtp.envoyerCodeOtp(email, code, dureeMinutes);
-    if (!envoye) {
+    if (this.config.get('nodeEnv') !== 'production') {
+      this.logger.warn(`[DEV] Code OTP e-mail pour ${email} : ${code}`);
+    }
+    if (!envoye && this.config.get('nodeEnv') === 'production') {
       throw new HttpException(
         { code: 'OTP_ENVOI_ECHOUE', message: "L'envoi du code par e-mail a echoue." },
         HttpStatus.BAD_GATEWAY,
@@ -97,7 +100,10 @@ export class OtpService {
     const smsOk = sms.status === 'fulfilled' && sms.value.succes;
     const whatsappOk = whatsapp.status === 'fulfilled' && whatsapp.value.succes;
 
-    if (!smsOk && !whatsappOk) {
+    if (this.config.get('nodeEnv') !== 'production') {
+      this.logger.warn(`[DEV] Code OTP telephone pour ${telephoneE164} : ${code}`);
+    }
+    if (!smsOk && !whatsappOk && this.config.get('nodeEnv') === 'production') {
       throw new HttpException(
         { code: 'OTP_ENVOI_ECHOUE', message: "L'envoi du code a echoue sur les deux canaux (SMS et WhatsApp)." },
         HttpStatus.BAD_GATEWAY,
