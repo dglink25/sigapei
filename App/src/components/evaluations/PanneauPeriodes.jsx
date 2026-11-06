@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { CalendarRange, Lock, Plus, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { evaluationsService } from '../../services/evaluations/evaluations.service'
-import { CYCLES, STATUTS_PERIODE, anneeScolaireCourante, formatDate, libelleCycle } from '../../config/evaluations/constantes'
+import { CYCLES, STATUTS_PERIODE, anneeScolaireCourante, libelleCycle } from '../../config/evaluations/constantes'
 import Drawer from '../administration/Drawer'
 import ConfirmDialog from '../commun/ConfirmDialog'
-import { Badge, Champ, Chargement, EtatVide, aria, erreursChamps, useDonnees } from './communs'
+import { aria, Badge, Champ, Chargement, erreursChamps, EtatVide, formatDate, useDonnees } from '../modules/outils'
 
 const VIDE = { annee_scolaire: anneeScolaireCourante(), cycle: 'secondaire', type: 'trimestre', numero: '1', libelle: '', date_debut: '', date_fin: '' }
 

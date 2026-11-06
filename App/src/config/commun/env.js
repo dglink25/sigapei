@@ -18,6 +18,7 @@ export const ENV = Object.freeze({
     rh: url(e.VITE_RH_SERVICE_URL),
     evaluation: url(e.VITE_EVALUATION_SERVICE_URL),
     demande: url(e.VITE_DEMANDE_SERVICE_URL),
+    finance: url(e.VITE_FINANCE_SERVICE_URL),
   }),
   firebase: Object.freeze({
     apiKey: str(e.VITE_FIREBASE_API_KEY),

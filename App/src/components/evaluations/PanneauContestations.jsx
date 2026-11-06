@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { MessageSquareWarning, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { evaluationsService } from '../../services/evaluations/evaluations.service'
-import { STATUTS_CONTESTATION, STATUTS_NOTE, formatDate, formatNombre } from '../../config/evaluations/constantes'
+import { STATUTS_CONTESTATION, STATUTS_NOTE } from '../../config/evaluations/constantes'
 import Drawer from '../administration/Drawer'
 import Pagination from '../administration/Pagination'
-import { Badge, Champ, Chargement, EtatVide, aria, erreursChamps, useDonnees } from './communs'
+import { aria, Badge, Champ, Chargement, erreursChamps, EtatVide, formatDate, formatNombre, useDonnees } from '../modules/outils'
 
 const texteNote = (n) => (!n ? '-' : n.statut !== 'saisie' ? STATUTS_NOTE.find((s) => s.code === n.statut)?.libelle : formatNombre(n.valeur))
 

@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownUp, BarChart3, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { evaluationsService } from '../../services/evaluations/evaluations.service'
-import { formatNombre, nomComplet } from '../../config/evaluations/constantes'
 import Drawer from '../administration/Drawer'
 import BulletinDetail from './BulletinDetail'
-import { Badge, Champ, Chargement, EtatVide, aria, useDonnees } from './communs'
+import { aria, Badge, Champ, Chargement, EtatVide, formatNombre, nomComplet, useDonnees } from '../modules/outils'
 import { libelleClasse, libellePeriode, periodeParDefaut, useClassesAccessibles, usePeriodes } from './referentiels'
 
 const TRIS = {

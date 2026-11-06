@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { Download, Flag, Info } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { evaluationsService } from '../../services/evaluations/evaluations.service'
-import { STATUTS_NOTE, formatDate, formatNombre } from '../../config/evaluations/constantes'
+import { STATUTS_NOTE } from '../../config/evaluations/constantes'
 import Drawer from '../administration/Drawer'
-import { Badge, Champ, aria, erreursChamps } from './communs'
+import { aria, Badge, Champ, erreursChamps, formatDate, formatNombre } from '../modules/outils'
 
 /** Texte d'une note dans le bulletin : valeur (sur barème si différent de 20), niveau ou statut d'absence. */
 const texteNote = (n) => {

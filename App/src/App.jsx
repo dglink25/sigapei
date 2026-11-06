@@ -69,6 +69,8 @@ import Loader from './components/commun/Loader'
 const ScolaritePage = lazy(() => import('./pages/etablissements/ScolaritePage'))
 const InscriptionPage = lazy(() => import('./pages/inscription/InscriptionPage'))
 const EvaluationsPage = lazy(() => import('./pages/evaluations/EvaluationsPage'))
+const DemandesAdministrativesPage = lazy(() => import('./pages/demandes/DemandesPage'))
+const FinancesPage = lazy(() => import('./pages/finances/FinancesPage'))
 
 /** Wrapper direct pour Scolarité (sans PortailLayout). */
 function ScolariteDirecte() {
@@ -88,11 +90,11 @@ function InscriptionDirecte() {
   )
 }
 
-/** Wrapper direct pour Évaluations (sans PortailLayout). */
-function EvaluationsDirecte() {
+/** Accès direct à un module qui gère sa propre mise en page (sans PortailLayout). */
+function ModuleDirect({ page: Page, nom }) {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}><Loader mode="inline" label="Ouverture des Évaluations…" /></div>}>
-      <EvaluationsPage />
+    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}><Loader mode="inline" label={`Ouverture : ${nom}…`} /></div>}>
+      <Page />
     </Suspense>
   )
 }
@@ -122,7 +124,9 @@ function routesEtablissement(base) {
       <Route element={<RequireEtablissement />}>
         <Route path={p('/scolarite/*')} element={<ScolariteDirecte />} />
         <Route path={p('/inscription/*')} element={<InscriptionDirecte />} />
-        <Route path={p('/evaluations/*')} element={<EvaluationsDirecte />} />
+        <Route path={p('/evaluations/*')} element={<ModuleDirect page={EvaluationsPage} nom="Évaluations" />} />
+        <Route path={p('/demandes/*')} element={<ModuleDirect page={DemandesAdministrativesPage} nom="Demandes administratives" />} />
+        <Route path={p('/finances/*')} element={<ModuleDirect page={FinancesPage} nom="Finances" />} />
         <Route path={p('/apprenant/*')} element={<DashboardApprenantPage />} />
         <Route path={p('/apprenants/*')} element={<DashboardApprenantPage />} />
         <Route path={p('/parent/*')} element={<DashboardParentPage />} />

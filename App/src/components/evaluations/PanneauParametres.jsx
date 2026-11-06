@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { FileText, Plus, Save, Scale, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { evaluationsService } from '../../services/evaluations/evaluations.service'
-import { COLONNES_BULLETIN, CYCLES, TYPES_EVALUATION, formatNombre, libelleCycle } from '../../config/evaluations/constantes'
+import { COLONNES_BULLETIN, CYCLES, TYPES_EVALUATION, libelleCycle } from '../../config/evaluations/constantes'
 import Drawer from '../administration/Drawer'
-import { Badge, Champ, Chargement, EtatVide, aria, erreursChamps, useDonnees } from './communs'
+import { aria, Badge, Champ, Chargement, erreursChamps, EtatVide, formatNombre, useDonnees } from '../modules/outils'
 
 const DEC = /^\d{1,3}(\.\d{1,2})?$/
 const norm = (v) => String(v ?? '').trim().replace(',', '.')

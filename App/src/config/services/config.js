@@ -1,4 +1,4 @@
-import { BookOpen, ClipboardCheck, GraduationCap, Layers, MonitorPlay, School, UserPlus, Users } from 'lucide-react'
+import { BookOpen, ClipboardCheck, FileText, GraduationCap, Layers, MonitorPlay, School, UserPlus, Users, Wallet } from 'lucide-react'
 
 export const SERVICE_PATHS = {
   liste: '/admin/services',
@@ -21,6 +21,8 @@ const ICONES = {
   'vie-scolaire': School,
   evaluations: ClipboardCheck,
   evaluation: ClipboardCheck,
+  demandes: FileText,
+  finances: Wallet,
   rh: Users,
   elearning: MonitorPlay,
   bibliotheque: BookOpen,

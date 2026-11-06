@@ -2,9 +2,8 @@ import { useEffect } from 'react'
 import { GraduationCap, RefreshCw } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { evaluationsService } from '../../services/evaluations/evaluations.service'
-import { nomComplet } from '../../config/evaluations/constantes'
 import BulletinDetail from './BulletinDetail'
-import { Champ, Chargement, EtatVide, aria, trierParNom, useDonnees } from './communs'
+import { aria, Champ, Chargement, EtatVide, nomComplet, trierParNom, useDonnees } from '../modules/outils'
 import { libellePeriode, periodeParDefaut, usePeriodes } from './referentiels'
 
 /** Apprenant : ses résultats ; parent : ceux de chaque enfant rattaché (liste fournie par Scolarité). */

@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ClipboardList, Lock, PenLine, Plus, RefreshCw, Save, Undo2 } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { evaluationsService } from '../../services/evaluations/evaluations.service'
-import { STATUTS_NOTE, TYPES_EVALUATION, formatDate, formatNombre, libelleType, nomComplet } from '../../config/evaluations/constantes'
+import { STATUTS_NOTE, TYPES_EVALUATION, libelleType } from '../../config/evaluations/constantes'
 import Drawer from '../administration/Drawer'
 import ConfirmDialog from '../commun/ConfirmDialog'
-import { Badge, Champ, Chargement, EtatVide, aria, erreursChamps, useDonnees } from './communs'
+import { aria, Badge, Champ, Chargement, erreursChamps, EtatVide, formatDate, formatNombre, nomComplet, useDonnees } from '../modules/outils'
 import { libelleClasse, libellePeriode, periodeParDefaut, useClassesAccessibles, usePeriodes } from './referentiels'
 
 const NOTE = /^\d{1,3}([.,]\d{1,2})?$/

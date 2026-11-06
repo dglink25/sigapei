@@ -4,6 +4,7 @@
  */
 import { ENV } from '../../config/commun/env'
 import { createHttp } from '../../lib/commun/http'
+import { ouvrirLienSigne } from '../../components/modules/outils'
 
 const BASE = ENV.services.evaluation || 'http://localhost:4006'
 const http = createHttp(BASE)
@@ -62,13 +63,7 @@ export const evaluationsService = {
   /** Lien signé (5 min) puis téléchargement par le navigateur : le PDF ne transite pas par la mémoire de la page. */
   telechargerBulletin: async (apprenantUuid, periodeUuid) => {
     const d = donnee(await http.get(`/bulletins/apprenant/${apprenantUuid}/pdf${qs({ periode_uuid: periodeUuid })}`))
-    if (!d?.url || !d.url.startsWith('/')) throw new Error('Lien de téléchargement invalide.')
-    const a = document.createElement('a')
-    a.href = `${BASE}${d.url}`
-    a.rel = 'noopener'
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
+    ouvrirLienSigne(BASE, d?.url)
     return d
   },
 

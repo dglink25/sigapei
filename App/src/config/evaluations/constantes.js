@@ -50,19 +50,7 @@ export const COLONNES_BULLETIN = [
 ]
 
 
-/** « 12.50 » -> « 12,5 » ; valeur absente -> « - ». */
-export const formatNombre = (v) => {
-  if (v === null || v === undefined || v === '') return '-'
-  const n = Number(v)
-  if (Number.isNaN(n)) return String(v)
-  return n.toLocaleString('fr-FR', { maximumFractionDigits: 2 })
-}
 
-export const formatDate = (iso) => {
-  if (!iso) return '-'
-  const d = new Date(iso.length === 10 ? `${iso}T00:00:00` : iso)
-  return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
 
 /** Année scolaire courante au format 2026-2027 (bascule en août). */
 export const anneeScolaireCourante = () => {
@@ -70,5 +58,3 @@ export const anneeScolaireCourante = () => {
   const debut = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1
   return `${debut}-${debut + 1}`
 }
-
-export const nomComplet = (a) => [a?.nom, a?.prenom].filter(Boolean).join(' ') || a?.matricule || '-'

@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { BookOpen, Pencil, Plus, RefreshCw, Scale, Search, Trash2 } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { evaluationsService } from '../../services/evaluations/evaluations.service'
-import { CYCLES, formatNombre, libelleCycle } from '../../config/evaluations/constantes'
+import { CYCLES, libelleCycle } from '../../config/evaluations/constantes'
 import Drawer from '../administration/Drawer'
 import Switch from '../administration/Switch'
-import { Badge, Champ, Chargement, EtatVide, aria, erreursChamps, useDonnees } from './communs'
+import { aria, Badge, Champ, Chargement, erreursChamps, EtatVide, formatNombre, useDonnees } from '../modules/outils'
 
 const COEF = /^\d{1,2}(\.\d{1,2})?$/
 const normaliserCoef = (v) => String(v ?? '').trim().replace(',', '.')
