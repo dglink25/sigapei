@@ -35,6 +35,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/formules', [FormulesController::class, 'creer']);
         Route::patch('/formules/{formule}', [FormulesController::class, 'modifier'])->whereUuid('formule');
 
+        Route::get('/classes/{classe}/apprenants', [FacturesController::class, 'apprenantsDeClasse'])->whereUuid('classe');
         Route::get('/factures', [FacturesController::class, 'index']);
         Route::post('/factures', [FacturesController::class, 'emettre'])->middleware('throttle:sensible');
         Route::post('/factures/classe', [FacturesController::class, 'emettrePourClasse'])->middleware('throttle:sensible');

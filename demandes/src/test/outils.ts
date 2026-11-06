@@ -54,6 +54,16 @@ export class FauxHttp {
       return id ? { success: true, donnees: { id, uuid: params.uuid } } : null;
     }
     if (service === 'scolarite') {
+      if (params.parent_uuid || params.utilisateur_uuid) {
+        const liste = Object.values(this.monde.apprenants).filter(
+          (x: any) =>
+            x._tenant === tenantId &&
+            (params.utilisateur_uuid
+              ? x.utilisateur_uuid === params.utilisateur_uuid
+              : (x.parents ?? []).some((p: any) => p.parent_uuid === params.parent_uuid)),
+        );
+        return { succes: true, donnees: liste };
+      }
       const a = this.monde.apprenants[params.uuid];
       return { succes: true, donnees: a && a._tenant === tenantId ? a : null };
     }

@@ -67,6 +67,18 @@ class FacturesController extends Controller
         return $this->ok(Presentation::facture($facture->load(['lignes', 'echeances', 'reglements']), true));
     }
 
+    /** GET /v1/classes/{uuid}/apprenants - apprenants actifs d'une classe, pour choisir à qui émettre une facture. */
+    public function apprenantsDeClasse(string $classe): JsonResponse
+    {
+        $this->gouvernance->exiger('emettre_factures');
+        $liste = array_map(fn ($a) => [
+            'uuid' => $a['uuid'], 'nom' => $a['nom'] ?? null, 'prenom' => $a['prenom'] ?? null, 'matricule' => $a['matricule'] ?? null,
+        ], $this->scolarite->apprenantsDeClasse(strtolower($classe)));
+        usort($liste, fn ($x, $y) => strcmp(mb_strtolower(($x['nom'] ?? '').' '.($x['prenom'] ?? '')), mb_strtolower(($y['nom'] ?? '').' '.($y['prenom'] ?? ''))));
+
+        return $this->ok($liste);
+    }
+
     /** POST /v1/factures */
     public function emettre(Request $request): JsonResponse
     {

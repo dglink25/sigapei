@@ -64,6 +64,17 @@ class ParcoursTest extends FinancesTestCase
         $this->en($this->admin)->getJson('/v1/factures?recherche=MAT0')->assertOk()->assertJsonPath('data.pagination.total', 1);
     }
 
+    public function test_apprenants_d_une_classe_pour_l_emission(): void
+    {
+        $this->apprenant(['nom' => 'ZINSOU']);
+        $this->apprenant(['nom' => 'ADJOVI']);
+        $this->apprenant(['nom' => 'BIO', 'statut' => 'radie']);
+
+        $this->en($this->admin)->getJson("/v1/classes/{$this->classe}/apprenants")->assertOk()
+            ->assertJsonCount(2, 'data')->assertJsonPath('data.0.nom', 'ADJOVI');
+        $this->en($this->caissier)->getJson("/v1/classes/{$this->classe}/apprenants")->assertStatus(403);
+    }
+
     public function test_grille_des_roles_et_separation_des_taches(): void
     {
         $f = $this->facture();

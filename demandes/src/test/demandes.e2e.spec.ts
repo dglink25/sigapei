@@ -602,4 +602,19 @@ describe('Demandes administratives (bout en bout, PostgreSQL reel)', () => {
     expect(s.demandes.par_statut.prete).toBeGreaterThanOrEqual(2);
     expect(s.permissions_absence.en_attente).toBe(0);
   });
+
+  it('mes apprenants : le parent voit ses enfants, l apprenant son dossier, le personnel rien ; noms dans la file', async () => {
+    const mes = (await en(app, 'parent').get('/mes-apprenants').expect(200)).body.data;
+    expect(mes).toEqual([{ uuid: alice, nom: 'ADJO', prenom: 'Alice', matricule: 'M001', classe: '5e A' }]);
+    expect((await en(app, 'eleve').get('/mes-apprenants').expect(200)).body.data.map((a: any) => a.uuid)).toEqual([alice]);
+    expect((await en(app, 'autreParent').get('/mes-apprenants').expect(200)).body.data.map((a: any) => a.uuid)).not.toContain(alice);
+    expect((await en(app, 'admin').get('/mes-apprenants').expect(200)).body.data).toEqual([]);
+
+    const t = await types();
+    const d = (await en(app, 'parent').post('/demandes', { type_document_uuid: t.certificat_scolarite, beneficiaire_apprenant_uuid: alice }).expect(201))
+      .body.data;
+    const file = (await en(app, 'admin').get('/demandes?par_page=100').expect(200)).body.data.elements;
+    expect(file.find((x: any) => x.uuid === d.uuid).beneficiaire).toMatchObject({ nom: 'ADJO', classe: '5e A' });
+    expect((await en(app, 'parent').get(`/demandes/${d.uuid}`).expect(200)).body.data.beneficiaire.prenom).toBe('Alice');
+  });
 });

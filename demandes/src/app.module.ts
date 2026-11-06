@@ -22,6 +22,7 @@ import { IdentiteClient } from './integrations/identite.client';
 import { RhClient } from './integrations/rh.client';
 import { ScolariteClient } from './integrations/scolarite.client';
 import { InterneController } from './interne/interne.controller';
+import { MoiController } from './moi/moi.controller';
 import { PermissionsAbsenceController } from './permissions-absence/permissions-absence.controller';
 import { PermissionsAbsenceService } from './permissions-absence/permissions-absence.service';
 import { ReclamationsController } from './reclamations/reclamations.controller';
@@ -67,6 +68,7 @@ import { TypesDocumentService } from './types-document/types-document.service';
     GouvernanceController,
     StatistiquesController,
     InterneController,
+    MoiController,
   ],
   providers: [
     Base,

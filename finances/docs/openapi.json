@@ -3308,6 +3308,59 @@
           }
         }
       }
+    },
+    "/v1/classes/{classe}/apprenants": {
+      "get": {
+        "tags": [
+          "Factures"
+        ],
+        "summary": "Apprenants actifs d'une classe (emettre_factures)",
+        "description": "Source Scolarité ; sert à choisir le destinataire d'une facture.",
+        "parameters": [
+          {
+            "name": "classe",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

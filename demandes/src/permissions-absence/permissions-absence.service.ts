@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Base, page, pagination } from '../common/base/base.service';
 import { UtilisateurCourant } from '../common/contexte/utilisateur-courant';
 import { ErreurMetier } from '../common/erreurs/erreurs';
+import { ScolariteClient } from '../integrations/scolarite.client';
 import { RabbitMqPublisher } from '../common/evenements/rabbitmq.publisher';
 import { EligibiliteService } from '../demandes/eligibilite.service';
 import { GouvernanceService } from '../gouvernance/gouvernance.service';
@@ -24,6 +25,7 @@ export class PermissionsAbsenceService {
     private readonly eligibilite: EligibiliteService,
     private readonly gouvernance: GouvernanceService,
     private readonly evenements: RabbitMqPublisher,
+    private readonly scolarite: ScolariteClient,
   ) {}
 
   async soumettre(u: UtilisateurCourant, dto: SoumettrePermissionDto) {
@@ -121,7 +123,7 @@ export class PermissionsAbsenceService {
     if (!p || (p.demandeur_uuid !== u.uuid && !(await this.gouvernance.peut(u, 'valider_permission_absence')))) {
       throw ErreurMetier.introuvable("Permission d'absence introuvable.");
     }
-    return p;
+    return { ...p, apprenant: (await this.scolarite.resumes([p.apprenant_uuid], u.tenantId)).get(p.apprenant_uuid) ?? null };
   }
 
   async lister(u: UtilisateurCourant, f: FiltresPermissionsDto, siennes: boolean) {
@@ -148,7 +150,15 @@ export class PermissionsAbsenceService {
       `SELECT ${COLONNES} FROM demandes.permissions_absence WHERE ${where} ORDER BY ${ordre}, id LIMIT ${p.parPage} OFFSET ${p.offset}`,
       params,
     );
-    return page(lignes, Number(total?.n ?? 0), p);
+    const noms = await this.scolarite.resumes(
+      lignes.map((l: any) => l.apprenant_uuid),
+      u.tenantId,
+    );
+    return page(
+      lignes.map((l: any) => ({ ...l, apprenant: noms.get(l.apprenant_uuid) ?? null })),
+      Number(total?.n ?? 0),
+      p,
+    );
   }
 
   /** Vie scolaire (interne) : l'apprenant est-il permissionnaire a cette date ? */

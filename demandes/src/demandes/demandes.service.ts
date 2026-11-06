@@ -6,6 +6,7 @@ import { ErreurMetier } from '../common/erreurs/erreurs';
 import { RabbitMqPublisher } from '../common/evenements/rabbitmq.publisher';
 import { DocumentsService, InstantaneDocument } from '../generation/documents.service';
 import { GouvernanceService } from '../gouvernance/gouvernance.service';
+import { ScolariteClient } from '../integrations/scolarite.client';
 import { TypesDocumentService } from '../types-document/types-document.service';
 import { FiltresDemandesDto, SoumettreDemandeDto, TraiterDemandeDto } from './dto/demandes.dto';
 import { EligibiliteService } from './eligibilite.service';
@@ -37,6 +38,7 @@ export class DemandesService {
     private readonly gouvernance: GouvernanceService,
     private readonly documents: DocumentsService,
     private readonly evenements: RabbitMqPublisher,
+    private readonly scolarite: ScolariteClient,
   ) {}
 
   async soumettre(u: UtilisateurCourant, dto: SoumettreDemandeDto) {
@@ -207,6 +209,7 @@ export class DemandesService {
     const d = await this.consulterBrut(u.tenantId, uuid);
     const gestionnaire = await this.gouvernance.peut(u, 'consulter_demandes');
     if (d.demandeur_uuid !== u.uuid && !gestionnaire) throw ErreurMetier.introuvable('Demande introuvable.');
+    d.beneficiaire = (await this.scolarite.resumes([d.beneficiaire_apprenant_uuid], u.tenantId)).get(d.beneficiaire_apprenant_uuid) ?? null;
     return this.presenter(d, d.demandeur_uuid === u.uuid, gestionnaire);
   }
 
@@ -270,8 +273,12 @@ export class DemandesService {
       `${SELECT_DEMANDE} WHERE ${where} ORDER BY ${ordre}, d.id LIMIT ${p.parPage} OFFSET ${p.offset}`,
       params,
     );
+    const noms = await this.scolarite.resumes(
+      lignes.map((d) => d.beneficiaire_apprenant_uuid),
+      u.tenantId,
+    );
     return page(
-      lignes.map((d) => this.presenter(d, siennes, !siennes, false)),
+      lignes.map((d) => this.presenter({ ...d, beneficiaire: noms.get(d.beneficiaire_apprenant_uuid) ?? null }, siennes, !siennes, false)),
       Number(total?.n ?? 0),
       p,
     );
@@ -382,6 +389,7 @@ export class DemandesService {
       priorite: d.priorite,
       commentaire: d.commentaire,
       beneficiaire_apprenant_uuid: d.beneficiaire_apprenant_uuid,
+      beneficiaire: d.beneficiaire ?? null,
       delai_indicatif_jours: d.delai_indicatif_jours,
       document_disponible: d.statut === 'prete',
       cree_le: d.created_at,

@@ -82,6 +82,7 @@ DB_HOST=127.0.0.1 DB_PASSWORD=... npm test
 | `POST` / `GET` | `/reclamations`, `/reclamations/mes-reclamations`, `/reclamations/{uuid}`, `/reclamations/{uuid}/messages` | tout profil (son fil) |
 | `GET` / `POST` / `PUT` | `/reclamations`, `/reclamations/vers-usager`, `/reclamations/{uuid}/statut` | `repondre_reclamation` (sur ses catégories) |
 | `GET` | `/gouvernance/mes-actions` | tout utilisateur (adapter l'interface) |
+| `GET` | `/mes-apprenants` | apprenant (son dossier), parent (ses enfants) : choix du bénéficiaire |
 | `GET` / `PUT` | `/gouvernance/permissions`, `/gouvernance/permissions/{role_code}` | administrateur |
 | `GET` | `/statistiques` | `consulter_statistiques` |
 | `GET` | `/interne/permission-active/{apprenant_uuid}?date=` | Vie scolaire (`X-Internal-Secret` + `X-Tenant-Id`) |
