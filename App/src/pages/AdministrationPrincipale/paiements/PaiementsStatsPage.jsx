@@ -63,7 +63,7 @@ export default function PaiementsStatsPage() {
     <div className="ap">
       <div className="ap-page-head">
         <div>
-          <h2 className="ap-page-title">Paiements — Vue d'ensemble</h2>
+          <h2 className="ap-page-title">Paiements - Vue d'ensemble</h2>
           <p className="ap-page-sub">Supervision globale des flux financiers de la plateforme</p>
         </div>
         <button type="button" className="ap-btn ap-btn--ghost" onClick={load} disabled={loading}>
@@ -77,7 +77,7 @@ export default function PaiementsStatsPage() {
         <div className="pay-alert pay-alert--danger">
           <AlertOctagon size={16} />
           <span>
-            <strong>{interrupteurs.length} interrupteur(s) de sécurité actif(s)</strong> — des paiements peuvent être bloqués.
+            <strong>{interrupteurs.length} interrupteur(s) de sécurité actif(s)</strong> - des paiements peuvent être bloqués.
             <Link to={PAIEMENT_PATHS.interrupteurs} style={{ marginLeft: 8, color: 'inherit', fontWeight: 700 }}>Voir →</Link>
           </span>
         </div>
@@ -87,10 +87,10 @@ export default function PaiementsStatsPage() {
       <section className="pay-section">
         <h3 className="pay-section-title"><TrendingDown size={16} /> Encaissements</h3>
         <div className="pay-kpi-grid">
-          <KpiCard label="Total" value={enc.total ?? '—'} tone="neutral" />
-          <KpiCard label="Disponibles" value={enc.disponibles ?? '—'} tone="success" sub="Fonds disponibles" />
-          <KpiCard label="En attente règlement" value={enc.en_attente_reglement ?? '—'} tone="warning" sub="Délai agrégateur non écoulé" />
-          <KpiCard label="Dernières 24h" value={enc.derniere_24h ?? '—'} tone="info" />
+          <KpiCard label="Total" value={enc.total ?? '-'} tone="neutral" />
+          <KpiCard label="Disponibles" value={enc.disponibles ?? '-'} tone="success" sub="Fonds disponibles" />
+          <KpiCard label="En attente règlement" value={enc.en_attente_reglement ?? '-'} tone="warning" sub="Délai agrégateur non écoulé" />
+          <KpiCard label="Dernières 24h" value={enc.derniere_24h ?? '-'} tone="info" />
         </div>
       </section>
 
@@ -98,10 +98,10 @@ export default function PaiementsStatsPage() {
       <section className="pay-section">
         <h3 className="pay-section-title"><TrendingUp size={16} /> Décaissements</h3>
         <div className="pay-kpi-grid">
-          <KpiCard label="Total" value={dec.total ?? '—'} tone="neutral" />
-          <KpiCard label="Envoyés" value={dec.envoyes ?? '—'} tone="success" />
-          <KpiCard label="En cours" value={dec.en_cours ?? '—'} tone="warning" />
-          <KpiCard label="Échoués" value={dec.echoues ?? '—'} tone="danger" sub="À vérifier" />
+          <KpiCard label="Total" value={dec.total ?? '-'} tone="neutral" />
+          <KpiCard label="Envoyés" value={dec.envoyes ?? '-'} tone="success" />
+          <KpiCard label="En cours" value={dec.en_cours ?? '-'} tone="warning" />
+          <KpiCard label="Échoués" value={dec.echoues ?? '-'} tone="danger" sub="À vérifier" />
         </div>
       </section>
 
@@ -156,7 +156,7 @@ export default function PaiementsStatsPage() {
                   <tr key={p.devise}>
                     <td><span className="ap-code">{p.devise}</span></td>
                     <td>
-                      {parseFloat(p.commission_avance_taux) > 0 ? `${p.commission_avance_taux}%` : '—'}
+                      {parseFloat(p.commission_avance_taux) > 0 ? `${p.commission_avance_taux}%` : '-'}
                       {Number(p.commission_avance_min) > 0 ? ` min. ${Number(p.commission_avance_min).toLocaleString('fr-FR')}` : ''}
                     </td>
                     <td>

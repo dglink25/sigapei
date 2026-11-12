@@ -2,7 +2,7 @@
  * Page : Journal d'audit paiements (super admin)
  * Route : /admin/paiements/audit
  *
- * Journal d'audit chaîné SHA-256 — toutes les opérations de paiement.
+ * Journal d'audit chaîné SHA-256 - toutes les opérations de paiement.
  * Le super admin peut filtrer par établissement, action, résultat, période.
  * Chaque ligne montre le hash SHA-256 pour prouver l'intégrité de la chaîne.
  */
@@ -66,13 +66,13 @@ export default function PaiementsAuditPage() {
 
   const dateFr = (iso) => iso
     ? new Date(iso).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'medium' })
-    : '—'
+    : '-'
 
   return (
     <div className="ap">
       <div className="ap-page-head">
         <div>
-          <h2 className="ap-page-title">Journal d'audit — Paiements</h2>
+          <h2 className="ap-page-title">Journal d'audit - Paiements</h2>
           <p className="ap-page-sub">Toutes les opérations de paiement, chaînées par empreinte SHA-256</p>
         </div>
         <button type="button" className="ap-btn ap-btn--ghost" onClick={load} disabled={loading}>
@@ -85,7 +85,7 @@ export default function PaiementsAuditPage() {
       <div className="pay-alert pay-alert--info">
         <ShieldCheck size={16} />
         <span>
-          Le journal est en <strong>ajout seul</strong> — aucune ligne ne peut être modifiée ni supprimée.
+          Le journal est en <strong>ajout seul</strong> - aucune ligne ne peut être modifiée ni supprimée.
           Chaque événement est chaîné par son empreinte SHA-256 au précédent.
         </span>
       </div>
@@ -135,7 +135,7 @@ export default function PaiementsAuditPage() {
                 {items.map((evt, i) => (
                   <tr key={evt.uuid ?? i}>
                     <td style={{ fontFamily: 'monospace', color: 'var(--ap-muted)', fontSize: '0.78rem' }}>
-                      {evt.rang ?? '—'}
+                      {evt.rang ?? '-'}
                     </td>
                     <td style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{dateFr(evt.created_at)}</td>
                     <td>
@@ -159,7 +159,7 @@ export default function PaiementsAuditPage() {
                           <ShieldCheck size={12} style={{ color: 'var(--ap-green)', marginRight: 4 }} />
                           {evt.hash.slice(0, 8)}
                         </span>
-                      ) : '—'}
+                      ) : '-'}
                     </td>
                   </tr>
                 ))}

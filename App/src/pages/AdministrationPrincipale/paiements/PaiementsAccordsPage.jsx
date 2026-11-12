@@ -151,7 +151,7 @@ export default function PaiementsAccordsPage() {
   }
 
   const nomEtab = (uuid) => etablissements.find(e => e.uuid === uuid)?.nom ?? uuid?.slice(0, 8) + '…'
-  const dateFr = (iso) => iso ? new Date(iso).toLocaleDateString('fr-FR', { dateStyle: 'short' }) : '—'
+  const dateFr = (iso) => iso ? new Date(iso).toLocaleDateString('fr-FR', { dateStyle: 'short' }) : '-'
 
   /* Modes actifs groupés par agrégateur pour le select */
   const modesParAgreg = useMemo(() => {
@@ -264,7 +264,7 @@ export default function PaiementsAccordsPage() {
                     <td>
                       {a.plafond_avance
                         ? <span>{Number(a.plafond_avance).toLocaleString('fr-FR')} {a.devise}</span>
-                        : <span className="ap-muted">—</span>}
+                        : <span className="ap-muted">-</span>}
                     </td>
                     <td>{dateFr(a.decide_le ?? a.created_at)}</td>
                     <td><StatutBadge statut={a.statut} /></td>
@@ -325,7 +325,7 @@ export default function PaiementsAccordsPage() {
             <label>Établissement <span className="pay-req">*</span></label>
             <select value={form.etablissementUuid} onChange={e => setForm(p => ({ ...p, etablissementUuid: e.target.value }))}
               className="ap-input" data-autofocus>
-              <option value="">— Sélectionner un établissement —</option>
+              <option value="">- Sélectionner un établissement -</option>
               {etablissements.map(e => (
                 <option key={e.uuid} value={e.uuid}>{e.nom}</option>
               ))}
@@ -336,7 +336,7 @@ export default function PaiementsAccordsPage() {
             <label>Mode de paiement <span className="pay-req">*</span></label>
             <select value={form.modePaiementId} onChange={e => setForm(p => ({ ...p, modePaiementId: e.target.value }))}
               className="ap-input">
-              <option value="">— Sélectionner un mode —</option>
+              <option value="">- Sélectionner un mode -</option>
               {Object.entries(modesParAgreg).map(([code, liste]) => (
                 <optgroup key={code} label={code.toUpperCase()}>
                   {liste.map(m => (

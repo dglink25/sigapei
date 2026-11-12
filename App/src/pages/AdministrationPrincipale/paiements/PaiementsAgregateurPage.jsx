@@ -211,7 +211,7 @@ export default function PaiementsAgregateurPage() {
           <div className="pay-drawer-section">
             <h3 className="pay-drawer-section-title">Environnement</h3>
             <p className="pay-drawer-hint">
-              <strong>Attention</strong> — basculer en test rejettera tous les paiements réels.
+              <strong>Attention</strong> - basculer en test rejettera tous les paiements réels.
               Basculer en production activera les transactions financières réelles.
             </p>
             <div className="pay-env-choices">
