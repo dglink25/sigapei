@@ -78,7 +78,7 @@ export function IncidentFormulaire() {
       <form id="formulaire-incident" className="carte formulaire" onSubmit={soumettre}>
         <div className="grille-2-colonnes">
           <div className="champ">
-            <label htmlFor="incident-apprenant">Apprenant — UUID *</label>
+            <label htmlFor="incident-apprenant">Apprenant - UUID *</label>
             <input
               id="incident-apprenant"
               type="text"

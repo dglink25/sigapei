@@ -5,7 +5,7 @@ import { notifierSucces } from '../stores/toasts.js'
 
 const CLE = ['presences']
 
-/** GET /v1/presences — liste filtrable (classe, apprenant, cours, statut, période). */
+/** GET /v1/presences - liste filtrable (classe, apprenant, cours, statut, période). */
 export function usePresencesListe(params = {}, options = {}) {
   return useQuery({
     queryKey: [...CLE, 'liste', params],
@@ -15,7 +15,7 @@ export function usePresencesListe(params = {}, options = {}) {
   })
 }
 
-/** GET /v1/apprenants/{uuid}/absences/synthese — totaux sur la période glissante. */
+/** GET /v1/apprenants/{uuid}/absences/synthese - totaux sur la période glissante. */
 export function useSyntheseAbsences(apprenantUuid, options = {}) {
   return useQuery({
     queryKey: [...CLE, 'synthese', apprenantUuid],
@@ -28,7 +28,7 @@ export function useSyntheseAbsences(apprenantUuid, options = {}) {
 }
 
 /**
- * POST /v1/presences — enregistre les présences d'un cours pour une classe.
+ * POST /v1/presences - enregistre les présences d'un cours pour une classe.
  * @param {{cours_uuid: string, date: string, apprenants: Array<{uuid: string, statut: string}>}} donnees
  */
 export function useEnregistrerPresences() {
@@ -43,7 +43,7 @@ export function useEnregistrerPresences() {
 }
 
 /**
- * PUT /v1/presences/{uuid} — correction d'une présence (fenêtre enseignant,
+ * PUT /v1/presences/{uuid} - correction d'une présence (fenêtre enseignant,
  * sinon censeur/administrateur). Le CAPTCHA est exigé (jeton du profil).
  */
 export function useCorrigerPresence() {

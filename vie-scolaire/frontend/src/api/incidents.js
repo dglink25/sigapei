@@ -5,7 +5,7 @@ import { notifierSucces } from '../stores/toasts.js'
 
 const CLE = ['incidents']
 
-/** GET /v1/incidents — liste filtrable par classe, apprenant ou type. */
+/** GET /v1/incidents - liste filtrable par classe, apprenant ou type. */
 export function useIncidentsListe(params = {}, options = {}) {
   return useQuery({
     queryKey: [...CLE, 'liste', params],
@@ -16,7 +16,7 @@ export function useIncidentsListe(params = {}, options = {}) {
 }
 
 /**
- * POST /v1/incidents — signale un incident disciplinaire.
+ * POST /v1/incidents - signale un incident disciplinaire.
  * @param {{apprenant_uuid: string, type: string, description: string}} donnees
  */
 export function useSignalerIncident() {
@@ -31,7 +31,7 @@ export function useSignalerIncident() {
 }
 
 /**
- * POST /v1/incidents/{uuid}/sanction — associe une sanction à un incident.
+ * POST /v1/incidents/{uuid}/sanction - associe une sanction à un incident.
  * Une sanction ne peut jamais exister sans incident (règle de gestion).
  */
 export function useAppliquerSanction() {

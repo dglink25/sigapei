@@ -202,7 +202,7 @@ export function PanneauProfil() {
 
         <Champ
           id="profil-user"
-          libelle="Utilisateur connecté — UUID (X-User-Id / claim sub)"
+          libelle="Utilisateur connecté - UUID (X-User-Id / claim sub)"
           champ="userId"
           placeholder="UUID de l'utilisateur"
           aide="Référence externe (identite) : sert d'auteur aux corrections, incidents et sanctions."
