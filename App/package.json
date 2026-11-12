@@ -45,6 +45,6 @@
   },
   "allowScripts": {
     "@firebase/util@1.15.3": true,
-    "esbuild@0.25.12": true
+    "esbuild@0.21.5": true
   }
 }
