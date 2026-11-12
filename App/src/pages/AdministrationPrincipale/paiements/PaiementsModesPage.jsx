@@ -281,13 +281,13 @@ export default function PaiementsModesPage() {
                       <td>
                         <span style={{ fontSize: '0.82rem' }}>
                           Min: {Number(m.montant_min).toLocaleString('fr-FR')}
-                          {m.montant_max ? ` — Max: ${Number(m.montant_max).toLocaleString('fr-FR')}` : ''}
+                          {m.montant_max ? ` - Max: ${Number(m.montant_max).toLocaleString('fr-FR')}` : ''}
                         </span>
                       </td>
                       <td style={{ fontSize: '0.82rem' }}>
                         {parseFloat(m.frais_taux) > 0 ? `${parseFloat(m.frais_taux)}%` : ''}
                         {Number(m.frais_fixe) > 0 ? ` + ${Number(m.frais_fixe).toLocaleString('fr-FR')}` : ''}
-                        {!parseFloat(m.frais_taux) && !Number(m.frais_fixe) ? '—' : ''}
+                        {!parseFloat(m.frais_taux) && !Number(m.frais_fixe) ? '-' : ''}
                       </td>
                       <td>
                         <span className="ap-badge ap-badge--info">{m.nb_accords_actifs ?? 0} actifs</span>

@@ -1,5 +1,5 @@
 /**
- * Controller Super Administrateur — Module Paiements
+ * Controller Super Administrateur - Module Paiements
  * Préfixe : /v1/admin/paiements
  * Protégé par JwtGuard + SuperAdminGuard (toutes les routes exigent role = super_admin).
  */
