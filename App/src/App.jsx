@@ -32,6 +32,11 @@ import EtablissementsPage from './pages/AdministrationPrincipale/EtablissementsP
 import ServicesPage from './pages/AdministrationPrincipale/ServicesPage'
 import ServiceDetailPage from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
+import PaiementsStatsPage     from './pages/AdministrationPrincipale/paiements/PaiementsStatsPage'
+import PaiementsAgregateurPage from './pages/AdministrationPrincipale/paiements/PaiementsAgregateurPage'
+import PaiementsModesPage     from './pages/AdministrationPrincipale/paiements/PaiementsModesPage'
+import PaiementsAccordsPage   from './pages/AdministrationPrincipale/paiements/PaiementsAccordsPage'
+import PaiementsAuditPage     from './pages/AdministrationPrincipale/paiements/PaiementsAuditPage'
 
 /* Vie scolaire */
 import VieScolaireLayout from './pages/vie-scolaire/VieScolaireLayout'
@@ -89,6 +94,12 @@ export default function App() {
           <Route path={SERVICE_PATHS.etablissementRoute} element={<EtablissementServicesPage />} />
           <Route path={SERVICE_PATHS.liste}         element={<ServicesPage />} />
           <Route path={SERVICE_PATHS.detailRoute}   element={<ServiceDetailPage />} />
+          {/* ── Paiements ── */}
+          <Route path="/admin/paiements"                   element={<PaiementsStatsPage />} />
+          <Route path="/admin/paiements/agregateurs"       element={<PaiementsAgregateurPage />} />
+          <Route path="/admin/paiements/modes-paiement"    element={<PaiementsModesPage />} />
+          <Route path="/admin/paiements/accords"           element={<PaiementsAccordsPage />} />
+          <Route path="/admin/paiements/audit"             element={<PaiementsAuditPage />} />
         </Route>
       </Route>
 
