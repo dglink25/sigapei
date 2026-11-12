@@ -140,7 +140,7 @@ export default function AccueilEtablissement() {
                   <LogIn size={16} /> Connexion espace établissement
                 </LienConnexion>
             }
-            <a href={urlPlateforme('/')} className="ae-btn ae-btn--ghost">
+            <a href={urlPlateforme('/')} className="ae-btn ae-btn">
               <ExternalLink size={15} /> SIGAPEI
             </a>
           </div>
