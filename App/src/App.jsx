@@ -48,96 +48,16 @@ import EtablissementsPage        from './pages/AdministrationPrincipale/Etabliss
 import ServicesPage              from './pages/AdministrationPrincipale/ServicesPage'
 import ServiceDetailPage         from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
-import EtablissementRolesPage    from './pages/AdministrationPrincipale/EtablissementRolesPage'
-import DemandesCyclePage         from './pages/AdministrationPrincipale/DemandesCyclePage'
-import RolesPage                 from './pages/AdministrationPrincipale/RolesPage'
-import DemandesRolePage          from './pages/AdministrationPrincipale/DemandesRolePage'
-import DemandesServicePage       from './pages/AdministrationPrincipale/DemandesServicePage'
-import UtilisateursPage          from './pages/AdministrationPrincipale/UtilisateursPage'
 
-/* E-Learning (ajouté par fusion) */
-import ElearningApp from './pages/elearning/ElearningApp'
-
-/* Modales de sécurité globale */
-import RateLimitModal from './components/securite/RateLimitModal'
-import TabConflictModal from './components/securite/TabConflictModal'
-
-import { Suspense, lazy } from 'react'
-import Loader from './components/commun/Loader'
-
-/* Modules avec layout propre (chargement direct sans PortailLayout) */
-const ScolaritePage = lazy(() => import('./pages/etablissements/ScolaritePage'))
-const InscriptionPage = lazy(() => import('./pages/inscription/InscriptionPage'))
-
-/** Wrapper direct pour Scolarité (sans PortailLayout). */
-function ScolariteDirecte() {
-  return (
-    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}><Loader mode="inline" label="Ouverture de Scolarité…" /></div>}>
-      <ScolaritePage />
-    </Suspense>
-  )
-}
-
-/** Wrapper direct pour Inscription (sans PortailLayout). */
-function InscriptionDirecte() {
-  return (
-    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center' }}><Loader mode="inline" label="Ouverture des Inscriptions…" /></div>}>
-      <InscriptionPage />
-    </Suspense>
-  )
-}
-
-/** Hôte d'un établissement (sous-domaine en production). */
-const SLUG_HOTE = MODE_SOUS_DOMAINE ? detecterSlugEtablissement() : null
-
-/**
- * Routes d'un établissement enveloppées dans PortailLayout.
- * base = '' sur un sous-domaine ; '/etablissements/:slug' en local.
- */
-function routesEtablissement(base) {
-  const p = (sub) => (base ? `${base}${sub}` : sub || '/')
-  return (
-    <>
-      {/* ── Public : accueil de l'établissement ── */}
-      <Route path={p('')} element={<AccueilEtablissement />} />
-      <Route path={p('/auth/callback')} element={<TransfertPage />} />
-
-      {/* ── Portail : page autonome sans sidebar ── */}
-      <Route element={<RequireEtablissement />}>
-        <Route path={p('/portail')} element={<Portail />} />
-      </Route>
-
-      {/* ── Modules avec leur propre layout (sidebar dédiée) ── */}
-      {/* Scolarité, Inscription et Espaces Métiers Dédiés (Apprenants, Parents, Prestataires) */}
-      <Route element={<RequireEtablissement />}>
-        <Route path={p('/scolarite/*')} element={<ScolariteDirecte />} />
-        <Route path={p('/inscription/*')} element={<InscriptionDirecte />} />
-        <Route path={p('/apprenant/*')} element={<DashboardApprenantPage />} />
-        <Route path={p('/apprenants/*')} element={<DashboardApprenantPage />} />
-        <Route path={p('/parent/*')} element={<DashboardParentPage />} />
-        <Route path={p('/parents/*')} element={<DashboardParentPage />} />
-        <Route path={p('/prestataire/*')} element={<DashboardPrestatairePage />} />
-        <Route path={p('/prestataires/*')} element={<DashboardPrestatairePage />} />
-      </Route>
-
-      {/* ── Services sans layout propre + compte + configuration : dans PortailLayout ── */}
-      <Route element={<RequireEtablissement />}>
-        <Route element={<PortailLayout />}>
-          <Route path={p('/compte')} element={<ComptePage />} />
-          {/* Exclure les modules avec layout propre via le wildcard /:code/* */}
-          <Route path={p('/:code/*')} element={<ServiceEtablissementPage />} />
-        </Route>
-      </Route>
-
-      {/* ── Configuration : admin uniquement, dans PortailLayout ── */}
-      <Route element={<RequireAuth roles={['administrateur']} />}>
-        <Route element={<PortailLayout />}>
-          <Route path={p('/configuration')} element={<ConfigurationPage />} />
-        </Route>
-      </Route>
-    </>
-  )
-}
+/* Vie scolaire */
+import VieScolaireLayout from './pages/vie-scolaire/VieScolaireLayout'
+import PresencesPage from './pages/vie-scolaire/PresencesPage'
+import PresenceSaisiePage from './pages/vie-scolaire/PresenceSaisiePage'
+import IncidentsPage from './pages/vie-scolaire/IncidentsPage'
+import IncidentNouveauPage from './pages/vie-scolaire/IncidentNouveauPage'
+import DossierPage from './pages/vie-scolaire/DossierPage'
+import AlertesPage from './pages/vie-scolaire/AlertesPage'
+import { PATHS as VS_PATHS } from './config/vie-scolaire/config'
 
 export default function App() {
   useEffect(() => { document.title = ENV.appName }, [])
@@ -199,20 +119,14 @@ export default function App() {
       {/* ── Administration : super_admin ── */}
       <Route element={<RequireAuth roles={['super_admin']} />}>
         <Route element={<AdminLayout />}>
-          <Route path={ADMIN_DASHBOARD_PATH}               element={<Dashboard />} />
-          <Route path={COMPTE_PATH}                        element={<ComptePage />} />
-          <Route path={ADMIN_PATHS.demandes}               element={<DemandesPage />} />
-          <Route path={ADMIN_PATHS.detailRoute}            element={<DemandeDetailPage />} />
-          <Route path={ADMIN_PATHS.etablissements}         element={<EtablissementsPage />} />
-          <Route path={SERVICE_PATHS.etablissementRoute}   element={<EtablissementServicesPage />} />
-          <Route path="/admin/etablissements/:uuid/roles"  element={<EtablissementRolesPage />} />
-          <Route path={SERVICE_PATHS.liste}                element={<ServicesPage />} />
-          <Route path={SERVICE_PATHS.detailRoute}          element={<ServiceDetailPage />} />
-          <Route path="/admin/demandes-cycle"              element={<DemandesCyclePage />} />
-          <Route path="/admin/roles"                       element={<RolesPage />} />
-          <Route path="/admin/demandes-role"               element={<DemandesRolePage />} />
-          <Route path="/admin/demandes-service"            element={<DemandesServicePage />} />
-          <Route path="/admin/utilisateurs"                element={<UtilisateursPage />} />
+          <Route path={ADMIN_DASHBOARD_PATH}       element={<Dashboard />} />
+          <Route path={COMPTE_PATH}                 element={<ComptePage />} />
+          <Route path={ADMIN_PATHS.demandes}        element={<DemandesPage />} />
+          <Route path={ADMIN_PATHS.detailRoute}     element={<DemandeDetailPage />} />
+          <Route path={ADMIN_PATHS.etablissements}  element={<EtablissementsPage />} />
+          <Route path={SERVICE_PATHS.etablissementRoute} element={<EtablissementServicesPage />} />
+          <Route path={SERVICE_PATHS.liste}         element={<ServicesPage />} />
+          <Route path={SERVICE_PATHS.detailRoute}   element={<ServiceDetailPage />} />
         </Route>
       </Route>
 

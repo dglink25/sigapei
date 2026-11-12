@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Building2, Users, FileText,
-  BarChart3, Settings, LogOut, Bell, Menu, X, Layers
+  BarChart3, Settings, LogOut, Bell, Menu, X, Layers, CreditCard
 } from 'lucide-react'
 import { useAuth } from '../../context/identite/AuthContext'
 import { withAuth } from '../../components/identite/RequireAuth'
@@ -12,6 +12,7 @@ import { ENV } from '../../config/commun/env'
 import { ADMIN_DASHBOARD_PATH, COMPTE_PATH } from '../../config/identite/routes'
 import { ADMIN_PATHS } from '../../config/etablissements/config'
 import { SERVICE_PATHS } from '../../config/services/config'
+import { PAIEMENT_PATHS } from '../../config/paiements/config'
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import './AdminLayout.css'
 
@@ -41,6 +42,16 @@ const NAV = [
       { id: 'utilisateurs',     label: 'Utilisateurs',         icon: Users,           path: '/admin/utilisateurs' },
       { id: 'roles',            label: 'Rôles',                icon: Layers,          path: '/admin/roles' },
       { id: 'demandes-role',    label: 'Demandes de rôle',     icon: FileText,        path: '/admin/demandes-role' },
+    ],
+  },
+  {
+    groupe: 'PAIEMENTS',
+    items: [
+      { id: 'paiements',        label: 'Vue d\'ensemble',      icon: CreditCard,      path: PAIEMENT_PATHS.superAdmin },
+      { id: 'paiements-ag',     label: 'Agrégateurs',          icon: Layers,          path: PAIEMENT_PATHS.agregateurs },
+      { id: 'paiements-modes',  label: 'Modes de paiement',    icon: CreditCard,      path: PAIEMENT_PATHS.modesPaiement },
+      { id: 'paiements-accords',label: 'Accords établissements',icon: Building2,      path: PAIEMENT_PATHS.accords },
+      { id: 'paiements-audit',  label: 'Journal d\'audit',     icon: FileText,        path: PAIEMENT_PATHS.audit },
     ],
   },
   {

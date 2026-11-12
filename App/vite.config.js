@@ -23,6 +23,14 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/etab-interne/, prefix),
           headers: env.ETAB_INTERNAL_SECRET ? { 'X-Internal-Secret': env.ETAB_INTERNAL_SECRET } : {},
         },
+        // Meme principe pour la surface interne du microservice Vie scolaire
+        // (GET /v1/interne/alertes-absences) : secret ajoute cote serveur.
+        '/vsc-interne': {
+          target: env.VSC_PROXY_TARGET || '',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/vsc-interne/, ''),
+          headers: env.VSC_INTERNAL_SECRET ? { 'X-Internal-Secret': env.VSC_INTERNAL_SECRET } : {},
+        },
       },
     },
   }
