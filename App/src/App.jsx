@@ -23,31 +23,20 @@ import ComptePage    from './pages/commun/ComptePage'
 import Portail       from './pages/commun/Portail'
 import DashboardTemp from './pages/commun/DashboardTemp'
 
-/* Espace d'établissement */
-import AccueilEtablissement     from './pages/etablissements/AccueilEtablissement'
-import ConfigurationPage        from './pages/etablissements/ConfigurationPage'
-import ServiceEtablissementPage from './pages/etablissements/ServiceEtablissementPage'
-import RedirectionPortail       from './pages/identite/RedirectionPortail'
-import TransfertPage            from './pages/identite/TransfertPage'
-import { VersConnexion, VersEtablissement } from './pages/commun/Redirections'
-
-/* Layout portail établissement */
-import PortailLayout from './components/commun/PortailLayout'
-
-/* Tableaux de bord dédiés par rôle */
-import DashboardApprenantPage from './pages/apprenants/DashboardApprenantPage'
-import DashboardParentPage from './pages/parents/DashboardParentPage'
-import DashboardPrestatairePage from './pages/prestataires/DashboardPrestatairePage'
-
-/* Administration principale */
-import AdminLayout               from './pages/AdministrationPrincipale/AdminLayout'
-import Dashboard                 from './pages/AdministrationPrincipale/Dashboard'
-import DemandesPage              from './pages/AdministrationPrincipale/DemandesPage'
-import DemandeDetailPage         from './pages/AdministrationPrincipale/DemandeDetailPage'
-import EtablissementsPage        from './pages/AdministrationPrincipale/EtablissementsPage'
-import ServicesPage              from './pages/AdministrationPrincipale/ServicesPage'
-import ServiceDetailPage         from './pages/AdministrationPrincipale/ServiceDetailPage'
+import AccueilEtablissement from './pages/etablissements/AccueilEtablissement'
+import AdminLayout        from './pages/AdministrationPrincipale/AdminLayout'
+import Dashboard          from './pages/AdministrationPrincipale/Dashboard'
+import DemandesPage       from './pages/AdministrationPrincipale/DemandesPage'
+import DemandeDetailPage  from './pages/AdministrationPrincipale/DemandeDetailPage'
+import EtablissementsPage from './pages/AdministrationPrincipale/EtablissementsPage'
+import ServicesPage from './pages/AdministrationPrincipale/ServicesPage'
+import ServiceDetailPage from './pages/AdministrationPrincipale/ServiceDetailPage'
 import EtablissementServicesPage from './pages/AdministrationPrincipale/EtablissementServicesPage'
+import PaiementsStatsPage     from './pages/AdministrationPrincipale/paiements/PaiementsStatsPage'
+import PaiementsAgregateurPage from './pages/AdministrationPrincipale/paiements/PaiementsAgregateurPage'
+import PaiementsModesPage     from './pages/AdministrationPrincipale/paiements/PaiementsModesPage'
+import PaiementsAccordsPage   from './pages/AdministrationPrincipale/paiements/PaiementsAccordsPage'
+import PaiementsAuditPage     from './pages/AdministrationPrincipale/paiements/PaiementsAuditPage'
 
 /* Vie scolaire */
 import VieScolaireLayout from './pages/vie-scolaire/VieScolaireLayout'
@@ -96,17 +85,24 @@ export default function App() {
       <Route path={PATHS.demande}         element={<DemandePage />} />
       <Route path={PATHS.correctionRoute} element={<CorrectionPage />} />
 
-      {/* ── Espace d'établissement ── */}
-      {MODE_SOUS_DOMAINE
-        ? <Route path="/etablissements/:slug" element={<VersEtablissement />} />
-        : routesEtablissement(BASE_ROUTE_ETABLISSEMENT)}
+      {/* ── Page d'accueil publique d'un établissement ── */}
+      <Route path="/etablissements/:slug" element={<AccueilEtablissement />} />
 
       {/* ── Accueil public ── */}
       <Route path={HOME_PATH} element={<Home />} />
 
-      {/* ── Redirection intelligente post-login & Espaces Dédiés ── */}
-      <Route element={<RequireEtablissement />}>
-        <Route path={PORTAIL_PATH} element={<RedirectionPortail />} />
+      {/* ── Sécurité rétrocompat (sans layout) ── */}
+      <Route element={<RequireAuth />}>
+        <Route path={SECURITY_PATH} element={<SecuritePage />} />
+      </Route>
+
+      {/* ── Portail : rôles portail uniquement ── */}
+      <Route element={<RequireAuth roles={PORTAIL_ROLES} />}>
+        <Route path={PORTAIL_PATH} element={<Portail />} />
+      </Route>
+
+      {/* ── Dashboard temporaire ── */}
+      <Route element={<RequireAuth roles={NON_ADMIN_ROLES} />}>
         <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
         <Route path="/apprenant/*" element={<DashboardApprenantPage />} />
         <Route path="/apprenants/*" element={<DashboardApprenantPage />} />
@@ -116,7 +112,7 @@ export default function App() {
         <Route path="/prestataires/*" element={<DashboardPrestatairePage />} />
       </Route>
 
-      {/* ── Administration : super_admin ── */}
+      {/* ── Administration : super_admin - /compte dans le layout admin ── */}
       <Route element={<RequireAuth roles={['super_admin']} />}>
         <Route element={<AdminLayout />}>
           <Route path={ADMIN_DASHBOARD_PATH}       element={<Dashboard />} />
@@ -127,11 +123,27 @@ export default function App() {
           <Route path={SERVICE_PATHS.etablissementRoute} element={<EtablissementServicesPage />} />
           <Route path={SERVICE_PATHS.liste}         element={<ServicesPage />} />
           <Route path={SERVICE_PATHS.detailRoute}   element={<ServiceDetailPage />} />
+          {/* ── Paiements ── */}
+          <Route path="/admin/paiements"                   element={<PaiementsStatsPage />} />
+          <Route path="/admin/paiements/agregateurs"       element={<PaiementsAgregateurPage />} />
+          <Route path="/admin/paiements/modes-paiement"    element={<PaiementsModesPage />} />
+          <Route path="/admin/paiements/accords"           element={<PaiementsAccordsPage />} />
+          <Route path="/admin/paiements/audit"             element={<PaiementsAuditPage />} />
         </Route>
       </Route>
 
-      {/* ── E-Learning (module ajouté par fusion) ── */}
-      <Route path="/elearning/*" element={<ElearningApp />} />
+      {/* ── Vie scolaire ── */}
+      <Route element={<RequireAuth />}>
+        <Route path={VS_PATHS.base} element={<VieScolaireLayout />}>
+          <Route index element={<Navigate to={VS_PATHS.presences} replace />} />
+          <Route path="presences" element={<PresencesPage />} />
+          <Route path="presences/nouvelle" element={<PresenceSaisiePage />} />
+          <Route path="incidents" element={<IncidentsPage />} />
+          <Route path="incidents/nouveau" element={<IncidentNouveauPage />} />
+          <Route path="alertes" element={<AlertesPage />} />
+          <Route path="apprenants/:uuid/dossier" element={<DossierPage />} />
+        </Route>
+      </Route>
 
       {/* ── Erreurs ── */}
       <Route path={FORBIDDEN_PATH} element={<ForbiddenPage />} />
