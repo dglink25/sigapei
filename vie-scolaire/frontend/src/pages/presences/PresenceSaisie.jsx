@@ -126,7 +126,7 @@ export function PresenceSaisie() {
       >
         <div className="grille-2-colonnes">
           <div className="champ">
-            <label htmlFor="saisie-cours">Cours — UUID (scolarite) *</label>
+            <label htmlFor="saisie-cours">Cours - UUID (scolarite) *</label>
             <input
               id="saisie-cours"
               type="text"
@@ -160,7 +160,7 @@ export function PresenceSaisie() {
               <div className="element" key={ligne.cle}>
                 <div className="element-tete">
                   <div className="champ" style={{ flex: 1 }}>
-                    <label htmlFor={`uuid-${ligne.cle}`}>Apprenant — UUID</label>
+                    <label htmlFor={`uuid-${ligne.cle}`}>Apprenant - UUID</label>
                     <input
                       id={`uuid-${ligne.cle}`}
                       type="text"

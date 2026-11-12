@@ -26,7 +26,7 @@ function SelectionApprenant({ uuidInitial }) {
   return (
     <form className="barre-filtres" onSubmit={valider}>
       <div className="champ" style={{ flex: 1 }}>
-        <label htmlFor="dossier-uuid">Apprenant — UUID (scolarite.apprenants)</label>
+        <label htmlFor="dossier-uuid">Apprenant - UUID (scolarite.apprenants)</label>
         <input
           id="dossier-uuid"
           type="text"
@@ -103,7 +103,7 @@ function DonneesDossier({ dossier }) {
       <section className="section">
         <div className="element-tete">
           <h2 style={{ margin: 0 }}>
-            Synthèse —{' '}
+            Synthèse -{' '}
             <code className="police-mono">{uuidCourt(dossier.apprenant_uuid)}</code>
           </h2>
           {synthese.seuil_depasse && (

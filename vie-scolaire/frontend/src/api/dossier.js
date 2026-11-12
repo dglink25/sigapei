@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from './client.js'
 
 /**
- * GET /v1/apprenants/{uuid}/dossier-vie-scolaire — vue consolidée
+ * GET /v1/apprenants/{uuid}/dossier-vie-scolaire - vue consolidée
  * (présences récentes, synthèse d'absences, incidents) d'un apprenant.
  */
 export function useDossierVieScolaire(apprenantUuid, options = {}) {
