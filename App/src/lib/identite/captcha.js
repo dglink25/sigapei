@@ -33,7 +33,6 @@ function load(key) {
  */
 export async function getCaptchaToken(action) {
   const key = ENV.recaptchaKey
-  if (import.meta.env.DEV) return 'test-bypass'
   if (!key) return ''
 
   try {

@@ -122,10 +122,10 @@ git push                      # fusion automatique vers develop, puis retest
 | [`inscription`](inscription) | `4003` | `inscription` | Candidatures, pièces justificatives, tests d'admission, validation bloquante & réinscriptions | [README](inscription/README.md) • [Docs API](inscription/docs/api-documentation.md) (`/docs`) |
 | [`scolarite`](scolarite) | `4004` | `scolarite` | Cycles, classes (programme béninois/français), dossiers apprenants, mutations, emplois du temps | [README](scolarite/README.md) • [Docs API](scolarite/docs/api-documentation.md) (`/docs`) |
 | [`vie-scolaire`](vie-scolaire) | `4005` | `vie_scolaire` | Presences/absences, incidents disciplinaires et sanctions, alertes au seuil d'absences, dossier de vie scolaire | [README](vie-scolaire/README.md) |
-
 | [`evaluations`](evaluations) | `4006` | `evaluations` | Notes, barèmes, coefficients, moyennes, classements, bulletins (calcul à la volée), contestations | [README](evaluations/README.md) |
 | [`demandes`](demandes) | `4007` | `demandes` | Guichet unique de documents (apprenants, personnel, enseignants), permissions d'absence, réclamations | [README](demandes/README.md) (`/docs`) |
-| [`finances`](finances) | `4008` | `finances` | Double flux entrant/sortant, FedaPay/KkiaPay, décaissements à double validation, abonnement & hibernation | [README](finances/README.md) |
+| [`finances`](finances) | `4008` | `finances` | Frais de scolarité : formules tarifaires, factures, règlements (guichet et en ligne via `paiements`), soldes, reçus et rapports | [README](finances/README.md) |
+| [`paiements`](paiements) | `4010` | `paiement` | Argent réel : agrégateurs FedaPay/KkiaPay/CinetPay, encaissements, décaissements, portefeuilles, grand livre | [README](paiements/README.md) |
 | [`elearning`](elearning) | - | `elearning` | *(à documenter par son responsable)* | - |
 
 

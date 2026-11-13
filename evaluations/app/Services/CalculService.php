@@ -66,6 +66,9 @@ final class CalculService
 
             $matieres[$m]['notes'][] = [
                 'evaluation_uuid' => $ev['evaluation_uuid'],
+                // Pour l'interface (libellé, contestation d'une note) : sans effet sur le calcul.
+                'evaluation_libelle' => $ev['evaluation_libelle'] ?? null,
+                'note_uuid' => $ev['note']['uuid'] ?? null,
                 'statut' => $ev['note']['statut'] ?? 'non_saisie',
                 'valeur' => $ev['note']['valeur'] ?? null,
                 'niveau_competence' => $ev['note']['niveau_competence'] ?? null,
@@ -85,6 +88,8 @@ final class CalculService
             );
             $matieres[$m]['_moyenne_echelle'] = $moyenne;
             $matieres[$m]['moyenne'] = $moyenne === null ? null : Decimal::versTexte($moyenne, $regles['decimales']);
+            // Appréciation de la matière : même échelle que la moyenne générale, sur la moyenne affichée.
+            $matieres[$m]['mention'] = $moyenne === null || $competences ? null : $this->mention(Decimal::arrondir($moyenne, $regles['decimales']), $regles['echelle_appreciation']);
             $matieres[$m]['moyennes_blocs'] = array_map(fn ($b) => Decimal::versTexte($b, $regles['decimales']), $blocs);
             $matieres[$m]['coefficient'] = Decimal::versTexte($ligne['coefficient'] * 100, 2);
         }

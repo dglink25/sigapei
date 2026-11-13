@@ -64,15 +64,16 @@ class BulletinService
         return Bulletin::where('periode_id', $periode->id)
             ->where('apprenant_uuid', $apprenantUuid)
             ->orderByDesc('version')
-            ->get(['uuid', 'version', 'contenu', 'rang', 'motif_version', 'genere_le', 'pdf_document_uuid'])
-            ->map(fn (Bulletin $b) => [
+            ->get(['uuid', 'version', 'contenu', 'rang', 'motif_version', 'genere_le'])
+            ->values()
+            ->map(fn (Bulletin $b, int $i) => [
                 'bulletin_uuid' => $b->uuid,
                 'version' => $b->version,
                 'moyenne' => $b->contenu['moyenne'] ?? null, // même format que le bulletin affiché
                 'rang' => $b->rang,
                 'motif_version' => $b->motif_version,
                 'genere_le' => $b->genere_le?->toIso8601String(),
-                'pdf_disponible' => $b->pdf_document_uuid !== null,
+                'pdf_disponible' => $i === 0, // le PDF (GET .../pdf) est celui de la dernière version
             ])
             ->all();
     }
@@ -252,7 +253,7 @@ class BulletinService
             ->get();
 
         $notes = Note::whereIn('evaluation_id', $evaluations->pluck('id'))
-            ->get(['evaluation_id', 'apprenant_uuid', 'statut', 'valeur', 'niveau_competence'])
+            ->get(['uuid', 'evaluation_id', 'apprenant_uuid', 'statut', 'valeur', 'niveau_competence'])
             ->groupBy('apprenant_uuid')
             ->map(fn ($n) => $n->keyBy('evaluation_id'));
 
@@ -263,6 +264,7 @@ class BulletinService
                 $note = $notes->get($apprenantUuid)?->get($ev->id);
                 $lignes[] = [
                     'evaluation_uuid' => $ev->uuid,
+                    'evaluation_libelle' => $ev->libelle,
                     'type' => $ev->type,
                     'matiere_uuid' => $ev->matiere->uuid,
                     'matiere_nom' => $ev->matiere->nom,
@@ -271,6 +273,7 @@ class BulletinService
                     'note_sur' => (string) $ev->note_sur,
                     'rattrapage_de' => $ev->rattrapageDe?->uuid,
                     'note' => $note === null ? null : [
+                        'uuid' => $note->uuid,
                         'statut' => $note->statut,
                         'valeur' => $note->valeur === null ? null : (string) $note->valeur,
                         'niveau_competence' => $note->niveau_competence,

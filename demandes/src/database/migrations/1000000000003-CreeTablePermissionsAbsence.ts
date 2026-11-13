@@ -1,51 +1,44 @@
-import { MigrationInterface, QueryRunner, Table } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Table demandes.permissions_absence
- * CDC section 15.1 + section 6 : demande de permission d'absence et sa decision.
- * Toujours liee a un apprenant (CDC section 6.1).
- *
- * Statuts : en_attente | validee | rejetee
- *
- * Interaction avec Vie scolaire (CDC section 6.2) : Vie scolaire interroge
- * cette table via l'endpoint interne /interne/permission-active pour qualifier
- * automatiquement les absences enregistrees.
+ * Permission d'absence (CDC §6) : soumise par un parent (ou l'apprenant), decidee par un role habilite.
+ * Validee => l'apprenant est "permissionnaire" sur la periode ; Vie scolaire l'interroge a chaque absence
+ * (GET /v1/interne/permission-active/{apprenant_uuid}?date=). Decision toujours motivee en cas de rejet.
  */
 export class CreeTablePermissionsAbsence1000000000003 implements MigrationInterface {
-  public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.createTable(
-      new Table({
-        name: 'permissions_absence',
-        schema: 'demandes',
-        columns: [
-          { name: 'id', type: 'bigserial', isPrimary: true },
-          { name: 'uuid', type: 'uuid', isUnique: true, default: 'gen_random_uuid()' },
-          { name: 'tenant_id', type: 'varchar', isNullable: false },
-          // apprenant_uuid reference scolarite.apprenants
-          { name: 'apprenant_uuid', type: 'varchar', isNullable: false },
-          { name: 'periode_debut', type: 'date', isNullable: false },
-          { name: 'periode_fin', type: 'date', isNullable: false },
-          { name: 'motif', type: 'text', isNullable: false },
-          { name: 'statut', type: 'varchar', default: "'en_attente'" },
-          // valide_par_uuid reference identite.utilisateurs
-          { name: 'valide_par_uuid', type: 'varchar', isNullable: true },
-          { name: 'motif_rejet', type: 'text', isNullable: true },
-          // piece_justificative_uuid : UUID du document joint (schema transverse documents)
-          { name: 'piece_justificative_uuid', type: 'varchar', isNullable: true },
-          { name: 'created_at', type: 'timestamptz', default: 'now()' },
-          { name: 'updated_at', type: 'timestamptz', default: 'now()' },
-        ],
-        indices: [
-          { columnNames: ['tenant_id'] },
-          { columnNames: ['apprenant_uuid', 'statut'] },
-          { columnNames: ['apprenant_uuid', 'periode_debut', 'periode_fin'] },
-        ],
-      }),
-      true,
+  public async up(q: QueryRunner): Promise<void> {
+    await q.query(`
+      CREATE TABLE demandes.permissions_absence (
+        id bigserial PRIMARY KEY,
+        uuid uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+        tenant_id bigint NOT NULL,
+        apprenant_uuid uuid NOT NULL,
+        demandeur_uuid uuid NOT NULL,
+        demandeur_role varchar(64) NOT NULL,
+        date_debut date NOT NULL,
+        date_fin date NOT NULL,
+        motif varchar(1000) NOT NULL,
+        statut varchar(20) NOT NULL DEFAULT 'en_attente',
+        decision_par_uuid uuid,
+        motif_decision varchar(1000),
+        decide_le timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT permissions_statut_chk CHECK (statut IN ('en_attente','validee','rejetee','annulee')),
+        CONSTRAINT permissions_periode_chk CHECK (date_fin >= date_debut AND date_fin - date_debut <= 366),
+        CONSTRAINT permissions_rejet_motive_chk CHECK (statut <> 'rejetee' OR motif_decision IS NOT NULL),
+        CONSTRAINT permissions_decision_chk CHECK (statut NOT IN ('validee','rejetee') OR (decision_par_uuid IS NOT NULL AND decide_le IS NOT NULL))
+      )`);
+    await q.query(
+      `CREATE INDEX permissions_apprenant_idx ON demandes.permissions_absence (tenant_id, apprenant_uuid, statut, date_debut, date_fin)`,
+    );
+    await q.query(`CREATE INDEX permissions_file_idx ON demandes.permissions_absence (tenant_id, statut, created_at)`);
+    await q.query(
+      `CREATE TRIGGER permissions_sans_suppression BEFORE DELETE ON demandes.permissions_absence FOR EACH ROW EXECUTE FUNCTION demandes.refuser_modification()`,
     );
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('demandes.permissions_absence', true);
+  public async down(q: QueryRunner): Promise<void> {
+    await q.query(`DROP TABLE IF EXISTS demandes.permissions_absence`);
   }
 }

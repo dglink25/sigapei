@@ -41,6 +41,19 @@ abstract class ApiTestCase extends TestCase
 
     protected bool $contratComplet = true;
 
+    /** @var array<string, array{sub: string, tenantId: ?string, roleCode: string}> jetons valides côté Identité simulée */
+    protected array $jetons = [];
+
+    /** @var array<string, int> uuid d'établissement => tenant_id (Établissements simulé) */
+    protected array $etablissements = [];
+
+    protected bool $identiteEnPanne = false;
+
+    /** @var array<string, bool> utilisateurs sans accès au module (catalogue d'Identité simulé) */
+    protected array $sansAcces = [];
+
+    protected int $appelsIntrospection = 0;
+
     protected function beforeRefreshingDatabase()
     {
         DB::statement('CREATE SCHEMA IF NOT EXISTS evaluations');
@@ -99,11 +112,44 @@ abstract class ApiTestCase extends TestCase
             $tenant = (int) ($r->header('X-Tenant-Id')[0] ?? 0);
             parse_str((string) parse_url($r->url(), PHP_URL_QUERY), $q);
 
+            if (str_starts_with($r->url(), 'http://identite.test/v1/interne/introspection')) {
+                $this->appelsIntrospection++;
+                if ($this->identiteEnPanne) {
+                    return Http::response(['success' => false], 500);
+                }
+                $ctx = $this->jetons[$q['token'] ?? ''] ?? null;
+
+                return Http::response($ctx === null
+                    ? ['success' => true, 'valide' => false, 'motif' => 'JETON_INVALIDE_OU_EXPIRE']
+                    : ['success' => true, 'valide' => true, 'familleAuth' => 'personnel_admin'] + $ctx);
+            }
+
+            if (str_starts_with($r->url(), 'http://identite.test/v1/interne/acces')) {
+                return Http::response(['success' => true, 'autorise' => ! isset($this->sansAcces[strtolower($q['utilisateurUuid'] ?? '')])]);
+            }
+
+            if (str_starts_with($r->url(), 'http://etablissements.test/v1/interne/etablissements')) {
+                $uuid = strtolower($q['uuid'] ?? '');
+
+                return isset($this->etablissements[$uuid])
+                    ? Http::response(['success' => true, 'donnees' => ['id' => $this->etablissements[$uuid], 'uuid' => $uuid, 'statut' => 'actif']])
+                    : Http::response(['success' => false], 404);
+            }
+
             if (str_contains($r->url(), '/v1/interne/apprenants')) {
                 $liste = $tenant === self::TENANT ? $this->apprenants : [];
                 $liste = array_map(fn ($a) => $this->contratComplet ? $a : array_diff_key($a, ['utilisateur_uuid' => 1]), $liste);
                 if (isset($q['uuid'])) {
                     return Http::response(['succes' => true, 'donnees' => $liste[$q['uuid']] ?? null]);
+                }
+
+                if (! $this->contratComplet && (isset($q['utilisateur_uuid']) || isset($q['parent_uuid']))) {
+                    return Http::response(['succes' => true, 'donnees' => array_values($liste)]); // filtre inconnu ignoré
+                }
+                if (isset($q['utilisateur_uuid']) || isset($q['parent_uuid'])) {
+                    return Http::response(['succes' => true, 'donnees' => array_values(array_filter($liste, fn ($a) => isset($q['utilisateur_uuid'])
+                        ? ($a['utilisateur_uuid'] ?? null) === $q['utilisateur_uuid']
+                        : in_array($q['parent_uuid'], array_column($a['parents'] ?? [], 'parent_uuid'), true)))]);
                 }
 
                 return Http::response(['succes' => true, 'donnees' => array_values(array_filter(
@@ -147,7 +193,7 @@ abstract class ApiTestCase extends TestCase
                 }
 
                 $liste = $tenant === self::TENANT ? $this->creneaux : [];
-                $liste = array_values(array_filter($liste, fn ($c) => $c['classe_uuid'] === ($q['classe_uuid'] ?? null)
+                $liste = array_values(array_filter($liste, fn ($c) => (! isset($q['classe_uuid']) || $c['classe_uuid'] === $q['classe_uuid'])
                     && $c['enseignant_uuid'] === ($q['enseignant_uuid'] ?? null)
                     && (! isset($q['matiere_uuid']) || $c['matiere_uuid'] === $q['matiere_uuid'])));
 

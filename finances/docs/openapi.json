@@ -1,0 +1,3374 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SIGAPEI - API Finances",
+    "version": "1.0.0",
+    "description": "Microservice Finances : formules tarifaires, facturation des apprenants, règlements (espèces, virement, chèque) à double validation, paiement en ligne via le microservice **Paiement**, soldes, relances et rapports.\n\n**Authentification** : `Authorization: Bearer <jeton Identité>` (vérifié par introspection auprès d'Identité), ou contexte Gateway (`X-Internal-Secret` + `X-Tenant-Id` + `X-User-Id` + `X-User-Role`). Les droits de gestion viennent de la grille rôle x action de l'établissement ; l'administrateur a tous les droits ; apprenants et parents ne voient que leurs factures.\n\n**Montants** : entiers dans l'unité de la devise (FCFA). **Réponses** : `{success, message, data}` ; erreurs `{success:false, message, error:{code, details}}`."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "Ce serveur (celui qui affiche /docs)"
+    },
+    {
+      "url": "http://api-finances:4008",
+      "description": "Réseau Docker sigapei"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Profil"
+    },
+    {
+      "name": "Formules tarifaires"
+    },
+    {
+      "name": "Factures"
+    },
+    {
+      "name": "Paiement en ligne"
+    },
+    {
+      "name": "Règlements"
+    },
+    {
+      "name": "Documents"
+    },
+    {
+      "name": "Rapports"
+    },
+    {
+      "name": "Administration"
+    },
+    {
+      "name": "Interne"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "Jeton": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Jeton d'accès délivré par Identité"
+      },
+      "SecretInterne": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Internal-Secret",
+        "description": "INTERNAL_API_SECRET de la plateforme"
+      },
+      "Tenant": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Tenant-Id",
+        "description": "uuid de l'établissement (Gateway)"
+      },
+      "Utilisateur": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-User-Id",
+        "description": "uuid de l'utilisateur (Gateway)"
+      },
+      "Role": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-User-Role",
+        "description": "Code du rôle (Gateway)"
+      }
+    },
+    "schemas": {
+      "Succes": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {}
+        }
+      },
+      "Erreur": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string"
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/v1/mes-droits": {
+      "get": {
+        "tags": [
+          "Profil"
+        ],
+        "summary": "Droits du profil connecté",
+        "description": "Actions accordées par la grille, devise, mode de validation des règlements. Le front n'affiche que ce qui est permis.",
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/mes-finances": {
+      "get": {
+        "tags": [
+          "Profil"
+        ],
+        "summary": "Situation de la famille",
+        "description": "Apprenant ou parent : pour chaque apprenant rattaché (Scolarité), solde et factures.",
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/formules": {
+      "get": {
+        "tags": [
+          "Formules tarifaires"
+        ],
+        "summary": "Lister les formules",
+        "parameters": [
+          {
+            "name": "annee_scolaire",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{4}$",
+              "example": "2026-2027"
+            }
+          },
+          {
+            "name": "actives",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Formules tarifaires"
+        ],
+        "summary": "Créer une formule (gerer_tarifs)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "libelle",
+                  "nature",
+                  "annee_scolaire",
+                  "montant",
+                  "echeancier"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]{2,59}$",
+                    "example": "scolarite-6e"
+                  },
+                  "libelle": {
+                    "type": "string"
+                  },
+                  "nature": {
+                    "type": "string",
+                    "enum": [
+                      "scolarite",
+                      "inscription",
+                      "cantine",
+                      "transport",
+                      "activite",
+                      "dossier",
+                      "autre"
+                    ]
+                  },
+                  "annee_scolaire": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{4}$",
+                    "example": "2026-2027"
+                  },
+                  "cycle": {
+                    "type": "string",
+                    "enum": [
+                      "maternelle",
+                      "primaire",
+                      "secondaire",
+                      "universitaire"
+                    ],
+                    "nullable": true
+                  },
+                  "niveau": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "classe_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "montant": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Unités entières de la devise (FCFA)"
+                  },
+                  "echeancier": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "date_echeance",
+                        "montant"
+                      ],
+                      "properties": {
+                        "libelle": {
+                          "type": "string"
+                        },
+                        "date_echeance": {
+                          "type": "string",
+                          "format": "date",
+                          "example": "2026-10-15"
+                        },
+                        "montant": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "description": "Somme des échéances = montant ; dates distinctes"
+                  },
+                  "actif": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/formules/applicables": {
+      "get": {
+        "tags": [
+          "Formules tarifaires"
+        ],
+        "summary": "Formules qui concernent la classe d'un apprenant (emettre_factures)",
+        "parameters": [
+          {
+            "name": "apprenant_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "annee_scolaire",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{4}$",
+              "example": "2026-2027"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/formules/{formule}": {
+      "patch": {
+        "tags": [
+          "Formules tarifaires"
+        ],
+        "summary": "Modifier une formule (gerer_tarifs)",
+        "description": "Le code ne change pas ; montant et échéancier figés dès qu'une facture utilise la formule (FORMULE_DEJA_FACTUREE).",
+        "parameters": [
+          {
+            "name": "formule",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "libelle": {
+                    "type": "string"
+                  },
+                  "nature": {
+                    "type": "string",
+                    "enum": [
+                      "scolarite",
+                      "inscription",
+                      "cantine",
+                      "transport",
+                      "activite",
+                      "dossier",
+                      "autre"
+                    ]
+                  },
+                  "annee_scolaire": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{4}$",
+                    "example": "2026-2027"
+                  },
+                  "cycle": {
+                    "type": "string",
+                    "enum": [
+                      "maternelle",
+                      "primaire",
+                      "secondaire",
+                      "universitaire"
+                    ],
+                    "nullable": true
+                  },
+                  "niveau": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "classe_uuid": {
+                    "type": "string",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "montant": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Unités entières de la devise (FCFA)"
+                  },
+                  "echeancier": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "date_echeance",
+                        "montant"
+                      ],
+                      "properties": {
+                        "libelle": {
+                          "type": "string"
+                        },
+                        "date_echeance": {
+                          "type": "string",
+                          "format": "date",
+                          "example": "2026-10-15"
+                        },
+                        "montant": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "description": "Somme des échéances = montant ; dates distinctes"
+                  },
+                  "actif": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/factures": {
+      "get": {
+        "tags": [
+          "Factures"
+        ],
+        "summary": "Lister les factures (consulter_finances)",
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "emise",
+                "partiellement_reglee",
+                "reglee",
+                "annulee",
+                "ouvertes"
+              ]
+            }
+          },
+          {
+            "name": "apprenant_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "classe_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "annee_scolaire",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{4}$",
+              "example": "2026-2027"
+            }
+          },
+          {
+            "name": "recherche",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Numéro, nom ou matricule"
+          },
+          {
+            "name": "en_retard",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recentes",
+                "anciennes",
+                "reste_desc",
+                "nom"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "par_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Factures"
+        ],
+        "summary": "Émettre une facture (emettre_factures)",
+        "description": "Apprenant lu dans Scolarité (dossier actif) ; formules et/ou lignes libres ; une formule n'est jamais facturée deux fois (DEJA_FACTURE).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "apprenant_uuid",
+                  "annee_scolaire"
+                ],
+                "properties": {
+                  "apprenant_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "annee_scolaire": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{4}$",
+                    "example": "2026-2027"
+                  },
+                  "libelle": {
+                    "type": "string"
+                  },
+                  "formules": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  "lignes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "libelle": {
+                          "type": "string"
+                        },
+                        "nature": {
+                          "type": "string",
+                          "enum": [
+                            "scolarite",
+                            "inscription",
+                            "cantine",
+                            "transport",
+                            "activite",
+                            "dossier",
+                            "autre"
+                          ]
+                        },
+                        "montant": {
+                          "type": "integer"
+                        },
+                        "date_echeance": {
+                          "type": "string",
+                          "format": "date",
+                          "example": "2026-10-15"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/factures/classe": {
+      "post": {
+        "tags": [
+          "Factures"
+        ],
+        "summary": "Facturer une classe (emettre_factures)",
+        "description": "Une facture par apprenant actif ; relançable sans doublon (les apprenants déjà facturés sont listés dans `ignorees`).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "classe_uuid",
+                  "annee_scolaire",
+                  "formules"
+                ],
+                "properties": {
+                  "classe_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "annee_scolaire": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{4}$",
+                    "example": "2026-2027"
+                  },
+                  "libelle": {
+                    "type": "string"
+                  },
+                  "formules": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/factures/{facture}": {
+      "get": {
+        "tags": [
+          "Factures"
+        ],
+        "summary": "Détail d'une facture",
+        "description": "Gestionnaire (consulter_finances) ou apprenant / parent rattaché. Lignes, échéances et règlements.",
+        "parameters": [
+          {
+            "name": "facture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/factures/{facture}/annuler": {
+      "post": {
+        "tags": [
+          "Factures"
+        ],
+        "summary": "Annuler une facture (annuler_facture)",
+        "description": "Motif obligatoire ; impossible avec un règlement (FACTURE_REGLEE) ou un paiement en ligne en cours (PAIEMENT_EN_COURS).",
+        "parameters": [
+          {
+            "name": "facture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "motif"
+                ],
+                "properties": {
+                  "motif": {
+                    "type": "string",
+                    "minLength": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/factures/{facture}/pdf": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Lien de téléchargement du PDF de la facture",
+        "description": "Lien relatif signé, valable 5 minutes.",
+        "parameters": [
+          {
+            "name": "facture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/factures/{facture}/paiements": {
+      "get": {
+        "tags": [
+          "Paiement en ligne"
+        ],
+        "summary": "Tentatives de paiement en ligne d'une facture",
+        "parameters": [
+          {
+            "name": "facture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Paiement en ligne"
+        ],
+        "summary": "Payer en ligne",
+        "description": "Finances demande un encaissement au microservice Paiements (agrégateur choisi : fedapay ou cinetpay) et renvoie l'URL de la page de paiement. Montant ≤ reste à payer (paiements en cours et règlements en attente déduits). `url_retour` doit appartenir au front (CORS_ORIGINS). Un refus de Paiements (accord absent, encaissements suspendus) répond 409 avec son message.",
+        "parameters": [
+          {
+            "name": "facture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "montant",
+                  "agregateur"
+                ],
+                "properties": {
+                  "montant": {
+                    "type": "integer",
+                    "minimum": 100
+                  },
+                  "agregateur": {
+                    "type": "string",
+                    "enum": [
+                      "fedapay",
+                      "cinetpay"
+                    ]
+                  },
+                  "url_retour": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/paiements/{paiement}": {
+      "get": {
+        "tags": [
+          "Paiement en ligne"
+        ],
+        "summary": "Suivre un paiement",
+        "description": "État relu chez Paiement tant que le paiement n'est pas terminé ; `acquis` = encaissement confirmé.",
+        "parameters": [
+          {
+            "name": "paiement",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reglements": {
+      "get": {
+        "tags": [
+          "Règlements"
+        ],
+        "summary": "Lister les règlements (consulter_finances ou valider_reglement)",
+        "parameters": [
+          {
+            "name": "statut",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "a_valider",
+                "valide",
+                "rejete"
+              ]
+            }
+          },
+          {
+            "name": "mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en_ligne",
+                "especes",
+                "virement",
+                "cheque"
+              ]
+            }
+          },
+          {
+            "name": "du",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-15"
+            }
+          },
+          {
+            "name": "au",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-15"
+            }
+          },
+          {
+            "name": "recherche",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tri",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recents",
+                "anciens",
+                "montant_desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "par_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/factures/{facture}/reglements": {
+      "post": {
+        "tags": [
+          "Règlements"
+        ],
+        "summary": "Saisir un règlement (saisir_reglement)",
+        "description": "Espèces, virement ou chèque avec pièce justificative. Séparation des tâches active par défaut : statut `a_valider` jusqu'à validation par un autre profil.",
+        "parameters": [
+          {
+            "name": "facture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "mode",
+                  "montant",
+                  "date_reglement",
+                  "piece_reference"
+                ],
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "enum": [
+                      "especes",
+                      "virement",
+                      "cheque"
+                    ]
+                  },
+                  "montant": {
+                    "type": "integer"
+                  },
+                  "date_reglement": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-10-15"
+                  },
+                  "piece_reference": {
+                    "type": "string"
+                  },
+                  "commentaire": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reglements/{reglement}/valider": {
+      "post": {
+        "tags": [
+          "Règlements"
+        ],
+        "summary": "Valider un règlement (valider_reglement)",
+        "description": "Jamais par celui qui l'a saisi (SEPARATION_DES_TACHES). Le numéro de reçu est attribué à la validation.",
+        "parameters": [
+          {
+            "name": "reglement",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reglements/{reglement}/rejeter": {
+      "post": {
+        "tags": [
+          "Règlements"
+        ],
+        "summary": "Rejeter un règlement (valider_reglement)",
+        "parameters": [
+          {
+            "name": "reglement",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "motif"
+                ],
+                "properties": {
+                  "motif": {
+                    "type": "string",
+                    "minLength": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/reglements/{reglement}/recu": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Lien de téléchargement du reçu",
+        "description": "Règlement validé uniquement. Lien relatif signé, valable 5 minutes.",
+        "parameters": [
+          {
+            "name": "reglement",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/apprenants/{apprenant}/solde": {
+      "get": {
+        "tags": [
+          "Rapports"
+        ],
+        "summary": "Solde d'un apprenant",
+        "description": "Total facturé, réglé, reste, montant échu impayé, en retard depuis.",
+        "parameters": [
+          {
+            "name": "apprenant",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rapports/synthese": {
+      "get": {
+        "tags": [
+          "Rapports"
+        ],
+        "summary": "Synthèse financière (consulter_rapports)",
+        "description": "Encaissé par mode et par jour, factures émises, taux de recouvrement, apprenants en retard, règlements à valider. Période ≤ 1 an (défaut : mois en cours).",
+        "parameters": [
+          {
+            "name": "du",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-15"
+            }
+          },
+          {
+            "name": "au",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-15"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/journal": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Journal d'audit (administrateur)",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cible_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "par_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/parametres": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Paramètres financiers (administrateur)",
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Enregistrer les paramètres (administrateur)",
+        "description": "Devise figée dès la première facture (DEVISE_FIGEE). Désactiver la séparation des tâches est journalisé et signalé à la plateforme.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "devise": {
+                    "type": "string",
+                    "enum": [
+                      "XOF",
+                      "XAF",
+                      "GNF"
+                    ]
+                  },
+                  "double_validation_reglements": {
+                    "type": "boolean"
+                  },
+                  "relance_jours_avant": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 60
+                  },
+                  "relance_jours_apres": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 120
+                    }
+                  },
+                  "mentions_recu": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflit métier (error.code explicite)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gouvernance": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Grille rôle x action (administrateur)",
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/gouvernance/{role}": {
+      "put": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "Définir les actions d'un rôle (administrateur)",
+        "description": "Liste complète ; l'administrateur a toujours toutes les actions.",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "comptable"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "actions"
+                ],
+                "properties": {
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "consulter_finances",
+                        "gerer_tarifs",
+                        "emettre_factures",
+                        "annuler_facture",
+                        "saisir_reglement",
+                        "valider_reglement",
+                        "consulter_rapports"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non connecté ou jeton invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée par la grille de l'établissement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service de la plateforme indisponible (refus, jamais un accès supposé)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/documents/factures/{facture}": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Télécharger le PDF d'une facture (lien signé)",
+        "parameters": [
+          {
+            "name": "facture",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "e",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Établissement (dans la signature)"
+          },
+          {
+            "name": "expires",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Lien invalide ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/documents/recus/{reglement}": {
+      "get": {
+        "tags": [
+          "Documents"
+        ],
+        "summary": "Télécharger un reçu PDF (lien signé)",
+        "parameters": [
+          {
+            "name": "reglement",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "e",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "expires",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Lien invalide ou expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/interne/solde/{apprenant}": {
+      "get": {
+        "tags": [
+          "Interne"
+        ],
+        "summary": "Solde d'un apprenant (Demandes : règle « solde à jour »)",
+        "description": "X-Tenant-Id (uuid de l'établissement) facultatif : restreint la recherche.",
+        "parameters": [
+          {
+            "name": "apprenant",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Secret interne absent ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/interne/apprenants/paiements": {
+      "get": {
+        "tags": [
+          "Interne"
+        ],
+        "summary": "Situation consolidée d'un apprenant (Scolarité)",
+        "description": "Champs total_du, total_regle, solde_restant, statut_global (SOLDE, A_JOUR, EN_RETARD), nombre_factures, factures.",
+        "parameters": [
+          {
+            "name": "apprenant_uuid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "SecretInterne": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Secret interne absent ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/interne/paiements/notification": {
+      "post": {
+        "tags": [
+          "Interne"
+        ],
+        "summary": "Notification du service Paiements",
+        "description": "Finances relit l'encaissement chez Paiements (GET /v1/etablissements/{etablissement}/encaissements/{uuid}) et contrôle établissement, facture et montant avant d'enregistrer le règlement, une seule fois.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "encaissement_uuid"
+                ],
+                "properties": {
+                  "encaissement_uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "SecretInterne": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Secret interne absent ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Données invalides (error.details par champ)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Ressource introuvable (ou d'un autre établissement)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/classes/{classe}/apprenants": {
+      "get": {
+        "tags": [
+          "Factures"
+        ],
+        "summary": "Apprenants actifs d'une classe (emettre_factures)",
+        "description": "Source Scolarité ; sert à choisir le destinataire d'une facture.",
+        "parameters": [
+          {
+            "name": "classe",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "security": [
+          {
+            "Jeton": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Succes"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Action non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

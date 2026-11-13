@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Common\Responses\ApiResponse;
 use App\Common\Tenant\Contexte;
+use App\Common\Tenant\ResolutionTenant;
 use App\Models\Bulletin;
 use App\Models\Periode;
 use App\Services\ReportElearningService;
@@ -16,18 +17,20 @@ use Illuminate\Validation\ValidationException;
 /** Endpoints internes (X-Internal-Secret), jamais exposés aux clients finaux. */
 class InterneController extends Controller
 {
+    public function __construct(private readonly ResolutionTenant $tenants) {}
+
     /**
      * GET /v1/interne/eligibilite-document/{apprenant_uuid} - consommé par Demandes administratives (CDC §17.5).
      * En-tête X-Tenant-Id obligatoire. Renvoie les bulletins archivés disponibles (dernière version par période).
      */
     public function eligibiliteDocument(Request $request, string $apprenantUuid): JsonResponse
     {
-        $tenant = (string) $request->header('X-Tenant-Id', '');
-        if (! ctype_digit($tenant) || (int) $tenant < 1 || ! Str::isUuid($apprenantUuid)) {
+        $tenant = $this->tenants->resoudre($request->header('X-Tenant-Id'));
+        if ($tenant === null || ! Str::isUuid($apprenantUuid)) {
             return ApiResponse::erreur('Paramètres invalides.', 'PARAMETRES_INVALIDES', 422);
         }
 
-        $bulletins = Contexte::executerPour((int) $tenant, function () use ($apprenantUuid) {
+        $bulletins = Contexte::executerPour($tenant, function () use ($apprenantUuid) {
             $derniers = Bulletin::query()
                 ->selectRaw('DISTINCT ON (periode_id) *')
                 ->where('apprenant_uuid', $apprenantUuid)
@@ -41,7 +44,7 @@ class InterneController extends Controller
                 'periode' => $periodes[$b->periode_id]->libelle,
                 'annee_scolaire' => $periodes[$b->periode_id]->annee_scolaire,
                 'version' => $b->version,
-                'pdf_disponible' => $b->pdf_document_uuid !== null,
+                'pdf_disponible' => true, // dernière version archivée : PDF produit à la demande
             ])->sortBy(['annee_scolaire', 'periode'])->values();
         });
 
@@ -58,9 +61,9 @@ class InterneController extends Controller
      */
     public function reporterNoteElearning(Request $request, ReportElearningService $service): JsonResponse
     {
-        $tenant = (string) $request->header('X-Tenant-Id', '');
-        if (! ctype_digit($tenant) || (int) $tenant < 1) {
-            return ApiResponse::erreur('En-tête X-Tenant-Id invalide.', 'PARAMETRES_INVALIDES', 422);
+        $tenant = $this->tenants->resoudre($request->header('X-Tenant-Id'));
+        if ($tenant === null) {
+            return ApiResponse::erreur('En-tête X-Tenant-Id invalide (identifiant ou uuid de l\'établissement attendu).', 'PARAMETRES_INVALIDES', 422);
         }
 
         $d = $request->validate([
@@ -80,8 +83,8 @@ class InterneController extends Controller
             throw ValidationException::withMessages(['valeur' => 'La note doit être comprise entre 0 et note_sur (strictement positif).']);
         }
 
-        $utilisateur = ['uuid' => $d['enseignant_uuid'], 'roleCode' => 'enseignant', 'tenantId' => (int) $tenant];
-        $r = Contexte::executerPour((int) $tenant, fn () => $service->reporter($d), $utilisateur);
+        $utilisateur = ['uuid' => $d['enseignant_uuid'], 'roleCode' => 'enseignant', 'tenantId' => $tenant];
+        $r = Contexte::executerPour($tenant, fn () => $service->reporter($d), $utilisateur);
 
         return ApiResponse::succes([
             'note_uuid' => $r['note']->uuid,

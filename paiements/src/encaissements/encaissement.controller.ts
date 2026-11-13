@@ -5,7 +5,7 @@ import {
 import { Request } from 'express';
 import { EncaissementService } from './encaissement.service';
 import { ContexteAcces } from '../database/contexte';
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsPositive, Min, Max, IsIn } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsUUID, IsPositive, Min, Max, IsIn, IsUrl, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class InitierEncaissementBodyDto {
@@ -27,6 +27,10 @@ class InitierEncaissementBodyDto {
 
   @IsOptional() @IsUUID()
   objetUuid?: string;
+
+  /** Page du front où revenir après le paiement (origine obligatoirement déclarée dans CORS_ORIGINS). */
+  @IsOptional() @IsUrl({ protocols: ['http', 'https'], require_tld: false, require_protocol: true }) @MaxLength(500)
+  urlRetour?: string;
 
   @IsOptional()
   payeur?: {
@@ -68,6 +72,7 @@ export class EncaissementController {
       libelle: body.libelle,
       objetType: body.objetType,
       objetUuid: body.objetUuid,
+      urlRetour: body.urlRetour,
       payeur: body.payeur,
       acteurUuid: (req as unknown as Record<string, unknown>).utilisateurUuid as string ?? 'system',
       acteurRole: 'administrateur',
