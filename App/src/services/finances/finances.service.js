@@ -40,7 +40,7 @@ export const financesService = {
 
   /* Paiement en ligne */
   paiements: async (factureUuid) => donnee(await http.get(`/factures/${factureUuid}/paiements`)) ?? [],
-  payer: async (factureUuid, montant, urlRetour) => donnee(await http.post(`/factures/${factureUuid}/paiements`, { montant, url_retour: urlRetour })),
+  payer: async (factureUuid, { montant, agregateur }, urlRetour) => donnee(await http.post(`/factures/${factureUuid}/paiements`, { montant, agregateur, url_retour: urlRetour })),
   paiement: async (uuid) => donnee(await http.get(`/paiements/${uuid}`)),
 
   /* Règlements */

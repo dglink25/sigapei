@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Ban, CreditCard, Download, HandCoins, Receipt } from 'lucide-react'
 import { useNotify } from '../../context/commun/NotifyContext'
 import { financesService } from '../../services/finances/finances.service'
-import { MODES, NATURES, STATUTS_FACTURE, STATUTS_PAIEMENT, STATUTS_REGLEMENT, libelle } from '../../config/finances/constantes'
+import { AGREGATEURS_EN_LIGNE, MODES, NATURES, STATUTS_FACTURE, STATUTS_PAIEMENT, STATUTS_REGLEMENT, libelle } from '../../config/finances/constantes'
 import Drawer from '../administration/Drawer'
 import { Badge, Champ, Chargement, aria, erreursChamps, formatDate, formatDateHeure, entier, formatMontant, useDonnees } from '../modules/outils'
 
@@ -135,6 +135,7 @@ function Tableau({ titre, entetes, lignes }) {
 function PayerEnLigne({ open, facture, suggere, onClose }) {
   const notify = useNotify()
   const [montant, setMontant] = useState('')
+  const [agregateur, setAgregateur] = useState(AGREGATEURS_EN_LIGNE[0].code)
   const [erreur, setErreur] = useState(null)
   const [envoi, setEnvoi] = useState(false)
   useEffect(() => { if (open) { setMontant(String(suggere)); setErreur(null) } }, [open]) // eslint-disable-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
@@ -148,7 +149,7 @@ function PayerEnLigne({ open, facture, suggere, onClose }) {
       const retour = new URL(window.location.href)
       retour.searchParams.set('section', 'mes-paiements')
       retour.searchParams.set('facture', facture.uuid)
-      const p = await financesService.payer(facture.uuid, m, retour.toString())
+      const p = await financesService.payer(facture.uuid, { montant: m, agregateur }, retour.toString())
       const url = new URL(p?.url_paiement ?? '')
       if (url.protocol !== 'https:') throw new Error('Adresse de paiement non sécurisée.')
       window.location.assign(url.toString())
@@ -171,6 +172,11 @@ function PayerEnLigne({ open, facture, suggere, onClose }) {
         <Champ id="ev-pay-montant" label={`Montant (${facture.devise === 'GNF' ? 'GNF' : 'FCFA'})`} requis erreur={erreur} aide="Vous pouvez payer tout ou partie du reste. Le montant échu est proposé par défaut.">
           <input {...aria('ev-pay-montant', erreur, true)} className="ap-input" inputMode="numeric" maxLength={14} value={montant} placeholder="Exemple : 50000"
             onChange={(e) => setMontant(e.target.value.replace(/[^\d\s]/g, ''))} />
+        </Champ>
+        <Champ id="ev-pay-agregateur" label="Moyen de paiement" requis>
+          <select {...aria('ev-pay-agregateur')} className="ap-input" value={agregateur} onChange={(e) => setAgregateur(e.target.value)}>
+            {AGREGATEURS_EN_LIGNE.map((a) => <option key={a.code} value={a.code}>{a.libelle}</option>)}
+          </select>
         </Champ>
         <p className="ap-hint">Vous allez être redirigé vers la page sécurisée de paiement (mobile money ou carte). La facture est mise à jour dès que le paiement est confirmé ; le reçu apparaît alors ici.</p>
       </form>

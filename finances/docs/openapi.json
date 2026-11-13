@@ -1557,7 +1557,7 @@
           "Paiement en ligne"
         ],
         "summary": "Payer en ligne",
-        "description": "Finances demande un encaissement au microservice Paiement et renvoie l'URL de la page de paiement. Montant ≤ reste à payer (paiements en cours et règlements en attente déduits). `url_retour` doit appartenir au front (CORS_ORIGINS).",
+        "description": "Finances demande un encaissement au microservice Paiements (agrégateur choisi : fedapay ou cinetpay) et renvoie l'URL de la page de paiement. Montant ≤ reste à payer (paiements en cours et règlements en attente déduits). `url_retour` doit appartenir au front (CORS_ORIGINS). Un refus de Paiements (accord absent, encaissements suspendus) répond 409 avec son message.",
         "parameters": [
           {
             "name": "facture",
@@ -1576,12 +1576,20 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "montant"
+                  "montant",
+                  "agregateur"
                 ],
                 "properties": {
                   "montant": {
                     "type": "integer",
                     "minimum": 100
+                  },
+                  "agregateur": {
+                    "type": "string",
+                    "enum": [
+                      "fedapay",
+                      "cinetpay"
+                    ]
                   },
                   "url_retour": {
                     "type": "string",
@@ -3239,8 +3247,8 @@
         "tags": [
           "Interne"
         ],
-        "summary": "Notification du service Paiement",
-        "description": "Finances relit l'encaissement chez Paiement (GET /v1/interne/encaissements/{uuid}) et contrôle établissement, facture et montant avant d'enregistrer le règlement, une seule fois.",
+        "summary": "Notification du service Paiements",
+        "description": "Finances relit l'encaissement chez Paiements (GET /v1/etablissements/{etablissement}/encaissements/{uuid}) et contrôle établissement, facture et montant avant d'enregistrer le règlement, une seule fois.",
         "requestBody": {
           "required": true,
           "content": {

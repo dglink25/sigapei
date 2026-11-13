@@ -15,6 +15,12 @@ export const STATUTS_REGLEMENT = {
 
 export const MODES = { en_ligne: 'En ligne', especes: 'Espèces', virement: 'Virement', cheque: 'Chèque' }
 
+/** Agrégateurs à redirection proposés aux familles (le service Paiements exécute l'encaissement). */
+export const AGREGATEURS_EN_LIGNE = [
+  { code: 'fedapay', libelle: 'FedaPay (mobile money, carte)' },
+  { code: 'cinetpay', libelle: 'CinetPay (mobile money, carte)' },
+]
+
 export const NATURES = {
   scolarite: 'Scolarité', inscription: 'Inscription', cantine: 'Cantine', transport: 'Transport',
   activite: 'Activité', dossier: 'Frais de dossier', autre: 'Autre',

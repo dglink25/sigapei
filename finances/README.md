@@ -1,7 +1,7 @@
 # api-finances - Microservice Finances - SIGAPEI
 
 Formules tarifaires, facturation des apprenants, règlements à double validation, paiement en ligne (via le
-microservice **Paiement**), soldes, relances et rapports de l'établissement.
+microservice **Paiements**), soldes, relances et rapports de l'établissement.
 
 - **Port** : `4008` (interne, non publié) | **Schéma** : `finances` | **Redis DB** : `5`
 - **Préfixe API** : `/v1/...` | **Sonde de santé** : `GET /sante`
@@ -20,33 +20,36 @@ docker compose up -d --build              # API + planificateur (schedule:work)
 La première migration vérifie que le schéma `finances` existe et s'arrête sinon : aucune table n'est jamais
 créée ailleurs (`public` compris).
 
-## Partage des rôles avec Paiement
+## Partage des rôles avec Paiements
 
-| Finances (ce service) | Paiement (`paiement/`, port 4010) |
+| Finances (ce service) | Paiements (`paiements/`, port 4010) |
 |---|---|
 | Ce qu'un apprenant **doit** : formules, factures, échéances, soldes, relances | Mouvements d'**argent réel** : agrégateurs, portefeuilles, grand livre, décaissements |
 | Règlements saisis à la main (espèces, virement, chèque) | Encaissements en ligne (mobile money, carte) |
-| Demande un encaissement pour une facture, puis relit son état | Exécute l'encaissement et notifie Finances |
+| Demande un encaissement pour une facture, puis relit son état | Exécute l'encaissement auprès de l'agrégateur choisi |
 
 Finances ne détient **aucune** clé d'agrégateur et ne reçoit aucun webhook externe.
 
-### Contrat attendu du service Paiement (routes internes, `X-Internal-Secret`)
+### Routes de Paiements consommées
 
 | Appel | Corps / réponse |
 |---|---|
-| `POST /v1/interne/encaissements` + en-tête `Idempotency-Key` (uuid du paiement Finances) | `{etablissement_uuid, devise, montant, objet_type: "facture", objet_uuid, libelle, payeur_utilisateur_uuid, url_retour}` → `{uuid, statut, url_paiement, expire_le}` |
-| `GET /v1/interne/encaissements/{uuid}` (+ `X-Tenant-Id`) | `{uuid, etablissement_uuid, objet_type, objet_uuid, devise, montant, montant_rembourse, statut, approuve_le}` |
-| Notification → `POST {finances}/v1/interne/paiements/notification` | `{encaissement_uuid}` |
+| `POST /v1/etablissements/{etablissement}/encaissements` | `{agregateurCode: "fedapay" ou "cinetpay", montant, devise, libelle, objetType: "facture", objetUuid, urlRetour}` → `{uuid, referenceMarchande, urlPaiement, statut}` |
+| `GET /v1/etablissements/{etablissement}/encaissements/{uuid}` | `{uuid, etablissement_uuid, objet_type, objet_uuid, devise, montant, montant_rembourse, statut, approuve_le}` |
+| Notification (optionnelle) → `POST {finances}/v1/interne/paiements/notification` | `{encaissement_uuid}` |
 
-États reconnus (machine « encaissement » de Paiement) : `initie`, `en_attente`, `approuve`, `refuse`, `annule`,
-`expire`, `disponible`, `rembourse_partiel`, `rembourse`. Sont acquis : `approuve`, `disponible`,
-`rembourse_partiel`, `rembourse`.
+La famille choisit l'agrégateur (FedaPay ou CinetPay ; KkiaPay fonctionne par widget et n'est pas proposé ici).
+L'adresse de retour doit appartenir à `CORS_ORIGINS` côté Finances **et** côté Paiements. Un refus de Paiements
+(accord absent, encaissements suspendus...) est renvoyé à l'utilisateur en 409 avec le message de Paiements ;
+une indisponibilité répond 503 et rien n'est enregistré.
 
-Finances **ne croit jamais une notification** : il relit l'encaissement, vérifie établissement, facture et montant,
-puis enregistre le règlement une seule fois (index unique). Un remboursement fait chez Paiement produit un
-règlement négatif du même montant. La commande `finances:synchroniser-paiements` (toutes les 10 minutes) rattrape
-une notification perdue. Tant que Paiement n'expose pas ces routes, le paiement en ligne répond 503 ; rien n'est
-jamais supposé payé.
+États reconnus : `initie`, `en_attente`, `approuve`, `refuse`, `annule`, `expire`, `disponible`,
+`rembourse_partiel`, `rembourse`. Sont acquis : `approuve`, `disponible`, `rembourse_partiel`, `rembourse`.
+
+Finances **ne suppose jamais un paiement** : il relit l'encaissement (à l'affichage du paiement, sur notification et
+toutes les 10 minutes via `finances:synchroniser-paiements`), vérifie établissement, facture et montant, puis
+enregistre le règlement une seule fois (index unique). Un remboursement fait chez Paiements produit un règlement
+négatif du même montant.
 
 ## Schéma `finances`
 
@@ -57,7 +60,7 @@ jamais supposé payé.
 | `formules_tarifaires` | Frais par année, portée (établissement, cycle, niveau, classe) et échéancier |
 | `factures`, `facture_lignes`, `echeances` | Facture figée à l'émission (lignes et échéances immuables en base) |
 | `reglements` | Règlements en ligne et manuels ; un règlement décidé est figé ; `montant_regle` et statut tenus par trigger |
-| `paiements_en_ligne` | Suivi des encaissements demandés à Paiement |
+| `paiements_en_ligne` | Suivi des encaissements demandés à Paiements |
 | `relances` | Une relance par échéance et par palier |
 | `compteurs`, `journal_audit` | Numérotation sans trou (FA-2026-000001, RE-2026-000001) ; journal en ajout seul |
 
@@ -90,7 +93,7 @@ Adresse de retour d'un paiement : uniquement une origine de `CORS_ORIGINS` (pas 
 |---|---|
 | `GET /v1/interne/solde/{apprenant_uuid}` | Demandes (règle « solde à jour ») |
 | `GET /v1/interne/apprenants/paiements?apprenant_uuid=` | Scolarité (vue consolidée) |
-| `POST /v1/interne/paiements/notification` | Paiement |
+| `POST /v1/interne/paiements/notification` | Paiements (optionnel) |
 
 ## Événements publiés (échange `sigapei.events`)
 
@@ -107,5 +110,5 @@ Adresse de retour d'un paiement : uniquement une origine de `CORS_ORIGINS` (pas 
 ## Tests
 
 ```bash
-php vendor/bin/phpunit    # PostgreSQL de test (voir phpunit.xml) ; Identité, Scolarité et Paiement simulés
+php vendor/bin/phpunit    # PostgreSQL de test (voir phpunit.xml) ; Identité, Scolarité et Paiements simulés
 ```

@@ -10,6 +10,7 @@ use App\Services\Gouvernance;
 use App\Services\PaiementsEnLigne;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /** Paiement en ligne d'une facture, exécuté par le microservice Paiement. */
@@ -27,13 +28,14 @@ class PaiementsController extends Controller
         $this->factures->exigerLecture($facture);
         $d = $request->validate([
             'montant' => ['required', 'integer', 'min:100', 'max:100000000000'],
+            'agregateur' => ['required', 'string', Rule::in(PaiementClient::AGREGATEURS)],
             'url_retour' => ['nullable', 'url:https,http', 'max:500'],
         ]);
         if (isset($d['url_retour']) && ! $this->origineAutorisee($d['url_retour'])) {
             throw ValidationException::withMessages(['url_retour' => "L'adresse de retour n'appartient pas à la plateforme."]);
         }
 
-        $p = $this->paiements->initier($facture, (int) $d['montant'], $d['url_retour'] ?? null);
+        $p = $this->paiements->initier($facture, (int) $d['montant'], $d['agregateur'], $d['url_retour'] ?? null);
 
         return $this->ok(Presentation::paiement($p), 'Paiement initié : poursuivez sur la page de paiement sécurisée.', 201);
     }

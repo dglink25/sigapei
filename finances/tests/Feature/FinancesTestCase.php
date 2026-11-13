@@ -45,6 +45,9 @@ abstract class FinancesTestCase extends TestCase
 
     protected bool $paiementEnPanne = false;
 
+    /** Paiements refuse l'encaissement (accord absent pour l'agrégateur). */
+    protected bool $paiementRefuse = false;
+
     protected function beforeRefreshingDatabase()
     {
         DB::statement('CREATE SCHEMA IF NOT EXISTS finances');
@@ -147,30 +150,31 @@ abstract class FinancesTestCase extends TestCase
                 return Http::response(['succes' => true, 'donnees' => array_values(array_filter($liste, $filtre))]);
             }
 
-            if (str_starts_with($url, 'http://paiement.test/v1/interne/encaissements')) {
+            // Microservice Paiements : réponses au format réel ({success: true, ...} à plat, erreurs {success: false, error}).
+            if (preg_match('#^http://paiement\.test/v1/etablissements/([0-9a-f-]{36})/encaissements(?:/([0-9a-f-]{36}))?$#', strtok($url, '?'), $m) === 1) {
                 if ($this->paiementEnPanne) {
                     return Http::response([], 502);
                 }
                 if ($r->method() === 'POST') {
-                    $cle = $r->header('Idempotency-Key')[0] ?? '';
-                    $this->demandesPaiement[] = $r->data() + ['cle' => $cle];
-                    $existant = collect($this->encaissements)->firstWhere('cle', $cle);
-                    $e = $existant ?? [
-                        'uuid' => (string) Str::uuid(), 'cle' => $cle, 'etablissement_uuid' => $r->data()['etablissement_uuid'],
-                        'objet_type' => $r->data()['objet_type'], 'objet_uuid' => $r->data()['objet_uuid'], 'devise' => $r->data()['devise'],
-                        'montant' => $r->data()['montant'], 'montant_rembourse' => 0, 'statut' => 'en_attente', 'approuve_le' => null,
-                        'url_paiement' => 'https://checkout.agregateur.test/p/'.Str::random(10), 'expire_le' => now()->addMinutes(30)->toIso8601String(),
+                    if ($this->paiementRefuse) {
+                        return Http::response(['success' => false, 'error' => ['code' => 'ACCORD_ABSENT', 'message' => 'Aucun accord actif pour fedapay en XOF.']], 403);
+                    }
+                    $this->demandesPaiement[] = $r->data() + ['cle' => $r->header('Idempotency-Key')[0] ?? ''];
+                    $e = [
+                        'uuid' => (string) Str::uuid(), 'etablissement_uuid' => $m[1], 'objet_type' => $r->data()['objetType'],
+                        'objet_uuid' => $r->data()['objetUuid'], 'devise' => $r->data()['devise'], 'montant' => (string) $r->data()['montant'],
+                        'montant_rembourse' => '0', 'statut' => 'initie', 'approuve_le' => null,
                     ];
                     $this->encaissements[$e['uuid']] = $e;
 
-                    return Http::response(['success' => true, 'data' => array_diff_key($e, ['cle' => 1])], 201);
+                    return Http::response(['success' => true, 'uuid' => $e['uuid'], 'referenceMarchande' => 'ENC-'.Str::random(8),
+                        'urlPaiement' => 'https://checkout.agregateur.test/p/'.Str::random(10), 'statut' => 'initie'], 201);
                 }
-                $uuid = basename((string) parse_url($url, PHP_URL_PATH));
-                $e = $this->encaissements[$uuid] ?? null;
+                $e = $this->encaissements[$m[2] ?? ''] ?? null;
 
-                return $e === null || strtolower($e['etablissement_uuid']) !== $tenant
-                    ? Http::response(['success' => false], 404)
-                    : Http::response(['success' => true, 'data' => array_diff_key($e, ['cle' => 1])]);
+                return $e === null || strtolower($e['etablissement_uuid']) !== $m[1]
+                    ? Http::response(['success' => false, 'error' => ['code' => 'ENCAISSEMENT_INTROUVABLE']], 404)
+                    : Http::response(['success' => true] + $e);
             }
 
             return Http::response([], 404);

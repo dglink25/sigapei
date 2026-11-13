@@ -2,6 +2,7 @@
 
 namespace App\Integrations;
 
+use App\Exceptions\MetierException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -18,12 +19,16 @@ class ClientInterne
         return $this->traiter($service, $chemin, fn ($http, $url) => $http->retry(2, 200, throw: false)->get($url, $query), $etablissement);
     }
 
-    public function post(string $service, string $chemin, array $corps, ?string $etablissement = null, array $entetes = []): ?array
+    /**
+     * @param  bool  $refusMetier  un refus 4xx du service appelé (accord absent, paiements suspendus...) est rendu
+     *                             à l'utilisateur avec son message (409) au lieu d'une indisponibilité (503).
+     */
+    public function post(string $service, string $chemin, array $corps, ?string $etablissement = null, array $entetes = [], bool $refusMetier = false): ?array
     {
-        return $this->traiter($service, $chemin, fn ($http, $url) => $http->withHeaders($entetes)->post($url, $corps), $etablissement);
+        return $this->traiter($service, $chemin, fn ($http, $url) => $http->withHeaders($entetes)->post($url, $corps), $etablissement, $refusMetier);
     }
 
-    private function traiter(string $service, string $chemin, callable $appel, ?string $etablissement): ?array
+    private function traiter(string $service, string $chemin, callable $appel, ?string $etablissement, bool $refusMetier = false): ?array
     {
         $base = rtrim((string) config("services.{$service}.url"), '/');
         $secret = (string) config('services.interne.secret', '');
@@ -45,6 +50,14 @@ class ClientInterne
 
         if ($r->status() === 404) {
             return null;
+        }
+        if ($refusMetier && $r->clientError()) {
+            $message = $r->json('error.message') ?? $r->json('message');
+            $code = $r->json('error.code') ?? $r->json('code');
+            throw MetierException::conflit(
+                is_string($message) && $message !== '' ? mb_substr($message, 0, 300) : 'Le service de paiement a refusé la demande.',
+                is_string($code) && preg_match('/^[A-Z_]{2,60}$/', $code) === 1 ? $code : 'PAIEMENT_REFUSE',
+            );
         }
         if (! $r->successful()) {
             throw new ServiceIndisponibleException("{$service} a répondu HTTP {$r->status()} ({$chemin}).");

@@ -19,7 +19,7 @@ use Throwable;
 /**
  * Paiement en ligne d'une facture : Finances CONSOMME le microservice Paiement (seul à parler aux agrégateurs).
  *  1. la famille (ou un profil habilité) demande à payer un montant ≤ reste à payer ;
- *  2. Finances demande un encaissement à Paiement (clé d'idempotence = uuid du paiement Finances) et renvoie
+ *  2. Finances demande un encaissement à Paiements (agrégateur choisi par le payeur) et renvoie
  *     l'URL de paiement de l'agrégateur ;
  *  3. Paiement notifie Finances (ou la synchronisation planifiée passe) : Finances RELIT l'encaissement chez
  *     Paiement, contrôle établissement, facture et montant, puis enregistre le règlement - une seule fois
@@ -34,7 +34,7 @@ class PaiementsEnLigne
         private readonly RabbitMqPublisher $evenements,
     ) {}
 
-    public function initier(Facture $facture, int $montant, ?string $urlRetour): PaiementEnLigne
+    public function initier(Facture $facture, int $montant, string $agregateur, ?string $urlRetour): PaiementEnLigne
     {
         $p = DB::transaction(function () use ($facture, $montant) {
             $f = Facture::whereKey($facture->id)->lockForUpdate()->firstOrFail();
@@ -59,14 +59,12 @@ class PaiementsEnLigne
         });
 
         try {
-            $e = $this->paiement->creerEncaissement([
-                'etablissement_uuid' => Contexte::etablissement(),
-                'devise' => $facture->devise,
+            $e = $this->paiement->creerEncaissement(Contexte::etablissement(), [
+                'agregateur' => $agregateur,
                 'montant' => $montant,
-                'objet_type' => 'facture',
-                'objet_uuid' => $facture->uuid,
+                'devise' => $facture->devise,
                 'libelle' => mb_substr("{$facture->numero} - {$facture->libelle}", 0, 255),
-                'payeur_utilisateur_uuid' => Contexte::utilisateurUuid(),
+                'objet_uuid' => $facture->uuid,
                 'url_retour' => $urlRetour,
             ], $p->uuid);
         } catch (Throwable $t) {
@@ -75,7 +73,7 @@ class PaiementsEnLigne
         }
 
         $p->forceFill(['encaissement_uuid' => $e['uuid'], 'statut' => $e['statut'], 'url_paiement' => $e['url_paiement'], 'expire_le' => $e['expire_le'], 'derniere_synchro' => now()])->save();
-        $this->journal->ecrire('paiement.initie', 'paiement', $p->uuid, ['facture' => $facture->numero, 'montant' => $montant, 'encaissement_uuid' => $e['uuid']]);
+        $this->journal->ecrire('paiement.initie', 'paiement', $p->uuid, ['facture' => $facture->numero, 'montant' => $montant, 'agregateur' => $agregateur, 'encaissement_uuid' => $e['uuid']]);
 
         return $p->fresh();
     }

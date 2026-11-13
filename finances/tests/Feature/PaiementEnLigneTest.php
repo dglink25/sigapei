@@ -31,7 +31,7 @@ class PaiementEnLigneTest extends FinancesTestCase
 
     private function payer(int $montant = 100000): array
     {
-        return $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['montant' => $montant, 'url_retour' => 'https://app.sigapei.test/finances'])
+        return $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'fedapay', 'montant' => $montant, 'url_retour' => 'https://app.sigapei.test/finances'])
             ->assertCreated()->json('data');
     }
 
@@ -49,16 +49,18 @@ class PaiementEnLigneTest extends FinancesTestCase
 
         $p = $this->payer();
         $this->assertStringStartsWith('https://checkout.agregateur.test/', $p['url_paiement']);
-        $this->assertSame('en_attente', $p['statut']);
+        $this->assertSame('initie', $p['statut']);
         $this->assertSame($p['uuid'], $this->demandesPaiement[0]['cle']);
-        $this->assertSame('facture', $this->demandesPaiement[0]['objet_type']);
-        $this->assertSame($this->facture['uuid'], $this->demandesPaiement[0]['objet_uuid']);
+        $this->assertSame('fedapay', $this->demandesPaiement[0]['agregateurCode']);
+        $this->assertSame('facture', $this->demandesPaiement[0]['objetType']);
+        $this->assertSame($this->facture['uuid'], $this->demandesPaiement[0]['objetUuid']);
+        $this->assertSame('https://app.sigapei.test/finances', $this->demandesPaiement[0]['urlRetour']);
 
         // Le reste est réservé pendant le paiement en cours.
-        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['montant' => 60000])->assertStatus(422);
+        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'fedapay', 'montant' => 60000])->assertStatus(422);
 
         // Notification avant approbation : rien n'est enregistré.
-        $this->notifier($p['encaissement_uuid'])->assertOk()->assertJsonPath('data.statut', 'en_attente');
+        $this->notifier($p['encaissement_uuid'])->assertOk()->assertJsonPath('data.statut', 'initie');
         $this->assertSame(0, DB::table('finances.reglements')->count());
 
         $this->encaissements[$p['encaissement_uuid']]['statut'] = 'approuve';
@@ -81,7 +83,7 @@ class PaiementEnLigneTest extends FinancesTestCase
 
         $this->en($this->parent)->getJson("/v1/paiements/{$p['uuid']}")->assertOk()->assertJsonPath('data.statut', 'disponible');
         $this->en($this->admin)->getJson("/v1/factures/{$this->facture['uuid']}")->assertJsonPath('data.statut', 'reglee');
-        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['montant' => 1000])->assertStatus(409);
+        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'fedapay', 'montant' => 1000])->assertStatus(409);
     }
 
     public function test_remboursement_chez_paiement_produit_un_ajustement_negatif(): void
@@ -113,10 +115,17 @@ class PaiementEnLigneTest extends FinancesTestCase
         $this->notifier((string) Str::uuid())->assertNotFound();
 
         $this->paiementEnPanne = true;
-        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['montant' => 100000])->assertStatus(503);
+        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'fedapay', 'montant' => 100000])->assertStatus(503);
         $this->assertSame('echec_creation', DB::table('finances.paiements_en_ligne')->value('statut'));
         // L'échec ne réserve pas le reste à payer.
         $this->paiementEnPanne = false;
+
+        // Refus métier de Paiements : message rendu à l'utilisateur, rien n'est réservé.
+        $this->paiementRefuse = true;
+        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'fedapay', 'montant' => 100000])
+            ->assertStatus(409)->assertJsonPath('error.code', 'ACCORD_ABSENT');
+        $this->paiementRefuse = false;
+        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'kkiapay', 'montant' => 100000])->assertStatus(422);
         $this->payer(150000);
     }
 
@@ -124,13 +133,13 @@ class PaiementEnLigneTest extends FinancesTestCase
     {
         [$autre] = $this->utilisateur('parent');
         $this->en($autre)->getJson("/v1/factures/{$this->facture['uuid']}")->assertNotFound();
-        $this->en($autre)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['montant' => 1000])->assertNotFound();
+        $this->en($autre)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'fedapay', 'montant' => 1000])->assertNotFound();
         $this->en($autre)->getJson("/v1/apprenants/{$this->enfant}/solde")->assertNotFound();
         $this->en($autre)->getJson('/v1/mes-finances')->assertOk()->assertJsonCount(0, 'data');
 
-        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['montant' => 1000, 'url_retour' => 'https://pirate.example/vol'])
+        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'fedapay', 'montant' => 1000, 'url_retour' => 'https://pirate.example/vol'])
             ->assertStatus(422)->assertJsonPath('error.code', 'DONNEES_INVALIDES');
-        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['montant' => 200000])->assertStatus(422);
+        $this->en($this->parent)->postJson("/v1/factures/{$this->facture['uuid']}/paiements", ['agregateur' => 'fedapay', 'montant' => 200000])->assertStatus(422);
     }
 
     public function test_synchronisation_planifiee(): void
