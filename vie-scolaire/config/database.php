@@ -107,6 +107,10 @@ return [
 
             // Neon refuse les connexions non chiffrees.
             'sslmode' => env('DB_SSLMODE', 'require'),
+            // Fix: emulated prepares to avoid PgBouncer + native prepare transaction aborts
+            'options' => [
+                PDO::ATTR_EMULATE_PREPARES => true,
+            ],
         ],
 
         'sqlsrv' => [

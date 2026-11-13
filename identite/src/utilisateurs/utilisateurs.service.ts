@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Utilisateur, StatutUtilisateur } from './utilisateur.entity';
+import { Role } from '../roles/role.entity';
 import { IdentifiantRecuperation } from './identifiant-recuperation.entity';
 import { QuestionSecurite } from './question-securite.entity';
 
@@ -81,6 +82,9 @@ export class UtilisateursService {
    * (evenement RabbitMQ "etablissement.valide" - voir InterneRpcController).
    * Rappel du principe "pas d'inscription" : ce microservice ne fait
    * qu'executer la creation ordonnee par le module metier proprietaire.
+   *
+   * GARDE DE SECURITE : verifie que le role fourni est bien 'administrateur'.
+   * Jamais 'super_admin', jamais un autre role systeme.
    */
   async creerUtilisateurAdministrateur(params: {
     tenantId: string;
@@ -90,6 +94,21 @@ export class UtilisateursService {
     telephone: string | null;
     matricule?: string | null;
   }): Promise<Utilisateur> {
+    // Vérification de sécurité : le rôle DOIT être 'administrateur'
+    const role = await this.utilisateurRepo.manager
+      .getRepository(Role)
+      .findOne({ where: { id: params.roleId } });
+
+    if (!role) {
+      throw new Error(`Role introuvable (id=${params.roleId})`);
+    }
+    if (role.code !== 'administrateur') {
+      throw new Error(
+        `Création de compte établissement refusée : le rôle '${role.code}' n'est pas autorisé ici. ` +
+        `Seul 'administrateur' est accepté.`,
+      );
+    }
+
     const utilisateur = this.utilisateurRepo.create({
       tenantId: params.tenantId,
       roleId: params.roleId,

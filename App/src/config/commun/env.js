@@ -9,7 +9,7 @@ export const ENV = Object.freeze({
   recaptchaKey: str(e.VITE_RECAPTCHA_SITE_KEY),
   apiPrefix: '/v1',
   services: Object.freeze({
-    auth: url(e.VITE_AUTH_SERVICE_URL) || 'http://localhost:4001',
+    auth: url(e.VITE_AUTH_SERVICE_URL) || '',
     gateway: url(e.VITE_GATEWAY_SERVICE_URL) || url(e.VITE_API_URL),
     inscription: url(e.VITE_INSCRIPTION_SERVICE_URL),
     scolarite: url(e.VITE_SCOLARITE_SERVICE_URL),
@@ -19,6 +19,7 @@ export const ENV = Object.freeze({
     evaluation: url(e.VITE_EVALUATION_SERVICE_URL),
     demande: url(e.VITE_DEMANDE_SERVICE_URL),
     finance: url(e.VITE_FINANCE_SERVICE_URL),
+    paiement: url(e.VITE_PAIEMENT_SERVICE_URL) || (import.meta.env.DEV ? '/paiement-api' : ''),
   }),
   firebase: Object.freeze({
     apiKey: str(e.VITE_FIREBASE_API_KEY),

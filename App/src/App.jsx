@@ -55,6 +55,14 @@ import DemandesRolePage          from './pages/AdministrationPrincipale/Demandes
 import DemandesServicePage       from './pages/AdministrationPrincipale/DemandesServicePage'
 import UtilisateursPage          from './pages/AdministrationPrincipale/UtilisateursPage'
 
+/* Paiements (super admin) */
+import { PAIEMENT_PATHS }       from './config/paiements/config'
+import PaiementsStatsPage      from './pages/AdministrationPrincipale/paiements/PaiementsStatsPage'
+import PaiementsAgregateurPage from './pages/AdministrationPrincipale/paiements/PaiementsAgregateurPage'
+import PaiementsModesPage      from './pages/AdministrationPrincipale/paiements/PaiementsModesPage'
+import PaiementsAccordsPage    from './pages/AdministrationPrincipale/paiements/PaiementsAccordsPage'
+import PaiementsAuditPage      from './pages/AdministrationPrincipale/paiements/PaiementsAuditPage'
+
 /* E-Learning (ajouté par fusion) */
 import ElearningApp from './pages/elearning/ElearningApp'
 
@@ -228,6 +236,11 @@ export default function App() {
           <Route path="/admin/demandes-role"               element={<DemandesRolePage />} />
           <Route path="/admin/demandes-service"            element={<DemandesServicePage />} />
           <Route path="/admin/utilisateurs"                element={<UtilisateursPage />} />
+          <Route path={PAIEMENT_PATHS.superAdmin}          element={<PaiementsStatsPage />} />
+          <Route path={PAIEMENT_PATHS.agregateurs}         element={<PaiementsAgregateurPage />} />
+          <Route path={PAIEMENT_PATHS.modesPaiement}       element={<PaiementsModesPage />} />
+          <Route path={PAIEMENT_PATHS.accords}             element={<PaiementsAccordsPage />} />
+          <Route path={PAIEMENT_PATHS.audit}               element={<PaiementsAuditPage />} />
         </Route>
       </Route>
 
