@@ -1,0 +1,327 @@
+/* ═══════════════════════════════════════════════════════════
+   AccueilHeader  —  copie exacte de la structure INSTI
+   Bleu remplacé par vert #006B3C
+═══════════════════════════════════════════════════════════ */
+
+/* ─── Dimensions ─── */
+:root {
+  --aeh-b1-h: 52px;
+  --aeh-b2-h: 32px;
+  --aeh-logo-size: 72px;
+  --aeh-logo-pad: 220px;  /* logo (72) + 18px de chaque côté */
+}
+
+/* ─── Conteneur global ─── */
+.aeh {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.20);
+}
+
+/* ══════════════════════════
+   BANDE 1 — fond vert
+══════════════════════════ */
+.aeh-b1 {
+  background: #006B3C;
+  height: var(--aeh-b1-h);
+  position: relative;         /* base des logos absolus */
+  display: flex;
+  align-items: center;
+  padding: 0 var(--aeh-logo-pad);   /* espace gauche + droite pour logos */
+  max-width: 100%;
+  gap: 0;
+}
+
+/* Contenu entre les deux logos */
+.aeh-b1-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+}
+
+/* Identité : nom abrégé + nom complet */
+.aeh-identity {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  line-height: 1.15;
+}
+.aeh-nom-court {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.aeh-nom-long {
+  font-size: 0.63rem;
+  color: rgba(255,255,255,0.72);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+/* Ligne blanche centrale */
+.aeh-b1-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.40);
+  min-width: 20px;
+}
+
+/* Boutons Accès rapide / Nous écrire */
+.aeh-b1-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.aeh-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.90);
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,0.30);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.aeh-action-btn:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+
+/* Burger (caché sur desktop) */
+.aeh-burger {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px 6px;
+  margin-left: 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.aeh-burger:hover { background: rgba(255,255,255,0.12); }
+
+/* ══════════════════════════
+   LOGOS absolus couvrant b1 + b2
+══════════════════════════ */
+.aeh-logo-left,
+.aeh-logo-right {
+  position: absolute;
+  top: 0;
+  /* Couvrir b1 + b2 : height = b1 + b2 */
+  height: calc(var(--aeh-b1-h) + var(--aeh-b2-h));
+  width: var(--aeh-logo-pad);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+.aeh-logo-left  { left: 0; padding: 0 18px; }
+.aeh-logo-right { right: 0; padding: 0 18px; }
+
+.aeh-logo-left img,
+.aeh-logo-right img {
+  height: var(--aeh-logo-size);
+  width:  var(--aeh-logo-size);
+  object-fit: contain;
+  border-radius: 50%;
+  background: #ffffff;
+  padding: 3px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+}
+.aeh-logo-ph {
+  height: var(--aeh-logo-size);
+  width:  var(--aeh-logo-size);
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+}
+
+/* ══════════════════════════
+   BANDE 2 — fond blanc, nav
+══════════════════════════ */
+.aeh-b2 {
+  background: #ffffff;
+  height: var(--aeh-b2-h);
+  border-top: 1px solid #ddd;
+}
+.aeh-b2-nav-wrap {
+  /* Même padding horizontal que b1 pour aligner sous les logos */
+  padding: 0 var(--aeh-logo-pad);
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.aeh-b2-nav-wrap::-webkit-scrollbar { display: none; }
+
+.aeh-nav {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  gap: 0;
+}
+
+.aeh-nav-btn {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  /* Séparateurs verticaux */
+  border-right: 1px solid #d0d0d0;
+  color: #333333;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 20px;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.15s, background 0.15s;
+}
+.aeh-nav-btn:first-child { border-left: 1px solid #d0d0d0; }
+
+/* Soulignement vert = onglet actif / hover */
+.aeh-nav-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #006B3C;
+  transform: scaleX(0);
+  transition: transform 0.18s ease;
+}
+.aeh-nav-btn:hover            { color: #006B3C; background: rgba(0,107,60,0.04); }
+.aeh-nav-btn.is-active        { color: #006B3C; }
+.aeh-nav-btn:hover::after,
+.aeh-nav-btn.is-active::after { transform: scaleX(1); }
+
+/* ══════════════════════════
+   DEVISE (sous les 2 bandes)
+══════════════════════════ */
+.aeh-devise {
+  background: #f5f5f5;
+  text-align: center;
+  padding: 3px 16px;
+  font-size: 0.69rem;
+  color: #777;
+  border-top: 1px solid #eee;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+/* ══════════════════════════
+   MENU MOBILE
+══════════════════════════ */
+.aeh-mobile-menu {
+  background: #fff;
+  border-top: 2px solid #006B3C;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  animation: aeh-down 0.18s ease;
+}
+.aeh-mobile-item {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  color: #333;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.aeh-mobile-item:hover { color: #006B3C; background: rgba(0,107,60,0.04); }
+.aeh-mobile-btns {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  flex-wrap: wrap;
+  background: #006B3C;
+}
+.aeh-mobile-btns .aeh-action-btn {
+  color: rgba(255,255,255,0.9);
+  border-color: rgba(255,255,255,0.3);
+}
+
+@keyframes aeh-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════
+   DARK MODE
+══════════════════════════ */
+[data-theme='dark'] .aeh-b1    { background: #004d2c; }
+[data-theme='dark'] .aeh-b2    { background: #1a2a1e; border-top-color: #2a3a2e; }
+[data-theme='dark'] .aeh-nav-btn { color: #ccc; border-color: #2a3a2e; }
+[data-theme='dark'] .aeh-nav-btn:hover,
+[data-theme='dark'] .aeh-nav-btn.is-active { color: #4ade80; }
+[data-theme='dark'] .aeh-nav-btn:hover::after,
+[data-theme='dark'] .aeh-nav-btn.is-active::after { background: #4ade80; }
+[data-theme='dark'] .aeh-devise { background: #111; color: #888; border-top-color: #222; }
+[data-theme='dark'] .aeh-mobile-menu { background: #1a2a1e; }
+[data-theme='dark'] .aeh-mobile-item { color: #ccc; border-bottom-color: #2a3a2e; }
+
+/* ══════════════════════════
+   RESPONSIVE
+══════════════════════════ */
+@media (max-width: 1024px) {
+  :root { --aeh-logo-size: 64px; --aeh-logo-pad: 100px; }
+  .aeh-nom-long { max-width: 160px; }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --aeh-b1-h: 44px;
+    --aeh-b2-h: 30px;
+    --aeh-logo-size: 48px;
+    --aeh-logo-pad: 76px;
+  }
+  .aeh-b2         { display: none; }
+  .aeh-devise     { display: none; }
+  .aeh-b1-actions { display: none; }
+  .aeh-burger     { display: grid; }
+  .aeh-nom-long   { display: none; }
+  .aeh-nom-court  { font-size: 1rem; }
+  /* Sur mobile b2 est caché : logos = hauteur b1 seulement */
+  .aeh-logo-left,
+  .aeh-logo-right { height: var(--aeh-b1-h); }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --aeh-b1-h: 42px;
+    --aeh-logo-size: 42px;
+    --aeh-logo-pad: 68px;
+  }
+  .aeh-nom-court { font-size: 0.88rem; }
+  .aeh-logo-left,
+  .aeh-logo-right { height: var(--aeh-b1-h); }
+}

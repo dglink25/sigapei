@@ -1,0 +1,165 @@
+/* ═══════════════════════════════════════════════════════════
+   AccueilFooter — Footer page publique établissement
+═══════════════════════════════════════════════════════════ */
+
+.aef-footer {
+  background: #1a2a1e;
+  color: rgba(255,246,221,0.72);
+  font-family: inherit;
+}
+
+.aef-inner {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.2fr;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 52px 24px 36px;
+}
+
+/* Col brand */
+.aef-col--brand { display: flex; flex-direction: column; gap: 8px; }
+
+.aef-logo {
+  height: 50px;
+  width: 50px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+  padding: 3px;
+}
+.aef-logo-ph {
+  height: 50px;
+  width: 50px;
+  border-radius: 8px;
+  background: rgba(255,246,221,0.10);
+  display: grid;
+  place-items: center;
+  color: #FFF6DD;
+}
+.aef-nom {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFF6DD;
+}
+.aef-devise {
+  margin: 0;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: rgba(255,246,221,0.50);
+}
+.aef-adresse {
+  margin: 0;
+  font-size: 0.80rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  line-height: 1.5;
+}
+
+/* Réseaux sociaux */
+.aef-rs {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.aef-rs-link {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: rgba(255,246,221,0.08);
+  color: rgba(255,246,221,0.65);
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 800;
+  transition: background 0.15s, color 0.15s;
+}
+.aef-rs-link:hover { background: #006B3C; color: #FFF6DD; }
+
+/* Col titre */
+.aef-col-titre {
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #E9AA20;
+  text-transform: uppercase;
+}
+
+/* Liens */
+.aef-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.aef-links a,
+.aef-links button {
+  color: rgba(255,246,221,0.65);
+  text-decoration: none;
+  font: inherit;
+  font-size: 0.85rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.aef-links a:hover,
+.aef-links button:hover { color: #E9AA20; }
+
+/* Col SIGAPEI */
+.aef-col--sigapei { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.aef-sigapei {
+  height: 42px;
+  width: 42px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+  padding: 3px;
+}
+.aef-propulse {
+  margin: 0;
+  font-size: 0.80rem;
+  color: rgba(255,246,221,0.55);
+}
+.aef-propulse a { color: #E9AA20; text-decoration: none; font-weight: 700; }
+.aef-ext {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: rgba(255,246,221,0.50);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.aef-ext:hover { color: #E9AA20; }
+
+/* Bas de page */
+.aef-bottom {
+  border-top: 1px solid rgba(255,246,221,0.08);
+  padding: 14px 24px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(255,246,221,0.35);
+}
+
+/* ── Dark mode ── */
+[data-theme='dark'] .aef-footer { background: #0d1a10; }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .aef-inner { grid-template-columns: 1fr 1fr; gap: 28px; }
+}
+@media (max-width: 640px) {
+  .aef-inner { grid-template-columns: 1fr; gap: 24px; padding: 32px 16px 24px; }
+  .aef-bottom { padding: 12px 16px; }
+}

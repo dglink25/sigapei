@@ -4,12 +4,20 @@ import { ENV } from './config/commun/env'
 import {
   FORBIDDEN_PATH, HOME_PATH, LOGIN_PATH, COMPTE_PATH,
   ADMIN_DASHBOARD_PATH, PORTAIL_PATH, DASHBOARD_TEMP_PATH,
+  SECURITY_PATH, PORTAIL_ROLES, NON_ADMIN_ROLES,
 } from './config/identite/routes'
 import { ADMIN_PATHS, PATHS } from './config/etablissements/config'
 import { SERVICE_PATHS } from './config/services/config'
-import { BASE_ROUTE_ETABLISSEMENT, MODE_SOUS_DOMAINE, detecterSlugEtablissement } from './lib/etablissements/subdomain'
+import { detecterSlugEtablissement, MODE_SOUS_DOMAINE } from './lib/etablissements/subdomain'
 import { PublicOnly, RequireAuth } from './components/identite'
 import RequireEtablissement from './components/identite/RequireEtablissement'
+import RateLimitModal from './components/securite/RateLimitModal'
+import TabConflictModal from './components/securite/TabConflictModal'
+import SecuritePage from './pages/identite/SecuritePage'
+import DashboardApprenantPage from './pages/apprenants/DashboardApprenantPage'
+import DashboardParentPage from './pages/parents/DashboardParentPage'
+import DashboardPrestatairePage from './pages/prestataires/DashboardPrestatairePage'
+import { VersConnexion } from './pages/commun/Redirections'
 
 /* Pages publiques */
 import AuthPage       from './pages/identite/AuthPage'
@@ -38,27 +46,20 @@ import PaiementsModesPage     from './pages/AdministrationPrincipale/paiements/P
 import PaiementsAccordsPage   from './pages/AdministrationPrincipale/paiements/PaiementsAccordsPage'
 import PaiementsAuditPage     from './pages/AdministrationPrincipale/paiements/PaiementsAuditPage'
 
-/* Vie scolaire */
-import VieScolaireLayout from './pages/vie-scolaire/VieScolaireLayout'
-import PresencesPage from './pages/vie-scolaire/PresencesPage'
-import PresenceSaisiePage from './pages/vie-scolaire/PresenceSaisiePage'
-import IncidentsPage from './pages/vie-scolaire/IncidentsPage'
-import IncidentNouveauPage from './pages/vie-scolaire/IncidentNouveauPage'
-import DossierPage from './pages/vie-scolaire/DossierPage'
-import AlertesPage from './pages/vie-scolaire/AlertesPage'
-import { PATHS as VS_PATHS } from './config/vie-scolaire/config'
+
 
 export default function App() {
   useEffect(() => { document.title = ENV.appName }, [])
 
+  const SLUG_HOTE = detecterSlugEtablissement()
+
   /* ── Sous-domaine d'un établissement ── */
-  if (SLUG_HOTE) {
+  if (SLUG_HOTE && MODE_SOUS_DOMAINE) {
     return (
       <>
         <RateLimitModal />
         <TabConflictModal />
         <Routes>
-          {routesEtablissement('')}
           <Route path={LOGIN_PATH} element={<VersConnexion />} />
           <Route element={<RequireEtablissement />}>
             <Route path={DASHBOARD_TEMP_PATH} element={<DashboardTemp />} />
@@ -129,19 +130,6 @@ export default function App() {
           <Route path="/admin/paiements/modes-paiement"    element={<PaiementsModesPage />} />
           <Route path="/admin/paiements/accords"           element={<PaiementsAccordsPage />} />
           <Route path="/admin/paiements/audit"             element={<PaiementsAuditPage />} />
-        </Route>
-      </Route>
-
-      {/* ── Vie scolaire ── */}
-      <Route element={<RequireAuth />}>
-        <Route path={VS_PATHS.base} element={<VieScolaireLayout />}>
-          <Route index element={<Navigate to={VS_PATHS.presences} replace />} />
-          <Route path="presences" element={<PresencesPage />} />
-          <Route path="presences/nouvelle" element={<PresenceSaisiePage />} />
-          <Route path="incidents" element={<IncidentsPage />} />
-          <Route path="incidents/nouveau" element={<IncidentNouveauPage />} />
-          <Route path="alertes" element={<AlertesPage />} />
-          <Route path="apprenants/:uuid/dossier" element={<DossierPage />} />
         </Route>
       </Route>
 
