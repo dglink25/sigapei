@@ -85,12 +85,23 @@ class InterneController extends Controller
         ]);
     }
 
-    public function listerEtablissements(): JsonResponse
+    public function listerEtablissements(Request $request): JsonResponse
     {
-        $etablissements = \App\Domain\Etablissement\Etablissement::orderBy('nom')
-            ->with('cyclesAutorises')
-            ->get()
-            ->map(fn($e) => [
+        $query = \App\Domain\Etablissement\Etablissement::orderBy('nom')
+            ->with('cyclesAutorises');
+
+        // Filtre par uuid (utilisé par TenantResolver des microservices inscription/scolarite)
+        if ($request->has('uuid')) {
+            $query->where('uuid', $request->query('uuid'));
+        }
+
+        // Filtre par id (utilisé par TenantResolver en mode entier)
+        if ($request->has('id')) {
+            $query->where('id', (int) $request->query('id'));
+        }
+
+        $etablissements = $query->get()->map(fn($e) => [
+                'id'               => $e->id,   // ← entier interne requis par TenantResolver
                 'uuid'             => $e->uuid,
                 'nom'              => $e->nom,
                 'code'             => $e->code,
@@ -107,6 +118,15 @@ class InterneController extends Controller
                     ->pluck('cycle')
                     ->values(),
             ]);
+
+        // Si un filtre uuid/id est présent, TenantResolver attend { donnees: { id, uuid, … } }
+        if ($request->hasAny(['uuid', 'id'])) {
+            $premier = $etablissements->first();
+            return response()->json([
+                'success' => true,
+                'donnees' => $premier,  // null si introuvable
+            ]);
+        }
 
         return response()->json(['success' => true, 'etablissements' => $etablissements]);
     }

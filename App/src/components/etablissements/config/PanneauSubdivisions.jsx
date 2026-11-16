@@ -188,7 +188,7 @@ export default function PanneauSubdivisions({ anneeActive, onTerminee, cycleFilt
           </p>
         </div>
         <div className="ap-page-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={charger} disabled={charge}>
+          <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={chargerSubdivisions} disabled={charge}>
             <RefreshCw size={14} className={charge ? 'spin' : ''} /> Actualiser
           </button>
           {(!estMaternelleOuPrimaire || !cycleUnique) && cycleId && (

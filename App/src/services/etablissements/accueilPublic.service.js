@@ -22,27 +22,18 @@ function headersContexte() {
   return headers
 }
 
-/** Normalise la réponse de l'API pour s'assurer que logoUrl est présent */
+/** Normalise logoDocumentId → logoUrl et les images imbriquées */
 function normaliser(data) {
   if (!data) return data
   if (data.logoDocumentId && !data.logoUrl) {
     data.logoUrl = logoUrl(data.logoDocumentId)
   }
-  // Normaliser les images des slides hero
   if (Array.isArray(data.hero)) {
     data.hero = data.hero.map((s) => ({
       ...s,
       imageUrl: s.imageUrl ?? (s.imageDocumentId ? logoUrl(s.imageDocumentId) : null),
     }))
   }
-  // Normaliser les images des formations
-  if (Array.isArray(data.formations)) {
-    data.formations = data.formations.map((f) => ({
-      ...f,
-      imageUrl: f.imageUrl ?? (f.imageDocumentId ? logoUrl(f.imageDocumentId) : null),
-    }))
-  }
-  // Normaliser les images des actualités
   if (Array.isArray(data.actualites)) {
     data.actualites = data.actualites.map((a) => ({
       ...a,
@@ -52,7 +43,7 @@ function normaliser(data) {
   return data
 }
 
-/** Lecture publique de l'accueil d'un établissement */
+/* ── Lecture publique (visiteur) ───────────────────────────────────── */
 export const accueilPublicService = {
   lire: async (slug) => {
     const r = await api.get(`/etablissements/${slug}/accueil`, PUBLIC)
@@ -60,32 +51,42 @@ export const accueilPublicService = {
   },
 }
 
-/** Gestion de la page d'accueil par l'administrateur de l'établissement */
+/* ── Gestion admin (administrateur de l'établissement) ──────────────
+ *
+ * Routes backend :
+ *   GET  /interne/mon-etablissement/page-accueil
+ *   PUT  /interne/mon-etablissement/page-accueil/{section}
+ *
+ * Sections : hero | statistiques | apropos | galerie | actualites | reseaux-sociaux
+ * ─────────────────────────────────────────────────────────────────── */
 export const accueilAdminService = {
-  /** Lire la configuration complète de la page d'accueil */
+  /** Lire la configuration complète */
   lire: async () => {
-    const r = await adminApi.withHeaders(headersContexte()).get('/interne/mon-etablissement/accueil')
+    const r = await adminApi.withHeaders(headersContexte()).get('/interne/mon-etablissement/page-accueil')
     return normaliser(r?.accueil ?? r)
   },
 
-  /** Mettre à jour une section (hero, statistiques, formations, apropos, galerie, actualites) */
+  /**
+   * Mettre à jour une section.
+   * @param {'hero'|'statistiques'|'apropos'|'galerie'|'actualites'|'reseaux-sociaux'} section
+   * @param {object} data  corps correspondant à la section
+   */
   mettreAJour: async (section, data) => {
-    const r = await adminApi.withHeaders(headersContexte()).put(
-      `/interne/mon-etablissement/accueil/${section}`,
-      data,
-    )
+    const r = await adminApi
+      .withHeaders(headersContexte())
+      .put(`/interne/mon-etablissement/page-accueil/${section}`, data)
     return r
   },
 
-  /** Upload d'une image (slide hero, formation, actualité, galerie) */
+  /** Upload d'une image (slide hero, actualité, galerie) → retourne l'URL */
   uploadImage: async (file, onProgress) => {
     const formData = new FormData()
     formData.append('image', file)
-    const r = await adminApi.withHeaders(headersContexte()).post(
-      '/interne/mon-etablissement/accueil/images',
-      formData,
-      { onUploadProgress: (e) => onProgress?.(Math.round((e.loaded / e.total) * 100)) },
-    )
+    const r = await adminApi
+      .withHeaders(headersContexte())
+      .post('/interne/mon-etablissement/page-accueil/images', formData, {
+        onUploadProgress: (e) => onProgress?.(Math.round((e.loaded / e.total) * 100)),
+      })
     return r?.imageUrl ?? r?.url ?? null
   },
 }

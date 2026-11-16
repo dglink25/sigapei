@@ -168,15 +168,21 @@ export default function DemandesServicePage() {
       <div className="sv-stats">
         <div className={`ap-card sv-stat sv-rise ${compteurs.enAttente > 0 ? 'sv-stat--gold' : ''}`} style={{ '--i': 1 }}>
           <p className="sv-stat-lbl">À instruire</p>
-          <p className="sv-stat-val">{compteurs.enAttente}</p>
+          <p className="sv-stat-val">
+            {demandes === null ? <span className="ap-skel" style={{ display:'inline-block', width:32, height:22, borderRadius:4 }} /> : compteurs.enAttente}
+          </p>
         </div>
         <div className="ap-card sv-stat sv-rise" style={{ '--i': 2 }}>
           <p className="sv-stat-lbl">Acceptées</p>
-          <p className="sv-stat-val">{compteurs.acceptees}</p>
+          <p className="sv-stat-val">
+            {demandes === null ? <span className="ap-skel" style={{ display:'inline-block', width:32, height:22, borderRadius:4 }} /> : compteurs.acceptees}
+          </p>
         </div>
         <div className="ap-card sv-stat sv-rise" style={{ '--i': 3 }}>
           <p className="sv-stat-lbl">Refusées</p>
-          <p className="sv-stat-val">{compteurs.refusees}</p>
+          <p className="sv-stat-val">
+            {demandes === null ? <span className="ap-skel" style={{ display:'inline-block', width:32, height:22, borderRadius:4 }} /> : compteurs.refusees}
+          </p>
         </div>
       </div>
 

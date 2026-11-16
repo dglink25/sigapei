@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, User, Settings, LogOut, Menu, X, Bell,
-  GraduationCap, Plus, Users, Shield, Layers, Globe,
+  GraduationCap, Plus, Users, Shield, Layers, Globe, Building2,
 } from 'lucide-react'
 import { useAuth }            from '../../context/identite/AuthContext'
 import ThemeToggle            from './ThemeToggle'
@@ -131,6 +131,7 @@ export default function PortailLayout() {
                 <div className="pl-nav-submenu">
                   {[
                     { label: 'Page d\'accueil',       section: 'accueil-public',    Icon: Globe },
+                    { label: 'Infos établissement',   section: 'etablissement',     Icon: Building2 },
                     { label: 'Services assignés',     section: 'services',          Icon: Layers },
                     { label: 'Cycles autorisés',      section: 'demandes-cycle',    Icon: GraduationCap },
                     { label: 'Utilisateurs',          section: 'utilisateurs',      Icon: Users },

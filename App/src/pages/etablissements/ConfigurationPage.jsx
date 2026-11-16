@@ -46,7 +46,7 @@ const SECTION_LABELS = {
 // ── Espaces de paramètres groupés ────────────────────────────────────
 const GROUPES = [
   {
-    groupe: 'Accès & Sécurité',
+    groupe: 'Accès & Sécurité' ,
     items: [
       { label: 'Services assignés',    icon: Layers,      section: 'services',            desc: 'Services accordés et demandes d’accès' },
       { label: "Droits d'accès",       icon: ShieldCheck, section: 'droits',              desc: 'Gérer les accès aux services' },

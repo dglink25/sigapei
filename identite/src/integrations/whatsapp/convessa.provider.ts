@@ -99,7 +99,7 @@ export class ConvessaProvider implements OnModuleInit {
       `Valable ${dureeMinutes} minutes - usage unique.\n` +
       `Ne communiquez ce code à personne, y compris au personnel SIGAPEI.\n\n` +
       `Vous n'êtes pas à l'origine de cette demande ? Ignorez ce message.\n\n` +
-      `SIGAPEI - Plateforme E-Académique`
+      `SIGAPEI`
     );
   }
 

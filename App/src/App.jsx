@@ -31,6 +31,12 @@ import SecuritePage  from './pages/identite/SecuritePage'
 
 /* Espace établissement */
 import AccueilEtablissement     from './pages/etablissements/AccueilEtablissement'
+import AccueilLayout            from './pages/etablissements/accueil/AccueilLayout'
+import PagePresentation         from './pages/etablissements/accueil/PagePresentation'
+import PageFormations           from './pages/etablissements/accueil/PageFormations'
+import PageActualites           from './pages/etablissements/accueil/PageActualites'
+import PageGalerie              from './pages/etablissements/accueil/PageGalerie'
+import PageContact              from './pages/etablissements/accueil/PageContact'
 import ConfigurationPage        from './pages/etablissements/ConfigurationPage'
 import ServiceEtablissementPage from './pages/etablissements/ServiceEtablissementPage'
 import RedirectionPortail       from './pages/identite/RedirectionPortail'
@@ -102,8 +108,14 @@ function routesEtablissement(base) {
   const p = (sub) => (base ? `${base}${sub}` : sub || '/')
   return (
     <>
-      {/* ── Public : accueil de l'établissement ── */}
-      <Route path={p('')} element={<AccueilEtablissement />} />
+      {/* ── Public : accueil de l'établissement (multi-pages) ── */}
+      <Route element={<AccueilLayout />}>
+        <Route path={p('')}             element={<PagePresentation />} />
+        <Route path={p('/formations')}  element={<PageFormations />} />
+        <Route path={p('/actualites')}  element={<PageActualites />} />
+        <Route path={p('/galerie')}     element={<PageGalerie />} />
+        <Route path={p('/contact')}     element={<PageContact />} />
+      </Route>
       <Route path={p('/auth/callback')} element={<TransfertPage />} />
 
       {/* ── Portail : page autonome sans sidebar ── */}

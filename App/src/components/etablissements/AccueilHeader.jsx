@@ -1,26 +1,42 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Building2, LogIn, LayoutGrid, Menu, X, Mail } from 'lucide-react'
 import LienConnexion from './LienConnexion'
 import { ENV } from '../../config/commun/env'
 import './AccueilHeader.css'
 
-export default function AccueilHeader({ data, slug, connecte, lienEspace, navItems, onScrollTo }) {
+/**
+ * navItems peut contenir soit { id, label } (ancres) soit { id, label, href } (pages).
+ * onScrollTo reçoit l'item complet.
+ * currentPath optionnel pour marquer l'onglet actif en mode multi-pages.
+ */
+export default function AccueilHeader({ data, slug, connecte, lienEspace, navItems, onScrollTo, currentPath }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
+  const path = currentPath ?? location.pathname
 
-  function handleNav(id) {
-    onScrollTo(id)
+  function isActive(item) {
+    if (item.href) {
+      /* Page racine de l'établissement = "Présentation" */
+      if (item.id === 'presentation') {
+        return path === item.href || path === item.href + '/'
+      }
+      return path.startsWith(item.href)
+    }
+    return false
+  }
+
+  function handleNav(item) {
+    onScrollTo(item)
     setMenuOpen(false)
   }
 
   return (
     <header className="aeh">
 
-      {/* ══════════════════════════════════════════════════
-          BANDE 1  -  fond vert
-      ══════════════════════════════════════════════════ */}
+      {/* ══ BANDE 1 - fond vert ══ */}
       <div className="aeh-b1">
 
-        {/* Logo établissement */}
         <div className="aeh-logo-left">
           {data.logoUrl
             ? <img src={data.logoUrl} alt={data.nom} />
@@ -29,17 +45,12 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
         </div>
 
         <div className="aeh-b1-content">
-          {/* 1. Nom à gauche */}
           <div className="aeh-identity">
             <span className="aeh-nom-court">{data.nom}</span>
           </div>
-
-          {/* 2. Devise au centre */}
           <div className="aeh-devise-inline" title={data.devise}>
             {data.devise || ''}
           </div>
-
-          {/* 3. Bouton Nous écrire tout à droite */}
           <div className="aeh-b1-actions">
             {data.email && (
               <a href={`mailto:${data.email}`} className="aeh-action-btn">
@@ -49,12 +60,10 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
           </div>
         </div>
 
-        {/* Logo SIGAPEI */}
         <div className="aeh-logo-right">
           <img src="/sigapei.png" alt={ENV.appName} />
         </div>
 
-        {/* Burger mobile */}
         <button
           type="button"
           className="aeh-burger"
@@ -65,25 +74,22 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
         </button>
       </div>
 
-      {/* ══════════════════════════════════════════════════
-          BANDE 2  -  fond blanc : navigation + Se connecter
-      ══════════════════════════════════════════════════ */}
+      {/* ══ BANDE 2 - fond blanc ══ */}
       <div className="aeh-b2">
         <div className="aeh-b2-nav-wrap">
           <nav className="aeh-nav" aria-label="Navigation">
-            {navItems.map((n, i) => (
+            {navItems.map((n) => (
               <button
                 key={n.id}
                 type="button"
-                className={`aeh-nav-btn${i === 0 ? ' is-active' : ''}`}
-                onClick={() => handleNav(n.id)}
+                className={`aeh-nav-btn${isActive(n) ? ' is-active' : ''}`}
+                onClick={() => handleNav(n)}
               >
                 {n.label}
               </button>
             ))}
           </nav>
 
-          {/* Se connecter - avec la même structure que "Nous écrire" */}
           <div className="aeh-b2-actions">
             {connecte
               ? <a href={lienEspace} className="aeh-auth-green">
@@ -101,7 +107,7 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
       {menuOpen && (
         <div className="aeh-mobile-menu">
           {navItems.map(n => (
-            <button key={n.id} type="button" className="aeh-mobile-item" onClick={() => handleNav(n.id)}>
+            <button key={n.id} type="button" className="aeh-mobile-item" onClick={() => handleNav(n)}>
               {n.label}
             </button>
           ))}

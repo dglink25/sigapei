@@ -3,15 +3,16 @@ import { Link } from 'react-router-dom'
 import { GraduationCap, ArrowLeft, RefreshCw, Users, BookOpen, ArrowRightLeft } from 'lucide-react'
 import { scolariteService } from '../../services/scolarite/scolarite.service'
 import usePageTitle from '../../hooks/commun/usePageTitle'
+import { useNotify } from '../../context/commun/NotifyContext'
 import './scolarite.css'
 
 export default function ScolaritePage() {
   usePageTitle('Gestion de la Scolarité')
+  const notify = useNotify()
   const [classes, setClasses] = useState([])
   const [apprenants, setApprenants] = useState([])
   const [activeTab, setActiveTab] = useState('classes')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [selectedApprenant, setSelectedApprenant] = useState(null)
   const [nouvelleClasseUuid, setNouvelleClasseUuid] = useState('')
   const [motifTransfert, setMotifTransfert] = useState('')
@@ -19,7 +20,6 @@ export default function ScolaritePage() {
 
   const chargerDonnees = async () => {
     setLoading(true)
-    setError('')
     try {
       const [cls, apps] = await Promise.all([
         scolariteService.listerClasses(),
@@ -28,7 +28,7 @@ export default function ScolaritePage() {
       setClasses(Array.isArray(cls) ? cls : [])
       setApprenants(Array.isArray(apps) ? apps : [])
     } catch (err) {
-      setError(err?.message || 'Erreur lors du chargement des données.')
+      notify.fromError(err)
     } finally {
       setLoading(false)
     }
@@ -45,13 +45,13 @@ export default function ScolaritePage() {
     setTransfertLoading(true)
     try {
       await scolariteService.transfererApprenant(selectedApprenant.uuid, nouvelleClasseUuid, motifTransfert)
-      alert('Mutation enregistrée avec succès sans doublon !')
+      notify.success('Mutation enregistrée', 'La mutation a été enregistrée avec succès.')
       setSelectedApprenant(null)
       setNouvelleClasseUuid('')
       setMotifTransfert('')
       await chargerDonnees()
     } catch (err) {
-      alert(err?.message || 'Erreur lors du transfert.')
+      notify.fromError(err)
     } finally {
       setTransfertLoading(false)
     }
@@ -74,20 +74,20 @@ export default function ScolaritePage() {
         </button>
       </div>
 
-      {error && <div className="module-alert module-alert--error">{error}</div>}
+      {/* bandeau d'erreur supprimé → erreurs via notify.fromError */}
 
       <div className="module-nav-tabs">
         <button
           className={`tab-btn ${activeTab === 'classes' ? 'active' : ''}`}
           onClick={() => setActiveTab('classes')}
         >
-          <BookOpen size={18} /> Classes ({classes.length})
+          <BookOpen size={18} /> Classes {loading ? '…' : `(${classes.length})`}
         </button>
         <button
           className={`tab-btn ${activeTab === 'apprenants' ? 'active' : ''}`}
           onClick={() => setActiveTab('apprenants')}
         >
-          <Users size={18} /> Apprenants ({apprenants.length})
+          <Users size={18} /> Apprenants {loading ? '…' : `(${apprenants.length})`}
         </button>
       </div>
 

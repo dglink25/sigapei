@@ -44,7 +44,10 @@ export default function AccueilFooter({ data, navItems, onScrollTo }) {
           <ul className="aef-links">
             {navItems.map((n) => (
               <li key={n.id}>
-                <button type="button" onClick={() => onScrollTo(n.id)}>{n.label}</button>
+                {n.href
+                  ? <button type="button" onClick={() => onScrollTo(n)}>{n.label}</button>
+                  : <button type="button" onClick={() => onScrollTo(n)}>{n.label}</button>
+                }
               </li>
             ))}
           </ul>

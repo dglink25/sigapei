@@ -82,6 +82,24 @@
   min-height: 80vh;
   background: linear-gradient(135deg, #006B3C 0%, #004d2b 100%);
 }
+
+/* Hero compact pour les pages secondaires (Formations, Galerie, etc.) */
+.ae2-hero--compact {
+  min-height: 34vh !important;
+  background-color: #004d2b;
+  background-size: cover;
+  background-position: center;
+}
+.ae2-hero--compact .ae2-hero-overlay {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.72) 100%);
+}
+.ae2-hero--compact .ae2-hero-titre {
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+}
+.ae2-hero--compact .ae2-hero-sous {
+  font-size: 0.92rem;
+  opacity: 0.78;
+}
 .ae2-hero-overlay {
   position: absolute;
   inset: 0;
@@ -120,7 +138,7 @@
   font-weight: 400;
 }
 
-/* Flèches — rondes, sur les bords */
+/* Flèches - rondes, sur les bords */
 .ae2-hero-arr {
   position: absolute;
   top: 50%;

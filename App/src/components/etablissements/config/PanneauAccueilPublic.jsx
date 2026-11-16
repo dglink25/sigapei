@@ -1,82 +1,64 @@
 /**
- * PanneauAccueilPublic - Configuration de la page d'accueil publique
- * de l'établissement (hero slides, statistiques, formations, à propos,
- * galerie, actualités, réseaux sociaux).
+ * PanneauAccueilPublic - Configuration de la page d'accueil publique.
+ * Sections : hero, statistiques, à propos (+ devise), galerie, actualités, réseaux sociaux.
+ * Note : les formations = classes de Scolarité, gérées dans Configuration académique.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  RefreshCw, Plus, Trash2, Save, X, ChevronUp, ChevronDown,
-  Image as ImageIcon, Upload, Eye,
-} from 'lucide-react'
+import { RefreshCw, Plus, Trash2, Save, X, ChevronUp, ChevronDown, Image as ImageIcon, Upload, Eye } from 'lucide-react'
 import { useNotify } from '../../../context/commun/NotifyContext'
 import { accueilAdminService } from '../../../services/etablissements/accueilPublic.service'
-import { detecterSlugEtablissement, lienEtablissement } from '../../../lib/etablissements/subdomain'
+import { lienEtablissement } from '../../../lib/etablissements/subdomain'
 import useSlugEtablissement from '../../../hooks/etablissements/useSlugEtablissement'
 import Loader from '../../commun/Loader'
 
-/* ── Icônes de stats disponibles ── */
-const STAT_ICONS_OPTIONS = [
-  { id: 'users',      label: 'Personnes'     },
-  { id: 'book',       label: 'Livre'         },
-  { id: 'calendar',   label: 'Calendrier'    },
-  { id: 'graduation', label: 'Diplomation'   },
-  { id: 'microscope', label: 'Microscope'    },
-  { id: 'award',      label: 'Prix'          },
-  { id: 'building',   label: 'Bâtiment'      },
-  { id: 'clock',      label: 'Horloge'       },
+const STAT_ICONS = [
+  { id: 'users', label: 'Personnes' }, { id: 'book', label: 'Livre' },
+  { id: 'calendar', label: 'Calendrier' }, { id: 'graduation', label: 'Diplomation' },
+  { id: 'microscope', label: 'Microscope' }, { id: 'award', label: 'Prix' },
+  { id: 'building', label: 'Bâtiment' }, { id: 'clock', label: 'Horloge' },
 ]
 
-const NIVEAUX = ['Licence', 'Master', 'Doctorat', 'BTS', 'DUT', 'CAP', 'BAC', 'BAC+2', 'BAC+3', 'BAC+4', 'BAC+5']
-
-/* ════════════════════════════════════════════════════════════
-   ONGLETS
-════════════════════════════════════════════════════════════ */
 const ONGLETS = [
-  { id: 'hero',        label: 'Hero / Slider'   },
-  { id: 'stats',       label: 'Statistiques'    },
-  { id: 'formations',  label: 'Formations'      },
-  { id: 'apropos',     label: 'À propos'        },
-  { id: 'galerie',     label: 'Galerie'         },
-  { id: 'actualites',  label: 'Actualités'      },
-  { id: 'reseaux',     label: 'Réseaux sociaux' },
+  { id: 'hero',       label: 'Hero / Slider'   },
+  { id: 'stats',      label: 'Statistiques'    },
+  { id: 'apropos',    label: 'À propos'        },
+  { id: 'galerie',    label: 'Galerie'         },
+  { id: 'actualites', label: 'Actualités'      },
+  { id: 'reseaux',    label: 'Réseaux sociaux' },
 ]
 
-/* ── Utilitaire UUID local ── */
 const uid = () => Math.random().toString(36).slice(2)
 
-/* ════════════════════════════════════════════════════════════
-   COMPOSANT PRINCIPAL
-════════════════════════════════════════════════════════════ */
+const VIDE = {
+  hero: [], statistiques: [],
+  apropos: { texte: '', mission: '', vision: '', devise: '' },
+  galerie: [], actualites: [],
+  reseauxSociaux: { facebook: '', twitter: '', linkedin: '', instagram: '' },
+}
+
 export default function PanneauAccueilPublic() {
   const notify = useNotify()
   const slug   = useSlugEtablissement()
-
-  const [onglet,   setOnglet]   = useState('hero')
-  const [data,     setData]     = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [saving,   setSaving]   = useState(false)
+  const [onglet,  setOnglet]  = useState('hero')
+  const [data,    setData]    = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving,  setSaving]  = useState(false)
 
   const charger = useCallback(async () => {
     setLoading(true)
     try {
       const r = await accueilAdminService.lire()
       setData({
-        hero:          Array.isArray(r?.hero)          ? r.hero          : [],
-        statistiques:  Array.isArray(r?.statistiques)  ? r.statistiques  : [],
-        formations:    Array.isArray(r?.formations)    ? r.formations    : [],
-        apropos:       r?.apropos  ?? { texte: '', mission: '', vision: '' },
-        galerie:       Array.isArray(r?.galerie)       ? r.galerie       : [],
-        actualites:    Array.isArray(r?.actualites)    ? r.actualites    : [],
-        reseauxSociaux: r?.reseauxSociaux ?? { facebook:'', twitter:'', linkedin:'', instagram:'' },
+        hero:          Array.isArray(r?.hero)         ? r.hero         : [],
+        statistiques:  Array.isArray(r?.statistiques) ? r.statistiques : [],
+        apropos:       r?.apropos  ?? { texte: '', mission: '', vision: '', devise: '' },
+        galerie:       Array.isArray(r?.galerie)      ? r.galerie      : [],
+        actualites:    Array.isArray(r?.actualites)   ? r.actualites   : [],
+        reseauxSociaux: r?.reseauxSociaux ?? { facebook: '', twitter: '', linkedin: '', instagram: '' },
       })
     } catch {
-      notify.warning('Chargement', 'La page d\'accueil publique n\'est pas encore configurée. Commencez par ajouter du contenu.')
-      setData({
-        hero: [], statistiques: [], formations: [],
-        apropos: { texte: '', mission: '', vision: '' },
-        galerie: [], actualites: [],
-        reseauxSociaux: { facebook: '', twitter: '', linkedin: '', instagram: '' },
-      })
+      notify.warning('Non configuré', 'La page d\'accueil n\'est pas encore configurée. Commencez par ajouter du contenu.')
+      setData({ ...VIDE })
     } finally {
       setLoading(false)
     }
@@ -88,7 +70,7 @@ export default function PanneauAccueilPublic() {
     setSaving(true)
     try {
       await accueilAdminService.mettreAJour(section, payload)
-      notify.success('Sauvegardé', 'La page d\'accueil publique a été mise à jour.')
+      notify.success('Sauvegardé', 'La page d\'accueil a été mise à jour.')
     } catch (err) {
       notify.fromError(err)
     } finally {
@@ -96,577 +78,341 @@ export default function PanneauAccueilPublic() {
     }
   }
 
-  if (loading) return <div style={{ padding: '3rem', display: 'flex', justifyContent: 'center' }}><Loader mode="inline" label="Chargement de la configuration…" /></div>
-  if (!data) return null
-
-  const lienPreview = lienEtablissement(slug, '')
+  if (loading) return <div style={{ padding: '3rem', display: 'flex', justifyContent: 'center' }}><Loader mode="inline" label="Chargement…" /></div>
+  if (!data)   return null
 
   return (
     <div className="cfg-tab">
-      {/* En-tête */}
       <div className="ap-page-head">
         <div>
           <h2 className="ap-page-title">Page d'accueil publique</h2>
-          <p className="ap-page-sub">
-            Configurez le contenu affiché aux visiteurs sur la page publique de votre établissement.
-          </p>
+          <p className="ap-page-sub">Contenu affiché aux visiteurs sur la page publique de l'établissement.</p>
         </div>
         <div className="ap-page-actions">
           <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={charger} disabled={loading}>
             <RefreshCw size={14} className={loading ? 'ap-spin' : ''} /> Actualiser
           </button>
-          <a href={lienPreview} target="_blank" rel="noreferrer" className="ap-btn ap-btn--sm ap-btn--ghost">
+          <a href={lienEtablissement(slug, '')} target="_blank" rel="noreferrer" className="ap-btn ap-btn--sm ap-btn--ghost">
             <Eye size={14} /> Voir la page
           </a>
         </div>
       </div>
 
-      {/* Onglets */}
       <div className="cfg-onglets" role="tablist">
         {ONGLETS.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            role="tab"
-            aria-selected={onglet === o.id}
-            className={`cfg-onglet ${onglet === o.id ? 'is-actif' : ''}`}
-            onClick={() => setOnglet(o.id)}
-          >
+          <button key={o.id} type="button" role="tab" aria-selected={onglet === o.id}
+            className={`cfg-onglet${onglet === o.id ? ' is-actif' : ''}`}
+            onClick={() => setOnglet(o.id)}>
             {o.label}
           </button>
         ))}
       </div>
 
-      {/* Contenu onglet */}
       <div className="cfg-onglet-corps">
         {onglet === 'hero'       && <OngletHero       data={data} setData={setData} saving={saving} onSave={sauvegarder} notify={notify} />}
         {onglet === 'stats'      && <OngletStats      data={data} setData={setData} saving={saving} onSave={sauvegarder} />}
-        {onglet === 'formations' && <OngletFormations  data={data} setData={setData} saving={saving} onSave={sauvegarder} notify={notify} />}
         {onglet === 'apropos'    && <OngletApropos    data={data} setData={setData} saving={saving} onSave={sauvegarder} />}
         {onglet === 'galerie'    && <OngletGalerie    data={data} setData={setData} saving={saving} onSave={sauvegarder} notify={notify} />}
-        {onglet === 'actualites' && <OngletActualites  data={data} setData={setData} saving={saving} onSave={sauvegarder} notify={notify} />}
+        {onglet === 'actualites' && <OngletActualites data={data} setData={setData} saving={saving} onSave={sauvegarder} notify={notify} />}
         {onglet === 'reseaux'    && <OngletReseaux    data={data} setData={setData} saving={saving} onSave={sauvegarder} />}
       </div>
     </div>
   )
 }
 
-/* ════════════════════════════════════════════════════════════
-   ONGLET HERO / SLIDER
-════════════════════════════════════════════════════════════ */
+/* ════ HERO ════════════════════════════════════════════════ */
 function OngletHero({ data, setData, saving, onSave, notify }) {
-  const slides = data.hero
+  const slides  = data.hero
   const fileRef = useRef(null)
-  const [uploadingIdx, setUploadingIdx] = useState(null)
+  const [uploadIdx, setUploadIdx] = useState(null)
 
-  const setSlides = (fn) => setData((d) => ({ ...d, hero: typeof fn === 'function' ? fn(d.hero) : fn }))
+  const set = (fn) => setData((d) => ({ ...d, hero: typeof fn === 'function' ? fn(d.hero) : fn }))
+  const maj = (i, p) => set((s) => s.map((x, j) => j === i ? { ...x, ...p } : x))
+  const del = (i)    => set((s) => s.filter((_, j) => j !== i))
+  const up  = (i)    => { if (i === 0) return; set((s) => { const a = [...s]; [a[i-1], a[i]] = [a[i], a[i-1]]; return a }) }
+  const dn  = (i)    => set((s) => { if (i === s.length - 1) return s; const a = [...s]; [a[i], a[i+1]] = [a[i+1], a[i]]; return a })
 
-  function ajouter() {
-    setSlides((s) => [...s, { _id: uid(), imageUrl: '', titre: '', sousTitre: '', ctaLibelle: '', ctaUrl: '' }])
-  }
-
-  function maj(idx, patch) {
-    setSlides((s) => s.map((item, i) => i === idx ? { ...item, ...patch } : item))
-  }
-
-  function supprimer(idx) {
-    setSlides((s) => s.filter((_, i) => i !== idx))
-  }
-
-  function monter(idx) {
-    if (idx === 0) return
-    setSlides((s) => { const a = [...s]; [a[idx - 1], a[idx]] = [a[idx], a[idx - 1]]; return a })
-  }
-
-  function descendre(idx) {
-    setSlides((s) => { if (idx === s.length - 1) return s; const a = [...s]; [a[idx], a[idx + 1]] = [a[idx + 1], a[idx]]; return a })
-  }
-
-  async function uploadImage(idx, file) {
+  async function upload(i, file) {
     if (!file) return
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      notify.warning('Format invalide', 'Utilisez JPG, PNG ou WebP.')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      notify.warning('Fichier trop lourd', 'L\'image ne doit pas dépasser 5 Mo.')
-      return
-    }
-    setUploadingIdx(idx)
-    try {
-      const url = await accueilAdminService.uploadImage(file)
-      if (url) maj(idx, { imageUrl: url })
-    } catch { notify.warning('Upload échoué', 'Impossible d\'envoyer l\'image.') }
-    finally { setUploadingIdx(null) }
+    if (file.size > 5e6) { notify.warning('Trop lourd', 'Max 5 Mo'); return }
+    setUploadIdx(i)
+    try { const url = await accueilAdminService.uploadImage(file); if (url) maj(i, { imageUrl: url }) }
+    catch { notify.warning('Upload échoué', '') }
+    finally { setUploadIdx(null) }
   }
 
   return (
     <div className="pac-section">
       <div className="pac-section-head">
-        <p className="ap-page-sub">Ajoutez des slides avec image, titre et bouton d'appel à l'action. Ils défileront en boucle sur la page d'accueil.</p>
-        <button type="button" className="ap-btn ap-btn--sm" onClick={ajouter}>
+        <p className="ap-page-sub">Slides du carousel plein écran. Chaque slide a une image, un titre et un bouton CTA.</p>
+        <button type="button" className="ap-btn ap-btn--sm" onClick={() => set((s) => [...s, { _id: uid(), imageUrl: '', titre: '', sousTitre: '', ctaLibelle: '', ctaUrl: '' }])}>
           <Plus size={14} /> Ajouter un slide
         </button>
       </div>
-
-      {slides.length === 0 && (
-        <div className="ap-empty" style={{ padding: '2.5rem', border: '1px dashed var(--sg-border)', borderRadius: 12 }}>
-          <ImageIcon size={32} />
-          <p>Aucun slide. Ajoutez-en un pour créer le carousel de la page d'accueil.</p>
-        </div>
-      )}
-
+      {slides.length === 0 && <EmptyMsg>Aucun slide. Ajoutez-en un pour créer le carousel.</EmptyMsg>}
       <div className="pac-liste">
-        {slides.map((s, idx) => (
-          <div key={s._id ?? idx} className="pac-item">
+        {slides.map((s, i) => (
+          <div key={s._id ?? i} className="pac-item">
             <div className="pac-item-ordre">
-              <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => monter(idx)} disabled={idx === 0} aria-label="Monter"><ChevronUp size={14} /></button>
-              <span className="pac-item-num">{idx + 1}</span>
-              <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => descendre(idx)} disabled={idx === slides.length - 1} aria-label="Descendre"><ChevronDown size={14} /></button>
+              <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => up(i)} disabled={i === 0}><ChevronUp size={14} /></button>
+              <span className="pac-item-num">{i + 1}</span>
+              <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => dn(i)} disabled={i === slides.length - 1}><ChevronDown size={14} /></button>
             </div>
-
             <div className="pac-item-body">
-              {/* Image */}
               <div className="pac-img-row">
                 <div className="pac-img-preview">
-                  {s.imageUrl
-                    ? <img src={s.imageUrl} alt="Aperçu slide" />
-                    : <div className="pac-img-ph"><ImageIcon size={24} /></div>
-                  }
+                  {s.imageUrl ? <img src={s.imageUrl} alt="" /> : <div className="pac-img-ph"><ImageIcon size={22} /></div>}
                 </div>
                 <div className="pac-img-actions">
-                  <input ref={fileRef} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(e) => { uploadImage(idx, e.target.files?.[0]); e.target.value = '' }} />
-                  <button
-                    type="button"
-                    className="ap-btn ap-btn--ghost ap-btn--sm"
-                    onClick={() => fileRef.current?.click()}
-                    disabled={uploadingIdx === idx}
-                  >
-                    {uploadingIdx === idx ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> {s.imageUrl ? 'Changer' : 'Choisir une image'}</>}
+                  <input ref={fileRef} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(e) => { upload(i, e.target.files?.[0]); e.target.value='' }} />
+                  <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => fileRef.current?.click()} disabled={uploadIdx === i}>
+                    {uploadIdx === i ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> Image</>}
                   </button>
-                  <p className="ap-hint">JPG, PNG ou WebP · 5 Mo max</p>
-                  <div className="ap-field">
-                    <label className="ap-label">Ou coller l'URL de l'image</label>
-                    <input className="ap-input" value={s.imageUrl} onChange={(e) => maj(idx, { imageUrl: e.target.value })} placeholder="https://…" />
+                  <div className="ap-field"><label className="ap-label">URL image</label>
+                    <input className="ap-input" value={s.imageUrl} onChange={(e) => maj(i, { imageUrl: e.target.value })} placeholder="https://…" />
                   </div>
                 </div>
               </div>
-
-              {/* Champs texte */}
               <div className="pac-fields">
-                <div className="ap-field pac-field-wide">
-                  <label className="ap-label">Titre <em>*</em></label>
-                  <input className="ap-input" value={s.titre} onChange={(e) => maj(idx, { titre: e.target.value })} placeholder="Ex. Des laboratoires à la pointe de la technologie" maxLength={120} />
-                </div>
-                <div className="ap-field pac-field-wide">
-                  <label className="ap-label">Sous-titre</label>
-                  <input className="ap-input" value={s.sousTitre} onChange={(e) => maj(idx, { sousTitre: e.target.value })} placeholder="Description courte visible sous le titre" maxLength={200} />
-                </div>
-                <div className="ap-field">
-                  <label className="ap-label">Libellé du bouton CTA</label>
-                  <input className="ap-input" value={s.ctaLibelle} onChange={(e) => maj(idx, { ctaLibelle: e.target.value })} placeholder="Ex. Découvrir" maxLength={40} />
-                </div>
-                <div className="ap-field">
-                  <label className="ap-label">URL du bouton CTA</label>
-                  <input className="ap-input" value={s.ctaUrl} onChange={(e) => maj(idx, { ctaUrl: e.target.value })} placeholder="https://… ou #section" maxLength={300} />
-                </div>
+                <Field wide label="Titre *"><input className="ap-input" value={s.titre} onChange={(e) => maj(i, { titre: e.target.value })} maxLength={120} placeholder="Titre du slide" /></Field>
+                <Field wide label="Sous-titre"><input className="ap-input" value={s.sousTitre} onChange={(e) => maj(i, { sousTitre: e.target.value })} maxLength={200} placeholder="Description courte" /></Field>
+                <Field label="Libellé CTA"><input className="ap-input" value={s.ctaLibelle} onChange={(e) => maj(i, { ctaLibelle: e.target.value })} maxLength={40} placeholder="Ex. Découvrir" /></Field>
+                <Field label="URL CTA"><input className="ap-input" value={s.ctaUrl} onChange={(e) => maj(i, { ctaUrl: e.target.value })} maxLength={300} placeholder="https://…" /></Field>
               </div>
             </div>
-
-            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm pac-suppr" onClick={() => supprimer(idx)} aria-label="Supprimer le slide">
-              <Trash2 size={14} />
-            </button>
+            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm pac-suppr" onClick={() => del(i)}><Trash2 size={14} /></button>
           </div>
         ))}
       </div>
-
-      <div className="pac-footer">
-        <button type="button" className="ap-btn" onClick={() => onSave('hero', { hero: slides })} disabled={saving}>
-          {saving ? <><Loader mode="button" /> Sauvegarde…</> : <><Save size={14} /> Enregistrer le slider</>}
-        </button>
-      </div>
+      <SaveBtn saving={saving} onClick={() => onSave('hero', { hero: slides })} />
     </div>
   )
 }
 
-/* ════════════════════════════════════════════════════════════
-   ONGLET STATISTIQUES
-════════════════════════════════════════════════════════════ */
+/* ════ STATISTIQUES ════════════════════════════════════════ */
 function OngletStats({ data, setData, saving, onSave }) {
   const stats = data.statistiques
-  const setStats = (fn) => setData((d) => ({ ...d, statistiques: typeof fn === 'function' ? fn(d.statistiques) : fn }))
-
-  function ajouter() {
-    setStats((s) => [...s, { _id: uid(), icone: 'users', valeur: 0, libelle: '' }])
-  }
-  function maj(idx, patch) { setStats((s) => s.map((item, i) => i === idx ? { ...item, ...patch } : item)) }
-  function supprimer(idx) { setStats((s) => s.filter((_, i) => i !== idx)) }
+  const set = (fn) => setData((d) => ({ ...d, statistiques: typeof fn === 'function' ? fn(d.statistiques) : fn }))
+  const maj = (i, p) => set((s) => s.map((x, j) => j === i ? { ...x, ...p } : x))
+  const del = (i)    => set((s) => s.filter((_, j) => j !== i))
 
   return (
     <div className="pac-section">
       <div className="pac-section-head">
-        <p className="ap-page-sub">Ces chiffres s'animent au défilement sur la page d'accueil (effet compte à rebours).</p>
-        <button type="button" className="ap-btn ap-btn--sm" onClick={ajouter}><Plus size={14} /> Ajouter une statistique</button>
+        <p className="ap-page-sub">Chiffres clés animés (count-up) déclenchés au défilement.</p>
+        <button type="button" className="ap-btn ap-btn--sm" onClick={() => set((s) => [...s, { _id: uid(), icone: 'users', valeur: 0, libelle: '' }])}>
+          <Plus size={14} /> Ajouter
+        </button>
       </div>
-
-      {stats.length === 0 && (
-        <div className="ap-empty" style={{ padding: '2rem', border: '1px dashed var(--sg-border)', borderRadius: 12 }}>
-          <p>Aucune statistique. Ajoutez des chiffres clés (étudiants, spécialités, année de création…).</p>
-        </div>
-      )}
-
+      {stats.length === 0 && <EmptyMsg>Aucune statistique. Ajoutez des chiffres clés (étudiants, spécialités, année de création…).</EmptyMsg>}
       <div className="pac-stats-liste">
-        {stats.map((s, idx) => (
-          <div key={s._id ?? idx} className="pac-stat-item">
+        {stats.map((s, i) => (
+          <div key={s._id ?? i} className="pac-stat-item">
             <div className="ap-field">
               <label className="ap-label">Icône</label>
-              <select className="ap-input" value={s.icone} onChange={(e) => maj(idx, { icone: e.target.value })}>
-                {STAT_ICONS_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+              <select className="ap-input" value={s.icone} onChange={(e) => maj(i, { icone: e.target.value })}>
+                {STAT_ICONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
               </select>
             </div>
             <div className="ap-field">
-              <label className="ap-label">Valeur <em>*</em></label>
-              <input className="ap-input" type="number" min="0" value={s.valeur} onChange={(e) => maj(idx, { valeur: parseInt(e.target.value, 10) || 0 })} placeholder="1950" />
+              <label className="ap-label">Valeur *</label>
+              <input className="ap-input" type="number" min="0" value={s.valeur} onChange={(e) => maj(i, { valeur: parseInt(e.target.value, 10) || 0 })} />
             </div>
             <div className="ap-field pac-stat-libelle">
-              <label className="ap-label">Libellé <em>*</em></label>
-              <input className="ap-input" value={s.libelle} onChange={(e) => maj(idx, { libelle: e.target.value })} placeholder="Étudiants en formation" maxLength={60} />
+              <label className="ap-label">Libellé *</label>
+              <input className="ap-input" value={s.libelle} onChange={(e) => maj(i, { libelle: e.target.value })} maxLength={60} placeholder="Étudiants en formation" />
             </div>
-            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm" onClick={() => supprimer(idx)} aria-label="Supprimer"><Trash2 size={14} /></button>
+            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm" onClick={() => del(i)}><Trash2 size={14} /></button>
           </div>
         ))}
       </div>
-
-      <div className="pac-footer">
-        <button type="button" className="ap-btn" onClick={() => onSave('statistiques', { statistiques: stats })} disabled={saving}>
-          {saving ? <><Loader mode="button" /> Sauvegarde…</> : <><Save size={14} /> Enregistrer</>}
-        </button>
-      </div>
+      <SaveBtn saving={saving} onClick={() => onSave('statistiques', { statistiques: stats })} />
     </div>
   )
 }
 
-/* ════════════════════════════════════════════════════════════
-   ONGLET FORMATIONS
-════════════════════════════════════════════════════════════ */
-function OngletFormations({ data, setData, saving, onSave, notify }) {
-  const formations = data.formations
-  const setFormations = (fn) => setData((d) => ({ ...d, formations: typeof fn === 'function' ? fn(d.formations) : fn }))
-  const fileRef = useRef(null)
-  const [uploadingIdx, setUploadingIdx] = useState(null)
-
-  function ajouter() {
-    setFormations((s) => [...s, { _id: uid(), imageUrl: '', niveau: 'Licence', duree: '', titre: '', description: '', lienUrl: '' }])
-  }
-  function maj(idx, patch) { setFormations((s) => s.map((item, i) => i === idx ? { ...item, ...patch } : item)) }
-  function supprimer(idx) { setFormations((s) => s.filter((_, i) => i !== idx)) }
-
-  async function uploadImage(idx, file) {
-    if (!file) return
-    if (file.size > 5 * 1024 * 1024) { notify.warning('Fichier trop lourd', 'Max 5 Mo.'); return }
-    setUploadingIdx(idx)
-    try {
-      const url = await accueilAdminService.uploadImage(file)
-      if (url) maj(idx, { imageUrl: url })
-    } catch { notify.warning('Upload échoué', 'Impossible d\'envoyer l\'image.') }
-    finally { setUploadingIdx(null) }
-  }
-
-  return (
-    <div className="pac-section">
-      <div className="pac-section-head">
-        <p className="ap-page-sub">Présentez vos programmes et filières aux visiteurs de votre page d'accueil.</p>
-        <button type="button" className="ap-btn ap-btn--sm" onClick={ajouter}><Plus size={14} /> Ajouter une formation</button>
-      </div>
-
-      {formations.length === 0 && (
-        <div className="ap-empty" style={{ padding: '2rem', border: '1px dashed var(--sg-border)', borderRadius: 12 }}>
-          <p>Aucune formation. Ajoutez vos programmes pour les présenter aux visiteurs.</p>
-        </div>
-      )}
-
-      <div className="pac-liste">
-        {formations.map((f, idx) => (
-          <div key={f._id ?? idx} className="pac-item">
-            <div className="pac-item-body">
-              <div className="pac-img-row">
-                <div className="pac-img-preview">
-                  {f.imageUrl
-                    ? <img src={f.imageUrl} alt="Aperçu formation" />
-                    : <div className="pac-img-ph"><ImageIcon size={22} /></div>
-                  }
-                </div>
-                <div className="pac-img-actions">
-                  <input ref={fileRef} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(e) => { uploadImage(idx, e.target.files?.[0]); e.target.value = '' }} />
-                  <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => fileRef.current?.click()} disabled={uploadingIdx === idx}>
-                    {uploadingIdx === idx ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> {f.imageUrl ? 'Changer' : 'Image'}</>}
-                  </button>
-                  <div className="ap-field">
-                    <label className="ap-label">URL image</label>
-                    <input className="ap-input" value={f.imageUrl} onChange={(e) => maj(idx, { imageUrl: e.target.value })} placeholder="https://…" />
-                  </div>
-                </div>
-              </div>
-              <div className="pac-fields">
-                <div className="ap-field">
-                  <label className="ap-label">Niveau</label>
-                  <select className="ap-input" value={f.niveau} onChange={(e) => maj(idx, { niveau: e.target.value })}>
-                    {NIVEAUX.map((n) => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-                <div className="ap-field">
-                  <label className="ap-label">Durée</label>
-                  <input className="ap-input" value={f.duree} onChange={(e) => maj(idx, { duree: e.target.value })} placeholder="Ex. 3 ans" maxLength={40} />
-                </div>
-                <div className="ap-field pac-field-wide">
-                  <label className="ap-label">Titre <em>*</em></label>
-                  <input className="ap-input" value={f.titre} onChange={(e) => maj(idx, { titre: e.target.value })} placeholder="Génie Civil" maxLength={120} />
-                </div>
-                <div className="ap-field pac-field-wide">
-                  <label className="ap-label">Description</label>
-                  <textarea className="ap-textarea" rows={2} value={f.description} onChange={(e) => maj(idx, { description: e.target.value })} placeholder="Courte description de la formation" maxLength={400} />
-                </div>
-                <div className="ap-field pac-field-wide">
-                  <label className="ap-label">Lien "Découvrir"</label>
-                  <input className="ap-input" value={f.lienUrl} onChange={(e) => maj(idx, { lienUrl: e.target.value })} placeholder="https://…" maxLength={300} />
-                </div>
-              </div>
-            </div>
-            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm pac-suppr" onClick={() => supprimer(idx)} aria-label="Supprimer"><Trash2 size={14} /></button>
-          </div>
-        ))}
-      </div>
-
-      <div className="pac-footer">
-        <button type="button" className="ap-btn" onClick={() => onSave('formations', { formations })} disabled={saving}>
-          {saving ? <><Loader mode="button" /> Sauvegarde…</> : <><Save size={14} /> Enregistrer</>}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-/* ════════════════════════════════════════════════════════════
-   ONGLET À PROPOS
-════════════════════════════════════════════════════════════ */
+/* ════ À PROPOS ════════════════════════════════════════════ */
 function OngletApropos({ data, setData, saving, onSave }) {
-  const apropos = data.apropos
-  const set = (patch) => setData((d) => ({ ...d, apropos: { ...d.apropos, ...patch } }))
+  const ap  = data.apropos
+  const set = (p) => setData((d) => ({ ...d, apropos: { ...d.apropos, ...p } }))
 
   return (
     <div className="pac-section">
-      <p className="ap-page-sub">Présentez votre établissement, sa mission et sa vision aux visiteurs.</p>
-      <div className="ap-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div className="ap-field">
-          <label className="ap-label">Présentation générale</label>
-          <textarea className="ap-textarea" rows={5} value={apropos.texte} onChange={(e) => set({ texte: e.target.value })} placeholder="Décrivez votre établissement, son histoire, ses valeurs…" maxLength={2000} />
-          <p className="ap-hint">{apropos.texte?.length ?? 0} / 2000 caractères</p>
-        </div>
-        <div className="ap-field">
-          <label className="ap-label">Notre Mission</label>
-          <textarea className="ap-textarea" rows={3} value={apropos.mission} onChange={(e) => set({ mission: e.target.value })} placeholder="La mission de notre établissement est…" maxLength={800} />
-        </div>
-        <div className="ap-field">
-          <label className="ap-label">Notre Vision</label>
-          <textarea className="ap-textarea" rows={3} value={apropos.vision} onChange={(e) => set({ vision: e.target.value })} placeholder="Notre vision pour les années à venir…" maxLength={800} />
-        </div>
+      <p className="ap-page-sub">Présentez votre établissement, sa devise, sa mission et sa vision.</p>
+      <div className="ap-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <Field label="Devise (affichée dans le header)">
+          <input className="ap-input" value={ap.devise ?? ''} onChange={(e) => set({ devise: e.target.value })} maxLength={200} placeholder="Excellence · Intégrité · Innovation" />
+        </Field>
+        <Field label="Présentation générale">
+          <textarea className="ap-textarea" rows={5} value={ap.texte ?? ''} onChange={(e) => set({ texte: e.target.value })} maxLength={2000} placeholder="Histoire, valeurs, description de l'établissement…" />
+          <p className="ap-hint">{(ap.texte ?? '').length} / 2000</p>
+        </Field>
+        <Field label="Notre Mission">
+          <textarea className="ap-textarea" rows={3} value={ap.mission ?? ''} onChange={(e) => set({ mission: e.target.value })} maxLength={800} placeholder="La mission de notre établissement…" />
+        </Field>
+        <Field label="Notre Vision">
+          <textarea className="ap-textarea" rows={3} value={ap.vision ?? ''} onChange={(e) => set({ vision: e.target.value })} maxLength={800} placeholder="Notre vision pour l'avenir…" />
+        </Field>
       </div>
-      <div className="pac-footer">
-        <button type="button" className="ap-btn" onClick={() => onSave('apropos', { apropos })} disabled={saving}>
-          {saving ? <><Loader mode="button" /> Sauvegarde…</> : <><Save size={14} /> Enregistrer</>}
-        </button>
-      </div>
+      <SaveBtn saving={saving} onClick={() => onSave('apropos', { apropos: ap })} />
     </div>
   )
 }
 
-/* ════════════════════════════════════════════════════════════
-   ONGLET GALERIE
-════════════════════════════════════════════════════════════ */
+/* ════ GALERIE ══════════════════════════════════════════════ */
 function OngletGalerie({ data, setData, saving, onSave, notify }) {
   const galerie = data.galerie
-  const setGalerie = (fn) => setData((d) => ({ ...d, galerie: typeof fn === 'function' ? fn(d.galerie) : fn }))
+  const setG = (fn) => setData((d) => ({ ...d, galerie: typeof fn === 'function' ? fn(d.galerie) : fn }))
   const fileRef = useRef(null)
   const [uploading, setUploading] = useState(false)
-  const [nouvelleUrl, setNouvelleUrl] = useState('')
-
-  function ajouterUrl() {
-    if (!nouvelleUrl.trim()) return
-    setGalerie((g) => [...g, nouvelleUrl.trim()])
-    setNouvelleUrl('')
-  }
+  const [url, setUrl] = useState('')
 
   async function uploadMultiple(files) {
     setUploading(true)
     try {
-      for (const file of Array.from(files)) {
-        if (file.size > 5 * 1024 * 1024) { notify.warning('Fichier trop lourd', `${file.name} dépasse 5 Mo.`); continue }
-        const url = await accueilAdminService.uploadImage(file)
-        if (url) setGalerie((g) => [...g, url])
+      for (const f of Array.from(files)) {
+        if (f.size > 5e6) { notify.warning('Trop lourd', f.name); continue }
+        const u = await accueilAdminService.uploadImage(f)
+        if (u) setG((g) => [...g, u])
       }
-    } catch { notify.warning('Upload', 'Certains fichiers n\'ont pas pu être envoyés.') }
+    } catch { notify.warning('Upload', 'Certains fichiers ont échoué.') }
     finally { setUploading(false) }
   }
 
   return (
     <div className="pac-section">
-      <p className="ap-page-sub">Ajoutez des photos de votre établissement. Les visiteurs pourront les voir en plein écran.</p>
-
-      {/* Upload multiple */}
-      <div className="ap-card" style={{ padding: '20px', marginBottom: 20 }}>
+      <p className="ap-page-sub">Photos de l'établissement. Les visiteurs peuvent les voir en plein écran.</p>
+      <div className="ap-card" style={{ padding: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input ref={fileRef} type="file" hidden multiple accept="image/jpeg,image/png,image/webp" onChange={(e) => { uploadMultiple(e.target.files); e.target.value = '' }} />
+          <input ref={fileRef} type="file" hidden multiple accept="image/jpeg,image/png,image/webp" onChange={(e) => { uploadMultiple(e.target.files); e.target.value='' }} />
           <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-            {uploading ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> Uploader des photos</>}
+            {uploading ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> Uploader</>}
           </button>
           <span className="ap-hint">ou</span>
-          <input className="ap-input" style={{ flex: 1, minWidth: 220 }} value={nouvelleUrl} onChange={(e) => setNouvelleUrl(e.target.value)} placeholder="Coller une URL d'image…" onKeyDown={(e) => e.key === 'Enter' && ajouterUrl()} />
-          <button type="button" className="ap-btn ap-btn--sm" onClick={ajouterUrl} disabled={!nouvelleUrl.trim()}><Plus size={14} /></button>
+          <input className="ap-input" style={{ flex: 1, minWidth: 220 }} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Coller une URL d'image…" onKeyDown={(e) => { if (e.key === 'Enter' && url.trim()) { setG((g) => [...g, url.trim()]); setUrl('') } }} />
+          <button type="button" className="ap-btn ap-btn--sm" onClick={() => { if (url.trim()) { setG((g) => [...g, url.trim()]); setUrl('') } }} disabled={!url.trim()}><Plus size={14} /></button>
         </div>
       </div>
-
-      {/* Grille galerie */}
-      {galerie.length === 0 ? (
-        <div className="ap-empty" style={{ padding: '2rem', border: '1px dashed var(--sg-border)', borderRadius: 12 }}>
-          <ImageIcon size={32} />
-          <p>Aucune photo. Ajoutez des images pour illustrer votre établissement.</p>
-        </div>
-      ) : (
-        <div className="pac-galerie-grid">
-          {galerie.map((url, idx) => (
-            <div key={idx} className="pac-galerie-item">
-              <img src={url} alt={`Photo ${idx + 1}`} loading="lazy" />
-              <button type="button" className="pac-galerie-suppr" onClick={() => setGalerie((g) => g.filter((_, i) => i !== idx))} aria-label="Supprimer">
-                <X size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="pac-footer">
-        <button type="button" className="ap-btn" onClick={() => onSave('galerie', { galerie })} disabled={saving}>
-          {saving ? <><Loader mode="button" /> Sauvegarde…</> : <><Save size={14} /> Enregistrer</>}
-        </button>
-      </div>
+      {galerie.length === 0
+        ? <EmptyMsg><ImageIcon size={28} /><span>Aucune photo.</span></EmptyMsg>
+        : <div className="pac-galerie-grid">
+            {galerie.map((u, i) => (
+              <div key={i} className="pac-galerie-item">
+                <img src={u} alt={`Photo ${i+1}`} loading="lazy" />
+                <button type="button" className="pac-galerie-suppr" onClick={() => setG((g) => g.filter((_, j) => j !== i))}><X size={14} /></button>
+              </div>
+            ))}
+          </div>
+      }
+      <SaveBtn saving={saving} onClick={() => onSave('galerie', { galerie })} />
     </div>
   )
 }
 
-/* ════════════════════════════════════════════════════════════
-   ONGLET ACTUALITÉS
-════════════════════════════════════════════════════════════ */
+/* ════ ACTUALITÉS ═══════════════════════════════════════════ */
 function OngletActualites({ data, setData, saving, onSave, notify }) {
-  const actualites = data.actualites
-  const setActualites = (fn) => setData((d) => ({ ...d, actualites: typeof fn === 'function' ? fn(d.actualites) : fn }))
+  const actu  = data.actualites
   const fileRef = useRef(null)
-  const [uploadingIdx, setUploadingIdx] = useState(null)
+  const [uploadIdx, setUploadIdx] = useState(null)
+  const set = (fn) => setData((d) => ({ ...d, actualites: typeof fn === 'function' ? fn(d.actualites) : fn }))
+  const maj = (i, p) => set((s) => s.map((x, j) => j === i ? { ...x, ...p } : x))
+  const del = (i)    => set((s) => s.filter((_, j) => j !== i))
 
-  function ajouter() {
-    setActualites((s) => [...s, { _id: uid(), imageUrl: '', titre: '', date: new Date().toISOString().slice(0, 10), extrait: '' }])
-  }
-  function maj(idx, patch) { setActualites((s) => s.map((item, i) => i === idx ? { ...item, ...patch } : item)) }
-  function supprimer(idx) { setActualites((s) => s.filter((_, i) => i !== idx)) }
-
-  async function uploadImage(idx, file) {
-    if (!file) return
-    if (file.size > 5 * 1024 * 1024) { notify.warning('Fichier trop lourd', 'Max 5 Mo.'); return }
-    setUploadingIdx(idx)
-    try {
-      const url = await accueilAdminService.uploadImage(file)
-      if (url) maj(idx, { imageUrl: url })
-    } catch { notify.warning('Upload échoué', '') }
-    finally { setUploadingIdx(null) }
+  async function upload(i, file) {
+    if (!file || file.size > 5e6) { notify.warning('Trop lourd', ''); return }
+    setUploadIdx(i)
+    try { const u = await accueilAdminService.uploadImage(file); if (u) maj(i, { imageUrl: u }) }
+    catch { notify.warning('Upload échoué', '') }
+    finally { setUploadIdx(null) }
   }
 
   return (
     <div className="pac-section">
       <div className="pac-section-head">
-        <p className="ap-page-sub">Publiez des annonces et actualités de votre établissement visibles par tous.</p>
-        <button type="button" className="ap-btn ap-btn--sm" onClick={ajouter}><Plus size={14} /> Ajouter une actualité</button>
+        <p className="ap-page-sub">Annonces et événements affichés sur la page d'accueil.</p>
+        <button type="button" className="ap-btn ap-btn--sm" onClick={() => set((s) => [...s, { _id: uid(), imageUrl: '', titre: '', date: new Date().toISOString().slice(0,10), extrait: '' }])}>
+          <Plus size={14} /> Ajouter
+        </button>
       </div>
-
-      {actualites.length === 0 && (
-        <div className="ap-empty" style={{ padding: '2rem', border: '1px dashed var(--sg-border)', borderRadius: 12 }}>
-          <p>Aucune actualité. Partagez des événements et annonces avec vos visiteurs.</p>
-        </div>
-      )}
-
+      {actu.length === 0 && <EmptyMsg>Aucune actualité.</EmptyMsg>}
       <div className="pac-liste">
-        {actualites.map((a, idx) => (
-          <div key={a._id ?? idx} className="pac-item">
+        {actu.map((a, i) => (
+          <div key={a._id ?? i} className="pac-item">
             <div className="pac-item-body">
               <div className="pac-img-row">
                 <div className="pac-img-preview">
-                  {a.imageUrl ? <img src={a.imageUrl} alt="Aperçu" /> : <div className="pac-img-ph"><ImageIcon size={20} /></div>}
+                  {a.imageUrl ? <img src={a.imageUrl} alt="" /> : <div className="pac-img-ph"><ImageIcon size={18} /></div>}
                 </div>
                 <div className="pac-img-actions">
-                  <input ref={fileRef} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(e) => { uploadImage(idx, e.target.files?.[0]); e.target.value = '' }} />
-                  <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => fileRef.current?.click()} disabled={uploadingIdx === idx}>
-                    {uploadingIdx === idx ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> Image</>}
+                  <input ref={fileRef} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(e) => { upload(i, e.target.files?.[0]); e.target.value='' }} />
+                  <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => fileRef.current?.click()} disabled={uploadIdx === i}>
+                    {uploadIdx === i ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> Image</>}
                   </button>
-                  <div className="ap-field">
-                    <input className="ap-input" value={a.imageUrl} onChange={(e) => maj(idx, { imageUrl: e.target.value })} placeholder="URL image" />
-                  </div>
+                  <div className="ap-field"><input className="ap-input" value={a.imageUrl} onChange={(e) => maj(i, { imageUrl: e.target.value })} placeholder="URL image" /></div>
                 </div>
               </div>
               <div className="pac-fields">
-                <div className="ap-field pac-field-wide">
-                  <label className="ap-label">Titre <em>*</em></label>
-                  <input className="ap-input" value={a.titre} onChange={(e) => maj(idx, { titre: e.target.value })} placeholder="Titre de l'actualité" maxLength={160} />
-                </div>
-                <div className="ap-field">
-                  <label className="ap-label">Date <em>*</em></label>
-                  <input className="ap-input" type="date" value={a.date} onChange={(e) => maj(idx, { date: e.target.value })} />
-                </div>
-                <div className="ap-field pac-field-wide">
-                  <label className="ap-label">Extrait</label>
-                  <textarea className="ap-textarea" rows={2} value={a.extrait} onChange={(e) => maj(idx, { extrait: e.target.value })} placeholder="Résumé court de l'actualité" maxLength={400} />
-                </div>
+                <Field wide label="Titre *"><input className="ap-input" value={a.titre} onChange={(e) => maj(i, { titre: e.target.value })} maxLength={160} /></Field>
+                <Field label="Date *"><input className="ap-input" type="date" value={a.date} onChange={(e) => maj(i, { date: e.target.value })} /></Field>
+                <Field wide label="Extrait"><textarea className="ap-textarea" rows={2} value={a.extrait} onChange={(e) => maj(i, { extrait: e.target.value })} maxLength={400} /></Field>
               </div>
             </div>
-            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm pac-suppr" onClick={() => supprimer(idx)} aria-label="Supprimer"><Trash2 size={14} /></button>
+            <button type="button" className="ap-btn ap-btn--danger ap-btn--sm pac-suppr" onClick={() => del(i)}><Trash2 size={14} /></button>
           </div>
         ))}
       </div>
-
-      <div className="pac-footer">
-        <button type="button" className="ap-btn" onClick={() => onSave('actualites', { actualites })} disabled={saving}>
-          {saving ? <><Loader mode="button" /> Sauvegarde…</> : <><Save size={14} /> Enregistrer</>}
-        </button>
-      </div>
+      <SaveBtn saving={saving} onClick={() => onSave('actualites', { actualites: actu })} />
     </div>
   )
 }
 
-/* ════════════════════════════════════════════════════════════
-   ONGLET RÉSEAUX SOCIAUX
-════════════════════════════════════════════════════════════ */
+/* ════ RÉSEAUX SOCIAUX ══════════════════════════════════════ */
 function OngletReseaux({ data, setData, saving, onSave }) {
-  const rs = data.reseauxSociaux
-  const set = (patch) => setData((d) => ({ ...d, reseauxSociaux: { ...d.reseauxSociaux, ...patch } }))
-
+  const rs  = data.reseauxSociaux
+  const set = (p) => setData((d) => ({ ...d, reseauxSociaux: { ...d.reseauxSociaux, ...p } }))
+  const cfg = [
+    { key: 'facebook',  label: 'Facebook',   ph: 'https://facebook.com/votre-page' },
+    { key: 'twitter',   label: 'Twitter / X', ph: 'https://twitter.com/votre-compte' },
+    { key: 'linkedin',  label: 'LinkedIn',   ph: 'https://linkedin.com/company/votre-page' },
+    { key: 'instagram', label: 'Instagram',  ph: 'https://instagram.com/votre-compte' },
+  ]
   return (
     <div className="pac-section">
-      <p className="ap-page-sub">Ces liens apparaissent dans le footer de votre page d'accueil.</p>
-      <div className="ap-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {[
-          { key: 'facebook',  label: 'Facebook',  ph: 'https://facebook.com/votre-page' },
-          { key: 'twitter',   label: 'Twitter / X', ph: 'https://twitter.com/votre-compte' },
-          { key: 'linkedin',  label: 'LinkedIn',  ph: 'https://linkedin.com/company/votre-page' },
-          { key: 'instagram', label: 'Instagram', ph: 'https://instagram.com/votre-compte' },
-        ].map(({ key, label, ph }) => (
-          <div key={key} className="ap-field">
-            <label className="ap-label">{label}</label>
-            <input className="ap-input" value={rs[key] ?? ''} onChange={(e) => set({ [key]: e.target.value })} placeholder={ph} type="url" maxLength={300} />
-          </div>
+      <p className="ap-page-sub">Liens affichés dans le footer de la page d'accueil.</p>
+      <div className="ap-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {cfg.map(({ key, label, ph }) => (
+          <Field key={key} label={label}>
+            <input className="ap-input" type="url" value={rs[key] ?? ''} onChange={(e) => set({ [key]: e.target.value })} placeholder={ph} maxLength={300} />
+          </Field>
         ))}
       </div>
-      <div className="pac-footer">
-        <button type="button" className="ap-btn" onClick={() => onSave('reseaux-sociaux', { reseauxSociaux: rs })} disabled={saving}>
-          {saving ? <><Loader mode="button" /> Sauvegarde…</> : <><Save size={14} /> Enregistrer</>}
-        </button>
-      </div>
+      <SaveBtn saving={saving} onClick={() => onSave('reseaux-sociaux', { reseauxSociaux: rs })} />
+    </div>
+  )
+}
+
+/* ════ HELPERS UI ═══════════════════════════════════════════ */
+function Field({ label, wide, children }) {
+  return (
+    <div className={`ap-field${wide ? ' pac-field-wide' : ''}`}>
+      {label && <label className="ap-label">{label}</label>}
+      {children}
+    </div>
+  )
+}
+function EmptyMsg({ children }) {
+  return (
+    <div className="ap-empty" style={{ padding: '2rem', border: '1px dashed var(--sg-border)', borderRadius: 12 }}>
+      {children}
+    </div>
+  )
+}
+function SaveBtn({ saving, onClick }) {
+  return (
+    <div className="pac-footer">
+      <button type="button" className="ap-btn" onClick={onClick} disabled={saving}>
+        {saving ? <><Loader mode="button" /> Sauvegarde…</> : <><Save size={14} /> Enregistrer</>}
+      </button>
     </div>
   )
 }
