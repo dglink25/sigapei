@@ -47,6 +47,7 @@ export default function ScolaritePage() {
   const [anneeActive,     setAnneeActive]     = useState(null)
   const [cyclesActifs,    setCyclesActifs]    = useState([])
   const [cyclesAutorises, setCyclesAutorises] = useState([])
+  const [initialLoading,  setInitialLoading]  = useState(true)
 
   // 1. Vérifier l'accès
   useEffect(() => {
@@ -93,8 +94,9 @@ export default function ScolaritePage() {
         setCyclesAutorises(
           (profil?.cyclesAutorises ?? []).filter((x) => x.statut === 'actif').map((x) => x.cycle),
         )
+        setInitialLoading(false)
       })
-      .catch(() => {})
+      .catch(() => { setInitialLoading(false) })
     return () => { c = true }
   }, [acces]) // eslint-disable-line
 
@@ -363,28 +365,36 @@ function VueEnsemble({
         <div className={`sc-stat ${anneeActive ? 'sc-stat--success' : 'sc-stat--warn'}`}>
           <div className="sc-stat-icon"><CalendarDays size={20} aria-hidden="true" /></div>
           <div>
-            <p className="sc-stat-val">{anneeActive ? '1' : '0'}</p>
+            <p className="sc-stat-val">
+              {initialLoading ? <span className="ap-skel" style={{ display:'inline-block', width:28, height:20, borderRadius:4 }} /> : (anneeActive ? '1' : '0')}
+            </p>
             <p className="sc-stat-lbl">Année active</p>
           </div>
         </div>
         <div className="sc-stat sc-stat--info">
           <div className="sc-stat-icon"><School size={20} aria-hidden="true" /></div>
           <div>
-            <p className="sc-stat-val">{totalCycles}</p>
+            <p className="sc-stat-val">
+              {initialLoading ? <span className="ap-skel" style={{ display:'inline-block', width:28, height:20, borderRadius:4 }} /> : totalCycles}
+            </p>
             <p className="sc-stat-lbl">Cycles autorisés</p>
           </div>
         </div>
         <div className="sc-stat sc-stat--success">
           <div className="sc-stat-icon"><CheckCircle2 size={20} aria-hidden="true" /></div>
           <div>
-            <p className="sc-stat-val">{actifs}</p>
+            <p className="sc-stat-val">
+              {initialLoading ? <span className="ap-skel" style={{ display:'inline-block', width:28, height:20, borderRadius:4 }} /> : actifs}
+            </p>
             <p className="sc-stat-lbl">Cycles actifs</p>
           </div>
         </div>
         <div className={`sc-stat ${inactifs.length > 0 ? 'sc-stat--warn' : 'sc-stat--info'}`}>
           <div className="sc-stat-icon"><AlertTriangle size={20} aria-hidden="true" /></div>
           <div>
-            <p className="sc-stat-val">{inactifs.length}</p>
+            <p className="sc-stat-val">
+              {initialLoading ? <span className="ap-skel" style={{ display:'inline-block', width:28, height:20, borderRadius:4 }} /> : inactifs.length}
+            </p>
             <p className="sc-stat-lbl">Cycles à activer</p>
           </div>
         </div>

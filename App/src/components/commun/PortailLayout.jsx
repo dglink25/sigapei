@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutGrid, User, Settings, LogOut, Menu, X, Bell,
-  GraduationCap, Plus, Users, Shield, Layers,
+  GraduationCap, Plus, Users, Shield, Layers, Globe, Building2,
 } from 'lucide-react'
 import { useAuth }            from '../../context/identite/AuthContext'
 import ThemeToggle            from './ThemeToggle'
@@ -61,6 +61,7 @@ export default function PortailLayout() {
   const titreTopbar = () => {
     if (estDansConfig) {
       const labels = {
+        'accueil-public':    'Page d\'accueil publique',
         services:            'Services assignés',
         droits:              "Droits d'accès",
         etablissement:       'Infos établissement',
@@ -129,11 +130,13 @@ export default function PortailLayout() {
               {estDansConfig && (
                 <div className="pl-nav-submenu">
                   {[
+                    { label: 'Page d\'accueil',       section: 'accueil-public',    Icon: Globe },
+                    { label: 'Infos établissement',   section: 'etablissement',     Icon: Building2 },
                     { label: 'Services assignés',     section: 'services',          Icon: Layers },
                     { label: 'Cycles autorisés',      section: 'demandes-cycle',    Icon: GraduationCap },
                     { label: 'Utilisateurs',          section: 'utilisateurs',      Icon: Users },
                     { label: 'Permissions des rôles', section: 'permissions-roles', Icon: Shield },
-                    { label: 'Demande de rôle',        section: 'demandes-role',     Icon: Plus },
+                    { label: 'Demande de rôle',       section: 'demandes-role',     Icon: Plus },
                   ]
                     // Dédupliquer par section
                     .filter((item, i, arr) => arr.findIndex((x) => x.section === item.section) === i)

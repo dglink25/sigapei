@@ -858,3 +858,212 @@
 .cf-welcome .ap-btn--gold {
   color: #000000 !important;
 }
+
+/* ============================================================
+   PANNEAU ACCUEIL PUBLIC (pac-*)
+   ============================================================ */
+
+.cfg-onglet-corps {
+  margin-top: 20px;
+}
+
+.pac-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pac-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pac-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--sg-border, #dde4df);
+}
+
+/* ── Liste items (slides, formations, actualités) ── */
+.pac-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pac-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--sg-surface, #fff);
+  border: 1px solid var(--sg-border, #dde4df);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.pac-item-ordre {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pac-item-num {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--sg-text-muted, #8a9e92);
+}
+
+.pac-item-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pac-suppr {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* ── Aperçu image ── */
+.pac-img-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.pac-img-preview {
+  width: 100px;
+  height: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--sg-border, #dde4df);
+  background: var(--sg-surface-2, #f7faf8);
+}
+
+.pac-img-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pac-img-ph {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--sg-text-muted, #8a9e92);
+}
+
+.pac-img-actions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Grille de champs ── */
+.pac-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pac-field-wide {
+  grid-column: 1 / -1;
+}
+
+/* ── Statistiques ── */
+.pac-stats-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pac-stat-item {
+  display: grid;
+  grid-template-columns: 160px 120px 1fr auto;
+  gap: 12px;
+  align-items: flex-end;
+  background: var(--sg-surface, #fff);
+  border: 1px solid var(--sg-border, #dde4df);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.pac-stat-libelle { grid-column: auto; }
+
+/* ── Galerie ── */
+.pac-galerie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.pac-galerie-item {
+  position: relative;
+  aspect-ratio: 4/3;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--sg-border, #dde4df);
+}
+
+.pac-galerie-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pac-galerie-suppr {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pac-galerie-suppr:hover { background: rgba(192, 57, 43, 0.85); }
+
+/* ── Dark mode panneau accueil public ── */
+[data-theme='dark'] .pac-item {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+[data-theme='dark'] .pac-img-preview {
+  border-color: var(--sg-border);
+  background: var(--sg-surface-2);
+}
+[data-theme='dark'] .pac-stat-item {
+  background: var(--sg-surface);
+  border-color: var(--sg-border);
+}
+[data-theme='dark'] .pac-galerie-item {
+  border-color: var(--sg-border);
+}
+[data-theme='dark'] .pac-footer {
+  border-top-color: var(--sg-border);
+}
+
+/* ── Responsive panneau ── */
+@media (max-width: 768px) {
+  .pac-fields { grid-template-columns: 1fr; }
+  .pac-stat-item { grid-template-columns: 1fr 1fr; }
+  .pac-stat-libelle { grid-column: 1 / -1; }
+  .pac-img-row { flex-direction: column; }
+  .pac-img-preview { width: 100%; height: 160px; }
+}

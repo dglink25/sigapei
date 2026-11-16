@@ -20,6 +20,7 @@ import PanneauUtilisateurs     from '../../components/etablissements/config/Pann
 import PanneauDemandesRole     from '../../components/etablissements/config/PanneauDemandesRole'
 import PanneauPermissionsRole  from '../../components/etablissements/config/PanneauPermissionsRole'
 import PanneauServicesEtablissement from '../../components/etablissements/config/PanneauServicesEtablissement'
+import PanneauAccueilPublic    from '../../components/etablissements/config/PanneauAccueilPublic'
 import { demandesServiceEtabService } from '../../services/identite/demandesService.service'
 import Loader                  from '../../components/commun/Loader'
 
@@ -39,12 +40,13 @@ const SECTION_LABELS = {
   'demandes-cycle':    'Cycles autorisés',
   'demandes-role':     'Demande de rôle',
   'permissions-roles': 'Permissions des rôles',
+  'accueil-public':    'Page d\'accueil publique',
 }
 
 // ── Espaces de paramètres groupés ────────────────────────────────────
 const GROUPES = [
   {
-    groupe: 'Accès & Sécurité',
+    groupe: 'Accès & Sécurité' ,
     items: [
       { label: 'Services assignés',    icon: Layers,      section: 'services',            desc: 'Services accordés et demandes d’accès' },
       { label: "Droits d'accès",       icon: ShieldCheck, section: 'droits',              desc: 'Gérer les accès aux services' },
@@ -55,6 +57,7 @@ const GROUPES = [
     groupe: 'Établissement',
     items: [
       { label: 'Infos établissement',  icon: Building2,   section: 'etablissement',       desc: 'Logo, types, adresse, localisation' },
+      { label: "Page d'accueil",      icon: Layers,      section: 'accueil-public',      desc: 'Hero, stats, formations, galerie…' },
       { label: 'Utilisateurs',         icon: Users,       section: 'utilisateurs',        desc: 'Comptes et rôles assignés' },
       { label: 'Demande de rôle',      icon: UserCog,     section: 'demandes-role',       desc: 'Rôle personnalisé au Super Admin' },
     ],
@@ -94,6 +97,7 @@ export default function ConfigurationPage() {
     if (section === 'utilisateurs')        return <PanneauUtilisateurs />
     if (section === 'demandes-role')       return <PanneauDemandesRole />
     if (section === 'permissions-roles')   return <PanneauPermissionsRole />
+    if (section === 'accueil-public')      return <PanneauAccueilPublic />
     return <VueEnsemble etab={etab} allerA={allerA} slug={slug} onRefresh={chargerPortail} />
   }
 

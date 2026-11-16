@@ -34,6 +34,7 @@ import { anneesService, cyclesService } from '../../services/etablissements/conf
 import { monEtablissementService } from '../../services/etablissements/monEtablissement.service'
 import useSlugEtablissement from '../../hooks/etablissements/useSlugEtablissement'
 import usePageTitle from '../../hooks/commun/usePageTitle'
+import { useNotify } from '../../context/commun/NotifyContext'
 
 import ModuleLayout from '../../components/commun/ModuleLayout'
 import Loader from '../../components/commun/Loader'
@@ -102,7 +103,8 @@ function buildNavInscription(base, section, cycleParam, cyclesActifsValides) {
 
 export default function InscriptionPage() {
   usePageTitle('Inscriptions')
-  const slug = useSlugEtablissement()
+  const slug   = useSlugEtablissement()
+  const notify = useNotify()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const section = searchParams.get('section') ?? ''
@@ -216,7 +218,6 @@ export default function InscriptionPage() {
   // --- Données Candidatures ---
   const [candidatures, setCandidatures] = useState([])
   const [chargementCandidatures, setChargementCandidatures] = useState(true)
-  const [erreurCandidatures, setErreurCandidatures] = useState('')
   const [filtreStatutCandidature, setFiltreStatutCandidature] = useState('tous')
   const [rechercheCandidature, setRechercheCandidature] = useState('')
   const [actionLoadingCandidature, setActionLoadingCandidature] = useState(null)
@@ -246,7 +247,7 @@ export default function InscriptionPage() {
       const data = await inscriptionService.listerCandidatures()
       setCandidatures(Array.isArray(data) ? data : data?.data ?? [])
     } catch (err) {
-      setErreurCandidatures(err?.message || 'Erreur lors du chargement des candidatures.')
+      notify.fromError(err)
     } finally {
       setChargementCandidatures(false)
     }
@@ -290,7 +291,7 @@ export default function InscriptionPage() {
       setModalAppelOuverte(false)
       await chargerAppels()
     } catch (err) {
-      alert(err?.message || "Erreur lors de l'enregistrement de l'appel.")
+      notify.fromError(err)
     } finally {
       setActionEnCoursAppel(false)
     }
@@ -302,7 +303,7 @@ export default function InscriptionPage() {
       await inscriptionService.terminerAppel(uuid)
       await chargerAppels()
     } catch (err) {
-      alert(err?.message || "Erreur lors de la clôture de l'appel.")
+      notify.fromError(err)
     }
   }
 
@@ -312,7 +313,7 @@ export default function InscriptionPage() {
       await inscriptionService.supprimerAppel(uuid)
       await chargerAppels()
     } catch (err) {
-      alert(err?.message || 'Erreur lors de la suppression.')
+      notify.fromError(err)
     }
   }
 
@@ -324,7 +325,7 @@ export default function InscriptionPage() {
       await inscriptionService.validerCandidature(uuid)
       await chargerCandidatures()
     } catch (err) {
-      alert(err?.message || 'Erreur lors de la validation.')
+      notify.fromError(err)
     } finally {
       setActionLoadingCandidature(null)
     }
@@ -338,7 +339,7 @@ export default function InscriptionPage() {
       await inscriptionService.rejeterCandidature(uuid, motif)
       await chargerCandidatures()
     } catch (err) {
-      alert(err?.message || 'Erreur lors du rejet.')
+      notify.fromError(err)
     } finally {
       setActionLoadingCandidature(null)
     }
@@ -692,12 +693,6 @@ export default function InscriptionPage() {
             </button>
           </div>
 
-          {erreurCandidatures && (
-            <div className="ap-alert ap-alert--danger" style={{ marginBottom: 16 }}>
-              {erreurCandidatures}
-            </div>
-          )}
-
           <div className="module-toolbar">
             <div className="module-search">
               <Search size={18} />
@@ -807,6 +802,8 @@ export default function InscriptionPage() {
         cyclesAutorises={cyclesAutorises}
         appels={appels}
         candidatures={candidatures}
+        chargementAppels={chargementAppels}
+        chargementCandidatures={chargementCandidatures}
         base={base}
         handleOuvrirCreationAppel={handleOuvrirCreationAppel}
       />
@@ -878,6 +875,8 @@ function VueEnsembleInscription({
   cyclesAutorises,
   appels,
   candidatures,
+  chargementAppels,
+  chargementCandidatures,
   base,
   handleOuvrirCreationAppel,
 }) {
@@ -922,28 +921,36 @@ function VueEnsembleInscription({
         <div className="sc-stat sc-stat--success">
           <div className="sc-stat-icon"><Megaphone size={20} aria-hidden="true" /></div>
           <div>
-            <p className="sc-stat-val">{appels.length}</p>
+            <p className="sc-stat-val">
+              {chargementAppels ? <span className="ap-skel" style={{ display: 'inline-block', width: 32, height: 22, borderRadius: 4 }} /> : appels.length}
+            </p>
             <p className="sc-stat-lbl">Campagnes au total</p>
           </div>
         </div>
         <div className="sc-stat sc-stat--info">
           <div className="sc-stat-icon"><CheckCircle2 size={20} aria-hidden="true" /></div>
           <div>
-            <p className="sc-stat-val">{appelsOuverts}</p>
+            <p className="sc-stat-val">
+              {chargementAppels ? <span className="ap-skel" style={{ display: 'inline-block', width: 32, height: 22, borderRadius: 4 }} /> : appelsOuverts}
+            </p>
             <p className="sc-stat-lbl">Campagnes ouvertes</p>
           </div>
         </div>
         <div className="sc-stat sc-stat--warn">
           <div className="sc-stat-icon"><Users size={20} aria-hidden="true" /></div>
           <div>
-            <p className="sc-stat-val">{candidatures.length}</p>
+            <p className="sc-stat-val">
+              {chargementCandidatures ? <span className="ap-skel" style={{ display: 'inline-block', width: 32, height: 22, borderRadius: 4 }} /> : candidatures.length}
+            </p>
             <p className="sc-stat-lbl">Candidatures reçues</p>
           </div>
         </div>
         <div className="sc-stat sc-stat--danger">
           <div className="sc-stat-icon"><Clock size={20} aria-hidden="true" /></div>
           <div>
-            <p className="sc-stat-val">{candidaturesAttente}</p>
+            <p className="sc-stat-val">
+              {chargementCandidatures ? <span className="ap-skel" style={{ display: 'inline-block', width: 32, height: 22, borderRadius: 4 }} /> : candidaturesAttente}
+            </p>
             <p className="sc-stat-lbl">En attente d'instruction</p>
           </div>
         </div>

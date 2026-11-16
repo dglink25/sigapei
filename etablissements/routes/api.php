@@ -10,6 +10,7 @@ use App\Http\Controllers\GeoController;
 use App\Http\Controllers\InterneController;
 use App\Http\Controllers\MonEtablissementController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\PageAccueilController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -31,6 +32,10 @@ Route::prefix('v1')->group(function () {
     // --- Page d'accueil publique (section 3) ---
     Route::get('/accueil', [AccueilController::class, 'plateforme']);
     Route::get('/etablissements/{slug}/accueil', [AccueilController::class, 'etablissement']);
+
+    // --- Images de la page d'accueil (accès public) ---
+    Route::get('/page-accueil/images/{chemin}', [PageAccueilController::class, 'servirImage'])
+        ->where('chemin', '.*');
 
     // --- Referentiel geographique panafricain (section 5) ---
     Route::get('/geo/pays', [GeoController::class, 'pays']);
@@ -131,6 +136,12 @@ Route::prefix('v1')->group(function () {
             Route::get('/demandes-cycle',                   [DemandeCycleController::class, 'listerMesDemandes']);
             Route::post('/demandes-cycle',                  [DemandeCycleController::class, 'soumettre']);
             Route::delete('/demandes-cycle/{uuid}',         [DemandeCycleController::class, 'annuler']);
+
+            // ── Page d'accueil publique configurable par l'administrateur ──
+            Route::get('/page-accueil',                     [PageAccueilController::class, 'lire']);
+            Route::post('/page-accueil/images',             [PageAccueilController::class, 'uploadImage']);
+            Route::put('/page-accueil/{section}',           [PageAccueilController::class, 'mettreAJourSection'])
+                ->where('section', 'hero|statistiques|apropos|galerie|actualites|reseaux-sociaux');
         });
     });
 });
