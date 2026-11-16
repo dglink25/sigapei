@@ -10,7 +10,7 @@ export default function PageContact() {
 
   return (
     <>
-      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Nous Contacter" />
+      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Nous Contacter" page="contact" />
       <section className="ae2-section ae2-section--contact" style={{ minHeight: '40vh' }}>
       <div className="ae2-container">
         <div className="ae2-section-head">

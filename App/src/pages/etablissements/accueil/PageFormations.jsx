@@ -14,7 +14,7 @@ export default function PageFormations() {
 
   return (
     <>
-      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Nos Formations" />
+      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Nos Formations" page="formations" />
       <section className="ae2-section ae2-section--alt" style={{ minHeight: '40vh' }}>
       <div className="ae2-container">
         <div className="ae2-section-head">

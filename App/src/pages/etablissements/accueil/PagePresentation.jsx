@@ -79,6 +79,7 @@ export default function PagePresentation() {
         connecte={connecte}
         lienEspace={lienEspace}
         mode="slider"
+        page="presentation"
       />
 
       {/* Statistiques */}

@@ -17,7 +17,7 @@ export default function PageActualites() {
 
   return (
     <>
-      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Actualités" />
+      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Actualités" page="actualites" />
       <section className="ae2-section" style={{ minHeight: '40vh' }}>
       <div className="ae2-container">
         <div className="ae2-section-head">

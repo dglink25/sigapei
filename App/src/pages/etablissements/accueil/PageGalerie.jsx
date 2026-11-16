@@ -19,7 +19,7 @@ export default function PageGalerie() {
 
   return (
     <>
-      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Galerie" />
+      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Galerie" page="galerie" />
       <section className="ae2-section ae2-section--alt" style={{ minHeight: '40vh' }}>
       <div className="ae2-container">
         <div className="ae2-section-head">

@@ -14,7 +14,7 @@
 .aeh {
   position: sticky;
   top: 0;
-  z-index: 1000; /* Augmenté pour passer au-dessus de tout le contenu du site */
+  z-index: 1000; /* Au-dessus du reste de la page */
   font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.20);
 }
@@ -123,7 +123,7 @@
 .aeh-burger:hover { background: rgba(255, 255, 255, 0.12); }
 
 /* ══════════════════════════
-   LOGOS absolus
+   LOGOS absolus (Corrigés)
 ══════════════════════════ */
 .aeh-logo-left,
 .aeh-logo-right {
@@ -134,7 +134,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 5;
+  /* ✅ Z-INDEX ÉLEVÉ : Les logos passent AU-DESSUS de la bande blanche et du menu */
+  z-index: 1001; 
 }
 .aeh-logo-left  { left: 0;  padding: 0 18px; }
 .aeh-logo-right { right: 0; padding: 0 18px; }
@@ -168,9 +169,9 @@
   background: #ffffff;
   height: var(--aeh-b2-h);
   border-top: 1px solid #ddd;
-  /* Important pour que le menu déroulant passe au dessus du reste */
   position: relative;
-  z-index: 10;
+  /* ✅ Z-INDEX BAS : La barre blanche est sous les logos (1001) */
+  z-index: 10; 
 }
 
 .aeh-b2-nav-wrap {
@@ -179,8 +180,7 @@
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  
-  /* ⚠️ CORRECTION MAJEURE ICI : on autorise le débordement */
+  /* ✅ IMPORTANT : Permet au sous-menu de sortir de la barre blanche */
   overflow: visible; 
 }
 
@@ -251,7 +251,8 @@
   border: 1px solid #e0e0e0;
   border-top: 3px solid #006B3C;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  z-index: 999;
+  /* ✅ Z-INDEX INTERMÉDIAIRE : Au-dessus du site (0), sous les logos (1001) */
+  z-index: 999; 
   display: flex;
   flex-direction: column;
   padding: 6px 0;
