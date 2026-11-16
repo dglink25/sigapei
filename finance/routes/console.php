@@ -2,7 +2,8 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-// Vérification quotidienne des échéances + déclenchement hibernation (CDC §4.3)
-Schedule::command('finances:verifier-echeances')->dailyAt('01:00');
-// Relances automatiques avant/après échéance (CDC §5)
-Schedule::command('finances:relancer-impayes')->dailyAt('09:00');
+// Filet de sécurité des paiements en ligne : relecture chez Paiement si une notification s'est perdue.
+Schedule::command('finances:synchroniser-paiements')->everyTenMinutes()->withoutOverlapping(30);
+
+// Relances d'échéances (CDC §5) : une fois par jour, en matinée (heure de l'établissement).
+Schedule::command('finances:relances')->dailyAt('08:00')->timezone('Africa/Porto-Novo')->withoutOverlapping(60);

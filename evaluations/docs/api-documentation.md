@@ -2,30 +2,41 @@
 
 Microservice de la plateforme **SIGAPEI** : notes, barèmes, coefficients, moyennes, classements, bulletins et contestations.
 
-- **Port interne** : `4006` (non publié ; accès via la Gateway sur le réseau `sigapei`)
+- **Port interne** : `4006` (réseau `sigapei` ; appelé par le front avec le jeton Identité, ou par la Gateway)
 - **Préfixe** : `/v1`
 - **Santé** : `GET /health` (et `GET /sante`)
-- **Contrat OpenAPI 3 (JSON)** : `GET /docs` - fichier source : [`docs/openapi.json`](openapi.json), importable dans Postman, Insomnia ou Swagger Editor
+- **Documentation interactive (Swagger UI)** : `GET /docs`
+- **Contrat OpenAPI 3 (JSON)** : `GET /docs-json` - fichier source : [`docs/openapi.json`](openapi.json), importable dans Postman, Insomnia ou Swagger Editor
 - **Base** : PostgreSQL (Neon), schéma `evaluations`
 
 ---
 
 ## 1. Principes communs
 
-### 1.1 En-têtes obligatoires
+### 1.1 Authentification : deux voies (règle n°5 du README plateforme)
 
-Toutes les routes `/v1/*` (sauf `/v1/interne/*`) exigent les 4 en-têtes posés par la **Gateway** après validation du JWT :
+**Voie 1 - le front appelle directement le service** (pas de Gateway) :
+
+```
+Authorization: Bearer <jeton d'accès émis par Identité>
+```
+
+Évaluations demande à Identité si le jeton est valide (`GET /v1/interne/introspection`, signature, expiration, révocation, session). L'établissement, l'utilisateur et le rôle viennent **uniquement** de la réponse d'Identité : des en-têtes `X-User-Role` ou `X-Tenant-Id` envoyés par le navigateur sont ignorés. Réponse positive mise en cache 60 s (clé = empreinte SHA-256 du jeton). L'uuid de l'établissement est converti en `tenant_id` par Établissements (cache 10 min).
+
+**Voie 2 - la Gateway** (ou un service de la plateforme) transmet le contexte :
 
 | En-tête | Contenu | Exemple |
 |---|---|---|
 | `X-Internal-Secret` | `INTERNAL_API_SECRET` de la plateforme | *(secret partagé)* |
-| `X-Tenant-Id` | id numérique de l'établissement (claim `tenantId`) | `12` |
+| `X-Tenant-Id` | identifiant numérique **ou** uuid de l'établissement | `12` |
 | `X-User-Id` | uuid de l'utilisateur (claim `sub`) | `d9aaa710-fe09-4c69-8e5b-ac4a3355c039` |
 | `X-User-Role` | `super_admin`, `administrateur`, `personnel`, `enseignant`, `apprenant`, `parent` | `enseignant` |
 
-Sans `X-Internal-Secret` valide, les autres en-têtes sont ignorés et la requête est refusée (**401**) : un client ne peut pas se déclarer administrateur en ajoutant lui-même `X-User-Role`.
+Sans `X-Internal-Secret` valide, ces en-têtes ne valent rien : un client ne peut pas se déclarer administrateur en ajoutant lui-même `X-User-Role`.
 
-Routes `/v1/interne/*` (appels entre microservices) : `X-Internal-Secret` + `X-Tenant-Id` uniquement.
+Dans les deux cas : seuls les 6 rôles système sont acceptés (**403** `ROLE_INVALIDE` sinon) ; Identité ou Établissements injoignable ⇒ **503**, jamais un accès accordé par défaut.
+
+Routes `/v1/interne/*` (appels entre microservices) : `X-Internal-Secret` + `X-Tenant-Id` (identifiant ou uuid) uniquement.
 
 ### 1.2 Format des réponses
 
@@ -54,10 +65,10 @@ Erreur :
 |---|---|---|
 | 200 / 201 | Succès / créé | |
 | 202 | Traitement lancé en tâche de fond | (clôture de période) |
-| 401 | Contexte Gateway absent ou invalide | `APPEL_NON_AUTORISE`, `TENANT_MANQUANT`, `NON_AUTHENTIFIE` |
+| 401 | Non authentifié (ni jeton valide ni contexte Gateway) | `APPEL_NON_AUTORISE`, `JETON_INVALIDE`, `TENANT_MANQUANT`, `NON_AUTHENTIFIE` |
 | 403 | Rôle ou relation refusés | `ACCES_REFUSE`, `ROLE_INVALIDE` |
 | 404 | Introuvable **dans cet établissement** | `RESSOURCE_INTROUVABLE` |
-| 409 | Conflit métier | `PERIODE_CLOTUREE`, `NOTE_MODIFIEE_ENTRE_TEMPS`, `SAISIE_VERROUILLEE`, `PARAMETRES_NON_CONFIGURES`, `PERIODE_NON_OUVERTE`, `CONTESTATION_EN_COURS`, `PDF_EN_ATTENTE` |
+| 409 | Conflit métier | `PERIODE_CLOTUREE`, `NOTE_MODIFIEE_ENTRE_TEMPS`, `SAISIE_VERROUILLEE`, `PARAMETRES_NON_CONFIGURES`, `PERIODE_NON_OUVERTE`, `CONTESTATION_EN_COURS`, `PERIODE_NON_CLOTUREE` |
 | 422 | Données invalides (`error.details` par champ) | `DONNEES_INVALIDES` |
 | 429 | Trop de requêtes (120/min/utilisateur ; 10/min pour clôture et contestation) | `TROP_DE_REQUETES` |
 | 503 | Service amont (Scolarité) muet ou contrat incomplet : **refus par défaut** | `SERVICE_DEPENDANT_INDISPONIBLE` |
@@ -284,12 +295,22 @@ Lecture de l'exemple : l'interro vaut 8/10, soit 16/20. La moyenne de maths est 
 - Période clôturée : `provisoire: false`, avec `version`, `bulletin_uuid`, `motif_version` et la liste `versions` :
   ```json
   "versions": [
-    { "bulletin_uuid": "…", "version": 2, "moyenne": "11.50", "rang": 2, "motif_version": "Erreur de report constatée sur la copie.", "pdf_disponible": false },
+    { "bulletin_uuid": "…", "version": 2, "moyenne": "11.50", "rang": 2, "motif_version": "Erreur de report constatée sur la copie.", "pdf_disponible": true },
     { "bulletin_uuid": "…", "version": 1, "moyenne": "11.50", "rang": 2, "motif_version": null, "pdf_disponible": false } ]
   ```
 
-#### `GET /v1/bulletins/apprenant/{apprenant_uuid}/pdf?periode_uuid=…`
-Renvoie `document_uuid` (service Documents). **Tant que le service Documents n'existe pas, la réponse est 409 `PDF_EN_ATTENTE`.**
+#### `GET /v1/bulletins/apprenant/{apprenant_uuid}/pdf?periode_uuid=…` - mêmes droits que le bulletin
+Après la clôture (avant : 409 `PERIODE_NON_CLOTUREE`), renvoie un **lien relatif signé, valable 5 minutes**, vers le PDF de la dernière version archivée :
+```json
+{ "data": { "bulletin_uuid": "…", "version": 1,
+  "url": "/v1/bulletins/telecharger/0b6f…?expires=1793050800&tenant=12&signature=…",
+  "expire_le": "2026-10-27T08:05:00+01:00" } }
+```
+Le front préfixe `url` par l'adresse du service et l'ouvre dans le navigateur.
+
+#### `GET /v1/bulletins/telecharger/{bulletin_uuid}?tenant=&expires=&signature=` - lien signé, sans en-tête
+Renvoie le PDF (`application/pdf`, téléchargement). La signature (HMAC avec la clé de l'application) couvre le bulletin, l'établissement et l'expiration : lien modifié ou expiré ⇒ **403**. 30 téléchargements/min/IP.
+Le PDF est produit depuis l'instantané figé à la clôture (toujours identique pour une même version), suit le **modèle de bulletin** du cycle (titre, colonnes, mentions de bas de page) et imprime l'empreinte SHA-256 de l'instantané en pied de page.
 
 #### `GET /v1/classements/classe/{classe_uuid}?periode_uuid=…` - administrateur, enseignant de la classe
 ```json
@@ -359,6 +380,16 @@ Réponse `201` (créée) ou `200` (déjà reportée) : `{"success": true, "data"
 | Contrôles | apprenant actif, matière d'Évaluations, enseignant affecté (403), valeur entre 0 et `note_sur` (422) |
 | Autres 409 | `PERIODE_INTROUVABLE`, `SAISIE_VERROUILLEE`, `ACTIVITE_INCOHERENTE` (activité déjà rattachée à une autre matière/classe), `BAREME_INCOMPATIBLE` (cycle noté par compétences) |
 
+### 3.9 Interface (contexte de l'utilisateur connecté)
+
+| Route | Rôles | Contenu |
+|---|---|---|
+| `GET /v1/mes-affectations` | enseignant | `[{classe_uuid, matiere: {uuid, code, nom}}]` - ses affectations actives (RH) |
+| `GET /v1/mes-apprenants` | apprenant, parent | `[{uuid, nom, prenom, matricule, classe: {uuid, nom, cycle}}]` - son dossier ou ses enfants (Scolarité, 503 tant que les filtres ne sont pas livrés) |
+| `GET /v1/modeles-bulletin/{cycle}` | administrateur | modèle de bulletin du cycle, `null` si mise en page par défaut |
+
+`GET /v1/notes/classe/{uuid}` renvoie aussi `apprenants` : la liste de la classe triée par nom (`uuid`, `nom`, `prenom`, `matricule`), pour construire la grille de saisie.
+
 ## 4. Événements RabbitMQ publiés
 
 Échange `sigapei.events` (type topic), format `{"pattern": "<clé>", "data": {…}}`. Les événements sont publiés **après validation** de la transaction et ne contiennent que des uuid.
@@ -378,6 +409,8 @@ Réponse `201` (créée) ou `200` (déjà reportée) : `{"success": true, "data"
 | Service | Endpoint appelé | Champs exigés |
 |---|---|---|
 | Scolarité | `GET /v1/interne/apprenants?uuid=` et `?classe_uuid=&statut=actif` | `uuid`, `statut`, `classe{uuid,cycle,niveau}`, **`utilisateur_uuid`**, **`parents[].parent_uuid`** |
-| Scolarité | `GET /v1/interne/emplois-du-temps?classe_uuid=&enseignant_uuid=` | **`enseignant_uuid`**, **`matiere_uuid`**, `classe_uuid`, `statut` |
+| Identité | `GET /v1/interne/introspection?token=` | `valide`, `sub`, `tenantId` (uuid), `roleCode` |
+| Établissements | `GET /v1/interne/etablissements?uuid=` | **`id`** et `uuid` de l'établissement (même contrat que le TenantResolver de Scolarité) |
+| RH | `GET /v1/interne/affectations/verifier?enseignant_uuid=&matiere_uuid=&classe_uuid=` et `GET /v1/interne/affectations?enseignant_uuid=&classe_uuid=` | `affecte` + écho des 3 uuids ; liste `enseignant_uuid`, `matiere_uuid`, `classe_uuid`, `statut` |
 
-Les champs en gras sont demandés à Scolarité. Tant qu'ils manquent, les actions qui en dépendent répondent **503** au lieu d'autoriser au hasard.
+Les champs en gras sont demandés à Scolarité et à Établissements. Tant qu'ils manquent, les actions qui en dépendent répondent **503** au lieu d'autoriser au hasard.

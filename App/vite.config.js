@@ -30,6 +30,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/vsc-interne/, ''),
           headers: env.VSC_INTERNAL_SECRET ? { 'X-Internal-Secret': env.VSC_INTERNAL_SECRET } : {},
+        // Module Paiements (super admin) : API du microservice paiements en développement.
+        '/paiement-api': {
+          target: env.PAIEMENT_PROXY_TARGET || 'http://localhost:4010',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/paiement-api/, ''),
         },
       },
     },

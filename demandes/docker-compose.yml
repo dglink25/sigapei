@@ -3,7 +3,7 @@
 # Demarrage : docker compose up -d --build
 # Port interne 4007 (non publie sur l'hote, acces via la Gateway)
 #
-# IMPORTANT : ce microservice REUTILISE le Redis et le RabbitMQ deja
+# IMPORTANT : ce microservice REUTILISE le RabbitMQ deja
 # demarres par la stack api-identite (meme reseau Docker partage "sigapei"),
 # et se connecte a la MEME base PostgreSQL unique (Neon), schema "demandes".
 #
@@ -23,7 +23,6 @@ services:
     env_file:
       - .env
     environment:
-      - REDIS_HOST=redis
       - RABBITMQ_URL=amqp://sigapei:${RABBITMQ_PASSWORD}@rabbitmq:5672/
     networks:
       - sigapei

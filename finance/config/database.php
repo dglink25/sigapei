@@ -13,6 +13,9 @@ return [
             'charset' => 'utf8',
             'search_path' => env('DB_SCHEMA', 'finances'),
             'sslmode' => env('DB_SSLMODE', 'require'),
+            // Colonnes timestamptz : la session parle le fuseau de l'application (lecture/écriture cohérentes,
+            // CURRENT_DATE = date locale des échéances).
+            'timezone' => env('APP_TIMEZONE', 'Africa/Porto-Novo'),
         ],
     ],
     'migrations' => ['table' => 'migrations', 'update_date_on_publish' => true],

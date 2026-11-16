@@ -3,27 +3,26 @@
 namespace App\Common\Middleware;
 
 use App\Common\Responses\ApiResponse;
+use App\Common\Tenant\ResolutionTenant;
+use App\Integrations\IdentiteClient;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Contexte utilisateur/tenant transmis par la Gateway (README plateforme, règles n°3 et n°5).
+ * Qui appelle ? Les deux voies autorisées par le README plateforme (règle n°5), jamais une troisième.
  *
- * La Gateway a déjà validé le JWT émis par `identite` et transmet le contexte dans des
- * en-têtes internes. Ce microservice ne vérifie jamais le JWT lui-même et ne connaît pas
- * JWT_ACCESS_SECRET.
+ * 1. Via la Gateway : elle a validé le JWT et transmet le contexte dans des en-têtes. De simples
+ *    en-têtes sont falsifiables par n'importe quel conteneur du réseau : ils ne sont acceptés
+ *    QU'AVEC le secret interne (X-Internal-Secret, comparaison en temps constant).
+ *      X-Internal-Secret, X-Tenant-Id (identifiant ou uuid de l'établissement), X-User-Id (uuid), X-User-Role
  *
- * Sécurité : de simples en-têtes sont falsifiables par n'importe quel conteneur du réseau.
- * Ils ne sont donc acceptés QUE s'ils sont accompagnés du secret interne partagé
- * (X-Internal-Secret), qui prouve que l'appel vient de la Gateway ou d'un service de
- * la plateforme. Toute anomalie => refus (fail closed).
+ * 2. Appel direct du front (aucune Gateway) : Authorization: Bearer <jeton d'accès Identité>.
+ *    Le jeton est vérifié PAR Identité (introspection : signature, expiration, révocation, session) ;
+ *    Évaluations ne connaît pas JWT_ACCESS_SECRET. Le contexte vient uniquement de la réponse
+ *    d'Identité, jamais d'en-têtes envoyés par le navigateur.
  *
- * En-têtes obligatoires :
- *  - X-Internal-Secret : INTERNAL_API_SECRET (comparaison en temps constant) ;
- *  - X-Tenant-Id       : identifiant numérique du tenant ;
- *  - X-User-Id         : uuid de l'utilisateur connecté (claim sub) ;
- *  - X-User-Role       : code du rôle (liste fermée).
+ * Toute anomalie => refus ; dépendance injoignable => 503 (fail closed).
  */
 class VerifyTenantAndJwt
 {
@@ -31,11 +30,14 @@ class VerifyTenantAndJwt
 
     private const UUID = '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
+    public function __construct(
+        private readonly ResolutionTenant $tenants,
+        private readonly IdentiteClient $identite,
+    ) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         $attendu = (string) config('services.interne.secret', '');
-        $header = (string) config('services.interne.header', 'X-Internal-Secret');
-
         if (strlen($attendu) < 32) {
             return ApiResponse::erreur(
                 'Service momentanément indisponible.',
@@ -45,43 +47,56 @@ class VerifyTenantAndJwt
             );
         }
 
-        $recu = (string) $request->header($header, '');
-        if ($recu === '' || ! hash_equals($attendu, $recu)) {
-            return ApiResponse::erreur(
-                'Accès refusé.',
-                'APPEL_NON_AUTORISE',
-                401,
-                'Appel direct sans secret interne valide (la Gateway est obligatoire)'
+        $secretRecu = (string) $request->header((string) config('services.interne.header', 'X-Internal-Secret'), '');
+
+        if ($secretRecu !== '') {
+            if (! hash_equals($attendu, $secretRecu)) {
+                return ApiResponse::erreur('Accès refusé.', 'APPEL_NON_AUTORISE', 401, 'Secret interne invalide');
+            }
+
+            return $this->poserContexte(
+                $request, $next,
+                (string) $request->header('X-Tenant-Id', ''),
+                strtolower((string) $request->header('X-User-Id', '')),
+                (string) $request->header('X-User-Role', ''),
             );
         }
 
-        $tenantId = (string) $request->header('X-Tenant-Id', '');
-        $userId = strtolower((string) $request->header('X-User-Id', ''));
-        $role = (string) $request->header('X-User-Role', '');
-
-        if ($tenantId === '' || ! ctype_digit($tenantId) || (int) $tenantId < 1 || strlen($tenantId) > 18) {
-            return ApiResponse::erreur('Contexte établissement manquant ou invalide.', 'TENANT_MANQUANT', 401);
+        $jeton = (string) $request->bearerToken();
+        if ($jeton === '') {
+            return ApiResponse::erreur('Vous devez être connecté pour accéder à cette ressource.', 'APPEL_NON_AUTORISE', 401, 'Ni secret interne (Gateway) ni jeton Bearer');
+        }
+        if (strlen($jeton) > 4096) {
+            return ApiResponse::erreur('Session invalide ou expirée.', 'JETON_INVALIDE', 401);
         }
 
+        $contexte = $this->identite->introspecter($jeton);
+        if ($contexte === null) {
+            return ApiResponse::erreur('Session invalide ou expirée. Reconnectez-vous.', 'JETON_INVALIDE', 401);
+        }
+
+        return $this->poserContexte($request, $next, (string) $contexte['tenantId'], strtolower($contexte['sub']), $contexte['roleCode']);
+    }
+
+    private function poserContexte(Request $request, Closure $next, string $tenantRef, string $userId, string $role): Response
+    {
         if (! preg_match(self::UUID, $userId)) {
             return ApiResponse::erreur('Vous devez être connecté pour accéder à cette ressource.', 'NON_AUTHENTIFIE', 401);
         }
-
         if (! in_array($role, self::ROLES, true)) {
-            return ApiResponse::erreur(
-                'Votre compte ne dispose pas d\'un rôle valide.',
-                'ROLE_INVALIDE',
-                403,
-                'X-User-Role absent ou hors liste'
-            );
+            return ApiResponse::erreur('Votre compte ne dispose pas d\'un rôle autorisé dans ce module.', 'ROLE_INVALIDE', 403, 'Rôle hors liste des rôles système');
         }
 
-        app()->instance('current_tenant_id', (int) $tenantId);
-        app()->instance('current_user', [
-            'uuid' => $userId,
-            'roleCode' => $role,
-            'tenantId' => (int) $tenantId,
-        ]);
+        $tenantId = $this->tenants->resoudre($tenantRef);
+        if ($tenantId === null) {
+            return ApiResponse::erreur('Contexte établissement manquant ou invalide.', 'TENANT_MANQUANT', 401);
+        }
+        if (! $this->identite->accesModule($userId)) {
+            return ApiResponse::erreur('Ce service n\'est pas ouvert à votre profil dans votre établissement.', 'MODULE_NON_AUTORISE', 403);
+        }
+
+        app()->instance('current_tenant_id', $tenantId);
+        app()->instance('current_user', ['uuid' => $userId, 'roleCode' => $role, 'tenantId' => $tenantId]);
 
         return $next($request);
     }

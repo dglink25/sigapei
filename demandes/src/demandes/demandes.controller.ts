@@ -1,62 +1,152 @@
-import { Controller, Get, Post, Put, Param, Body, HttpCode } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Header, HttpCode, Param, ParseUUIDPipe, Post, Put, Query, Res, StreamableFile } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import { Response } from 'express';
+import { Utilisateur, UtilisateurCourant } from '../common/contexte/utilisateur-courant';
+import { SansContexteUtilisateur } from '../common/decorators/public.decorator';
+import { ErreurMetier } from '../common/erreurs/erreurs';
+import { avecMessage } from '../common/filtres/reponse.interceptor';
+import { DocumentsService } from '../generation/documents.service';
+import { DemandesService } from './demandes.service';
+import { FiltresDemandesDto, MotifDto, PrioriteDto, SoumettreDemandeDto, TraiterDemandeDto } from './dto/demandes.dto';
 
-/**
- * Demandes de documents administratifs.
- * CDC section 17 : POST /demandes, GET /demandes/{uuid}, PUT /demandes/{uuid}/traiter,
- *                  PUT /demandes/{uuid}/rejeter
- *
- * Regles metier cles (CDC section 3.1) :
- * - La verification d'eligibilite s'execute cote serveur au moment du traitement.
- * - Tout rejet exige un motif obligatoire.
- * - Le dossier du demandeur n'est jamais recopie dans le schema demandes :
- *   verification via les API /interne de scolarite, finances, evaluations ou rh (Regle n°1).
- */
+const Uuid = new ParseUUIDPipe({
+  exceptionFactory: () => ErreurMetier.introuvable(),
+});
+
 @ApiTags('Demandes administratives')
+@ApiBearerAuth()
 @Controller('demandes')
 export class DemandesController {
-  /**
-   * POST /demandes
-   * Soumet une nouvelle demande de document (tout profil).
-   * Declenche la verification d'eligibilite adaptee au type de document.
-   */
+  constructor(private readonly demandes: DemandesService) {}
+
   @Post()
-  @HttpCode(201)
-  async soumettre(@Body() body: Record<string, unknown>) {
-    // TODO : valider DTO, verifier eligibilite via ServiceEligibilite,
-    // inserer dans demandes_administratives, statut = recue
-    return { message: 'Non implemente' };
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Soumet une demande de document (tout profil) : eligibilite verifiee immediatement.',
+  })
+  async soumettre(@Utilisateur() u: UtilisateurCourant, @Body() dto: SoumettreDemandeDto) {
+    const d = await this.demandes.soumettre(u, dto);
+    const message =
+      {
+        bloquee: `Demande enregistrée mais bloquée : ${d.motif_blocage}`,
+        prete: 'Votre document est prêt.',
+      }[d.statut as string] ?? 'Demande enregistrée.';
+    return avecMessage(message, d);
   }
 
-  /**
-   * GET /demandes/{uuid}
-   * Consulte le statut et l'historique d'une demande.
-   */
+  @Get('mes-demandes')
+  @ApiOperation({
+    summary: "Demandes de l'utilisateur connecte (suivi facon colis).",
+  })
+  mesDemandes(@Utilisateur() u: UtilisateurCourant, @Query() f: FiltresDemandesDto) {
+    return this.demandes.mesDemandes(u, f);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: "File des demandes de l'etablissement (permission consulter_demandes), prioritaires puis plus anciennes.",
+  })
+  file(@Utilisateur() u: UtilisateurCourant, @Query() f: FiltresDemandesDto) {
+    return this.demandes.file(u, f);
+  }
+
   @Get(':uuid')
-  async consulter(@Param('uuid') uuid: string) {
-    // TODO : retourner la demande avec son statut et les etapes franchies
-    return { message: 'Non implemente' };
+  @ApiOperation({
+    summary: "Detail et chronologie d'une demande (demandeur ou gestionnaire).",
+  })
+  consulter(@Utilisateur() u: UtilisateurCourant, @Param('uuid', Uuid) uuid: string) {
+    return this.demandes.consulter(u, uuid);
   }
 
-  /**
-   * PUT /demandes/{uuid}/traiter
-   * Passe une demande en traitement / genere le document.
-   * Necessite la permission "traiter une demande" (CDC section 5.3).
-   */
+  @Get(':uuid/document')
+  @ApiOperation({
+    summary: 'Lien de telechargement signe du document (valable 5 minutes).',
+  })
+  lien(@Utilisateur() u: UtilisateurCourant, @Param('uuid', Uuid) uuid: string) {
+    return this.demandes.lienDocument(u, uuid);
+  }
+
+  @Post(':uuid/resoumettre')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: "Relance la verification d'une demande bloquee (demandeur).",
+  })
+  async resoumettre(@Utilisateur() u: UtilisateurCourant, @Param('uuid', Uuid) uuid: string) {
+    return avecMessage('Vérification relancée.', await this.demandes.resoumettre(u, uuid));
+  }
+
+  @Post(':uuid/annuler')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Annule une demande non terminee (demandeur).' })
+  async annuler(@Utilisateur() u: UtilisateurCourant, @Param('uuid', Uuid) uuid: string) {
+    return avecMessage('Demande annulée.', await this.demandes.annuler(u, uuid));
+  }
+
   @Put(':uuid/traiter')
-  async traiter(@Param('uuid') uuid: string, @Body() body: Record<string, unknown>) {
-    // TODO : verifier permission via role_permissions (Identite),
-    // lancer ServiceGeneration en file asynchrone, passer statut en_traitement ou prete
-    return { message: 'Non implemente' };
+  @ApiOperation({
+    summary: 'Genere le document (permission traiter_demande) apres nouvelle verification.',
+  })
+  async traiter(@Utilisateur() u: UtilisateurCourant, @Param('uuid', Uuid) uuid: string, @Body() dto: TraiterDemandeDto) {
+    return avecMessage('Document généré : le demandeur est notifié.', await this.demandes.traiter(u, uuid, dto));
   }
 
-  /**
-   * PUT /demandes/{uuid}/rejeter
-   * Rejette une demande avec motif obligatoire (CDC section 3.1).
-   */
   @Put(':uuid/rejeter')
-  async rejeter(@Param('uuid') uuid: string, @Body() body: Record<string, unknown>) {
-    // TODO : valider motif obligatoire, passer statut rejetee, notifier via RabbitMQ
-    return { message: 'Non implemente' };
+  @ApiOperation({
+    summary: 'Rejette une demande, motif obligatoire (permission traiter_demande).',
+  })
+  async rejeter(@Utilisateur() u: UtilisateurCourant, @Param('uuid', Uuid) uuid: string, @Body() dto: MotifDto) {
+    return avecMessage('Demande rejetée.', await this.demandes.rejeter(u, uuid, dto.motif));
+  }
+
+  @Put(':uuid/derogation')
+  @ApiOperation({
+    summary: 'Accorde une derogation a une demande bloquee (permission accorder_derogation, journalisee).',
+  })
+  async deroger(@Utilisateur() u: UtilisateurCourant, @Param('uuid', Uuid) uuid: string, @Body() dto: MotifDto) {
+    return avecMessage('Dérogation accordée.', await this.demandes.deroger(u, uuid, dto.motif));
+  }
+
+  @Put(':uuid/priorite')
+  @ApiOperation({
+    summary: 'Marque ou retire la priorite (permission traiter_demande).',
+  })
+  prioriser(@Utilisateur() u: UtilisateurCourant, @Param('uuid', Uuid) uuid: string, @Body() dto: PrioriteDto) {
+    return this.demandes.prioriser(u, uuid, dto.priorite);
+  }
+}
+
+/** Telechargement par lien signe : aucun en-tete d'authentification, la signature est l'autorisation. */
+@ApiTags('Demandes administratives')
+@Controller('documents')
+export class DocumentsController {
+  constructor(
+    private readonly demandes: DemandesService,
+    private readonly documents: DocumentsService,
+  ) {}
+
+  @Get(':uuid')
+  @SansContexteUtilisateur()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Header('Cache-Control', 'private, no-store, max-age=0')
+  @ApiOperation({
+    summary: 'PDF du document (lien signe obtenu par GET /demandes/{uuid}/document). Lien modifie ou expire : 403.',
+  })
+  async telecharger(
+    @Param('uuid', Uuid) uuid: string,
+    @Query('t') t: string,
+    @Query('e') e: string,
+    @Query('s') s: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const tenant = this.documents.verifierLien(uuid, String(t ?? ''), String(e ?? ''), String(s ?? ''));
+    if (tenant === null) throw ErreurMetier.accesRefuse('Lien invalide ou expiré : redemandez le document.', 'LIEN_INVALIDE');
+    const { pdf, nom } = await this.demandes.document(uuid, tenant);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${nom}"`,
+      'X-Content-Type-Options': 'nosniff',
+    });
+    return new StreamableFile(pdf);
   }
 }

@@ -1,47 +1,44 @@
-import { MigrationInterface, QueryRunner, Table } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Table demandes.reclamations
- * CDC section 15.1 + section 10 : fil de reclamation ouvert par tout utilisateur
- * ou par l'etablissement (caractere bidirectionnel - CDC section 10.1).
- *
- * Categories (CDC section 10.1) : pedagogique | discipline | finances | ressources_humaines | autre
- * Statuts : ouverte | en_cours | resolue | cloturee
- * initiee_par : utilisateur | etablissement (bidirectionnel)
+ * Reclamations bidirectionnelles (CDC §10) : ouvertes par tout usager, ou par l'etablissement vers un usager.
+ *  - demandeur_uuid   : l'usager concerne (auteur si initiee_par = usager, destinataire sinon) ;
+ *  - lu_usager_le / lu_etablissement_le : accuses de lecture du fil.
  */
 export class CreeTableReclamations1000000000004 implements MigrationInterface {
-  public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.createTable(
-      new Table({
-        name: 'reclamations',
-        schema: 'demandes',
-        columns: [
-          { name: 'id', type: 'bigserial', isPrimary: true },
-          { name: 'uuid', type: 'uuid', isUnique: true, default: 'gen_random_uuid()' },
-          { name: 'tenant_id', type: 'varchar', isNullable: false },
-          // demandeur_uuid reference identite.utilisateurs (tout profil)
-          { name: 'demandeur_uuid', type: 'varchar', isNullable: false },
-          // nullable - concerne un apprenant seulement si pertinent (CDC section 4.1)
-          { name: 'beneficiaire_apprenant_uuid', type: 'varchar', isNullable: true },
-          { name: 'categorie', type: 'varchar', isNullable: false },
-          { name: 'statut', type: 'varchar', default: "'ouverte'" },
-          // utilisateur | etablissement
-          { name: 'initiee_par', type: 'varchar', isNullable: false },
-          { name: 'description', type: 'text', isNullable: false },
-          { name: 'created_at', type: 'timestamptz', default: 'now()' },
-          { name: 'updated_at', type: 'timestamptz', default: 'now()' },
-        ],
-        indices: [
-          { columnNames: ['tenant_id'] },
-          { columnNames: ['tenant_id', 'statut', 'categorie'] },
-          { columnNames: ['demandeur_uuid'] },
-        ],
-      }),
-      true,
+  public async up(q: QueryRunner): Promise<void> {
+    await q.query(`
+      CREATE TABLE demandes.reclamations (
+        id bigserial PRIMARY KEY,
+        uuid uuid NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+        tenant_id bigint NOT NULL,
+        reference varchar(30) NOT NULL,
+        demandeur_uuid uuid NOT NULL,
+        demandeur_role varchar(64),
+        beneficiaire_apprenant_uuid uuid,
+        categorie varchar(30) NOT NULL,
+        objet varchar(150) NOT NULL,
+        statut varchar(20) NOT NULL DEFAULT 'ouverte',
+        initiee_par varchar(20) NOT NULL,
+        ouverte_par_uuid uuid NOT NULL,
+        dernier_message_le timestamptz NOT NULL DEFAULT now(),
+        lu_usager_le timestamptz,
+        lu_etablissement_le timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT reclamations_reference_unique UNIQUE (tenant_id, reference),
+        CONSTRAINT reclamations_categorie_chk CHECK (categorie IN ('pedagogique','discipline','finances','ressources_humaines','autre')),
+        CONSTRAINT reclamations_statut_chk CHECK (statut IN ('ouverte','en_cours','resolue','cloturee')),
+        CONSTRAINT reclamations_initiee_chk CHECK (initiee_par IN ('usager','etablissement'))
+      )`);
+    await q.query(`CREATE INDEX reclamations_file_idx ON demandes.reclamations (tenant_id, statut, categorie, dernier_message_le DESC)`);
+    await q.query(`CREATE INDEX reclamations_usager_idx ON demandes.reclamations (tenant_id, demandeur_uuid, dernier_message_le DESC)`);
+    await q.query(
+      `CREATE TRIGGER reclamations_sans_suppression BEFORE DELETE ON demandes.reclamations FOR EACH ROW EXECUTE FUNCTION demandes.refuser_modification()`,
     );
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('demandes.reclamations', true);
+  public async down(q: QueryRunner): Promise<void> {
+    await q.query(`DROP TABLE IF EXISTS demandes.reclamations`);
   }
 }

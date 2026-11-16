@@ -10,19 +10,36 @@ return [
         'header' => 'X-Internal-Secret',
     ],
 
-    // Webhooks des agrégateurs : secret partagé configuré dans leur tableau de bord.
-    'fedapay' => [
-        'secret_key' => env('FEDAPAY_SECRET_KEY'),
-        'environment' => env('FEDAPAY_ENVIRONMENT', 'sandbox'),
-        'webhook_secret' => env('FEDAPAY_WEBHOOK_SECRET'),
-        // Fenêtre de validité de l'horodatage signé (anti-rejeu), en secondes.
-        'tolerance' => (int) env('FEDAPAY_WEBHOOK_TOLERANCE', 300),
+    // Identité : vérification du jeton du front et accès au module (code du service au catalogue).
+    'identite' => [
+        'url' => env('IDENTITE_URL', 'http://api-identite:4001'),
+        'timeout' => 5,
+        'code_service' => env('IDENTITE_CODE_SERVICE', 'finances'),
     ],
 
-    'kkiapay' => [
-        'public_key' => env('KKIAPAY_PUBLIC_KEY'),
-        'private_key' => env('KKIAPAY_PRIVATE_KEY'),
-        'secret' => env('KKIAPAY_SECRET'),
-        'sandbox' => (bool) env('KKIAPAY_SANDBOX', true),
+    // Scolarité : dossiers des apprenants (classe, parents rattachés).
+    'scolarite' => [
+        'url' => env('SCOLARITE_URL', 'http://api-scolarite:4004'),
+        'timeout' => 5,
+    ],
+
+    // Paiement : seul service qui manipule l'argent réel (agrégateurs, portefeuilles, grand livre).
+    'paiement' => [
+        'url' => env('PAIEMENT_URL', 'http://api-paiement:4010'),
+        'timeout' => 10,
+    ],
+
+    // Front de la plateforme : seules adresses de retour acceptées après un paiement en ligne (pas de redirection ouverte).
+    'front' => [
+        'origines' => array_values(array_filter(array_map('trim', explode(',', (string) env('CORS_ORIGINS', ''))))),
+    ],
+
+    // RabbitMQ : publication des événements (échange sigapei.events).
+    'rabbitmq' => [
+        'host' => env('RABBITMQ_HOST'),
+        'port' => (int) env('RABBITMQ_PORT', 5672),
+        'user' => env('RABBITMQ_USER'),
+        'password' => env('RABBITMQ_PASSWORD'),
+        'vhost' => env('RABBITMQ_VHOST', '/'),
     ],
 ];

@@ -36,6 +36,7 @@ export interface InitierEncaissementDto {
   libelle: string;
   objetType?: string;             // ex: 'inscription', 'scolarite'
   objetUuid?: string;
+  urlRetour?: string;             // page du front où revenir après paiement (origine autorisée uniquement)
   payeur?: {
     utilisateurUuid?: string;
     nom?: string;
@@ -69,6 +70,21 @@ export class EncaissementService {
     private readonly audit: AuditService,
     private readonly chiffrement: ChiffrementService,
   ) {}
+
+  /** Pas de redirection ouverte : l'adresse de retour doit appartenir à une origine déclarée (CORS_ORIGINS). */
+  private urlRetourAutorisee(url: string): string {
+    const origines = (process.env.CORS_ORIGINS ?? '').split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean);
+    let origine: string;
+    try {
+      origine = new URL(url).origin;
+    } catch {
+      throw new BadRequestException({ code: 'URL_RETOUR_INVALIDE', message: "L'adresse de retour est invalide." });
+    }
+    if (!origines.includes(origine)) {
+      throw new BadRequestException({ code: 'URL_RETOUR_NON_AUTORISEE', message: "L'adresse de retour n'appartient pas à la plateforme." });
+    }
+    return url;
+  }
 
   async initierEncaissement(dto: InitierEncaissementDto, ctx: ContexteAcces): Promise<EncaissementInitie> {
     const ag = this.agregateurs.obtenir(dto.agregateurCode);
@@ -144,7 +160,9 @@ export class EncaissementService {
 
       // URLs de callback
       const baseUrl = process.env.APP_BASE_URL ?? 'http://localhost:4010';
-      const callbackUrl = `${baseUrl}/v1/paiement/retour/${referenceMarchande}`;
+      const callbackUrl = dto.urlRetour
+        ? this.urlRetourAutorisee(dto.urlRetour)
+        : `${baseUrl}/v1/paiement/retour/${referenceMarchande}`;
       const notifyUrl = `${baseUrl}/v1/webhooks/${dto.agregateurCode}`;
 
       // Appel agrégateur

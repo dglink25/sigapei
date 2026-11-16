@@ -1,10 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  ServiceUnavailableException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { egalTempsConstant, secretValide } from '../secret.util';
 
@@ -25,14 +19,14 @@ export class InternalSecretGuard implements CanActivate {
     if (!secretValide(attendu)) {
       throw new ServiceUnavailableException({
         code: 'CONFIG_SECURITE_INVALIDE',
-        message: 'Service momentanement indisponible.',
+        message: 'Service momentanément indisponible.',
       });
     }
 
     if (typeof recu !== 'string' || !egalTempsConstant(attendu, recu)) {
       throw new UnauthorizedException({
         code: 'SECRET_INTERNE_INVALIDE',
-        message: 'Acces reserve aux services internes de la plateforme.',
+        message: 'Accès réservé aux services internes de la plateforme.',
       });
     }
 

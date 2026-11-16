@@ -20,12 +20,12 @@ class VerifierSecretInterne
         $attendu = (string) config('services.interne.secret', '');
         $header = (string) config('services.interne.header', 'X-Internal-Secret');
 
-        if ($attendu === '') {
+        if (strlen($attendu) < 32) {
             return ApiResponse::erreur(
                 'Endpoint interne indisponible.',
                 'CONFIG_SECURITE_INVALIDE',
-                403,
-                'INTERNAL_API_SECRET absent de la configuration'
+                503,
+                'INTERNAL_API_SECRET absent ou trop court (32 caractères minimum)'
             );
         }
 

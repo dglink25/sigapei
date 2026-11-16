@@ -4,9 +4,6 @@
          bootstrap="vendor/autoload.php"
          colors="true">
     <testsuites>
-        <testsuite name="Unit">
-            <directory>tests/Unit</directory>
-        </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
@@ -25,7 +22,17 @@
         <env name="LOG_CHANNEL" value="stderr" force="true"/>
         <env name="LOG_LEVEL" value="error" force="true"/>
         <env name="INTERNAL_API_SECRET" value="secret-de-test-interne-0123456789abcdef" force="true"/>
-        <env name="FEDAPAY_WEBHOOK_SECRET" value="whsec_test_fedapay" force="true"/>
-        <env name="KKIAPAY_SECRET" value="kkiapay-secret-test" force="true"/>
+        <env name="IDENTITE_URL" value="http://identite.test" force="true"/>
+        <env name="SCOLARITE_URL" value="http://scolarite.test" force="true"/>
+        <env name="PAIEMENT_URL" value="http://paiement.test" force="true"/>
+        <env name="CORS_ORIGINS" value="https://app.sigapei.test" force="true"/>
+        <env name="RABBITMQ_HOST" value="" force="true"/>
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="5432"/>
+        <env name="DB_DATABASE" value="sigapei_test"/>
+        <env name="DB_USERNAME" value="postgres"/>
+        <env name="DB_PASSWORD" value="postgres"/>
+        <env name="DB_SSLMODE" value="disable"/>
     </php>
 </phpunit>

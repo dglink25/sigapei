@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Common\Tenant\Contexte;
+use App\Integrations\ScolariteClient;
 use App\Models\Evaluation;
 use App\Models\Matiere;
 use App\Models\Note;
@@ -21,6 +22,7 @@ class NotesController extends Controller
     public function __construct(
         private readonly NoteService $notes,
         private readonly ControleAcces $acces,
+        private readonly ScolariteClient $scolarite,
     ) {}
 
     /**
@@ -70,8 +72,14 @@ class NotesController extends Controller
 
         $notes = Note::whereIn('evaluation_id', $evaluations->pluck('id'))->get()->groupBy('evaluation_id');
 
+        $apprenants = collect($this->scolarite->apprenantsDeClasse($classeUuid))
+            ->map(fn ($a) => ['uuid' => $a['uuid'], 'nom' => $a['nom'] ?? null, 'prenom' => $a['prenom'] ?? null, 'matricule' => $a['matricule'] ?? null])
+            ->sortBy(fn ($a) => mb_strtolower(($a['nom'] ?? '').' '.($a['prenom'] ?? '')))
+            ->values();
+
         return $this->ok([
-            'periode' => ['uuid' => $periode->uuid, 'libelle' => $periode->libelle, 'statut' => $periode->statut],
+            'periode' => ['uuid' => $periode->uuid, 'libelle' => $periode->libelle, 'statut' => $periode->statut, 'cycle' => $periode->cycle],
+            'apprenants' => $apprenants,
             'evaluations' => $evaluations->map(fn ($ev) => [
                 'uuid' => $ev->uuid,
                 'libelle' => $ev->libelle,

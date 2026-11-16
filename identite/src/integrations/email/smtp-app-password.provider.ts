@@ -304,10 +304,10 @@ export class SmtpAppPasswordProvider implements OnModuleInit {
   // ─────────────────────────────────────────────────────────────────────────
 
   private construireContenuOtp(code: string, dureeMinutes: number): { sujet: string; texte: string; html: string } {
-    const sujet = 'Code de vérification - SIGAPEI';
+    const sujet = 'Code de vérification — SIGAPEI';
 
     const texte =
-      `SIGAPEI - Système Intégré de Gestion Académique\n` +
+      `SIGAPEI — Système Intégré de Gestion Académique\n` +
       `${'─'.repeat(48)}\n\n` +
       `Votre code de vérification : ${code}\n\n` +
       `Ce code est valable ${dureeMinutes} minutes et ne peut être utilisé qu'une seule fois.\n` +

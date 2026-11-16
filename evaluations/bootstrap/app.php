@@ -15,6 +15,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
@@ -31,9 +32,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/sante',
         then: function () {
             // Limite par utilisateur (ou par IP à défaut) : 120 requêtes/minute.
-            RateLimiter::for('api', fn (Request $r) => Limit::perMinute(120)->by($r->header('X-User-Id') ?: $r->ip()));
+            // Clé = utilisateur authentifié (contexte posé par auth.tenant), jamais un en-tête brut falsifiable.
+            $cle = fn (Request $r) => app()->bound('current_user') ? 'u:'.app('current_user')['uuid'] : 'ip:'.$r->ip();
+            RateLimiter::for('api', fn (Request $r) => Limit::perMinute(120)->by($cle($r)));
             // Actions lourdes ou sensibles (clôture, contestation) : 10/minute/utilisateur.
-            RateLimiter::for('sensible', fn (Request $r) => Limit::perMinute(10)->by('s:'.($r->header('X-User-Id') ?: $r->ip())));
+            RateLimiter::for('telechargement', fn (Request $r) => Limit::perMinute(30)->by('t:'.$r->ip()));
+            RateLimiter::for('sensible', fn (Request $r) => Limit::perMinute(10)->by('s:'.$cle($r)));
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
@@ -47,7 +51,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Le contexte tenant DOIT être posé avant la résolution des paramètres de route
         // ({periode}, {note}...) : sinon le filtre tenant des modèles s'applique sans tenant.
-        $middleware->prependToPriorityList(SubstituteBindings::class, VerifyTenantAndJwt::class);
+        // Et avant la limitation de débit, dont la clé est l'utilisateur authentifié.
+        $middleware->prependToPriorityList(ThrottleRequests::class, VerifyTenantAndJwt::class);
         $middleware->prependToPriorityList(SubstituteBindings::class, VerifyRole::class);
 
         $middleware->trustProxies(at: '*');

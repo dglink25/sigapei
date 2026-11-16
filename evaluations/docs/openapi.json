@@ -3,9 +3,13 @@
   "info": {
     "title": "SIGAPEI - API Évaluations",
     "version": "1.0.0",
-    "description": "Notes, barèmes, coefficients, moyennes, classements, bulletins et contestations.\n\n**Accès** : uniquement via la Gateway, qui ajoute les en-têtes de contexte et le secret interne. Un appel direct sans `X-Internal-Secret` est refusé (401).\n\nRéponses : `{success, message, data}` ; erreurs : `{success: false, message, error: {code, details?}}`. Montants et notes en **chaînes décimales** (\"14.50\"), jamais en nombres flottants. Identifiants : uuid uniquement."
+    "description": "Notes, barèmes, coefficients, moyennes, classements, bulletins et contestations.\n\n**Accès** (règle n°5 du README plateforme), au choix :\n1. **Front, appel direct** : `Authorization: Bearer <jeton Identité>`. Le jeton est vérifié par Identité (introspection, mise en cache 60 s) ; l'établissement et le rôle viennent de la réponse d'Identité, jamais d'en-têtes envoyés par le navigateur.\n2. **Gateway** : `X-Internal-Secret` + `X-Tenant-Id` (identifiant ou uuid de l'établissement) + `X-User-Id` + `X-User-Role`. Sans secret valide, ces en-têtes sont ignorés.\n\nSeuls les 6 rôles système sont acceptés (403 sinon). Identité ou Établissements injoignable : 503, jamais un accès accordé par défaut.\n\nRéponses : `{success, message, data}` ; erreurs : `{success: false, message, error: {code, details?}}`. Montants et notes en **chaînes décimales** (\"14.50\"), jamais en nombres flottants. Identifiants : uuid uniquement."
   },
   "servers": [
+    {
+      "url": "/",
+      "description": "Ce serveur (celui qui affiche /docs)"
+    },
     {
       "url": "http://api-evaluations:4006",
       "description": "Réseau Docker sigapei (derrière la Gateway)"
@@ -38,6 +42,10 @@
     },
     {
       "name": "Interne"
+    },
+    {
+      "name": "Interface",
+      "description": "Contexte de l'utilisateur connecté pour construire son interface"
     }
   ],
   "paths": {
@@ -113,6 +121,9 @@
           }
         ],
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -252,6 +263,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -320,6 +334,9 @@
           }
         },
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -535,6 +552,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -673,6 +693,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -757,6 +780,9 @@
         ],
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -839,6 +865,9 @@
           }
         },
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -930,6 +959,9 @@
           }
         },
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -1046,6 +1078,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -1142,6 +1177,9 @@
           }
         ],
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -1253,6 +1291,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -1330,6 +1371,9 @@
           }
         },
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -1438,6 +1482,9 @@
           }
         ],
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -1576,6 +1623,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -1641,6 +1691,9 @@
           }
         },
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -1782,6 +1835,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -1854,6 +1910,28 @@
                               }
                             ]
                           }
+                        },
+                        "apprenants": {
+                          "type": "array",
+                          "description": "Liste de la classe (Scolarité), triée par nom",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "uuid": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nom": {
+                                "type": "string"
+                              },
+                              "prenom": {
+                                "type": "string"
+                              },
+                              "matricule": {
+                                "type": "string"
+                              }
+                            }
+                          }
                         }
                       }
                     }
@@ -1896,6 +1974,9 @@
           }
         ],
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -2018,6 +2099,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -2098,6 +2182,9 @@
         ],
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -2124,8 +2211,8 @@
         "tags": [
           "Bulletins"
         ],
-        "summary": "PDF du bulletin archivé",
-        "description": "**Rôles autorisés** : mêmes droits que le bulletin.\n\nRenvoie l'uuid du document stocké par le service Documents (URL signée). **En attente du service Documents** : répond 409 `PDF_EN_ATTENTE` tant que le PDF n'existe pas.",
+        "summary": "Lien de téléchargement du PDF du bulletin archivé",
+        "description": "**Rôles autorisés** : mêmes droits que le bulletin.\n\nRenvoie un lien **relatif signé, valable 5 minutes**, vers `GET /v1/bulletins/telecharger/{bulletin_uuid}` (dernière version archivée). Le front le préfixe par l'URL du service et l'ouvre dans le navigateur. 409 `PERIODE_NON_CLOTUREE` avant la clôture.",
         "responses": {
           "200": {
             "description": "Succès",
@@ -2144,12 +2231,20 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "document_uuid": {
+                        "bulletin_uuid": {
                           "type": "string",
                           "format": "uuid"
                         },
                         "version": {
                           "type": "integer"
+                        },
+                        "url": {
+                          "type": "string",
+                          "example": "/v1/bulletins/telecharger/0b6f…?expires=1793050800&tenant=12&signature=…"
+                        },
+                        "expire_le": {
+                          "type": "string",
+                          "format": "date-time"
                         }
                       }
                     }
@@ -2186,6 +2281,9 @@
           }
         ],
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -2266,6 +2364,9 @@
           }
         ],
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -2356,6 +2457,9 @@
         ],
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -2442,6 +2546,9 @@
           }
         },
         "security": [
+          {
+            "Bearer": []
+          },
           {
             "SecretInterne": [],
             "Tenant": [],
@@ -2543,6 +2650,9 @@
         },
         "security": [
           {
+            "Bearer": []
+          },
+          {
             "SecretInterne": [],
             "Tenant": [],
             "Utilisateur": [],
@@ -2570,7 +2680,7 @@
           "Interne"
         ],
         "summary": "Bulletins archivés disponibles (Demandes administratives)",
-        "description": "**Appel inter-services uniquement** : `X-Internal-Secret` + `X-Tenant-Id`. Dernière version de chaque période clôturée.",
+        "description": "**Appel inter-services uniquement** : `X-Internal-Secret` + `X-Tenant-Id`. Dernière version de chaque période clôturée.\n\n`X-Tenant-Id` : identifiant numérique ou uuid de l'établissement.",
         "responses": {
           "200": {
             "description": "Succès",
@@ -2660,7 +2770,7 @@
           "Interne"
         ],
         "summary": "Report d'une note E-learning (devoir noté, tentative de quiz)",
-        "description": "**Appel inter-services uniquement** (microservice E-learning) : `X-Internal-Secret` + `X-Tenant-Id`.\n\n- Une épreuve `note_elearning` par devoir/quiz (`activite_uuid`), créée au premier report dans la période ouverte qui couvre `date` (cycle de l'apprenant).\n- Une note par apprenant et par activité : rejouer le même report ne crée rien (200, même `note_uuid`) ; une valeur différente met la note à jour (nouvelle `version`, tracée dans l'audit) tant que la période est ouverte.\n- L'épreuve garde le barème (`note_sur`) de son premier report ; un report sur un autre barème est ramené dessus.\n- La note compte directement dans la moyenne (poids du type `note_elearning` paramétrable par établissement).",
+        "description": "**Appel inter-services uniquement** (microservice E-learning) : `X-Internal-Secret` + `X-Tenant-Id`.\n\n- Une épreuve `note_elearning` par devoir/quiz (`activite_uuid`), créée au premier report dans la période ouverte qui couvre `date` (cycle de l'apprenant).\n- Une note par apprenant et par activité : rejouer le même report ne crée rien (200, même `note_uuid`) ; une valeur différente met la note à jour (nouvelle `version`, tracée dans l'audit) tant que la période est ouverte.\n- L'épreuve garde le barème (`note_sur`) de son premier report ; un report sur un autre barème est ramené dessus.\n- La note compte directement dans la moyenne (poids du type `note_elearning` paramétrable par établissement).\n\n`X-Tenant-Id` : identifiant numérique ou uuid de l'établissement.",
         "operationId": "post_interne_notes_elearning",
         "security": [
           {
@@ -2871,6 +2981,313 @@
           }
         }
       }
+    },
+    "/v1/bulletins/telecharger/{bulletin_uuid}": {
+      "parameters": [
+        {
+          "name": "bulletin_uuid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Bulletins"
+        ],
+        "summary": "Télécharger le PDF d'un bulletin (lien signé)",
+        "operationId": "get_bulletins_telecharger_bulletin_uuid",
+        "security": [],
+        "description": "Lien obtenu par `GET /v1/bulletins/apprenant/{uuid}/pdf`. **Aucun en-tête d'authentification** : la signature (HMAC, clé de l'application) couvre le bulletin, l'établissement et l'expiration. Lien modifié ou expiré : 403. PDF produit depuis l'instantané figé à la clôture, empreinte SHA-256 imprimée en pied de page. Débit limité (30/min/IP).",
+        "parameters": [
+          {
+            "name": "tenant",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "expires",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Le PDF",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Signature invalide ou lien expiré",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Erreur"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "429": {
+            "$ref": "#/components/responses/ErrDebit"
+          }
+        }
+      }
+    },
+    "/v1/mes-affectations": {
+      "get": {
+        "tags": [
+          "Interface"
+        ],
+        "summary": "Classes et matières de l'enseignant connecté",
+        "description": "**Rôle** : enseignant. Source : RH (affectations actives). Sert au choix de la classe et de la matière dans l'interface.",
+        "operationId": "get_mes_affectations",
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "classe_uuid": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "matiere": {
+                            "type": "object",
+                            "properties": {
+                              "uuid": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "code": {
+                                "type": "string"
+                              },
+                              "nom": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        }
+      }
+    },
+    "/v1/mes-apprenants": {
+      "get": {
+        "tags": [
+          "Interface"
+        ],
+        "summary": "Dossier de l'apprenant connecté, ou enfants du parent connecté",
+        "description": "**Rôles** : apprenant, parent. Source : Scolarité (filtres `utilisateur_uuid` / `parent_uuid` demandés à Scolarité ; chaque dossier renvoyé est recontrôlé). 503 tant que le contrat n'est pas livré.",
+        "operationId": "get_mes_apprenants",
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "uuid": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "nom": {
+                            "type": "string"
+                          },
+                          "prenom": {
+                            "type": "string"
+                          },
+                          "matricule": {
+                            "type": "string"
+                          },
+                          "classe": {
+                            "type": "object",
+                            "nullable": true,
+                            "properties": {
+                              "uuid": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "nom": {
+                                "type": "string"
+                              },
+                              "cycle": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        }
+      }
+    },
+    "/v1/modeles-bulletin/{cycle}": {
+      "parameters": [
+        {
+          "name": "cycle",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "enum": [
+              "primaire",
+              "secondaire",
+              "universitaire"
+            ]
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Barèmes et règles"
+        ],
+        "summary": "Modèle de bulletin d'un cycle (null si mise en page par défaut)",
+        "description": "**Rôle** : administrateur.",
+        "operationId": "get_modeles_bulletin_cycle",
+        "security": [
+          {
+            "Bearer": []
+          },
+          {
+            "SecretInterne": [],
+            "Tenant": [],
+            "Utilisateur": [],
+            "Role": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrIntrouvable"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrNonAuthentifie"
+          },
+          "403": {
+            "$ref": "#/components/responses/ErrAcces"
+          },
+          "503": {
+            "$ref": "#/components/responses/ErrDependance"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2885,7 +3302,7 @@
         "type": "apiKey",
         "in": "header",
         "name": "X-Tenant-Id",
-        "description": "Identifiant numérique de l'établissement (claim tenantId du JWT)"
+        "description": "Établissement : identifiant numérique (tenant_id) ou uuid de l'établissement"
       },
       "Utilisateur": {
         "type": "apiKey",
@@ -2898,6 +3315,12 @@
         "in": "header",
         "name": "X-User-Role",
         "description": "super_admin | administrateur | personnel | enseignant | apprenant | parent"
+      },
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Jeton d'accès émis par Identité (appel direct du front). Vérifié par introspection auprès d'Identité ; l'établissement et le rôle viennent de la réponse d'Identité."
       }
     },
     "schemas": {

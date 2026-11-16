@@ -111,6 +111,14 @@ class ParametresController extends Controller
         return $this->ok($p->toArray() + ['grille' => $p->grille], 'Règles de notation enregistrées.');
     }
 
+    /** GET /v1/modeles-bulletin/{cycle} - modèle de bulletin du cycle (null si aucun : mise en page par défaut). */
+    public function lireModele(string $cycle): JsonResponse
+    {
+        abort_unless(in_array($cycle, self::CYCLES, true), 404);
+
+        return $this->ok(ModeleBulletin::where('cycle', $cycle)->first());
+    }
+
     /** POST /v1/modeles-bulletin - création ou mise à jour du modèle d'un cycle (CDC Tableau 7). */
     public function modele(Request $request): JsonResponse
     {
