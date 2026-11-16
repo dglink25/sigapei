@@ -4,9 +4,8 @@
 
 /* ─── Dimensions ─── */
 :root {
-  /* On égalise les hauteurs et on ajuste le padding droit pour un alignement parfait */
   --aeh-b1-h: 52px;
-  --aeh-b2-h: 52px; 
+  --aeh-b2-h: 52px;
   --aeh-logo-size: 72px;
   --aeh-logo-pad: 220px;
 }
@@ -15,9 +14,9 @@
 .aeh {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000; /* Augmenté pour passer au-dessus de tout le contenu du site */
   font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.20);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.20);
 }
 
 /* ══════════════════════════
@@ -58,7 +57,7 @@
 
 .aeh-nom-long {
   font-size: 0.63rem;
-  color: rgba(255,255,255,0.72);
+  color: rgba(255, 255, 255, 0.72);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -79,7 +78,7 @@
   padding: 0 16px;
 }
 
-/* Conteneur du bouton Nous écrire (identique à la bande 2) */
+/* Conteneur du bouton Nous écrire */
 .aeh-b1-actions {
   display: flex;
   align-items: center;
@@ -96,17 +95,16 @@
   font: inherit;
   font-size: 0.78rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.90);
+  color: rgba(255, 255, 255, 0.90);
   text-decoration: none;
-  border: 1px solid rgba(255,255,255,0.30);
+  border: 1px solid rgba(255, 255, 255, 0.30);
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.15s, color 0.15s;
 }
-
 .aeh-action-btn:hover {
-  background: rgba(255,255,255,0.14);
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
@@ -122,7 +120,7 @@
   border-radius: 4px;
   flex-shrink: 0;
 }
-.aeh-burger:hover { background: rgba(255,255,255,0.12); }
+.aeh-burger:hover { background: rgba(255, 255, 255, 0.12); }
 
 /* ══════════════════════════
    LOGOS absolus
@@ -138,29 +136,29 @@
   justify-content: center;
   z-index: 5;
 }
-.aeh-logo-left  { left: 0; padding: 0 18px; }
+.aeh-logo-left  { left: 0;  padding: 0 18px; }
 .aeh-logo-right { right: 0; padding: 0 18px; }
 
 .aeh-logo-left img,
 .aeh-logo-right img {
   height: var(--aeh-logo-size);
-  width:  var(--aeh-logo-size);
+  width: var(--aeh-logo-size);
   object-fit: contain;
   border-radius: 50%;
   background: #ffffff;
   padding: 3px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
 }
 
 .aeh-logo-ph {
   height: var(--aeh-logo-size);
-  width:  var(--aeh-logo-size);
+  width: var(--aeh-logo-size);
   border-radius: 50%;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   display: grid;
   place-items: center;
   color: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
 }
 
 /* ══════════════════════════
@@ -168,8 +166,11 @@
 ══════════════════════════ */
 .aeh-b2 {
   background: #ffffff;
-  height: var(--aeh-b2-h); /* Même hauteur que la bande 1 */
+  height: var(--aeh-b2-h);
   border-top: 1px solid #ddd;
+  /* Important pour que le menu déroulant passe au dessus du reste */
+  position: relative;
+  z-index: 10;
 }
 
 .aeh-b2-nav-wrap {
@@ -178,10 +179,10 @@
   display: flex;
   align-items: stretch;
   justify-content: space-between;
-  overflow-x: auto;
-  scrollbar-width: none;
+  
+  /* ⚠️ CORRECTION MAJEURE ICI : on autorise le débordement */
+  overflow: visible; 
 }
-.aeh-b2-nav-wrap::-webkit-scrollbar { display: none; }
 
 .aeh-nav {
   display: flex;
@@ -190,9 +191,19 @@
   gap: 0;
 }
 
+/* ══════════════════════════
+   ONGLETS PARENTS ET ENFANTS
+══════════════════════════ */
+.aeh-nav-item {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
 .aeh-nav-btn {
   display: flex;
   align-items: center;
+  gap: 6px;
   background: transparent;
   border: none;
   border-right: 1px solid #d0d0d0;
@@ -218,12 +229,74 @@
   transform: scaleX(0);
   transition: transform 0.18s ease;
 }
-.aeh-nav-btn:hover            { color: #006B3C; background: rgba(0,107,60,0.04); }
+.aeh-nav-btn:hover            { color: #006B3C; background: rgba(0, 107, 60, 0.04); }
 .aeh-nav-btn.is-active        { color: #006B3C; }
 .aeh-nav-btn:hover::after,
 .aeh-nav-btn.is-active::after { transform: scaleX(1); }
 
-/* Conteneur du bouton Se connecter (identique à la bande 1) */
+.aeh-chevron { transition: transform 0.18s ease; }
+.aeh-nav-btn[aria-expanded="true"] .aeh-chevron {
+  transform: rotate(180deg);
+}
+
+/* ══════════════════════════
+   SOUS-MENU DÉROULANT (Desktop)
+══════════════════════════ */
+.aeh-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-top: 3px solid #006B3C;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+  animation: aeh-down 0.18s ease;
+}
+
+/* Petite flèche pointant vers l'onglet parent */
+.aeh-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -11px;
+  left: 24px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #006B3C;
+}
+
+.aeh-dropdown-item {
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, background 0.15s;
+}
+.aeh-dropdown-item:hover {
+  color: #006B3C;
+  background: rgba(0, 107, 60, 0.06);
+}
+.aeh-dropdown-item.is-active {
+  color: #006B3C;
+  background: rgba(0, 107, 60, 0.09);
+  font-weight: 700;
+}
+
+/* ══════════════════════════
+   BOUTON SE CONNECTER
+══════════════════════════ */
 .aeh-b2-actions {
   display: flex;
   align-items: center;
@@ -231,7 +304,6 @@
   flex-shrink: 0;
 }
 
-/* Bouton Se connecter */
 .aeh-auth-green {
   display: inline-flex;
   align-items: center;
@@ -262,7 +334,7 @@
   border-top: 2px solid #006B3C;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   animation: aeh-down 0.18s ease;
 }
 .aeh-mobile-item {
@@ -278,7 +350,37 @@
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
 }
-.aeh-mobile-item:hover { color: #006B3C; background: rgba(0,107,60,0.04); }
+.aeh-mobile-item:hover { color: #006B3C; background: rgba(0, 107, 60, 0.04); }
+
+/* Groupe mobile (parent + sous-menu) */
+.aeh-mobile-group { display: flex; flex-direction: column; }
+
+.aeh-mobile-item--parent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aeh-mobile-chevron { transition: transform 0.2s ease; }
+.aeh-mobile-chevron.is-open { transform: rotate(180deg); }
+
+.aeh-mobile-sub {
+  display: flex;
+  flex-direction: column;
+  background: #f7faf8;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.aeh-mobile-item--child {
+  padding-left: 34px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #555;
+}
+.aeh-mobile-item--child.is-active {
+  color: #006B3C;
+  font-weight: 700;
+}
 
 .aeh-mobile-btns {
   display: flex;
@@ -288,8 +390,8 @@
   background: #006B3C;
 }
 .aeh-mobile-btns .aeh-action-btn {
-  color: rgba(255,255,255,0.9);
-  border-color: rgba(255,255,255,0.3);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 @keyframes aeh-down {
@@ -300,8 +402,8 @@
 /* ══════════════════════════
    DARK MODE
 ══════════════════════════ */
-[data-theme='dark'] .aeh-b1    { background: #004d2c; }
-[data-theme='dark'] .aeh-b2    { background: #1a2a1e; border-top-color: #2a3a2e; }
+[data-theme='dark'] .aeh-b1 { background: #004d2c; }
+[data-theme='dark'] .aeh-b2 { background: #1a2a1e; border-top-color: #2a3a2e; }
 [data-theme='dark'] .aeh-nav-btn { color: #ccc; border-color: #2a3a2e; }
 [data-theme='dark'] .aeh-nav-btn:hover,
 [data-theme='dark'] .aeh-nav-btn.is-active { color: #4ade80; }
@@ -309,6 +411,7 @@
 [data-theme='dark'] .aeh-nav-btn.is-active::after { background: #4ade80; }
 [data-theme='dark'] .aeh-mobile-menu { background: #1a2a1e; }
 [data-theme='dark'] .aeh-mobile-item { color: #ccc; border-bottom-color: #2a3a2e; }
+[data-theme='dark'] .aeh-mobile-item:hover { color: #4ade80; background: rgba(74, 222, 128, 0.06); }
 [data-theme='dark'] .aeh-devise-inline { color: #e0f2e6; }
 [data-theme='dark'] .aeh-auth-green {
   background: #4ade80;
@@ -319,12 +422,30 @@
   background: #22c55e;
   border-color: #22c55e;
 }
+[data-theme='dark'] .aeh-dropdown {
+  background: #1a2a1e;
+  border-color: #2a3a2e;
+  border-top-color: #4ade80;
+}
+[data-theme='dark'] .aeh-dropdown::before { border-bottom-color: #4ade80; }
+[data-theme='dark'] .aeh-dropdown-item { color: #ccc; }
+[data-theme='dark'] .aeh-dropdown-item:hover,
+[data-theme='dark'] .aeh-dropdown-item.is-active {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+}
+[data-theme='dark'] .aeh-mobile-sub { background: #15241a; border-bottom-color: #2a3a2e; }
+[data-theme='dark'] .aeh-mobile-item--child { color: #9fb8a8; }
+[data-theme='dark'] .aeh-mobile-item--child.is-active { color: #4ade80; }
 
 /* ══════════════════════════
    RESPONSIVE
 ══════════════════════════ */
 @media (max-width: 1024px) {
-  :root { --aeh-logo-size: 64px; --aeh-logo-pad: 100px; }
+  :root {
+    --aeh-logo-size: 64px;
+    --aeh-logo-pad: 100px;
+  }
   .aeh-nom-long { max-width: 160px; }
 }
 
@@ -335,7 +456,7 @@
     --aeh-logo-size: 48px;
     --aeh-logo-pad: 76px;
   }
-  .aeh-b2            { display: none; }
+  .aeh-b2             { display: none; }
   .aeh-b1-actions     { display: none; }
   .aeh-burger         { display: grid; }
   .aeh-nom-long       { display: none; }
@@ -343,6 +464,9 @@
   .aeh-devise-inline  { display: none; }
   .aeh-logo-left,
   .aeh-logo-right     { height: var(--aeh-b1-h); }
+
+  /* Le dropdown desktop n'a pas lieu d'être sur mobile */
+  .aeh-dropdown { display: none; }
 }
 
 @media (max-width: 480px) {
@@ -355,4 +479,15 @@
   .aeh-nom-court { font-size: 0.88rem; }
   .aeh-logo-left,
   .aeh-logo-right { height: var(--aeh-b1-h); }
+}
+
+/* Respect des préférences utilisateur */
+@media (prefers-reduced-motion: reduce) {
+  .aeh-dropdown,
+  .aeh-mobile-menu,
+  .aeh-chevron,
+  .aeh-mobile-chevron {
+    animation: none !important;
+    transition: none !important;
+  }
 }

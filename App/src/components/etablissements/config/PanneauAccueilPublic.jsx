@@ -27,6 +27,15 @@ const ONGLETS = [
   { id: 'reseaux',    label: 'Réseaux sociaux' },
 ]
 
+const PAGES_OPTIONS = [
+  { id: 'toutes',       label: 'Toutes les pages'  },
+  { id: 'presentation', label: 'Présentation'       },
+  { id: 'formations',   label: 'Formations'         },
+  { id: 'actualites',   label: 'Actualités'         },
+  { id: 'galerie',      label: 'Galerie'            },
+  { id: 'contact',      label: 'Contact'            },
+]
+
 const uid = () => Math.random().toString(36).slice(2)
 
 const VIDE = {
@@ -145,7 +154,7 @@ function OngletHero({ data, setData, saving, onSave, notify }) {
     <div className="pac-section">
       <div className="pac-section-head">
         <p className="ap-page-sub">Slides du carousel plein écran. Chaque slide a une image, un titre et un bouton CTA.</p>
-        <button type="button" className="ap-btn ap-btn--sm" onClick={() => set((s) => [...s, { _id: uid(), imageUrl: '', titre: '', sousTitre: '', ctaLibelle: '', ctaUrl: '' }])}>
+        <button type="button" className="ap-btn ap-btn--sm" onClick={() => set((s) => [...s, { _id: uid(), imageUrl: '', titre: '', sousTitre: '', ctaLibelle: '', ctaUrl: '', pages: ['toutes'] }])}>
           <Plus size={14} /> Ajouter un slide
         </button>
       </div>
@@ -178,6 +187,32 @@ function OngletHero({ data, setData, saving, onSave, notify }) {
                 <Field wide label="Sous-titre"><input className="ap-input" value={s.sousTitre} onChange={(e) => maj(i, { sousTitre: e.target.value })} maxLength={200} placeholder="Description courte" /></Field>
                 <Field label="Libellé CTA"><input className="ap-input" value={s.ctaLibelle} onChange={(e) => maj(i, { ctaLibelle: e.target.value })} maxLength={40} placeholder="Ex. Découvrir" /></Field>
                 <Field label="URL CTA"><input className="ap-input" value={s.ctaUrl} onChange={(e) => maj(i, { ctaUrl: e.target.value })} maxLength={300} placeholder="https://…" /></Field>
+                <Field wide label="Pages d'affichage">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {PAGES_OPTIONS.map((p) => {
+                      const pages = Array.isArray(s.pages) ? s.pages : ['toutes']
+                      const checked = pages.includes(p.id)
+                      function toggle() {
+                        let next
+                        if (p.id === 'toutes') {
+                          next = checked ? [] : ['toutes']
+                        } else {
+                          const sans = pages.filter((x) => x !== 'toutes' && x !== p.id)
+                          next = checked ? sans : [...sans, p.id]
+                          if (next.length === 0) next = ['toutes']
+                        }
+                        maj(i, { pages: next })
+                      }
+                      return (
+                        <label key={p.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, padding: '4px 10px', borderRadius: 6, border: `1.5px solid ${checked ? '#006B3C' : 'var(--sg-border)'}`, background: checked ? 'rgba(0,107,60,0.08)' : 'transparent', color: checked ? '#006B3C' : 'var(--sg-text-secondary)', transition: 'all 0.15s' }}>
+                          <input type="checkbox" checked={checked} onChange={toggle} style={{ display: 'none' }} />
+                          {p.label}
+                        </label>
+                      )
+                    })}
+                  </div>
+                  <p className="ap-hint">Choisissez les pages où ce slide apparaîtra. "Toutes" = toutes les pages.</p>
+                </Field>
               </div>
             </div>
             <button type="button" className="ap-btn ap-btn--danger ap-btn--sm pac-suppr" onClick={() => del(i)}><Trash2 size={14} /></button>

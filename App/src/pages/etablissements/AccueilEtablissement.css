@@ -83,9 +83,9 @@
   background: linear-gradient(135deg, #006B3C 0%, #004d2b 100%);
 }
 
-/* Hero compact pour les pages secondaires (Formations, Galerie, etc.) */
+/* Hero compact pour les pages secondaires */
 .ae2-hero--compact {
-  min-height: 34vh !important;
+  min-height: calc(100vh - 86px) !important;
   background-color: #004d2b;
   background-size: cover;
   background-position: center;
@@ -99,6 +99,11 @@
 .ae2-hero--compact .ae2-hero-sous {
   font-size: 0.92rem;
   opacity: 0.78;
+}
+
+/* Hauteur hero principale = plein écran moins le header */
+.ae2-hero {
+  min-height: calc(100vh - 86px) !important;
 }
 .ae2-hero-overlay {
   position: absolute;

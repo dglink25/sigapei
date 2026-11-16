@@ -10,14 +10,21 @@ import LienConnexion from './LienConnexion'
 import { ENV } from '../../config/commun/env'
 
 export default function AccueilHero({
-  data,          // données établissement
+  data,
   slug,
   connecte,
   lienEspace,
-  mode = 'page', // 'slider' | 'page'
-  titre,         // titre affiché en mode 'page'
+  mode = 'page',
+  titre,
+  page = 'presentation', // identifiant de la page courante
 }) {
-  const hero = Array.isArray(data?.hero) ? data.hero : []
+  const allHero = Array.isArray(data?.hero) ? data.hero : []
+
+  /* Filtrer les slides selon la page : inclure ceux configurés pour cette page ou pour 'toutes' */
+  const hero = allHero.filter((s) => {
+    const pages = Array.isArray(s.pages) && s.pages.length > 0 ? s.pages : ['toutes']
+    return pages.includes('toutes') || pages.includes(page)
+  })
 
   /* ── Mode slider (page Présentation) ── */
   const [slide,       setSlide]       = useState(0)

@@ -29,6 +29,8 @@ class PageAccueilController extends Controller
             'hero.*.sousTitre'   => 'nullable|string|max:200',
             'hero.*.ctaLibelle'  => 'nullable|string|max:40',
             'hero.*.ctaUrl'      => 'nullable|string|max:300',
+            'hero.*.pages'       => 'nullable|array',
+            'hero.*.pages.*'     => 'string|in:toutes,presentation,formations,actualites,galerie,contact',
         ],
         'statistiques' => [
             'statistiques'          => 'nullable|array|max:10',
