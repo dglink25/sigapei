@@ -57,7 +57,7 @@ const GROUPES = [
     groupe: 'Établissement',
     items: [
       { label: 'Infos établissement',  icon: Building2,   section: 'etablissement',       desc: 'Logo, types, adresse, localisation' },
-      { label: 'Page d'accueil',      icon: Layers,      section: 'accueil-public',      desc: 'Hero, stats, formations, galerie…' },
+      { label: "Page d'accueil",      icon: Layers,      section: 'accueil-public',      desc: 'Hero, stats, formations, galerie…' },
       { label: 'Utilisateurs',         icon: Users,       section: 'utilisateurs',        desc: 'Comptes et rôles assignés' },
       { label: 'Demande de rôle',      icon: UserCog,     section: 'demandes-role',       desc: 'Rôle personnalisé au Super Admin' },
     ],
