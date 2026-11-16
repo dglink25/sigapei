@@ -1,5 +1,5 @@
 /**
- * AccueilFooter — Footer de la page publique d'un établissement.
+ * AccueilFooter - Footer de la page publique d'un établissement.
  * 4 colonnes : identité + réseaux · liens rapides · contact · SIGAPEI
  */
 import { MapPin, Mail, Phone, ExternalLink } from 'lucide-react'

@@ -1,5 +1,5 @@
 /**
- * PanneauAccueilPublic — Configuration de la page d'accueil publique
+ * PanneauAccueilPublic - Configuration de la page d'accueil publique
  * de l'établissement (hero slides, statistiques, formations, à propos,
  * galerie, actualités, réseaux sociaux).
  */

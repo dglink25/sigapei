@@ -16,11 +16,11 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
     <header className="aeh">
 
       {/* ══════════════════════════════════════════════════
-          BANDE 1  —  fond vert
+          BANDE 1  -  fond vert
       ══════════════════════════════════════════════════ */}
       <div className="aeh-b1">
 
-        {/* Logo établissement — couvre les 2 bandes */}
+        {/* Logo établissement */}
         <div className="aeh-logo-left">
           {data.logoUrl
             ? <img src={data.logoUrl} alt={data.nom} />
@@ -28,23 +28,19 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
           }
         </div>
 
-        {/* Nom + ligne + boutons */}
         <div className="aeh-b1-content">
+          {/* 1. Nom à gauche */}
           <div className="aeh-identity">
             <span className="aeh-nom-court">{data.nom}</span>
           </div>
 
-          <div className="aeh-b1-line" aria-hidden="true" />
+          {/* 2. Devise au centre */}
+          <div className="aeh-devise-inline" title={data.devise}>
+            {data.devise || ''}
+          </div>
 
+          {/* 3. Bouton Nous écrire tout à droite */}
           <div className="aeh-b1-actions">
-            {connecte
-              ? <a href={lienEspace} className="aeh-action-btn">
-                  <LayoutGrid size={13} /> Mon espace
-                </a>
-              : <LienConnexion slug={slug} className="aeh-action-btn">
-                  <LogIn size={13} /> Se connecter
-                </LienConnexion>
-            }
             {data.email && (
               <a href={`mailto:${data.email}`} className="aeh-action-btn">
                 <Mail size={13} /> Nous écrire
@@ -53,7 +49,7 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
           </div>
         </div>
 
-        {/* Logo SIGAPEI — couvre les 2 bandes */}
+        {/* Logo SIGAPEI */}
         <div className="aeh-logo-right">
           <img src="/sigapei.png" alt={ENV.appName} />
         </div>
@@ -70,7 +66,7 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
       </div>
 
       {/* ══════════════════════════════════════════════════
-          BANDE 2  —  fond blanc, navigation
+          BANDE 2  -  fond blanc : navigation + Se connecter
       ══════════════════════════════════════════════════ */}
       <div className="aeh-b2">
         <div className="aeh-b2-nav-wrap">
@@ -86,13 +82,20 @@ export default function AccueilHeader({ data, slug, connecte, lienEspace, navIte
               </button>
             ))}
           </nav>
+
+          {/* Se connecter - avec la même structure que "Nous écrire" */}
+          <div className="aeh-b2-actions">
+            {connecte
+              ? <a href={lienEspace} className="aeh-auth-green">
+                  <LayoutGrid size={13} /> Mon espace
+                </a>
+              : <LienConnexion slug={slug} className="aeh-auth-green">
+                  <LogIn size={13} /> Se connecter
+                </LienConnexion>
+            }
+          </div>
         </div>
       </div>
-
-      {/* Devise */}
-      {data.devise && (
-        <div className="aeh-devise"><em>{data.devise}</em></div>
-      )}
 
       {/* Menu mobile */}
       {menuOpen && (

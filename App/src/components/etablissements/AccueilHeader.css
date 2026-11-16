@@ -1,14 +1,14 @@
 /* ═══════════════════════════════════════════════════════════
-   AccueilHeader  —  copie exacte de la structure INSTI
-   Bleu remplacé par vert #006B3C
+   AccueilHeader  -  structure INSTI, vert #006B3C
 ═══════════════════════════════════════════════════════════ */
 
 /* ─── Dimensions ─── */
 :root {
+  /* On égalise les hauteurs et on ajuste le padding droit pour un alignement parfait */
   --aeh-b1-h: 52px;
-  --aeh-b2-h: 32px;
+  --aeh-b2-h: 52px; 
   --aeh-logo-size: 72px;
-  --aeh-logo-pad: 220px;  /* logo (72) + 18px de chaque côté */
+  --aeh-logo-pad: 220px;
 }
 
 /* ─── Conteneur global ─── */
@@ -21,36 +21,33 @@
 }
 
 /* ══════════════════════════
-   BANDE 1 — fond vert
+   BANDE 1 - fond vert
 ══════════════════════════ */
 .aeh-b1 {
   background: #006B3C;
   height: var(--aeh-b1-h);
-  position: relative;         /* base des logos absolus */
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 0 var(--aeh-logo-pad);   /* espace gauche + droite pour logos */
+  padding: 0 var(--aeh-logo-pad);
   max-width: 100%;
-  gap: 0;
 }
 
-/* Contenu entre les deux logos */
 .aeh-b1-content {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
   height: 100%;
 }
 
-/* Identité : nom abrégé + nom complet */
 .aeh-identity {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   line-height: 1.15;
+  min-width: 120px;
 }
+
 .aeh-nom-court {
   font-size: 1.25rem;
   font-weight: 800;
@@ -58,6 +55,7 @@
   white-space: nowrap;
   letter-spacing: 0.01em;
 }
+
 .aeh-nom-long {
   font-size: 0.63rem;
   color: rgba(255,255,255,0.72);
@@ -67,29 +65,36 @@
   max-width: 220px;
 }
 
-/* Ligne blanche centrale */
-.aeh-b1-line {
+/* Devise centrée */
+.aeh-devise-inline {
   flex: 1;
-  height: 1px;
-  background: rgba(255,255,255,0.40);
-  min-width: 20px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 16px;
 }
 
-/* Boutons Accès rapide / Nous écrire */
+/* Conteneur du bouton Nous écrire (identique à la bande 2) */
 .aeh-b1-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
   flex-shrink: 0;
 }
+
 .aeh-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 11px;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: 4px;
   font: inherit;
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: rgba(255,255,255,0.90);
   text-decoration: none;
@@ -99,12 +104,13 @@
   white-space: nowrap;
   transition: background 0.15s, color 0.15s;
 }
+
 .aeh-action-btn:hover {
   background: rgba(255,255,255,0.14);
   color: #fff;
 }
 
-/* Burger (caché sur desktop) */
+/* Burger */
 .aeh-burger {
   display: none;
   background: transparent;
@@ -119,13 +125,12 @@
 .aeh-burger:hover { background: rgba(255,255,255,0.12); }
 
 /* ══════════════════════════
-   LOGOS absolus couvrant b1 + b2
+   LOGOS absolus
 ══════════════════════════ */
 .aeh-logo-left,
 .aeh-logo-right {
   position: absolute;
   top: 0;
-  /* Couvrir b1 + b2 : height = b1 + b2 */
   height: calc(var(--aeh-b1-h) + var(--aeh-b2-h));
   width: var(--aeh-logo-pad);
   display: flex;
@@ -146,6 +151,7 @@
   padding: 3px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.22);
 }
+
 .aeh-logo-ph {
   height: var(--aeh-logo-size);
   width:  var(--aeh-logo-size);
@@ -158,19 +164,20 @@
 }
 
 /* ══════════════════════════
-   BANDE 2 — fond blanc, nav
+   BANDE 2 - fond blanc
 ══════════════════════════ */
 .aeh-b2 {
   background: #ffffff;
-  height: var(--aeh-b2-h);
+  height: var(--aeh-b2-h); /* Même hauteur que la bande 1 */
   border-top: 1px solid #ddd;
 }
+
 .aeh-b2-nav-wrap {
-  /* Même padding horizontal que b1 pour aligner sous les logos */
   padding: 0 var(--aeh-logo-pad);
   height: 100%;
   display: flex;
   align-items: stretch;
+  justify-content: space-between;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -188,7 +195,6 @@
   align-items: center;
   background: transparent;
   border: none;
-  /* Séparateurs verticaux */
   border-right: 1px solid #d0d0d0;
   color: #333333;
   font: inherit;
@@ -202,13 +208,11 @@
 }
 .aeh-nav-btn:first-child { border-left: 1px solid #d0d0d0; }
 
-/* Soulignement vert = onglet actif / hover */
 .aeh-nav-btn::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: 0; right: 0;
   height: 3px;
   background: #006B3C;
   transform: scaleX(0);
@@ -219,18 +223,35 @@
 .aeh-nav-btn:hover::after,
 .aeh-nav-btn.is-active::after { transform: scaleX(1); }
 
-/* ══════════════════════════
-   DEVISE (sous les 2 bandes)
-══════════════════════════ */
-.aeh-devise {
-  background: #f5f5f5;
-  text-align: center;
-  padding: 3px 16px;
-  font-size: 0.69rem;
-  color: #777;
-  border-top: 1px solid #eee;
-  font-style: italic;
-  letter-spacing: 0.04em;
+/* Conteneur du bouton Se connecter (identique à la bande 1) */
+.aeh-b2-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* Bouton Se connecter */
+.aeh-auth-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-decoration: none;
+  background: #006B3C;
+  border: 1px solid #006B3C;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+.aeh-auth-green:hover {
+  background: #00522e;
+  color: #fff;
 }
 
 /* ══════════════════════════
@@ -258,6 +279,7 @@
   transition: color 0.15s, background 0.15s;
 }
 .aeh-mobile-item:hover { color: #006B3C; background: rgba(0,107,60,0.04); }
+
 .aeh-mobile-btns {
   display: flex;
   gap: 8px;
@@ -285,9 +307,18 @@
 [data-theme='dark'] .aeh-nav-btn.is-active { color: #4ade80; }
 [data-theme='dark'] .aeh-nav-btn:hover::after,
 [data-theme='dark'] .aeh-nav-btn.is-active::after { background: #4ade80; }
-[data-theme='dark'] .aeh-devise { background: #111; color: #888; border-top-color: #222; }
 [data-theme='dark'] .aeh-mobile-menu { background: #1a2a1e; }
 [data-theme='dark'] .aeh-mobile-item { color: #ccc; border-bottom-color: #2a3a2e; }
+[data-theme='dark'] .aeh-devise-inline { color: #e0f2e6; }
+[data-theme='dark'] .aeh-auth-green {
+  background: #4ade80;
+  border-color: #4ade80;
+  color: #0a1a10;
+}
+[data-theme='dark'] .aeh-auth-green:hover {
+  background: #22c55e;
+  border-color: #22c55e;
+}
 
 /* ══════════════════════════
    RESPONSIVE
@@ -300,24 +331,24 @@
 @media (max-width: 768px) {
   :root {
     --aeh-b1-h: 44px;
-    --aeh-b2-h: 30px;
+    --aeh-b2-h: 44px;
     --aeh-logo-size: 48px;
     --aeh-logo-pad: 76px;
   }
-  .aeh-b2         { display: none; }
-  .aeh-devise     { display: none; }
-  .aeh-b1-actions { display: none; }
-  .aeh-burger     { display: grid; }
-  .aeh-nom-long   { display: none; }
-  .aeh-nom-court  { font-size: 1rem; }
-  /* Sur mobile b2 est caché : logos = hauteur b1 seulement */
+  .aeh-b2            { display: none; }
+  .aeh-b1-actions     { display: none; }
+  .aeh-burger         { display: grid; }
+  .aeh-nom-long       { display: none; }
+  .aeh-nom-court      { font-size: 1rem; }
+  .aeh-devise-inline  { display: none; }
   .aeh-logo-left,
-  .aeh-logo-right { height: var(--aeh-b1-h); }
+  .aeh-logo-right     { height: var(--aeh-b1-h); }
 }
 
 @media (max-width: 480px) {
   :root {
     --aeh-b1-h: 42px;
+    --aeh-b2-h: 42px;
     --aeh-logo-size: 42px;
     --aeh-logo-pad: 68px;
   }

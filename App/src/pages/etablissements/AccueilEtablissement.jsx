@@ -14,6 +14,7 @@ import AccueilHeader from '../../components/etablissements/AccueilHeader'
 import AccueilFooter from '../../components/etablissements/AccueilFooter'
 import { ENV } from '../../config/commun/env'
 import Loader from '../../components/commun/Loader'
+import usePageTitle from '../../hooks/commun/usePageTitle'
 import './AccueilEtablissement.css'
 
 /* ── Icônes de stats ── */
@@ -108,7 +109,7 @@ export default function AccueilEtablissement() {
   /* Auto-slide */
   useEffect(() => {
     if (!data?.hero?.length || data.hero.length < 2 || pauseSlider) return
-    const id = setInterval(() => setSlide((s) => (s + 1) % data.hero.length), 5000)
+    const id = setInterval(() => setSlide((s) => (s + 1) % data.hero.length), 3000)
     return () => clearInterval(id)
   }, [data, pauseSlider])
 
@@ -129,6 +130,9 @@ export default function AccueilEtablissement() {
   }, [lightbox])
 
   const lienEspace = lienEtablissement(slug, '/portail')
+
+  /* ── Titre de l'onglet dynamique ── */
+  usePageTitle(data?.nom ?? null)
 
   function navSlide(dir) {
     if (!data?.hero?.length) return
@@ -259,7 +263,7 @@ export default function AccueilEtablissement() {
               <div className="ae2-hero-overlay" />
               <div className="ae2-hero-content">
                 <h1 className="ae2-hero-titre">Bienvenue à <strong>{data.nom}</strong></h1>
-                <p className="ae2-hero-sous">Propulsé par {ENV.appName} — Système Intégré de Gestion et d'Administration des Établissements Privés d'Enseignement</p>
+                <p className="ae2-hero-sous">Propulsé par {ENV.appName} - Système Intégré de Gestion et d'Administration des Établissements Privés d'Enseignement</p>
                 {connecte
                   ? <a href={lienEspace} className="ae2-btn ae2-btn--hero"><LayoutGrid size={14} /> Mon espace</a>
                   : <LienConnexion slug={slug} className="ae2-btn ae2-btn--hero"><LogIn size={14} /> Se connecter</LienConnexion>
@@ -329,7 +333,7 @@ export default function AccueilEtablissement() {
               <div className="ae2-galerie-grid">
                 {galerie.map((url, i) => (
                   <button key={i} type="button" className="ae2-galerie-item" onClick={() => setLightbox(url)} aria-label={`Photo ${i + 1}`}>
-                    <img src={url} alt={`${data.nom} — photo ${i + 1}`} loading="lazy" />
+                    <img src={url} alt={`${data.nom} - photo ${i + 1}`} loading="lazy" />
                     <div className="ae2-galerie-overlay" />
                   </button>
                 ))}
@@ -389,7 +393,7 @@ export default function AccueilEtablissement() {
               <BookOpen size={26} className="ae2-cta-icon" />
               <div>
                 <h3>Accédez à votre espace</h3>
-                <p>Élèves, enseignants, parents et administration — connectez-vous pour accéder aux services.</p>
+                <p>Élèves, enseignants, parents et administration - connectez-vous pour accéder aux services.</p>
               </div>
               {connecte
                 ? <a href={lienEspace} className="ae2-btn ae2-btn--gold"><LayoutGrid size={14} /> Mon espace</a>
