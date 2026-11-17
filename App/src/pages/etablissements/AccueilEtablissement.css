@@ -390,3 +390,128 @@
   .ae2-galerie-grid  { grid-template-columns: 1fr; }
   .ae2-stats-grid    { grid-template-columns: 1fr 1fr; }
 }
+
+/* ════════════════════════════════════════════════════════════
+   PAGE CYCLE - Appels à candidature
+════════════════════════════════════════════════════════════ */
+.pc-appels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.pc-appel-card {
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 2px solid var(--sg-border, #dde4df);
+  background: var(--sg-surface, #fff);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.pc-appel-card--ouvert {
+  border-color: rgba(0, 107, 60, 0.35);
+  background: rgba(0, 107, 60, 0.03);
+}
+.pc-appel-card--ouvert:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 107, 60, 0.12);
+}
+.pc-appel-card--bientot {
+  opacity: 0.78;
+  border-style: dashed;
+}
+
+.pc-appel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  width: fit-content;
+  letter-spacing: 0.04em;
+}
+.pc-appel-badge--ouvert  { background: rgba(0,107,60,0.12); color: #006B3C; }
+.pc-appel-badge--bientot { background: rgba(100,100,100,0.1); color: #777; }
+
+.pc-appel-titre {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--sg-text, #1a2a1e);
+  line-height: 1.3;
+}
+.pc-appel-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--sg-text-secondary, #5a6b5f);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pc-appel-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pc-appel-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--sg-text-secondary, #5a6b5f);
+}
+.pc-appel-date svg { color: #006B3C; flex-shrink: 0; }
+.pc-appel-frais {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--sg-text-secondary, #5a6b5f);
+  padding: 6px 10px;
+  background: rgba(233, 170, 32, 0.08);
+  border-radius: 6px;
+  border-left: 3px solid #E9AA20;
+}
+
+.pc-appel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  margin-top: auto;
+  transition: filter 0.15s, transform 0.15s;
+}
+.pc-appel-btn--candidater {
+  background: #006B3C;
+  color: #FFF6DD;
+}
+.pc-appel-btn--candidater:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.pc-appel-btn--bientot {
+  background: #e0e0e0;
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* ── Dark mode ── */
+[data-theme='dark'] .pc-appel-card { background: var(--sg-surface); border-color: var(--sg-border); }
+[data-theme='dark'] .pc-appel-card--ouvert { border-color: rgba(74,222,128,0.25); }
+[data-theme='dark'] .pc-appel-badge--ouvert { background: rgba(74,222,128,0.1); color: #4ade80; }
+[data-theme='dark'] .pc-appel-titre { color: var(--sg-text); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .pc-appels-grid { grid-template-columns: 1fr; }
+}

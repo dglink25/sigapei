@@ -1,6 +1,7 @@
 <?php
 
 use App\appels_candidatures\AppelCandidatureController;
+use App\appels_candidatures\AppelPublicController;
 use App\candidatures\CandidatureController;
 use App\common\Middleware\VerifyTenantAndJwt;
 use App\docs\DocsController;
@@ -24,7 +25,15 @@ Route::get('/docs-json', [DocsController::class, 'specification']);
 
 // Routes metier sous le prefixe v1, protegees par VerifyTenantAndJwt
 // Roles identite utilisables : super_admin | administrateur | personnel | enseignant | apprenant | parent
-Route::prefix('v1')->middleware([VerifyTenantAndJwt::class])->group(function () {
+Route::prefix('v1')->group(function () {
+
+    // ── Routes PUBLIQUES (sans JWT) ─────────────────────────────────────────
+    // Appels à candidature lisibles par tous les visiteurs (page publique étab)
+    Route::get('/public/appels-candidatures',        [AppelPublicController::class, 'index']);
+    Route::get('/public/appels-candidatures/{uuid}', [AppelPublicController::class, 'show']);
+
+    // ── Routes PROTÉGÉES (JWT requis) ───────────────────────────────────────
+    Route::middleware([VerifyTenantAndJwt::class])->group(function () {
 
     // --- Appels à candidatures ---
     Route::get('/appels-candidatures', [AppelCandidatureController::class, 'index']);
@@ -74,4 +83,5 @@ Route::prefix('v1')->middleware([VerifyTenantAndJwt::class])->group(function () 
     // Reconduite d'un apprenant vers une nouvelle classe : secretaire ou directeur
     Route::post('/reinscriptions', [ReinscriptionController::class, 'store'])
         ->middleware('role:administrateur,personnel');
-});
+    }); // fin groupe protégé VerifyTenantAndJwt
+}); // fin prefix v1

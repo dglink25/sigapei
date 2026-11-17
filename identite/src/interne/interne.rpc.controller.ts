@@ -80,7 +80,7 @@ export class InterneRpcController {
         const existant = await this.utilisateursService.trouverParEmail(dirigeantEmail.toLowerCase());
         if (existant) {
           matriculeAdmin = existant.matricule ?? null;
-          this.logger.log(`Compte existant pour ${dirigeantEmail} — idempotence respectée.`);
+          this.logger.log(`Compte existant pour ${dirigeantEmail} - idempotence respectée.`);
         } else {
           const roles     = await this.rolesService.lister();
           const roleAdmin = roles.find((r) => r.code === 'administrateur');
@@ -100,17 +100,17 @@ export class InterneRpcController {
               telephone:  telephoneE164,
               matricule:  matriculeAdmin,
             });
-            this.logger.log(`Compte administrateur créé — ${nomEtablissement} (${matriculeAdmin}).`);
+            this.logger.log(`Compte administrateur créé - ${nomEtablissement} (${matriculeAdmin}).`);
           }
         }
       }
     } catch (err) {
-      this.logger.error(`Création compte admin — ${tenantUuid} : ${(err as Error).message}`);
+      this.logger.error(`Création compte admin - ${tenantUuid} : ${(err as Error).message}`);
     }
 
     // ── 2. Notifications ──
     const url = urlAccueil ?? `https://${slug}.sigapei.com`;
-    const identifiantConnexion = dirigeantEmail ?? dirigeantTelephone ?? '—';
+    const identifiantConnexion = dirigeantEmail ?? dirigeantTelephone ?? '-';
     const promesses: Promise<any>[] = [];
 
     // WhatsApp
@@ -123,7 +123,7 @@ export class InterneRpcController {
         const tel = normaliserTelephoneE164(dirigeantTelephone).e164;
         promesses.push(this.whatsapp.envoyerMessage(tel, msgWa));
         promesses.push(this.sms.envoyerMessage(tel,
-          `SIGAPEI — ${nomEtablissement} est enregistré.` +
+          `SIGAPEI - ${nomEtablissement} est enregistré.` +
           (matriculeAdmin ? ` Matricule admin. : ${matriculeAdmin}.` : '') +
           ` Identifiant : ${identifiantConnexion}. Accès : ${url}`,
         ));
@@ -140,7 +140,7 @@ export class InterneRpcController {
       ];
 
       promesses.push(this.email.envoyerNotificationOnboarding(dirigeantEmail.toLowerCase(), {
-        sujet: `Enregistrement de ${nomEtablissement} — SIGAPEI`,
+        sujet: `Enregistrement de ${nomEtablissement} - SIGAPEI`,
         titreCourrier: 'Enregistrement confirmé',
         corps: `
           <p style="margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;
@@ -168,7 +168,7 @@ export class InterneRpcController {
     }
 
     await Promise.allSettled(promesses);
-    this.logger.log(`Notifications établissement.valide — ${nomEtablissement} (${code}).`);
+    this.logger.log(`Notifications établissement.valide - ${nomEtablissement} (${code}).`);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -196,13 +196,13 @@ export class InterneRpcController {
     const civil   = d.dirigeantNom ? `Monsieur / Madame ${d.dirigeantNom}` : 'Madame, Monsieur';
 
     const msgWa =
-      `SIGAPEI — Accusé de réception\n\n` +
+      `SIGAPEI - Accusé de réception\n\n` +
       `${civil},\n\n` +
       `Votre demande d'inscription pour *${nomEtab}* a bien été reçue sous la référence *${ref}*.\n\n` +
       `Elle est en cours d'instruction. Vous serez contacté(e) dès qu'une décision sera rendue ` +
       `ou si des compléments vous sont demandés.\n\n` +
       `Référence : ${ref}\n\n` +
-      `SIGAPEI — Système Intégré de Gestion Académique`;
+      `SIGAPEI - Système Intégré de Gestion Académique`;
 
     const promesses: Promise<any>[] = [];
 
@@ -222,7 +222,7 @@ export class InterneRpcController {
     const destinataires = [...new Set([d.dirigeantEmail, d.etablissementEmail].filter(Boolean) as string[])];
     for (const dest of destinataires) {
       promesses.push(this.email.envoyerNotificationOnboarding(dest, {
-        sujet: `Accusé de réception — réf. ${ref}`,
+        sujet: `Accusé de réception - réf. ${ref}`,
         titreCourrier: 'Accusé de réception',
         corps: `
           <p style="margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;
@@ -255,7 +255,7 @@ export class InterneRpcController {
     }
 
     await Promise.allSettled(promesses);
-    this.logger.log(`Notifications demande.soumise — réf. ${ref}.`);
+    this.logger.log(`Notifications demande.soumise - réf. ${ref}.`);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -283,14 +283,14 @@ export class InterneRpcController {
       .join('\n');
 
     const msgWa =
-      `SIGAPEI — Action requise\n\n` +
+      `SIGAPEI - Action requise\n\n` +
       `Madame, Monsieur,\n\n` +
       `Des compléments ou corrections sont attendus sur votre dossier *${ref}*.\n\n` +
       `Éléments concernés :\n${lignesWa}\n\n` +
       `Accédez à votre dossier via le lien sécurisé ci-dessous (valable 72 heures) :\n` +
       `${d.lienCorrection}\n\n` +
       `Ce lien est strictement personnel et à usage unique.\n\n` +
-      `SIGAPEI — Système Intégré de Gestion Académique`;
+      `SIGAPEI - Système Intégré de Gestion Académique`;
 
     const promesses: Promise<any>[] = [];
 
@@ -315,7 +315,7 @@ export class InterneRpcController {
         .join('');
 
       promesses.push(this.email.envoyerNotificationOnboarding(d.dirigeantEmail, {
-        sujet: `Compléments requis — dossier ${ref}`,
+        sujet: `Compléments requis - dossier ${ref}`,
         titreCourrier: 'Compléments requis',
         corps: `
           <p style="margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;
@@ -356,7 +356,7 @@ export class InterneRpcController {
     }
 
     await Promise.allSettled(promesses);
-    this.logger.log(`Notifications demande.correction_demandee — réf. ${ref}.`);
+    this.logger.log(`Notifications demande.correction_demandee - réf. ${ref}.`);
   }
 
   @EventPattern('demande.correction_relance')
@@ -390,7 +390,7 @@ export class InterneRpcController {
     const nom         = utilisateur.nomComplet;
     const telephone   = utilisateur.telephone;
     const emailAddr   = utilisateur.email;
-    const identifiant = emailAddr ?? telephone ?? '—';
+    const identifiant = emailAddr ?? telephone ?? '-';
 
     const lignes: Array<{ libelle: string; valeur: string; accentuer?: boolean }> = [
       { libelle: 'Identifiant de connexion', valeur: identifiant },
@@ -400,13 +400,13 @@ export class InterneRpcController {
     ];
 
     const msgWa =
-      `SIGAPEI — Ouverture de compte\n\n` +
+      `SIGAPEI - Ouverture de compte\n\n` +
       `Madame, Monsieur ${nom},\n\n` +
       `Un compte vous a été ouvert sur la plateforme SIGAPEI.\n\n` +
       `Identifiant de connexion : ${identifiant}\n` +
       (utilisateur.matricule ? `Matricule : ${utilisateur.matricule}\n` : '') +
       `\nConnectez-vous sur la plateforme pour accéder à vos services.\n\n` +
-      `SIGAPEI — Système Intégré de Gestion Académique`;
+      `SIGAPEI - Système Intégré de Gestion Académique`;
 
     const promesses: Promise<any>[] = [];
 
@@ -415,7 +415,7 @@ export class InterneRpcController {
         const tel = normaliserTelephoneE164(telephone).e164;
         promesses.push(this.whatsapp.envoyerMessage(tel, msgWa));
         promesses.push(this.sms.envoyerMessage(tel,
-          `SIGAPEI — Un compte a été ouvert à votre nom.` +
+          `SIGAPEI - Un compte a été ouvert à votre nom.` +
           (utilisateur.matricule ? ` Matricule : ${utilisateur.matricule}.` : '') +
           ` Identifiant : ${identifiant}.`,
         ));
@@ -424,7 +424,7 @@ export class InterneRpcController {
 
     if (emailAddr) {
       promesses.push(this.email.envoyerNotificationOnboarding(emailAddr.toLowerCase(), {
-        sujet: `Ouverture de compte — SIGAPEI`,
+        sujet: `Ouverture de compte - SIGAPEI`,
         titreCourrier: 'Ouverture de compte',
         corps: `
           <p style="margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;
@@ -450,7 +450,7 @@ export class InterneRpcController {
     }
 
     await Promise.allSettled(promesses);
-    this.logger.log(`Notification utilisateur.cree — ${d.utilisateurUuid}.`);
+    this.logger.log(`Notification utilisateur.cree - ${d.utilisateurUuid}.`);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -467,7 +467,7 @@ export class InterneRpcController {
     url: string;
   }): string {
     return (
-      `SIGAPEI — Enregistrement confirmé\n\n` +
+      `SIGAPEI - Enregistrement confirmé\n\n` +
       `Monsieur / Madame ${p.dirigeantNom},\n\n` +
       `L'établissement *${p.nomEtablissement}* a été enregistré sur la plateforme SIGAPEI ` +
       `et est désormais opérationnel.\n\n` +
@@ -477,7 +477,7 @@ export class InterneRpcController {
       `  Matricule étab. : ${p.matricule}\n` +
       `  Code public : ${p.code}\n\n` +
       `Espace de gestion :\n${p.url}\n\n` +
-      `SIGAPEI — Système Intégré de Gestion Académique`
+      `SIGAPEI - Système Intégré de Gestion Académique`
     );
   }
 }
