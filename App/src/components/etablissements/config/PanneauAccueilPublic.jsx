@@ -65,8 +65,11 @@ export default function PanneauAccueilPublic() {
         actualites:    Array.isArray(r?.actualites)   ? r.actualites   : [],
         reseauxSociaux: r?.reseauxSociaux ?? { facebook: '', twitter: '', linkedin: '', instagram: '' },
       })
-    } catch {
-      notify.warning('Non configuré', 'La page d\'accueil n\'est pas encore configurée. Commencez par ajouter du contenu.')
+    } catch (err) {
+      /* 404 = page non encore configurée : état vide sans notification d'erreur */
+      if (err?.status !== 404) {
+        notify.fromError(err)
+      }
       setData({ ...VIDE })
     } finally {
       setLoading(false)

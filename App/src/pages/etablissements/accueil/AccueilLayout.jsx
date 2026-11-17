@@ -1,12 +1,13 @@
 /**
  * AccueilLayout - Layout commun des pages publiques d'un établissement.
- * Header + <Outlet> + Footer. Les données sont chargées ici une seule fois
- * et partagées via Context aux pages enfants.
+ * Header + <Outlet> + Footer. Les données et cycles actifs sont chargés ici
+ * une seule fois et partagés via Context aux pages enfants.
  */
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { Building2 } from 'lucide-react'
 import { accueilPublicService } from '../../../services/etablissements/accueilPublic.service'
+import { cyclesPublicsService } from '../../../services/etablissements/cyclesPublics.service'
 import { detecterSlugEtablissement, urlPlateforme, lienEtablissement } from '../../../lib/etablissements/subdomain'
 import { tokenStore } from '../../../lib/identite/tokenStore'
 import AccueilHeader from '../../../components/etablissements/AccueilHeader'
@@ -15,6 +16,14 @@ import { ENV } from '../../../config/commun/env'
 import Loader from '../../../components/commun/Loader'
 import usePageTitle from '../../../hooks/commun/usePageTitle'
 import '../AccueilEtablissement.css'
+import '../../commun/ErrorPages.css'
+
+const CYCLE_LABELS = {
+  maternelle:    'Maternelle',
+  primaire:      'Primaire',
+  secondaire:    'Secondaire',
+  universitaire: 'Université',
+}
 
 /* ── Contexte partagé avec les pages enfants ── */
 export const AccueilCtx = createContext(null)
@@ -26,10 +35,11 @@ export default function AccueilLayout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [data,     setData]     = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [erreur,   setErreur]   = useState(null)
-  const [connecte, setConnecte] = useState(false)
+  const [data,         setData]         = useState(null)
+  const [loading,      setLoading]      = useState(true)
+  const [erreur,       setErreur]       = useState(null)
+  const [connecte,     setConnecte]     = useState(false)
+  const [cyclesActifs, setCyclesActifs] = useState([]) // ex: ['secondaire', 'primaire']
 
   useEffect(() => { setConnecte(!!tokenStore.getAccess()) }, [])
 
@@ -37,26 +47,32 @@ export default function AccueilLayout() {
     if (!slug) return
     setLoading(true)
     accueilPublicService.lire(slug)
-      .then(setData)
+      .then((d) => {
+        setData(d)
+        // Charger les cycles actifs de l'établissement en parallèle
+        cyclesPublicsService.listerAutorises(slug)
+          .then((cycles) => setCyclesActifs(Array.isArray(cycles) ? cycles : []))
+          .catch(() => setCyclesActifs([]))
+      })
       .catch(() => setErreur('Établissement introuvable ou indisponible.'))
       .finally(() => setLoading(false))
   }, [slug])
 
   usePageTitle(data?.nom ?? null)
 
-  /* ── Chargement ── */
   if (loading) return <Loader label="Chargement…" />
 
-  /* ── Erreur ── */
   if (erreur || !data) {
     return (
-      <div className="ae2-error">
-        <div className="ae2-error-card">
-          <img src="/sigapei.png" alt={ENV.appName} className="ae2-error-logo" />
-          <Building2 size={44} className="ae2-error-icon" />
-          <h1>Établissement introuvable</h1>
-          <p>{erreur ?? "Cet établissement n'existe pas ou n'est plus actif."}</p>
-          <a href={urlPlateforme('/')} className="ae2-btn">Retour à SIGAPEI</a>
+      <div className="err-page">
+        <div className="err-card">
+          <img src="/sigapei.png" alt={ENV.appName} className="err-logo" />
+          <Building2 size={44} style={{ color: '#E9AA20', marginBottom: 8 }} />
+          <h1 className="err-title">Établissement introuvable</h1>
+          <p className="err-msg">{erreur ?? "Cet établissement n'existe pas ou n'est plus actif."}</p>
+          <div className="err-actions">
+            <a href={urlPlateforme('/')} className="err-btn is-primary">Retour à SIGAPEI</a>
+          </div>
         </div>
       </div>
     )
@@ -64,55 +80,67 @@ export default function AccueilLayout() {
 
   if (data.degrade) {
     return (
-      <div className="ae2-error">
-        <div className="ae2-error-card">
+      <div className="err-page">
+        <div className="err-card">
           {data.logoUrl
-            ? <img src={data.logoUrl} alt={data.nom ?? ''} className="ae2-error-logo" />
-            : <img src="/sigapei.png" alt={ENV.appName} className="ae2-error-logo" />
+            ? <img src={data.logoUrl} alt={data.nom ?? ''} className="err-logo" />
+            : <img src="/sigapei.png" alt={ENV.appName} className="err-logo" />
           }
-          <Building2 size={44} className="ae2-error-icon ae2-error-icon--warn" />
-          <h1>{data.nom ?? 'Établissement'}</h1>
-          <p>{data.message ?? "Cet établissement n'est pas accessible pour le moment."}</p>
-          <a href={urlPlateforme('/')} className="ae2-btn ae2-btn--ghost">Retour à SIGAPEI</a>
+          <Building2 size={44} style={{ color: '#c97e00', marginBottom: 8 }} />
+          <h1 className="err-title">{data.nom ?? 'Établissement'}</h1>
+          <p className="err-msg">{data.message ?? "Cet établissement n'est pas accessible pour le moment."}</p>
+          <div className="err-actions">
+            <a href={urlPlateforme('/')} className="err-btn">Retour à SIGAPEI</a>
+          </div>
         </div>
       </div>
     )
   }
 
-  const lienEspace   = lienEtablissement(slug, '/portail')
-  const formations   = Array.isArray(data.formations)   ? data.formations   : []
-  const actualites   = Array.isArray(data.actualites)   ? data.actualites   : []
-  const galerie      = Array.isArray(data.galerie)      ? data.galerie      : []
+  const lienEspace = lienEtablissement(slug, '/portail')
+  const actualites = Array.isArray(data.actualites) ? data.actualites : []
+  const galerie    = Array.isArray(data.galerie)    ? data.galerie    : []
 
-  /* Navigation : pages qui ont du contenu */
   const base = slug ? `/etablissements/${slug}` : ''
+
+  /* Navigation principale */
   const NAV = [
-    { id: 'presentation', label: 'Présentation', href: base || '/' },
-    ...(formations.length  ? [{ id: 'formations',  label: 'Formations',  href: `${base}/formations`  }] : []),
-    ...(actualites.length  ? [{ id: 'actualites',  label: 'Actualités',  href: `${base}/actualites`  }] : []),
-    ...(galerie.length     ? [{ id: 'galerie',     label: 'Galerie',     href: `${base}/galerie`     }] : []),
-    { id: 'contact', label: 'Contact', href: `${base}/contact` },
+    /* Accueil avec sous-menu pages */
+    {
+      id: 'accueil',
+      label: 'Accueil',
+      href: base || '/',
+      sousMenu: [
+        { id: 'presentation', label: 'Présentation', href: base || '/' },
+        ...(actualites.length ? [{ id: 'actualites', label: 'Actualités', href: `${base}/actualites` }] : []),
+        ...(galerie.length    ? [{ id: 'galerie',    label: 'Galerie',    href: `${base}/galerie`    }] : []),
+        { id: 'contact', label: 'Contact', href: `${base}/contact` },
+      ],
+    },
+    /* Formations avec sous-menu cycles */
+    {
+      id: 'formations',
+      label: 'Formations',
+      href: `${base}/formations`,
+      sousMenu: cyclesActifs.length > 0
+        ? [
+            { id: 'formations-all', label: 'Toutes les formations', href: `${base}/formations` },
+            ...cyclesActifs.map((cycle) => ({
+              id: `cycle-${cycle}`,
+              label: CYCLE_LABELS[cycle] ?? cycle,
+              href: `${base}/formations/${cycle}`,
+            })),
+          ]
+        : [],
+    },
   ]
 
-  /* scrollTo pour ancres internes (page Présentation) */
-  function scrollVers(id) {
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' })
-    } else {
-      /* Naviguer d'abord vers la page, puis scroller */
-      const item = NAV.find((n) => n.id === id)
-      if (item) navigate(item.href)
-    }
-  }
-
-  /* Naviguer via href pour les liens de nav multi-pages */
   function naviguerVers(item) {
     navigate(item.href)
   }
 
   return (
-    <AccueilCtx.Provider value={{ data, slug, connecte, lienEspace, NAV, scrollVers }}>
+    <AccueilCtx.Provider value={{ data, slug, connecte, lienEspace, NAV, cyclesActifs }}>
       <div className="ae2-page">
         <AccueilHeader
           data={data}

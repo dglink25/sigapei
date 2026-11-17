@@ -13,7 +13,7 @@ export interface ContexteJeton {
 
 /**
  * Identite (Regle n°5, cas 2 : appel direct du front sans Gateway).
- *  - introspection du jeton : signature, expiration, revocation, session — verifiees PAR Identite ;
+ *  - introspection du jeton : signature, expiration, revocation, session - verifiees PAR Identite ;
  *  - acces au module : le role de l'utilisateur a-t-il ce service, et l'etablissement l'a-t-il active ?
  * Cache : jeton valide 60 s, jeton refuse 10 s (cle = empreinte SHA-256, jamais le jeton lui-meme).
  */

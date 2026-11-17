@@ -29,15 +29,17 @@ import Portail       from './pages/commun/Portail'
 import DashboardTemp from './pages/commun/DashboardTemp'
 import SecuritePage  from './pages/identite/SecuritePage'
 
-/* Espace établissement — accueil public multi-pages */
+/* Espace établissement - accueil public multi-pages */
 import AccueilLayout    from './pages/etablissements/accueil/AccueilLayout'
 import PagePresentation from './pages/etablissements/accueil/PagePresentation'
 import PageFormations   from './pages/etablissements/accueil/PageFormations'
+import PageCycle        from './pages/etablissements/accueil/PageCycle'
 import PageActualites   from './pages/etablissements/accueil/PageActualites'
+import PageActualiteDetail from './pages/etablissements/accueil/PageActualiteDetail'
 import PageGalerie      from './pages/etablissements/accueil/PageGalerie'
 import PageContact      from './pages/etablissements/accueil/PageContact'
 
-/* Espace établissement — portail & services */
+/* Espace établissement - portail & services */
 import ConfigurationPage        from './pages/etablissements/ConfigurationPage'
 import ServiceEtablissementPage from './pages/etablissements/ServiceEtablissementPage'
 import RedirectionPortail       from './pages/identite/RedirectionPortail'
@@ -125,7 +127,9 @@ function routesEtablissement(base) {
       <Route element={<AccueilLayout />}>
         <Route path={p('')}            element={<PagePresentation />} />
         <Route path={p('/formations')} element={<PageFormations />} />
+        <Route path={p('/formations/:cycle')} element={<PageCycle />} />
         <Route path={p('/actualites')} element={<PageActualites />} />
+        <Route path={p('/actualites/:index')} element={<PageActualiteDetail />} />
         <Route path={p('/galerie')}    element={<PageGalerie />} />
         <Route path={p('/contact')}    element={<PageContact />} />
       </Route>

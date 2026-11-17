@@ -11,26 +11,26 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         // Module E-Learning : le backend Django n'émet aucun en-tête CORS,
-        // les appels /v1/ passent donc par ce proxy en développement
-        // (IPv4 explicite : Node résout « localhost » en ::1 sous Windows).
+        // les appels /v1/ passent donc par ce proxy en développement.
         '/v1': {
           target: env.VITE_ELEARNING_SERVICE_URL || '',
           changeOrigin: true,
         },
+        // Établissements back-office (routes /interne/*) : ajoute X-Internal-Secret
         '/etab-interne': {
           target: env.ETAB_PROXY_TARGET || '',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/etab-interne/, prefix),
           headers: env.ETAB_INTERNAL_SECRET ? { 'X-Internal-Secret': env.ETAB_INTERNAL_SECRET } : {},
         },
-        // Meme principe pour la surface interne du microservice Vie scolaire
-        // (GET /v1/interne/alertes-absences) : secret ajoute cote serveur.
+        // Vie scolaire (GET /v1/interne/alertes-absences) : secret côté serveur
         '/vsc-interne': {
           target: env.VSC_PROXY_TARGET || '',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/vsc-interne/, ''),
           headers: env.VSC_INTERNAL_SECRET ? { 'X-Internal-Secret': env.VSC_INTERNAL_SECRET } : {},
-        // Module Paiements (super admin) : API du microservice paiements en développement.
+        },
+        // Paiements (super admin) : API du microservice paiements en développement
         '/paiement-api': {
           target: env.PAIEMENT_PROXY_TARGET || 'http://localhost:4010',
           changeOrigin: true,
