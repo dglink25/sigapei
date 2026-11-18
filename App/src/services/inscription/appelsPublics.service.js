@@ -1,41 +1,44 @@
 /**
  * Appels à candidature - lecture publique (sans authentification).
- * Utilisé par la page publique de l'établissement pour afficher
- * les campagnes ouvertes aux candidats.
+ * Utilise fetch() natif directement vers le microservice inscription.
+ * CORS autorisé côté backend (Access-Control-Allow-Origin: *).
  */
 import { ENV } from '../../config/commun/env'
-import { createHttp } from '../../lib/commun/http'
 
-const INSCRIPTION_BASE = ENV.services.inscription || 'http://localhost:4003'
-const http = createHttp(INSCRIPTION_BASE)
-const PUBLIC = { auth: false }
+const BASE = (ENV.services.inscription || 'http://localhost:4003').replace(/\/+$/, '')
+
+async function getPublic(path) {
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      headers: { Accept: 'application/json' },
+    })
+    if (!res.ok) return null
+    return res.json()
+  } catch {
+    return null
+  }
+}
 
 export const appelsPublicsService = {
-  /**
-   * Lister les appels ouverts d'un établissement par cycle.
-   * @param {string} etablissementUuid  UUID de l'établissement
-   * @param {string} cycle              maternelle | primaire | secondaire | universitaire
-   */
+  /** Lister tous les appels d'un établissement par slug ou UUID */
+  listerTous: async (etablissementUuid, slug) => {
+    const params = new URLSearchParams()
+    if (etablissementUuid) params.set('etablissement_uuid', etablissementUuid)
+    else if (slug) params.set('slug', slug)
+    const r = await getPublic(`/v1/public/appels-candidatures?${params}`)
+    return Array.isArray(r?.data) ? r.data : []
+  },
+
+  /** Lister par cycle */
   listerParCycle: async (etablissementUuid, cycle) => {
-    const qs = new URLSearchParams({ etablissement_uuid: etablissementUuid, cycle }).toString()
-    const r = await http.get(`/public/appels-candidatures?${qs}`, PUBLIC)
-    return Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []
+    const params = new URLSearchParams({ etablissement_uuid: etablissementUuid, cycle })
+    const r = await getPublic(`/v1/public/appels-candidatures?${params}`)
+    return Array.isArray(r?.data) ? r.data : []
   },
 
-  /**
-   * Lister tous les appels d'un établissement (tous cycles).
-   */
-  listerTous: async (etablissementUuid) => {
-    const qs = new URLSearchParams({ etablissement_uuid: etablissementUuid }).toString()
-    const r = await http.get(`/public/appels-candidatures?${qs}`, PUBLIC)
-    return Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : []
-  },
-
-  /**
-   * Détail d'un appel par UUID (public).
-   */
+  /** Détail d'un appel */
   afficher: async (uuid) => {
-    const r = await http.get(`/public/appels-candidatures/${uuid}`, PUBLIC)
-    return r?.data ?? r
+    const r = await getPublic(`/v1/public/appels-candidatures/${uuid}`)
+    return r?.data ?? null
   },
 }

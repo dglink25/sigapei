@@ -1,7 +1,3 @@
-/**
- * PageCycle - Appels à candidature d'un cycle pour l'établissement public.
- * URL : /etablissements/:slug/:cycle  (maternelle | primaire | secondaire | universitaire)
- */
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { GraduationCap, CalendarDays, Clock, ArrowLeft, Users } from 'lucide-react'
@@ -26,22 +22,36 @@ function datesFr(iso) {
 }
 
 function statutAppel(appel) {
-  const now = new Date()
+  const now   = new Date()
   const debut = appel.date_debut ? new Date(appel.date_debut) : null
   const fin   = appel.date_fin   ? new Date(appel.date_fin)   : null
+  const s     = appel.statut
 
-  if (appel.statut === 'ouvert' || appel.statut === 'en_cours') {
+  if (s === 'termine' || s === 'annule') return 'termine'
+  if (s === 'ouvert') {
     if (fin && now > fin) return 'termine'
     return 'ouvert'
   }
-  if (appel.statut === 'brouillon' || appel.statut === 'planifie') {
+  if (s === 'brouillon' || s === 'planifie') {
+    if (debut && now >= debut) return 'ouvert'
     return 'bientot'
   }
-  if (appel.statut === 'termine' || appel.statut === 'annule') return 'termine'
-  // Fallback : comparer les dates
-  if (debut && now < debut) return 'bientot'
   if (debut && fin && now >= debut && now <= fin) return 'ouvert'
+  if (debut && now < debut) return 'bientot'
   return 'termine'
+}
+
+/* ── Skeleton card ── */
+function SkeletonCard() {
+  return (
+    <div className="pc-appel-card" style={{ gap: 14 }}>
+      <div className="ap-skel" style={{ height: 20, width: '40%', borderRadius: 6 }} />
+      <div className="ap-skel" style={{ height: 24, width: '85%', borderRadius: 6 }} />
+      <div className="ap-skel" style={{ height: 16, width: '70%', borderRadius: 6 }} />
+      <div className="ap-skel" style={{ height: 16, width: '55%', borderRadius: 6 }} />
+      <div className="ap-skel" style={{ height: 40, width: 140, borderRadius: 8, marginTop: 8 }} />
+    </div>
+  )
 }
 
 export default function PageCycle() {
@@ -58,29 +68,31 @@ export default function PageCycle() {
   const base = slug ? `/etablissements/${slug}` : ''
 
   useEffect(() => {
-    if (!data?.uuid && !slug) return
+    if (!slug || !cycle) return
+    let annule = false
     setLoading(true)
-    // On utilise l'UUID de l'établissement si disponible, sinon on filtre côté front
-    appelsPublicsService.listerTous(data?.uuid ?? '')
+    setAppels([])
+
+    appelsPublicsService.listerTous(null, slug)
       .then((liste) => {
-        const filtres = liste.filter((a) =>
-          a.cycle === cycle && statutAppel(a) !== 'termine'
-        )
-        // Tri : ouverts en premier, puis bientôt disponibles
-        filtres.sort((a, b) => {
-          const sa = statutAppel(a) === 'ouvert' ? 0 : 1
-          const sb = statutAppel(b) === 'ouvert' ? 0 : 1
-          return sa - sb
-        })
+        if (annule) return
+        const filtres = (Array.isArray(liste) ? liste : [])
+          .filter((a) => a.cycle === cycle && statutAppel(a) !== 'termine')
+          .sort((a, b) => {
+            const sa = statutAppel(a) === 'ouvert' ? 0 : 1
+            const sb = statutAppel(b) === 'ouvert' ? 0 : 1
+            return sa - sb
+          })
         setAppels(filtres)
       })
-      .catch(() => setAppels([]))
-      .finally(() => setLoading(false))
-  }, [slug, cycle, data?.uuid])
+      .catch(() => { if (!annule) setAppels([]) })
+      .finally(() => { if (!annule) setLoading(false) })
+
+    return () => { annule = true }
+  }, [slug, cycle]) // ← uniquement slug et cycle, pas data?.uuid
 
   return (
     <>
-      {/* Hero compact avec image du premier slide hero de l'étab */}
       <AccueilHero
         data={data}
         slug={slug}
@@ -94,7 +106,6 @@ export default function PageCycle() {
       <section className="ae2-section" style={{ minHeight: '50vh' }}>
         <div className="ae2-container">
 
-          {/* Bouton retour */}
           <button
             type="button"
             className="ae2-btn ae2-btn--ghost"
@@ -108,16 +119,16 @@ export default function PageCycle() {
             <h2 className="ae2-section-titre">
               <span className="ae2-accent">{cycleLabel}</span>
             </h2>
-            <p className="ae2-section-sous">
-              Appels à candidature disponibles pour ce cycle
-            </p>
+            <p className="ae2-section-sous">Appels à candidature disponibles pour ce cycle</p>
             <div className="ae2-section-barre" />
           </div>
 
+          {/* Skeletons pendant le chargement */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--sg-text-muted)' }}>
-              <Clock size={32} style={{ marginBottom: 12 }} />
-              <p>Chargement des campagnes…</p>
+            <div className="pc-appels-grid">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
             </div>
           ) : appels.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--sg-text-muted)' }}>
@@ -127,12 +138,10 @@ export default function PageCycle() {
           ) : (
             <div className="pc-appels-grid">
               {appels.map((appel, i) => {
-                const statut = statutAppel(appel)
+                const statut   = statutAppel(appel)
                 const estOuvert = statut === 'ouvert'
-
                 return (
                   <article key={appel.uuid ?? i} className={`pc-appel-card ${estOuvert ? 'pc-appel-card--ouvert' : 'pc-appel-card--bientot'}`}>
-                    {/* Badge statut */}
                     <div className={`pc-appel-badge ${estOuvert ? 'pc-appel-badge--ouvert' : 'pc-appel-badge--bientot'}`}>
                       {estOuvert ? '● Ouvert' : '○ Bientôt disponible'}
                     </div>
@@ -143,7 +152,6 @@ export default function PageCycle() {
                       <p className="pc-appel-desc">{appel.description}</p>
                     )}
 
-                    {/* Dates */}
                     <div className="pc-appel-dates">
                       <div className="pc-appel-date">
                         <CalendarDays size={14} />
@@ -157,24 +165,22 @@ export default function PageCycle() {
                       )}
                     </div>
 
-                    {/* Frais */}
-                    {appel.est_payant && appel.frais_dossier && (
+                    {appel.est_payant && appel.montant && Number(appel.montant) > 0 && (
                       <p className="pc-appel-frais">
-                        Frais de dossier : <strong>{Number(appel.frais_dossier).toLocaleString('fr-FR')} FCFA</strong>
+                        Frais de dossier : <strong>{Number(appel.montant).toLocaleString('fr-FR')} {appel.devise ?? 'FCFA'}</strong>
                       </p>
                     )}
 
-                    {/* CTA */}
                     {estOuvert ? (
                       <a
-                        href={`${base}/inscription?appel=${appel.uuid}`}
+                        href={`${base}/candidature?appel=${appel.uuid}`}
                         className="pc-appel-btn pc-appel-btn--candidater"
                       >
                         <Users size={15} /> Candidater
                       </a>
                     ) : (
                       <span className="pc-appel-btn pc-appel-btn--bientot" aria-disabled="true">
-                        <Clock size={15} /> Bientôt ouvert
+                        <Clock size={15} /> Bientôt ouvert - {datesFr(appel.date_debut)}
                       </span>
                     )}
                   </article>

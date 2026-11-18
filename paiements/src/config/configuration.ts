@@ -9,7 +9,7 @@ export default () => ({
   apiPrefix: process.env.API_PREFIX ?? 'v1',
   internalApiSecret: process.env.INTERNAL_API_SECRET,
   corsOrigins: (process.env.CORS_ORIGINS ?? '').split(',').filter(Boolean),
-  appBaseUrl: process.env.APP_BASE_URL ?? 'http://localhost:4010',
+  appBaseUrl: process.env.APP_BASE_URL ?? '',
 
   db: {
     host: process.env.DB_HOST,

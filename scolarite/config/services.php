@@ -15,11 +15,11 @@ return [
 
     'microservices' => [
         'urls' => [
-            'identite'      => env('URL_SERVICE_IDENTITE',      'http://localhost:4001'),
-            'etablissements'=> env('URL_SERVICE_ETABLISSEMENTS','http://localhost:4002'),
-            'inscription'   => env('URL_SERVICE_INSCRIPTION',   'http://localhost:4003'),
-            'scolarite'     => env('URL_SERVICE_SCOLARITE',     'http://localhost:4004'),
-            'vie-scolaire'  => env('URL_SERVICE_VIE_SCOLAIRE',  'http://localhost:4005'),
+            'identite'      => env('URL_SERVICE_IDENTITE',      ''),
+            'etablissements'=> env('URL_SERVICE_ETABLISSEMENTS',''),
+            'inscription'   => env('URL_SERVICE_INSCRIPTION',   ''),
+            'scolarite'     => env('URL_SERVICE_SCOLARITE',     ''),
+            'vie-scolaire'  => env('URL_SERVICE_VIE_SCOLAIRE',  ''),
         ],
         // Neon est une base managée distante : la latence d'un aller-retour
         // dépasse couramment 1 s, et une requête qui traverse plusieurs

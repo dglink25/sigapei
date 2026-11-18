@@ -3,6 +3,7 @@
 use App\appels_candidatures\AppelCandidatureController;
 use App\appels_candidatures\AppelPublicController;
 use App\candidatures\CandidatureController;
+use App\candidatures\CandidaturePublicController;
 use App\common\Middleware\VerifyTenantAndJwt;
 use App\docs\DocsController;
 use App\pieces_justificatives\PieceJustificativeController;
@@ -31,6 +32,10 @@ Route::prefix('v1')->group(function () {
     // Appels à candidature lisibles par tous les visiteurs (page publique étab)
     Route::get('/public/appels-candidatures',        [AppelPublicController::class, 'index']);
     Route::get('/public/appels-candidatures/{uuid}', [AppelPublicController::class, 'show']);
+
+    // Soumission publique d'une candidature (parent/tuteur sans compte)
+    // Le tenant_id est fourni dans le body ou via X-Tenant-Id
+    Route::post('/public/candidatures', [CandidaturePublicController::class, 'store']);
 
     // ── Routes PROTÉGÉES (JWT requis) ───────────────────────────────────────
     Route::middleware([VerifyTenantAndJwt::class])->group(function () {
