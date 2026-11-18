@@ -5,10 +5,10 @@ import { useProfilStore } from '../../context/elearning/profil.js'
 // Taille de page configurée côté DRF (PAGE_SIZE de settings.py).
 export const TAILLE_PAGE = 20
 
-// Instance unique : baseURL relative « /v1 » passe par le proxy Vite en
+// Instance unique : baseURL passe par le proxy Vite /elearning-api en
 // développement (voir vite.config.js), ce qui évite tout problème de CORS.
 export const api = axios.create({
-  baseURL: '/v1',
+  baseURL: '/elearning-api/v1',
   headers: { 'Content-Type': 'application/json' },
 })
 

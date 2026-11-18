@@ -194,6 +194,7 @@ export default function ScolaritePage() {
         toutesAnnees={toutesAnnees}
         cyclesActifs={cyclesActifsValides}
         cyclesAutorises={cyclesAutorises}
+        initialLoading={initialLoading}
         allerA={allerA}
         changerAnnee={changerAnnee}
         slug={slug}
@@ -305,7 +306,7 @@ function buildNav(base, section, cycleParam, ongletURL, cyclesActifs) {
 /* ── Vue d'ensemble - design identique au Dashboard ── */
 function VueEnsemble({
   anneeActive, toutesAnnees, cyclesActifs, cyclesAutorises,
-  allerA, changerAnnee, slug,
+  initialLoading, allerA, changerAnnee, slug,
 }) {
   const base        = lienEtablissement(slug, '/scolarite')
   const totalCycles = cyclesAutorises.length

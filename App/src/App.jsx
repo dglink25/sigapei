@@ -34,6 +34,7 @@ import AccueilLayout    from './pages/etablissements/accueil/AccueilLayout'
 import PagePresentation from './pages/etablissements/accueil/PagePresentation'
 import PageFormations   from './pages/etablissements/accueil/PageFormations'
 import PageCycle        from './pages/etablissements/accueil/PageCycle'
+import PageCandidature  from './pages/etablissements/accueil/PageCandidature'
 import PageActualites   from './pages/etablissements/accueil/PageActualites'
 import PageActualiteDetail from './pages/etablissements/accueil/PageActualiteDetail'
 import PageGalerie      from './pages/etablissements/accueil/PageGalerie'
@@ -128,6 +129,7 @@ function routesEtablissement(base) {
         <Route path={p('')}            element={<PagePresentation />} />
         <Route path={p('/formations')} element={<PageFormations />} />
         <Route path={p('/formations/:cycle')} element={<PageCycle />} />
+        <Route path={p('/candidature')}       element={<PageCandidature />} />
         <Route path={p('/actualites')} element={<PageActualites />} />
         <Route path={p('/actualites/:index')} element={<PageActualiteDetail />} />
         <Route path={p('/galerie')}    element={<PageGalerie />} />

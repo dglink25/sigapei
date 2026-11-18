@@ -8,6 +8,7 @@ import { Outlet, useParams, useNavigate, useLocation } from 'react-router-dom'
 import { Building2 } from 'lucide-react'
 import { accueilPublicService } from '../../../services/etablissements/accueilPublic.service'
 import { cyclesPublicsService } from '../../../services/etablissements/cyclesPublics.service'
+import { appelsPublicsService } from '../../../services/inscription/appelsPublics.service'
 import { detecterSlugEtablissement, urlPlateforme, lienEtablissement } from '../../../lib/etablissements/subdomain'
 import { tokenStore } from '../../../lib/identite/tokenStore'
 import AccueilHeader from '../../../components/etablissements/AccueilHeader'
@@ -45,17 +46,38 @@ export default function AccueilLayout() {
 
   useEffect(() => {
     if (!slug) return
+    let annule = false
     setLoading(true)
-    accueilPublicService.lire(slug)
-      .then((d) => {
-        setData(d)
-        // Charger les cycles actifs de l'établissement en parallèle
-        cyclesPublicsService.listerAutorises(slug)
-          .then((cycles) => setCyclesActifs(Array.isArray(cycles) ? cycles : []))
-          .catch(() => setCyclesActifs([]))
+    Promise.allSettled([
+      accueilPublicService.lire(slug),
+      cyclesPublicsService.listerAutorises(slug),
+      appelsPublicsService.listerTous(null, slug),
+    ])
+      .then(([resultData, resultCycles, resultAppels]) => {
+        if (annule) return
+        if (resultData.status === 'fulfilled') {
+          setData(resultData.value)
+        } else {
+          setErreur('Établissement introuvable ou indisponible.')
+          return
+        }
+        const tousLesCycles = resultCycles.status === 'fulfilled'
+          ? (Array.isArray(resultCycles.value) ? resultCycles.value : [])
+          : []
+        const appels = resultAppels.status === 'fulfilled'
+          ? (Array.isArray(resultAppels.value) ? resultAppels.value : [])
+          : []
+        // Cycles qui ont au moins un appel ouvert ou planifié
+        const cyclesAvecAppels = new Set(
+          appels
+            .filter((a) => ['ouvert', 'planifie', 'brouillon'].includes(a.statut))
+            .map((a) => a.cycle)
+        )
+        const actifs = tousLesCycles.filter((c) => cyclesAvecAppels.has(c))
+        setCyclesActifs(actifs.length > 0 ? actifs : tousLesCycles)
       })
-      .catch(() => setErreur('Établissement introuvable ou indisponible.'))
-      .finally(() => setLoading(false))
+      .finally(() => { if (!annule) setLoading(false) })
+    return () => { annule = true }
   }, [slug])
 
   usePageTitle(data?.nom ?? null)
@@ -140,8 +162,7 @@ export default function AccueilLayout() {
   }
 
   return (
-    <AccueilCtx.Provider value={{ data, slug, connecte, lienEspace, NAV, cyclesActifs }}>
-      <div className="ae2-page">
+    <AccueilCtx.Provider value={{ data, slug, connecte, lienEspace, NAV, cyclesActifs }}>      <div className="ae2-page">
         <AccueilHeader
           data={data}
           slug={slug}
