@@ -338,3 +338,28 @@
 .auth-btn.google {
   color: var(--sg-cream);
 }
+
+/* ── Lien retour vers l'accueil (en haut de la carte) ── */
+.auth-home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 246, 221, 0.70);
+  text-decoration: none;
+  margin-bottom: 10px;
+  transition: color 0.15s;
+  align-self: flex-start;
+}
+.auth-home-link:hover { color: var(--sg-gold); }
+
+/* ── Nom de l'établissement sous le logo ── */
+.auth-etab-nom {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--sg-gold);
+  letter-spacing: 0.03em;
+}

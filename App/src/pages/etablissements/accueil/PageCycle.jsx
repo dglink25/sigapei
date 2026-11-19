@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { GraduationCap, CalendarDays, Clock, ArrowLeft, Users } from 'lucide-react'
+import { GraduationCap, CalendarDays, Clock, Users } from 'lucide-react'
 import AccueilHero from '../../../components/etablissements/AccueilHero'
+import CycleIllustration from '../../../components/etablissements/CycleIllustration'
+import AppelIllustration from '../../../components/etablissements/AppelIllustration'
+import PageBanner from '../../../components/etablissements/PageBanner'
 import { useAccueil } from './AccueilLayout'
 import { appelsPublicsService } from '../../../services/inscription/appelsPublics.service'
 import usePageTitle from '../../../hooks/commun/usePageTitle'
@@ -94,28 +97,26 @@ export default function PageCycle() {
   return (
     <>
       <AccueilHero
-        data={data}
-        slug={slug}
-        connecte={connecte}
-        lienEspace={lienEspace}
-        mode="page"
-        titre={`Formations - ${cycleLabel}`}
-        page="formations"
+        data={data} slug={slug} connecte={connecte} lienEspace={lienEspace}
+        mode="page" titre={cycleLabel} page="formations"
+      />
+      <PageBanner
+        titre={cycleLabel}
+        fil={[
+          { label: data?.nom ?? 'Accueil', href: base || '/' },
+          { label: 'Formations', href: `${base}/formations` },
+          { label: cycleLabel },
+        ]}
+        retour={`${base}/formations`}
       />
 
       <section className="ae2-section" style={{ minHeight: '50vh' }}>
         <div className="ae2-container">
 
-          <button
-            type="button"
-            className="ae2-btn ae2-btn--ghost"
-            style={{ marginBottom: 32 }}
-            onClick={() => navigate(`${base}/formations`)}
-          >
-            <ArrowLeft size={15} /> Retour aux formations
-          </button>
-
           <div className="ae2-section-head">
+            <div style={{ marginBottom: 16 }}>
+              <CycleIllustration cycle={cycle} size={100} />
+            </div>
             <h2 className="ae2-section-titre">
               <span className="ae2-accent">{cycleLabel}</span>
             </h2>
@@ -142,6 +143,17 @@ export default function PageCycle() {
                 const estOuvert = statut === 'ouvert'
                 return (
                   <article key={appel.uuid ?? i} className={`pc-appel-card ${estOuvert ? 'pc-appel-card--ouvert' : 'pc-appel-card--bientot'}`}>
+
+                    {/* Illustration automatique selon le titre / cycle */}
+                    <div className="pc-appel-illu">
+                      <AppelIllustration
+                        titre={appel.titre ?? ''}
+                        cycle={cycle}
+                        index={i}
+                        size={100}
+                      />
+                    </div>
+
                     <div className={`pc-appel-badge ${estOuvert ? 'pc-appel-badge--ouvert' : 'pc-appel-badge--bientot'}`}>
                       {estOuvert ? '● Ouvert' : '○ Bientôt disponible'}
                     </div>
@@ -172,12 +184,13 @@ export default function PageCycle() {
                     )}
 
                     {estOuvert ? (
-                      <a
-                        href={`${base}/candidature?appel=${appel.uuid}`}
+                      <button
+                        type="button"
                         className="pc-appel-btn pc-appel-btn--candidater"
+                        onClick={() => navigate(`${base}/candidature?appel=${appel.uuid}`)}
                       >
                         <Users size={15} /> Candidater
-                      </a>
+                      </button>
                     ) : (
                       <span className="pc-appel-btn pc-appel-btn--bientot" aria-disabled="true">
                         <Clock size={15} /> Bientôt ouvert - {datesFr(appel.date_debut)}

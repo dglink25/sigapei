@@ -12,11 +12,18 @@
 
 /* ─── Conteneur global ─── */
 .aeh {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 1000; /* Au-dessus du reste de la page */
+  left: 0;
+  right: 0;
+  z-index: 1000;
   font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.20);
+}
+
+/* Espace réservé sous le header fixe - utilisé par ae2-page */
+:root {
+  --aeh-total-h: calc(var(--aeh-b1-h) + var(--aeh-b2-h));
 }
 
 /* ══════════════════════════

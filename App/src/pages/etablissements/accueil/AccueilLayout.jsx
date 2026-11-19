@@ -36,11 +36,12 @@ export default function AccueilLayout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [data,         setData]         = useState(null)
-  const [loading,      setLoading]      = useState(true)
-  const [erreur,       setErreur]       = useState(null)
-  const [connecte,     setConnecte]     = useState(false)
-  const [cyclesActifs, setCyclesActifs] = useState([]) // ex: ['secondaire', 'primaire']
+  const [data,          setData]          = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [erreur,        setErreur]        = useState(null)
+  const [connecte,      setConnecte]      = useState(false)
+  const [cyclesActifs,  setCyclesActifs]  = useState([])
+  const [cyclesLoading, setCyclesLoading] = useState(true)
 
   useEffect(() => { setConnecte(!!tokenStore.getAccess()) }, [])
 
@@ -48,35 +49,51 @@ export default function AccueilLayout() {
     if (!slug) return
     let annule = false
     setLoading(true)
+    setCyclesLoading(true)
+
+    // ── Phase 1 : données établissement + cycles autorisés (priorité) ──
     Promise.allSettled([
       accueilPublicService.lire(slug),
       cyclesPublicsService.listerAutorises(slug),
-      appelsPublicsService.listerTous(null, slug),
-    ])
-      .then(([resultData, resultCycles, resultAppels]) => {
-        if (annule) return
-        if (resultData.status === 'fulfilled') {
-          setData(resultData.value)
-        } else {
-          setErreur('Établissement introuvable ou indisponible.')
-          return
-        }
-        const tousLesCycles = resultCycles.status === 'fulfilled'
-          ? (Array.isArray(resultCycles.value) ? resultCycles.value : [])
-          : []
-        const appels = resultAppels.status === 'fulfilled'
-          ? (Array.isArray(resultAppels.value) ? resultAppels.value : [])
-          : []
-        // Cycles qui ont au moins un appel ouvert ou planifié
-        const cyclesAvecAppels = new Set(
-          appels
-            .filter((a) => ['ouvert', 'planifie', 'brouillon'].includes(a.statut))
-            .map((a) => a.cycle)
-        )
-        const actifs = tousLesCycles.filter((c) => cyclesAvecAppels.has(c))
-        setCyclesActifs(actifs.length > 0 ? actifs : tousLesCycles)
-      })
-      .finally(() => { if (!annule) setLoading(false) })
+    ]).then(([resultData, resultCycles]) => {
+      if (annule) return
+
+      if (resultData.status === 'fulfilled') {
+        setData(resultData.value)
+      } else {
+        setErreur('Établissement introuvable ou indisponible.')
+        setLoading(false)
+        setCyclesLoading(false)
+        return
+      }
+
+      // Afficher immédiatement les cycles autorisés sans attendre les appels
+      const tousLesCycles = resultCycles.status === 'fulfilled'
+        ? (Array.isArray(resultCycles.value) ? resultCycles.value : [])
+        : []
+
+      setCyclesActifs(tousLesCycles)
+      setLoading(false)       // page visible dès ici
+      setCyclesLoading(false) // cycles affichés dès ici
+
+      // ── Phase 2 : appels en arrière-plan pour affiner si besoin ──
+      appelsPublicsService.listerTous(null, slug)
+        .then((appels) => {
+          if (annule) return
+          const liste = Array.isArray(appels) ? appels : []
+          const cyclesAvecAppels = new Set(
+            liste
+              .filter((a) => ['ouvert', 'planifie', 'brouillon'].includes(a.statut))
+              .map((a) => a.cycle)
+          )
+          // Affiner : ne garder que les cycles qui ont des appels actifs
+          // Si aucun appel trouvé, on garde tous les cycles autorisés (déjà affichés)
+          const affines = tousLesCycles.filter((c) => cyclesAvecAppels.has(c))
+          if (affines.length > 0) setCyclesActifs(affines)
+        })
+        .catch(() => { /* silencieux : les cycles autorisés restent affichés */ })
+    })
+
     return () => { annule = true }
   }, [slug])
 
@@ -162,7 +179,7 @@ export default function AccueilLayout() {
   }
 
   return (
-    <AccueilCtx.Provider value={{ data, slug, connecte, lienEspace, NAV, cyclesActifs }}>      <div className="ae2-page">
+    <AccueilCtx.Provider value={{ data, slug, connecte, lienEspace, NAV, cyclesActifs, cyclesLoading }}>      <div className="ae2-page">
         <AccueilHeader
           data={data}
           slug={slug}

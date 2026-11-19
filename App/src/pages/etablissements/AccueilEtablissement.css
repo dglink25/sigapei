@@ -12,6 +12,11 @@
   font-family: 'Century Gothic', 'Questrial', 'Poppins', system-ui, sans-serif;
   color: var(--sg-text, #1a2a1e);
   font-size: 16px;
+  /* Compense le header fixed (b1 + b2 = 52+52 = 104px desktop) */
+  padding-top: calc(var(--aeh-b1-h, 52px) + var(--aeh-b2-h, 52px));
+}
+@media (max-width: 768px) {
+  .ae2-page { padding-top: var(--aeh-b1-h, 44px); }
 }
 .ae2-page *, .ae2-page *::before, .ae2-page *::after { box-sizing: border-box; }
 
@@ -85,7 +90,8 @@
 
 /* Hero compact pour les pages secondaires */
 .ae2-hero--compact {
-  min-height: calc(100vh - 86px) !important;
+  min-height: 220px;
+  max-height: 320px;
   background-color: #004d2b;
   background-size: cover;
   background-position: center;
@@ -94,16 +100,17 @@
   background: linear-gradient(to bottom, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.72) 100%);
 }
 .ae2-hero--compact .ae2-hero-titre {
-  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-size: clamp(1.4rem, 3vw, 2rem);
 }
 .ae2-hero--compact .ae2-hero-sous {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   opacity: 0.78;
 }
 
 /* Hauteur hero principale = plein écran moins le header */
 .ae2-hero {
-  min-height: calc(100vh - 86px) !important;
+  min-height: calc(100vh - 104px) !important;
+  max-height: none !important;
 }
 .ae2-hero-overlay {
   position: absolute;
@@ -371,7 +378,8 @@
 }
 
 @media (max-width: 768px) {
-  .ae2-hero          { min-height: 60vh; }
+  .ae2-hero          { min-height: calc(100vh - 44px) !important; }
+  .ae2-hero--compact { min-height: 160px; max-height: 220px; }
   .ae2-hero-titre    { font-size: 1.6rem; }
   .ae2-hero-sous     { font-size: 0.95rem; }
   .ae2-hero-arr      { width: 36px; height: 36px; }
@@ -392,6 +400,85 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   PAGE BANNER - bandeau titre léger (remplace hero mode page)
+════════════════════════════════════════════════════════════ */
+.pgb {
+  background: var(--sg-surface, #fff);
+  border-bottom: 1px solid var(--sg-border, #dde4df);
+  padding: 10px 0 12px;
+}
+
+.pgb-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Fil d'Ariane */
+.pgb-fil {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.pgb-fil-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pgb-fil-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #006B3C;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.pgb-fil-link:hover { opacity: 0.75; text-decoration: underline; }
+.pgb-fil-current {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--sg-text-muted, #888);
+}
+.pgb-sep { color: var(--sg-text-muted, #aaa); flex-shrink: 0; }
+
+/* Ligne titre + bouton retour */
+.pgb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pgb-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid var(--sg-border, #dde4df);
+  background: transparent;
+  color: var(--sg-text, #1a2a1e);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.pgb-back:hover { border-color: #006B3C; color: #006B3C; background: rgba(0,107,60,0.04); }
+
+.pgb-titre {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--sg-text, #1a2a1e);
+  line-height: 1.2;
+}
+
+/* Dark mode */
+[data-theme='dark'] .pgb { background: var(--sg-surface); border-color: var(--sg-border); }
+[data-theme='dark'] .pgb-titre { color: var(--sg-text); }
+[data-theme='dark'] .pgb-fil-link { color: #4ade80; }
+[data-theme='dark'] .pgb-back { border-color: var(--sg-border); color: var(--sg-text); }
+[data-theme='dark'] .pgb-back:hover { border-color: #4ade80; color: #4ade80; }
+
+/* ════════════════════════════════════════════════════════════
    PAGE CYCLE - Appels à candidature
 ════════════════════════════════════════════════════════════ */
 .pc-appels-grid {
@@ -402,15 +489,42 @@
 
 .pc-appel-card {
   border-radius: 16px;
-  padding: 24px;
+  padding: 0 0 20px 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
   border: 2px solid var(--sg-border, #dde4df);
   background: var(--sg-surface, #fff);
   transition: transform 0.2s, box-shadow 0.2s;
   position: relative;
+  overflow: hidden;
 }
+
+/* Zone illustration en haut de la card */
+.pc-appel-illu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px 18px;
+  background: var(--sg-surface, #fff);
+  border-bottom: 1px solid var(--sg-border, #edf0ed);
+  margin-bottom: 16px;
+}
+
+/* Rembourrage pour le contenu sous l'illustration */
+.pc-appel-card .pc-appel-badge,
+.pc-appel-card .pc-appel-titre,
+.pc-appel-card .pc-appel-desc,
+.pc-appel-card .pc-appel-dates,
+.pc-appel-card .pc-appel-frais,
+.pc-appel-card .pc-appel-btn {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+.pc-appel-card .pc-appel-badge { margin-bottom: 8px; }
+.pc-appel-card .pc-appel-titre { margin-bottom: 6px; }
+.pc-appel-card .pc-appel-dates { margin-top: 6px; }
+.pc-appel-card .pc-appel-btn   { margin-top: 14px; }
 .pc-appel-card--ouvert {
   border-color: rgba(0, 107, 60, 0.35);
   background: rgba(0, 107, 60, 0.03);
@@ -514,4 +628,64 @@
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .pc-appels-grid { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   CANDIDATURE - PhoneInput indicatif (react-phone-number-input)
+════════════════════════════════════════════════════════════ */
+.ap-phone-wrap {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1.5px solid var(--sg-input-border, #d0d9d2);
+  border-radius: 8px;
+  background: var(--sg-input-bg, #fff);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.ap-phone-wrap:focus-within {
+  border-color: #006B3C;
+  box-shadow: 0 0 0 3px rgba(0, 107, 60, 0.14);
+}
+.ap-phone-wrap.has-error {
+  border-color: #c0392b;
+}
+
+/* Composant interne PhoneInput */
+.ap-phone-wrap .PhoneInput {
+  width: 100%;
+  --PhoneInputCountryFlag-height: 1.1em;
+  --PhoneInput-color--focus: #006B3C;
+  --PhoneInputCountrySelectArrow-color: var(--sg-text-muted, #8a9e92);
+}
+.ap-phone-wrap .PhoneInputInput {
+  flex: 1;
+  height: 38px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--sg-text, #1a2a1e);
+  font: inherit;
+  font-size: 0.95rem;
+}
+.ap-phone-wrap .PhoneInputInput::placeholder {
+  color: var(--sg-text-muted, #8a9e92);
+}
+.ap-phone-wrap .PhoneInputCountrySelect option {
+  color: #111;
+  background: #fff;
+}
+
+/* Dark mode */
+[data-theme='dark'] .ap-phone-wrap {
+  background: var(--sg-input-bg);
+  border-color: var(--sg-input-border);
+}
+[data-theme='dark'] .ap-phone-wrap:focus-within {
+  border-color: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+[data-theme='dark'] .ap-phone-wrap .PhoneInputInput {
+  color: var(--sg-text);
 }

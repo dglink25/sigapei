@@ -4,7 +4,7 @@ import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import { getExampleNumber, getCountryCallingCode, isValidPhoneNumber } from 'libphonenumber-js'
 import examples from 'libphonenumber-js/examples.mobile.json'
-import { Phone, Mail, Fingerprint, ArrowLeft } from 'lucide-react'
+import { Phone, Mail, Fingerprint, ArrowLeft, Home } from 'lucide-react'
 import { startAuthentication, browserSupportsWebAuthn } from '@simplewebauthn/browser'
 import { ENV } from '../../config/commun/env'
 import { useNotify } from '../../context/commun/NotifyContext'
@@ -14,6 +14,8 @@ import { authService } from '../../services/identite/auth.service'
 import { getCaptchaToken } from '../../lib/identite/captcha'
 import { getGoogleIdToken } from '../../lib/identite/firebase'
 import { HOME_PATH, LOGIN_PATH, redirectionPostLogin } from '../../config/identite/routes'
+import { detecterSlugEtablissement, MODE_SOUS_DOMAINE, lienEtablissement } from '../../lib/etablissements/subdomain'
+import { accueilPublicService } from '../../services/etablissements/accueilPublic.service'
 import Loader from '../../components/commun/Loader'
 import usePageTitle from '../../hooks/commun/usePageTitle'
 import flags from 'react-phone-number-input/flags'
@@ -31,6 +33,41 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 /* Formatage matricule : XXX-code_de_son_etablissement-XXXXXXX */
 function formatMatricule(value) {
   return value.toUpperCase().replace(/[^A-Z0-9-]/g, '')
+}
+
+/**
+ * Détecte si on est sur la page login d'un établissement.
+ * En mode sous-domaine : slug depuis le hostname.
+ * En mode local : paramètre ?etablissement= ou state.etablissement.
+ */
+function useContexteEtablissement(location) {
+  const [etab, setEtab] = useState(null)
+
+  useEffect(() => {
+    // Sous-domaine production : slug dans le hostname
+    const slugSousDomaine = MODE_SOUS_DOMAINE ? detecterSlugEtablissement() : null
+    // Mode local : paramètre URL ?etablissement= (mis par urlConnexion())
+    const params = new URLSearchParams(location.search)
+    const slugParam = params.get('etablissement') ?? location.state?.etablissement ?? null
+    const slug = slugSousDomaine ?? slugParam
+
+    if (!slug) return
+
+    accueilPublicService.lire(slug)
+      .then((d) => {
+        if (d && !d.degrade) {
+          setEtab({
+            slug,
+            nom:    d.nom,
+            logoUrl: d.logoUrl ?? null,
+            accueilUrl: lienEtablissement(slug, ''),
+          })
+        }
+      })
+      .catch(() => {})
+  }, [location.search, location.state])
+
+  return etab
 }
 
 const GoogleIcon = () => (
@@ -52,6 +89,9 @@ export default function AuthPage() {
     document.body.classList.add('page-public-recaptcha')
     return () => document.body.classList.remove('page-public-recaptcha')
   }, [])
+
+  /* ── Contexte établissement (logo + bouton retour dynamiques) ── */
+  const etab = useContexteEtablissement(location)
 
   // L'URL /login#recuperer ouvre directement le parcours de recuperation
   const mode = location.hash === '#recuperer' ? 'recover' : 'login'
@@ -241,7 +281,29 @@ export default function AuthPage() {
           </button>
         )}
 
-        <img className="auth-logo" src="/sigapei.png" alt={ENV.appName} />
+        {/* Bouton retour vers l'accueil (établissement ou SIGAPEI) */}
+        {(step === 'identifier' || step === 'done') && (
+          <a
+            href={etab ? etab.accueilUrl : HOME_PATH}
+            className="auth-home-link"
+            aria-label={etab ? `Retour à ${etab.nom}` : `Retour à ${ENV.appName}`}
+          >
+            <Home size={15} />
+            {etab ? etab.nom : ENV.appName}
+          </a>
+        )}
+
+        {/* Logo dynamique */}
+        {etab?.logoUrl
+          ? <img className="auth-logo" src={etab.logoUrl} alt={etab.nom} />
+          : <img className="auth-logo" src="/sigapei.png" alt={ENV.appName} />
+        }
+
+        {/* Nom de l'établissement ou SIGAPEI sous le logo */}
+        {etab && (
+          <p className="auth-etab-nom">{etab.nom}</p>
+        )}
+
         <h1 className="auth-title">{mode === 'login' ? 'Bon retour' : 'Récupérer mon compte'}</h1>
 
         {/* ===== Connexion ===== */}
