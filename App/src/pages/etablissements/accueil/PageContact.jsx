@@ -1,16 +1,29 @@
 import { MapPin, Mail, Phone, BookOpen, LogIn, LayoutGrid } from 'lucide-react'
 import LienConnexion from '../../../components/etablissements/LienConnexion'
 import AccueilHero from '../../../components/etablissements/AccueilHero'
+import PageBanner from '../../../components/etablissements/PageBanner'
 import { useAccueil } from './AccueilLayout'
 import usePageTitle from '../../../hooks/commun/usePageTitle'
 
 export default function PageContact() {
   const { data, slug, connecte, lienEspace } = useAccueil()
   usePageTitle(`Contact - ${data?.nom ?? ''}`)
+  const base = slug ? `/etablissements/${slug}` : ''
 
   return (
     <>
-      <AccueilHero data={data} slug={slug} connecte={connecte} lienEspace={lienEspace} mode="page" titre="Nous Contacter" page="contact" />
+      <AccueilHero
+        data={data} slug={slug} connecte={connecte} lienEspace={lienEspace}
+        mode="page" titre="Nous Contacter" page="contact"
+      />
+      <PageBanner
+        titre="Nous Contacter"
+        fil={[
+          { label: data?.nom ?? 'Accueil', href: base || '/' },
+          { label: 'Contact' },
+        ]}
+        retour={base || '/'}
+      />
       <section className="ae2-section ae2-section--contact" style={{ minHeight: '40vh' }}>
       <div className="ae2-container">
         <div className="ae2-section-head">

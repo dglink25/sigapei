@@ -1,6 +1,7 @@
 import { Image as ImageIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import AccueilHero from '../../../components/etablissements/AccueilHero'
+import PageBanner from '../../../components/etablissements/PageBanner'
 import { useAccueil } from './AccueilLayout'
 import usePageTitle from '../../../hooks/commun/usePageTitle'
 
@@ -27,6 +28,13 @@ export default function PageActualites() {
       <AccueilHero
         data={data} slug={slug} connecte={connecte} lienEspace={lienEspace}
         mode="page" titre="Actualités" page="actualites"
+      />
+      <PageBanner
+        titre="Actualités"
+        fil={[
+          { label: data?.nom ?? 'Accueil', href: base || '/' },
+          { label: 'Actualités' },
+        ]}
       />
       <section className="ae2-section" style={{ minHeight: '40vh' }}>
         <div className="ae2-container">
