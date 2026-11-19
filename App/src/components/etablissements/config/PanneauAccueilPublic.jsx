@@ -10,6 +10,7 @@ import { accueilAdminService } from '../../../services/etablissements/accueilPub
 import { lienEtablissement } from '../../../lib/etablissements/subdomain'
 import useSlugEtablissement from '../../../hooks/etablissements/useSlugEtablissement'
 import Loader from '../../commun/Loader'
+import RichEditor from '../../commun/RichEditor'
 
 const STAT_ICONS = [
   { id: 'users', label: 'Personnes' }, { id: 'book', label: 'Livre' },
@@ -274,23 +275,49 @@ function OngletApropos({ data, setData, saving, onSave }) {
   const ap  = data.apropos
   const set = (p) => setData((d) => ({ ...d, apropos: { ...d.apropos, ...p } }))
 
+  async function uploadImage(file) {
+    return accueilAdminService.uploadImage(file)
+  }
+
   return (
     <div className="pac-section">
       <p className="ap-page-sub">Présentez votre établissement, sa devise, sa mission et sa vision.</p>
       <div className="ap-card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+
         <Field label="Devise (affichée dans le header)">
           <input className="ap-input" value={ap.devise ?? ''} onChange={(e) => set({ devise: e.target.value })} maxLength={200} placeholder="Excellence · Intégrité · Innovation" />
         </Field>
-        <Field label="Présentation générale">
-          <textarea className="ap-textarea" rows={5} value={ap.texte ?? ''} onChange={(e) => set({ texte: e.target.value })} maxLength={2000} placeholder="Histoire, valeurs, description de l'établissement…" />
-          <p className="ap-hint">{(ap.texte ?? '').length} / 2000</p>
+
+        <Field wide label="Présentation générale">
+          <RichEditor
+            value={ap.texte ?? ''}
+            onChange={(html) => set({ texte: html })}
+            onImageUpload={uploadImage}
+            placeholder="Histoire, valeurs, description de l'établissement… (titres, tableaux, images, liens…)"
+            minHeight={280}
+          />
         </Field>
-        <Field label="Notre Mission">
-          <textarea className="ap-textarea" rows={3} value={ap.mission ?? ''} onChange={(e) => set({ mission: e.target.value })} maxLength={800} placeholder="La mission de notre établissement…" />
+
+        <Field wide label="Notre Mission">
+          <RichEditor
+            value={ap.mission ?? ''}
+            onChange={(html) => set({ mission: html })}
+            onImageUpload={uploadImage}
+            placeholder="La mission de notre établissement…"
+            minHeight={180}
+          />
         </Field>
-        <Field label="Notre Vision">
-          <textarea className="ap-textarea" rows={3} value={ap.vision ?? ''} onChange={(e) => set({ vision: e.target.value })} maxLength={800} placeholder="Notre vision pour l'avenir…" />
+
+        <Field wide label="Notre Vision">
+          <RichEditor
+            value={ap.vision ?? ''}
+            onChange={(html) => set({ vision: html })}
+            onImageUpload={uploadImage}
+            placeholder="Notre vision pour l'avenir…"
+            minHeight={180}
+          />
         </Field>
+
       </div>
       <SaveBtn saving={saving} onClick={() => onSave('apropos', { apropos: ap })} />
     </div>
@@ -364,11 +391,15 @@ function OngletActualites({ data, setData, saving, onSave, notify }) {
     finally { setUploadIdx(null) }
   }
 
+  async function uploadImageContenu(file) {
+    return accueilAdminService.uploadImage(file)
+  }
+
   return (
     <div className="pac-section">
       <div className="pac-section-head">
         <p className="ap-page-sub">Annonces et événements affichés sur la page d'accueil.</p>
-        <button type="button" className="ap-btn ap-btn--sm" onClick={() => set((s) => [...s, { _id: uid(), imageUrl: '', titre: '', date: new Date().toISOString().slice(0,10), extrait: '' }])}>
+        <button type="button" className="ap-btn ap-btn--sm" onClick={() => set((s) => [...s, { _id: uid(), imageUrl: '', titre: '', date: new Date().toISOString().slice(0,10), extrait: '', corps: '' }])}>
           <Plus size={14} /> Ajouter
         </button>
       </div>
@@ -384,15 +415,36 @@ function OngletActualites({ data, setData, saving, onSave, notify }) {
                 <div className="pac-img-actions">
                   <input ref={fileRef} type="file" hidden accept="image/jpeg,image/png,image/webp" onChange={(e) => { upload(i, e.target.files?.[0]); e.target.value='' }} />
                   <button type="button" className="ap-btn ap-btn--ghost ap-btn--sm" onClick={() => fileRef.current?.click()} disabled={uploadIdx === i}>
-                    {uploadIdx === i ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> Image</>}
+                    {uploadIdx === i ? <><Loader mode="button" /> Envoi…</> : <><Upload size={13} /> Image de couverture</>}
                   </button>
-                  <div className="ap-field"><input className="ap-input" value={a.imageUrl} onChange={(e) => maj(i, { imageUrl: e.target.value })} placeholder="URL image" /></div>
+                  <div className="ap-field"><input className="ap-input" value={a.imageUrl} onChange={(e) => maj(i, { imageUrl: e.target.value })} placeholder="URL image de couverture" /></div>
                 </div>
               </div>
               <div className="pac-fields">
-                <Field wide label="Titre *"><input className="ap-input" value={a.titre} onChange={(e) => maj(i, { titre: e.target.value })} maxLength={160} /></Field>
-                <Field label="Date *"><input className="ap-input" type="date" value={a.date} onChange={(e) => maj(i, { date: e.target.value })} /></Field>
-                <Field wide label="Extrait"><textarea className="ap-textarea" rows={2} value={a.extrait} onChange={(e) => maj(i, { extrait: e.target.value })} maxLength={400} /></Field>
+                <Field wide label="Titre *">
+                  <input className="ap-input" value={a.titre} onChange={(e) => maj(i, { titre: e.target.value })} maxLength={160} />
+                </Field>
+                <Field label="Date *">
+                  <input className="ap-input" type="date" value={a.date} onChange={(e) => maj(i, { date: e.target.value })} />
+                </Field>
+                <Field wide label="Extrait (résumé affiché en liste)">
+                  <RichEditor
+                    value={a.extrait ?? ''}
+                    onChange={(html) => maj(i, { extrait: html })}
+                    onImageUpload={uploadImageContenu}
+                    placeholder="Résumé court de l'actualité…"
+                    minHeight={120}
+                  />
+                </Field>
+                <Field wide label="Contenu complet (page de détail)">
+                  <RichEditor
+                    value={a.corps ?? ''}
+                    onChange={(html) => maj(i, { corps: html })}
+                    onImageUpload={uploadImageContenu}
+                    placeholder="Rédigez le contenu complet de l'actualité ici (titres, tableaux, images, liens…)"
+                    minHeight={240}
+                  />
+                </Field>
               </div>
             </div>
             <button type="button" className="ap-btn ap-btn--danger ap-btn--sm pac-suppr" onClick={() => del(i)}><Trash2 size={14} /></button>

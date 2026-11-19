@@ -317,9 +317,9 @@ export default function AccueilEtablissement() {
             <div className="ae2-container">
               <SectionTitre titre="À PROPOS DE" accent="NOUS" />
               <div className="ae2-apropos-grid">
-                {apropos.texte   && <div className="ae2-apropos-bloc ae2-apropos-bloc--main"><p>{apropos.texte}</p></div>}
-                {apropos.mission && <div className="ae2-apropos-bloc"><h4 className="ae2-apropos-label">Notre Mission</h4><p>{apropos.mission}</p></div>}
-                {apropos.vision  && <div className="ae2-apropos-bloc"><h4 className="ae2-apropos-label">Notre Vision</h4><p>{apropos.vision}</p></div>}
+                {apropos.texte   && <div className="ae2-apropos-bloc ae2-apropos-bloc--main ae2-rich-content" dangerouslySetInnerHTML={{ __html: apropos.texte }} />}
+                {apropos.mission && <div className="ae2-apropos-bloc ae2-rich-content"><h4 className="ae2-apropos-label">Notre Mission</h4><div dangerouslySetInnerHTML={{ __html: apropos.mission }} /></div>}
+                {apropos.vision  && <div className="ae2-apropos-bloc ae2-rich-content"><h4 className="ae2-apropos-label">Notre Vision</h4><div dangerouslySetInnerHTML={{ __html: apropos.vision }} /></div>}
               </div>
             </div>
           </section>
@@ -356,7 +356,7 @@ export default function AccueilEtablissement() {
                     <div className="ae2-actu-body">
                       {a.date && <time className="ae2-actu-date" dateTime={a.date}>{datesFr(a.date)}</time>}
                       <h3 className="ae2-actu-titre">{a.titre}</h3>
-                      {a.extrait && <p className="ae2-actu-extrait">{a.extrait}</p>}
+                      {a.extrait && <div className="ae2-actu-extrait ae2-rich-content" dangerouslySetInnerHTML={{ __html: a.extrait }} />}
                     </div>
                   </article>
                 ))}

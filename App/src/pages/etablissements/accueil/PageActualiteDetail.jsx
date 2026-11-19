@@ -74,14 +74,16 @@ export default function PageActualiteDetail() {
           </h1>
 
           {actu.extrait && (
-            <p style={{ fontSize: '1.08rem', color: 'var(--sg-text-secondary)', lineHeight: 1.7, margin: '0 0 28px', borderLeft: '4px solid #006B3C', paddingLeft: 16 }}>
-              {actu.extrait}
-            </p>
+            <div
+              className="ae2-rich-content"
+              style={{ fontSize: '1.08rem', color: 'var(--sg-text-secondary)', lineHeight: 1.7, margin: '0 0 28px', borderLeft: '4px solid #006B3C', paddingLeft: 16 }}
+              dangerouslySetInnerHTML={{ __html: actu.extrait }}
+            />
           )}
 
           {actu.corps && (
             <div
-              className="ae2-actu-corps"
+              className="ae2-actu-corps ae2-rich-content"
               style={{ fontSize: '1rem', lineHeight: 1.8, color: 'var(--sg-text)' }}
               dangerouslySetInnerHTML={{ __html: actu.corps }}
             />
